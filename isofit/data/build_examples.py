@@ -4,6 +4,7 @@ Builds the examples from their template files for a given ISOFIT ini
 
 import json
 import os
+import platform
 import shutil
 from pathlib import Path
 from types import SimpleNamespace as sns
@@ -69,6 +70,28 @@ del model\
 """,
 )
 
+Powershell = sns(
+    template="""\
+# This is a generated example script to illustrate how to execute this example via the command line
+# Execute via: powershell -File [file].ps1
+
+# These are important to set before executing
+$env:MKL_NUM_THREADS = "1"
+$env:OMP_NUM_THREADS = "1"
+
+# Build a surface model first
+echo 'Building surface model: {surface_name}'
+isofit surface_model {surface}
+
+# Now run retrievals
+{commands}
+""",
+    command="""\
+echo 'Running {i}/{total}: {name}'
+isofit run --level DEBUG {config}\
+""",
+)
+
 OEScript = sns(
     template="""\
 #!/bin/bash
@@ -87,6 +110,21 @@ isofit apply_oe \\
   "$@"\
 
 # The "$@" will capture any additional options passed into the script
+"""
+)
+
+# Windows PowerShell variant
+OEScriptPS = sns(
+    template="""\
+# This is a generated example script to illustrate how to execute this example via the command line
+# Execute via: powershell -File [file].ps1
+
+# These are important to set before executing
+$env:MKL_NUM_THREADS = "1"
+$env:OMP_NUM_THREADS = "1"
+
+isofit apply_oe `
+  {args}\
 """
 )
 
@@ -216,6 +254,13 @@ class IsofitExample(Example):
         # Shared arguments for both scripts
         args = {"surface_name": surface.name, "surface": surface}
 
+        # Write powershell script when on Windows
+        if platform.system() == "Windows":
+            args["commands"] = "\n\n".join(bash)
+            file = self.path / f"{path.name}.ps1"
+            tmpl = Powershell.template.format(**args)
+            createScript(file, tmpl)
+
         # Write bash script
         args["commands"] = "\n\n".join(bash)
         file = self.path / f"{path.name}.sh"
@@ -252,13 +297,20 @@ class ApplyOEExample(Example):
 
         for arg in tmpl.glob("*.args.json"):
             args = updateTemplate(arg)
-            args = " \\\n  ".join(args)
+            join = " \\\n  ".join(args)
             name = arg.name.split(".")[0]
 
             file = path / f"{name}.sh"
-            tmpl = OEScript.template.format(args=args)
+            tmpl = OEScript.template.format(args=join)
 
             createScript(file, tmpl)
+
+            # Write powershell script when on Windows
+            if platform.system() == "Windows":
+                file = path / f"{name}.ps1"
+                join = " `\n  ".join(args)
+                tmpl = OEScriptPS.template.format(args=join)
+                createScript(file, tmpl)
 
 
 Examples = {

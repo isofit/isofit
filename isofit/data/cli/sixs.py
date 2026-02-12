@@ -12,17 +12,10 @@ from pathlib import Path
 import click
 
 from isofit.data import env, shared
-from isofit.data.download import (
-    download_file,
-    isUpToDateGithub,
-    prepare_output,
-    pullFromRepo,
-    unzip,
-)
+from isofit.data.download import isUpToDateGithub, prepare_output, pullFromRepo
 
 ESSENTIAL = True
 CMD = "sixs"
-MINGW = "https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-msvcrt-r2/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64msvcrt-13.0.0-r2.zip"
 
 Logger = logging.getLogger(__name__)
 
@@ -84,14 +77,62 @@ def precheck():
     True or None
         True if `gfortran --version` returns a valid response, None otherwise
     """
-    proc = subprocess.run("gfortran --version", shell=True, stdout=subprocess.PIPE)
+    missing = []
 
-    if proc.returncode == 0:
+    # Check gfortran
+    proc = subprocess.run(
+        "gfortran --version",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    if proc.returncode != 0:
+        missing.append("gfortran")
+
+    # Check make (allow mingw's mingw32-make on Windows)
+    proc = subprocess.run(
+        "make --version", shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
+    )
+    if proc.returncode != 0 and platform.system() == "Windows":
+        proc = subprocess.run(
+            "mingw32-make.exe --help",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+
+    if proc.returncode != 0:
+        missing.append("make")
+
+    # Check bash (git-bash on Windows provides bash)
+    proc = subprocess.run(
+        "bash --version", shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
+    )
+    if proc.returncode != 0:
+        missing.append("bash")
+
+    if not missing:
         return True
 
-    print(
-        f"Failed to validate an existing gfortran installation. Please ensure it is installed on your system."
-    )
+    print("Missing required tools for building 6S:")
+    for m in missing:
+        if m == "gfortran":
+            print(" - gfortran: required Fortran compiler")
+        elif m == "make":
+            print(" - make: required build tool (on Windows mingw32-make)")
+        elif m == "bash":
+            print(" - bash: required shell (on Windows use Git Bash)")
+
+    if platform.system() == "Windows":
+        print(
+            "On Windows you can install helpers via: isofit download windows [--mingw|--git]"
+        )
+    else:
+        print(
+            "Please install the missing tools via your package manager (eg. apt, brew, yum)"
+        )
+
+    return
 
 
 def patch_makefile(file):
@@ -140,11 +181,11 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     make = "make"
     if platform.system() == "Windows":
         make = "mingw32-make.exe"
-
         proc = subprocess.run(f"{make} --help", shell=True, stdout=subprocess.PIPE)
         if proc.returncode != 0:
-            print("MinGW64 not found, downloading")
-            download_mingw()
+            print(
+                "MinGW64 (mingw) not found. On Windows install helpers via: isofit download windows --mingw"
+            )
 
     kwargs = dict(
         shell=True,
@@ -168,39 +209,6 @@ def make(directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, debug=False)
     except subprocess.CalledProcessError as e:
         print(f"Building 6S via make failed, exit code: {e.returncode}")
         print(e.stderr)
-
-
-def download_mingw(path=None, tag="latest", overwrite=False, **_):
-    """
-    Downloads MinGW64 for Windows
-
-    Parameters
-    ----------
-    output : str | None
-        Path to output as. If None, defaults to the ini path.
-    overwrite : bool, default=False
-        Overwrite an existing installation
-    **_ : dict
-        Ignores unused params that may be used by other validate functions. This is to
-        maintain compatibility with other functions
-    """
-    print("Downloading MinGW64")
-
-    output = prepare_output(path, env.path("sixs", "MinGW64"), overwrite=overwrite)
-    if not output:
-        return
-
-    zipfile = download_file(MINGW, output.parent / "MinGW64.zip")
-    avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
-
-    print(f"Done, now available at: {avail}/bin")
-    print(
-        "You may need to add it to your PATH environment variable, ISOFIT will also do this automatically at runtime"
-    )
-
-    env.changeKey("path.mingw", "{sixs}/MinGW64/bin")
-    env.save()
-    env.load()  # Reload to insert the MinGW64 path to $PATH
 
 
 def download(path=None, tag="latest", overwrite=False, debug_make=False, **_):
@@ -321,12 +329,7 @@ def update(check=False, **kwargs):
 @click.option(
     "--debug-make", is_flag=True, help="Enable debug logging for the make command"
 )
-@click.option(
-    "--mingw",
-    is_flag=True,
-    help="Downloads the MinGW64 (for Windows) instead of 6S",
-)
-def download_cli(debug_make, mingw, **kwargs):
+def download_cli(debug_make, **kwargs):
     """\
     Downloads 6S from https://github.com/isofit/6S. Only HDF5 versions are supported at this time.
 
@@ -347,8 +350,6 @@ def download_cli(debug_make, mingw, **kwargs):
         print(f"Finished")
     elif kwargs.get("overwrite"):
         download(**kwargs)
-    elif mingw:
-        download_mingw(**kwargs)
     else:
         update(**kwargs)
 
