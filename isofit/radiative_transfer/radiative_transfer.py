@@ -208,17 +208,15 @@ class RadiativeTransfer:
         # Atmospheric path radiance
         L_atm = self.get_L_atm(x_RT, geom)
 
-        # Multiple scattering events, accounting for neighboring terrain if bg_rfl provided.
-        # For svf=1, this collapses back to s_alb * rho_dif_dif.
+        # Spherical albedo
         s_alb = r["sphalb"]
 
+        # For svf=1, this collapses back to s_alb. Safe assumption if bgrfl not present.
         if not isinstance(geom.bg_rfl, np.ndarray):
             skyview_factor = 1.0
+        s_eff = (s_alb * skyview_factor) + (rho_dif_dif * (1 - skyview_factor))
 
-        atm_surface_scattering = (
-            (s_alb * skyview_factor) + (rho_dif_dif * (1 - skyview_factor))
-        ) * rho_dif_dif
-
+        atm_surface_scattering = s_eff * rho_dif_dif
         eq_11_term = 1 - atm_surface_scattering
 
         # Special case: 1-component model

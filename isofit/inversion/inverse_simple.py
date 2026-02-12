@@ -294,15 +294,19 @@ def invert_analytical(
     bg_rfl = fm.upsample(fm.surface.wl, bg_rfl)
 
     # Estimation of background radiance
-    # For svf=1, this collapses back to s_alb * rho_dif_dif
     svf = geom.verify(fm.RT.coszen)["skyview_factor"]
+
+    # For svf=1, this collapses back to s_alb. Safe assumption if bgrfl not present.
     if not isinstance(geom.bg_rfl, np.ndarray):
         svf = 1.0
-    s_weighted = (s * svf) + (bg_rfl * (1 - svf))
+    s_eff = (s * svf) + (bg_rfl * (1 - svf))
 
-    L_bg = (L_dir_dif + L_dif_dif) * bg_rfl + L_tot * (s_weighted * bg_rfl**2) / (
-        1 - s_weighted * bg_rfl
-    )
+    atm_surface_scattering = s_eff * bg_rfl
+    eq_11_term = 1 - atm_surface_scattering
+
+    L_bg = (L_dir_dif + L_dif_dif) * bg_rfl + L_tot * (
+        atm_surface_scattering * bg_rfl
+    ) / (eq_11_term)
 
     # Get superpixel EOF shift if used
     eof_offset = fm.eof_offset(sub_surface, sub_RT, sub_instrument)
