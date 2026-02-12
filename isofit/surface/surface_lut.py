@@ -53,7 +53,7 @@ class LUTSurface(Surface):
         - Data Variables:
             * rho_dif_dir: (LUT Axes..., n_wl)
             * rho_dir_dir: (LUT Axes..., n_wl) [optional]
-            * statevec_names: [optional]
+            * statevec_names: (n_state) [optional]
             * mean: (n_state) [optional]
             * sigma: (n_state) [optional]
 
@@ -69,6 +69,12 @@ class LUTSurface(Surface):
         super().__init__(full_config)
         config = full_config.forward_model.surface
         surface_n_wl = self.n_wl
+
+        # Optimization parameters, if not set will come from the data, with a default scale of 1.0.
+        # This could potentially live in surface config?
+        self.bounds = None
+        self.scale = None
+        self.init = None
 
         # Check if model is stored as dictionaries in .mat format
         if config.surface_file.endswith(".mat"):
@@ -121,10 +127,13 @@ class LUTSurface(Surface):
                     f"Statevector:{name} not found in LUT dimensions: {self.lut_names}"
                 )
 
-        # Set the opt params based on data, can be overridden in child class.
-        self.bounds = [[g.min(), g.max()] for g in self.lut_grid]
-        self.scale = np.ones(self.n_state)
-        self.init = np.array([(b[0] + b[1]) / 2.0 for b in self.bounds])
+        # Set the optimization parameters based on data if none are provided
+        if self.bounds is None:
+            self.bounds = [[g.min(), g.max()] for g in self.lut_grid]
+        if self.scale is None:
+            self.scale = np.ones(self.n_state)
+        if self.init is None:
+            self.init = np.array([(b[0] + b[1]) / 2.0 for b in self.bounds])
 
         # If no priors given, assume uninformative, flat priors
         if self.mean is None:
@@ -369,4 +378,6 @@ class LUTSurface(Surface):
         if len(x_surface) < 1:
             return ""
 
-        return "Surface: " + " ".join([("%5.4f" % x) for x in x_surface])
+        return "Surface: " + " ".join(
+            [f"{n}: {v:5.4f}" for n, v in zip(self.statevec_names, x_surface)]
+        )
