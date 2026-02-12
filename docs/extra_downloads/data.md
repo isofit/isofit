@@ -34,11 +34,10 @@ The contents below go into further details about additional commands.
 
 ISOFIT uses INI files to configure the location of extra dependencies that are not included in the default ISOFIT installation. These include things like larger data files and the ISOFIT examples.
 
-<blockquote style="border-left: 5px solid lightblue; padding: 0.5em 1em; margin: 1em 0;" markdown="1">
+???+ note
 
-:information_source: The below commands assume a user is in their home directory, aka `~`. For Mac, this is commonly `/Users/[username]/`. The examples on this page will use `~`, but in practice this path and other relative paths will be automatically replaced with the absolute path.
+    The below commands assume a user is in their home directory, aka `~`. For Mac, this is commonly `/Users/[username]/`. The examples on this page will use `~`, but in practice this path and other relative paths will be automatically replaced with the absolute path.
 
-</blockquote>
 
 When the `isofit` command is first executed, it will create a directory under the user's home directory named `.isofit` as well as initialize a default `isofit.ini` file:
 
@@ -147,6 +146,7 @@ ISOFIT comes with a `download` command that provides users the ability to downlo
 | `sixs`      | Downloads and builds 6sv-2.1 |
 | `plots`     | Downloads and installs the ISOFIT plots package from https://github.com/isofit/isofit-plots |
 | `libradtran`| Downloads and installs the LibRadTran radiative transfer model. This is experimental and not guaranteed to work. For advanced users only |
+| `windows` | Downloads Windows helper tools (MinGW64, Portable Git) |
 
 The paths for each download are defined in the currently active INI.
 Download paths can be modified by either directly modifying the `~/.isofit/isofit.ini` or by using `isofit --help` flags (shown above).
@@ -174,3 +174,11 @@ Options:
 ```
 
 Some subcommands have additional flags to further tweak the download, such as `data` and `examples` having a `--tag` to download specific tag releases, or `sRTMnet` having `--version` for different model versions, but it is recommended to use the default to pull the most up-to-date download for each.
+
+## Windows
+
+ISOFIT requires three external dependencies to run correctly on Windows: bash, gfortran, and make. These can be installed via the `isofit download windows` command. If `isofit download all` is executed, these will be automatically installed on Windows machines.
+
+6S requires gfortran and make to compile. Bash is used to execute 6S simulation files.
+
+Once installed, a bash terminal can be opened via `isofit dev bash`, which makes executing the examples easier.

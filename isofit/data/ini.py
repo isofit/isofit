@@ -52,6 +52,7 @@ class Ini:
         "surface",
         "plots",
         "libradtran",
+        "windows",
     ]
 
     # Additional keys with default values
@@ -222,6 +223,25 @@ class Ini:
             # Retrieve the absolute path
             for key in self._dirs:
                 self.changePath(key, self[key])
+
+            # Cache the existing $PATH, restore it on every load
+            if not self._path_bak:
+                self._path_bak = os.environ["PATH"]
+            else:
+                os.environ["PATH"] = self._path_bak
+
+            # Insert paths into the $PATH variable
+            for key, value in self.items():
+                try:
+                    val = Path(
+                        value.format(**self)
+                    )  # Value may need some interpolation
+
+                    if key.startswith("path.") and val.exists():
+                        # Prepend to take precedence
+                        os.environ["PATH"] = str(val) + os.pathsep + os.environ["PATH"]
+                except:
+                    Logger.exception("Failed to process key {key}='{value}'")
 
             Logger.info(f"Loaded ini from: {self.ini}")
         else:
