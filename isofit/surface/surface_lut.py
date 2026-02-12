@@ -141,6 +141,12 @@ class LUTSurface(Surface):
         if self.sigma is None:
             self.sigma = np.ones(self.n_state) * 1e6
 
+        # Ensure priors shape is correct
+        if len(self.mean) != len(self.init) or len(self.sigma) != len(self.init):
+            raise ValueError(
+                f"Priors must match length of statevector (statevector length:{len(self.init)})."
+            )
+
         # Cache some important computations
         Cov = np.diag(self.sigma**2)
         Cov_normalized = Cov / np.mean(np.diag(Cov))
