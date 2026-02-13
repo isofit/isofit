@@ -122,8 +122,7 @@ class ForwardModel:
 
         # handle surface reflectance vs non-reflectance portion for different surface types
         if self.is_lut_surface:
-            # NOTE lut_surface case, assumes idx surf rfl to be empty
-            self.idx_surf_rfl = np.array([], dtype=int)
+            self.idx_surf_rfl = self.surface.idx_lamb
             self.idx_surf_nonrfl = self.idx_surface
         else:
             self.idx_surf_rfl = self.idx_surface[: len(self.surface.idx_lamb)]
