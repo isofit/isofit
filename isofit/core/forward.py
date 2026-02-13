@@ -76,6 +76,9 @@ class ForwardModel:
 
         # Build the surface model
         self.surface = Surface(full_config)
+        self.is_lut_surface = (
+            self.full_config.forward_model.surface.surface_category == "lut_surface"
+        )
 
         # Check to see if using supported calibration surface model
         if self.surface.n_wl != len(self.RT.wl) or not np.all(
@@ -118,15 +121,13 @@ class ForwardModel:
         self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
 
         # handle surface reflectance vs non-reflectance portion for different surface types
-        # multicomponent and glint case (rfl or rfl+ some other variables)
-        if len(self.surface.statevec_names) >= len(self.surface.idx_lamb):
-            self.idx_surf_rfl = self.idx_surface[: len(self.surface.idx_lamb)]
-            self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb) :]
-
-        # NOTE lut_surface case, assumes idx surf rfl to be empty
-        else:
+        if self.is_lut_surface:
+            # NOTE lut_surface case, assumes idx surf rfl to be empty
             self.idx_surf_rfl = np.array([], dtype=int)
             self.idx_surf_nonrfl = self.idx_surface
+        else:
+            self.idx_surf_rfl = self.idx_surface[: len(self.surface.idx_lamb)]
+            self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb) :]
 
         # radiative transfer portion
         self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(

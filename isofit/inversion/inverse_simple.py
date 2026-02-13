@@ -119,7 +119,7 @@ def heuristic_atmosphere(
                 geom,
             )
             # NOTE only calls indexing if it's not the lut surface
-            if len(fm.idx_surf_rfl) != 0:
+            if not fm.is_lut_surface:
                 r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
 
             # Simple linear interpolation
