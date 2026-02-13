@@ -359,10 +359,10 @@ class RadiativeTransferConfig(BaseConfigSection):
         Style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
         """
 
-        self._min_cos_i_type = float
-        self.min_cos_i = 0.0
+        self._max_slope_type = float
+        self.max_slope = 45.0
         """
-        float: Minimum cos(i) value used in LUT component calculations.  Only relevant
+        float: Max slope value used in LUT component calculations.  Only relevant
         if terrain_style is 'dem' and a 6 component model is used. This can avoid
         runaway results at low values where diffuse radiance dominates.
         """

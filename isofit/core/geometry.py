@@ -83,6 +83,8 @@ class Geometry:
             self.observer_zenith = obs[2]  # 0 to 90 from zenith
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
+            self.slope = obs[6]  # 0 to 90 from horizon
+            self.aspect = obs[7]  # 0 to 360 clockwise from N
             self.cos_i = obs[8]  # cosine of eSZA
             # calculate relative to-sun azimuth
             delta_phi = np.abs(self.solar_azimuth - self.observer_azimuth)
@@ -121,15 +123,28 @@ class Geometry:
         day_of_year = date_time.timetuple().tm_yday
         return float(self.earth_sun_distance[day_of_year - 1, 1])
 
-    def verify(self, coszen):
+    def verify(self, coszen, max_slope, terrain_style):
         """Verify important geometry data such as coszen, cos_i, slope, aspect, and sky view prior to inversion."""
         valid_data = {}
 
         # Populate coszen if NaN
         coszen = np.cos(np.deg2rad(self.solar_zenith)) if np.isnan(coszen) else coszen
 
+        # set max slope
+        self.slope = np.min(self.slope, max_slope)
+
         # Local solar zenith angle as a function of surface slope and aspect
-        cos_i = self.cos_i if self.cos_i is not None else coszen
+        cos_i = np.sin(np.radians(self.solar_zenith)) * np.sin(
+            np.radians(self.slope)
+        ) * np.cos(np.radians(self.solar_azimuth) - np.radians(self.aspect)) + np.cos(
+            np.radians(self.solar_zenith)
+        ) * np.cos(
+            np.radians(self.slope)
+        )
+
+        # Pretend that the surface is flat, regardless of input geometry
+        if terrain_style == "flat":
+            cos_i = coszen
 
         # Ensure coszen, cos_i respect 0-1 bounds.
         valid_data["coszen"] = np.clip(coszen, 0.0, 1.0)
