@@ -1,8 +1,10 @@
 """ISOFIT command line interface."""
 
 import importlib
+import inspect
 import logging
 import os
+import re
 import sys
 
 # Explicitly set the number of threads to be 1, so we more effectively run in parallel
@@ -16,6 +18,63 @@ import click
 
 import isofit
 from isofit.data import env
+
+
+def fix_paragraph_formatting(obj):
+    """
+    Convert a NumPy-style docstring into Click verbatim help text.
+
+    Click collapses single newlines and reflows paragraphs by default.
+    This function preserves the original formatting by marking each
+    paragraph as a verbatim block using Click's ``\\b`` escape.
+
+    Parameters
+    ----------
+    obj : object
+        The object from which to extract a docstring. Typically a function
+        or Click command.
+
+    Returns
+    -------
+    str
+        A Click-compatible help string with formatting preserved.
+    """
+    doc = inspect.getdoc(obj) or ""
+    paragraphs = re.split(r"\n\s*\n", doc)
+    return "\n\n".join(f"\b\n{p}" for p in paragraphs)
+
+
+def resolve_doc_source(command):
+    """
+    Resolve the authoritative documentation source for a Click command.
+
+    The resolution order is:
+
+    1. ``command.__doc_source__`` (explicit override)
+    2. ``command.callback.__doc_source__`` (common delegation pattern)
+    3. ``command.callback`` (fallback)
+    4. ``command`` itself
+
+    Parameters
+    ----------
+    command : click.Command
+        The Click command instance.
+
+    Returns
+    -------
+    object
+        The object whose docstring should be used for help text.
+    """
+    if hasattr(command, "__doc_source__"):
+        return command.__doc_source__
+
+    callback = getattr(command, "callback", None)
+    if callback:
+        if hasattr(callback, "__doc_source__"):
+            return callback.__doc_source__
+        return callback
+
+    return command
 
 
 class CLI(click.Group):
@@ -166,20 +225,21 @@ class CLI(click.Group):
                 return click.Command(cmd_name)
 
             try:
-                return self.resolve(cmd_name)
+                cmd = self.resolve(cmd_name)
+                source = resolve_doc_source(cmd)
+                cmd.help = fix_paragraph_formatting(source)
+
+                return cmd
             except ModuleNotFoundError:
                 if self.debug:
                     if cmd_name == "plot":
                         logging.exception(
                             "Isoplots does not appear to be installed, install it via `isofit download plots`"
                         )
-                    else:
-                        logging.exception(
-                            f"Failed to import {cmd_name} from {command}:"
-                        )
-            except:
-                if self.debug:
+                else:
                     logging.exception(f"Failed to import {cmd_name} from {command}:")
+            except:
+                logging.exception(f"Failed to import {cmd_name} from {command}:")
 
         return super().get_command(ctx, cmd_name)
 

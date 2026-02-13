@@ -77,6 +77,7 @@ class RadiativeTransfer:
         self.lut_grid = config.lut_grid
         self.statevec_names = config.statevector.get_element_names()
         self.terrain_style = config.terrain_style
+        self.min_cos_i = config.min_cos_i
 
         self.rt_engines = []
         for idx in range(len(config.radiative_transfer_engines)):
@@ -321,6 +322,8 @@ class RadiativeTransfer:
         # Pretend that the surface is flat, regardless of input geometry
         if self.terrain_style == "flat":
             cos_i = coszen
+
+        cos_i = max(self.min_cos_i, cos_i)
 
         # radiances along all optical paths
         L_coupled = []
