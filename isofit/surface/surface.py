@@ -36,8 +36,8 @@ class Surface:
 
     def __init__(self, full_config: Config):
         config = full_config.forward_model.surface
-        self.model_dict = loadmat(config.surface_file)
 
+        self.model_dict = {}
         self.statevec_names = []
         self.idx_surface = np.arange(len(self.statevec_names))
         self.bounds = np.array([])
@@ -50,6 +50,9 @@ class Surface:
 
         self.wl = None
         self.fwhm = None
+
+        if config.surface_category != "lut_surface":
+            self.model_dict = loadmat(config.surface_file)
 
         # 1st Priority: use the wavelength file
         if config.wavelength_file is not None:

@@ -117,11 +117,16 @@ class ForwardModel:
         # entire surface portion
         self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
 
-        # surface reflectance portion
-        self.idx_surf_rfl = self.idx_surface[: len(self.surface.idx_lamb)]
+        # handle surface reflectance vs non-reflectance portion for different surface types
+        # multicomponent and glint case (rfl or rfl+ some other variables)
+        if len(self.surface.statevec_names) >= len(self.surface.idx_lamb):
+            self.idx_surf_rfl = self.idx_surface[: len(self.surface.idx_lamb)]
+            self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb) :]
 
-        # non-reflectance surface parameters
-        self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb) :]
+        # NOTE lut_surface case, assumes idx surf rfl to be empty
+        else:
+            self.idx_surf_rfl = np.array([], dtype=int)
+            self.idx_surf_nonrfl = self.idx_surface
 
         # radiative transfer portion
         self.idx_RT = np.arange(len(self.RT.statevec_names), dtype=int) + len(
