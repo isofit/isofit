@@ -77,7 +77,7 @@ class RadiativeTransfer:
         self.lut_grid = config.lut_grid
         self.statevec_names = config.statevector.get_element_names()
         self.terrain_style = config.terrain_style
-        self.min_cos_i = config.min_cos_i
+        self.max_slope = config.max_slope
 
         self.rt_engines = []
         for idx in range(len(config.radiative_transfer_engines)):
@@ -278,7 +278,9 @@ class RadiativeTransfer:
         """
         L_atms = []
 
-        verified_geom = geom.verify(self.coszen)
+        verified_geom = geom.verify(
+            self.coszen, max_slope=self.max_slope, terrain_stle=self.terrain_style
+        )
         coszen, cos_i = verified_geom["coszen"], verified_geom["cos_i"]
 
         for RT in self.rt_engines:
@@ -313,17 +315,14 @@ class RadiativeTransfer:
             L_dif_dif => downward diffuse * upward diffuse
         """
         # Check coszen against cos_i
-        verified_geom = geom.verify(self.coszen)
+        verified_geom = geom.verify(
+            self.coszen, max_slope=self.max_slope, terrain_stle=self.terrain_style
+        )
         coszen, cos_i, skyview_factor = (
             verified_geom["coszen"],
             verified_geom["cos_i"],
             verified_geom["skyview_factor"],
         )
-        # Pretend that the surface is flat, regardless of input geometry
-        if self.terrain_style == "flat":
-            cos_i = coszen
-
-        cos_i = max(self.min_cos_i, cos_i)
 
         # radiances along all optical paths
         L_coupled = []
@@ -399,7 +398,9 @@ class RadiativeTransfer:
 
         # Handle 1c L_tot. NOTE: transm_down_dif = total transm for 1c case.
         if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
-            coszen = geom.verify(self.coszen)["coszen"]
+            coszen = geom.verify(
+                self.coszen, max_slope=self.max_slope, terrain_stle=self.terrain_style
+            )["coszen"]
             L_tots = []
             for RT in self.rt_engines:
                 r = RT.get(x_RT, geom)
