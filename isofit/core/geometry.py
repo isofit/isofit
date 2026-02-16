@@ -131,10 +131,10 @@ class Geometry:
         # set min cosi (which is at max slope facing away from sun)
         self.min_cosi = max(
             0,
-            np.sin(np.radians(self.solar_zenith))
+            np.sin(np.arccos(coszen))
             * np.sin(np.radians(max_slope))
             * np.cos(np.radians(180))
-            + np.cos(np.radians(self.solar_zenith)) * np.cos(np.radians(max_slope)),
+            + coszen * np.cos(np.radians(max_slope)),
         )
 
         # Local solar zenith angle as a function of surface slope and aspect
