@@ -279,7 +279,7 @@ class RadiativeTransfer:
         L_atms = []
 
         verified_geom = geom.verify(
-            self.coszen, max_slope=self.max_slope, terrain_stle=self.terrain_style
+            self.coszen, max_slope=self.max_slope, terrain_style=self.terrain_style
         )
         coszen, cos_i = verified_geom["coszen"], verified_geom["cos_i"]
 
@@ -316,7 +316,7 @@ class RadiativeTransfer:
         """
         # Check coszen against cos_i
         verified_geom = geom.verify(
-            self.coszen, max_slope=self.max_slope, terrain_stle=self.terrain_style
+            self.coszen, max_slope=self.max_slope, terrain_style=self.terrain_style
         )
         coszen, cos_i, skyview_factor = (
             verified_geom["coszen"],
@@ -399,7 +399,7 @@ class RadiativeTransfer:
         # Handle 1c L_tot. NOTE: transm_down_dif = total transm for 1c case.
         if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
             coszen = geom.verify(
-                self.coszen, max_slope=self.max_slope, terrain_stle=self.terrain_style
+                self.coszen, max_slope=self.max_slope, terrain_style=self.terrain_style
             )["coszen"]
             L_tots = []
             for RT in self.rt_engines:
