@@ -72,7 +72,6 @@ class LUTSurface(Surface):
         config = full_config.forward_model.surface
         surface_n_wl = self.n_wl
         self.terrain_style = full_config.forward_model.radiative_transfer.terrain_style
-        self.min_cos_i = full_config.forward_model.radiative_transfer.min_cos_i
 
         # Optimization parameters, if not set will come from the data, with a default scale of 1.0.
         # This could potentially live in surface config?
@@ -174,8 +173,9 @@ class LUTSurface(Surface):
                 if name.startswith("zfrac_"):
                     # for mixed pixel fractions for softmax function
                     self.bounds.append([-5.0, 5.0])
+                    # assuming 0-1 range for free cosi variable
                 elif name.startswith("cos_i"):
-                    self.bounds.append([self.min_cos_i, 1.0])
+                    self.bounds.append([0.0, 1.0])
                 else:
                     idx = self.lut_names.index(name)
                     self.bounds.append(
@@ -318,7 +318,6 @@ class LUTSurface(Surface):
             cos_i = x_surface[self.cos_i_idx]
         else:
             cos_i = geom.verify(geom.solar_zenith)["cos_i"]
-        cos_i = np.clip(cos_i, self.min_cos_i, 1.0)
 
         if self.sza_ind is not None:
             point[self.sza_ind] = np.degrees(np.arccos(cos_i))
