@@ -23,7 +23,24 @@ import numpy as np
 from scipy.linalg import block_diag
 
 from isofit.core.common import eps, svd_inv_sqrt
+from isofit.surface.surface import DefaultState
 from isofit.surface.surface_multicomp import MultiComponentSurface
+
+DefaultSkyGlintPrior = DefaultState(
+    bounds=[0.0, 100.0],
+    scale=1.0,
+    prior_mean=1 / np.pi,
+    prior_sigma=0.001,
+    init=1 / np.pi,
+)
+
+DefaultSunGlintPrior = DefaultState(
+    bounds=[0.0, 100.0],
+    scale=1.0,
+    prior_mean=0.02,
+    prior_sigma=0.001,
+    init=0.02,
+)
 
 
 class GlintModelSurface(MultiComponentSurface):
@@ -40,33 +57,45 @@ class GlintModelSurface(MultiComponentSurface):
         self.glint_ind = len(self.statevec_names) - 2
         self.sky_glint_ind = self.glint_ind
         self.sun_glint_ind = self.glint_ind + 1
-
-        self.scale.extend([1.0, 1.0])
-
-        # Numbers from Marcel Koenig; used for prior mean
-        self.init.extend([1 / np.pi, 0.02])
-
-        # Gege (2021), WASI user manual
-        self.bounds.extend([[0, 10], [0, 10]])
-
         self.n_state = self.n_state + 2
-
-        # Useful indexes to track
-        self.glint_ind = len(self.statevec_names) - 2
-        self.sky_glint_ind = self.glint_ind
-        self.sun_glint_ind = self.glint_ind + 1
-
         self.idx_surface = np.arange(len(self.statevec_names))
 
-        # Change this if you don't want to analytical solve for all the full statevector elements.
+        # TODO Remove or update ability to smooth on any statevector idx
         self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
-        self.sun_glint_sigma = (
-            config.sun_glint_prior_sigma * np.array(self.scale[self.sun_glint_ind])
-        ) ** 2
-        self.sky_glint_sigma = (
-            config.sky_glint_prior_sigma * np.array(self.scale[self.sky_glint_ind])
-        ) ** 2
+        # Old syntax (setting optimizaion and prior directly from config:
+        # self.sun_glint_sigma = (
+        #     config.sun_glint_prior_sigma
+        #     * np.array(self.scale[self.sun_glint_ind])
+        # ) ** 2
+
+        # New syntax pulling from populated config object
+        self.init.extend(
+            [
+                config.statevector.SKY_GLINT.get("init"),
+                config.statevector.SUN_GLINT.get("init"),
+            ]
+        )
+
+        self.scale.extend(
+            [
+                config.statevector.SKY_GLINT.get("scale"),
+                config.statevector.SUN_GLINT.get("scale"),
+            ]
+        )
+
+        self.bounds.extend(
+            [
+                config.statevector.SKY_GLINT.get("bounds"),
+                config.statevector.SUN_GLINT.get("bounds"),
+            ]
+        )
+
+        self.sky_glint_mean = config.statevector.SKY_GLINT.get("prior_mean")
+        self.sky_glint_sigma = (config.statevector.SKY_GLINT.get("prior_sigma")) ** 2
+
+        self.sun_glint_mean = config.statevector.SUN_GLINT.get("prior_mean")
+        self.sun_glint_sigma = (config.statevector.SUN_GLINT.get("prior_sigma")) ** 2
 
         # Compute and and cache normalized Sa inversions for glint case
         Cov = np.array([[self.sky_glint_sigma, 0], [0, self.sun_glint_sigma]])
@@ -78,7 +107,9 @@ class GlintModelSurface(MultiComponentSurface):
         """Mean of prior distribution, calculated at state x."""
 
         mu = MultiComponentSurface.xa(self, x_surface, geom)
-        mu[self.glint_ind :] = self.init[self.glint_ind :]
+        mu[self.sky_glint_ind] = self.sky_glint_mean
+        mu[self.sun_glint_ind] = self.sun_glint_mean
+
         return mu
 
     def Sa(self, x_surface, geom):

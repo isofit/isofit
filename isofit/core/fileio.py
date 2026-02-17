@@ -266,6 +266,7 @@ class SpectrumFile:
                     self.file = envi.open(envi_header(fname))
 
             self.open_map_with_retries()
+            logging.debug(self.memmap.shape)
 
     def open_map_with_retries(self):
         """Try to open a memory map, handling Beowulf I/O issues."""
