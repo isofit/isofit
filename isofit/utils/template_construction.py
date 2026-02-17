@@ -850,7 +850,11 @@ def build_config(
 
     for key, sigma, scale in zip(statekeys, statesigmas, statescale):
         if key in lut_grid:
-            grid = lut_grid[key]
+            grid = (
+                lut_grid[key]
+                if isinstance(lut_grid[key], list)
+                else list(lut_grid[key].values())
+            )
             radiative_transfer_config["statevector"][key] = {
                 "bounds": [grid[0], grid[-1]],
                 "scale": scale,
@@ -1867,5 +1871,18 @@ def make_surface_config(
             surface_category
         ]
         surface_config_dict["surface_category"] = surface_category
+
+    # Accumulate statevector
+    surface_config_dict["statevector"] = {}
+    for category, path in paths.surface_working_paths.items():
+        statevector = loadmat(path)
+        for i, name in enumerate(statevector["statevec"]):
+            surface_config_dict["statevector"][name] = {
+                "bounds": [i for i in statevector["prior_bounds"][i]],
+                "init": statevector["prior_init"][0][i],
+                "prior_mean": statevector["prior_mean"][0][i],
+                "prior_sigma": statevector["prior_sigma"][0][i],
+                "scale": statevector["prior_scale"][0][i],
+            }
 
     return surface_config_dict

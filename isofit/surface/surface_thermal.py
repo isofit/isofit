@@ -44,6 +44,7 @@ class ThermalSurface(MultiComponentSurface):
             self.init.extend([300.0])  # This is overwritten below
             self.scale.extend([100.0])
             self.bounds.extend([[250.0, 400.0]])
+
         self.idx_surface = np.arange(len(self.statevec_names))
         self.surf_temp_ind = len(self.statevec_names) - 1
         self.emissive = True
