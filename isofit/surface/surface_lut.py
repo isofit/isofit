@@ -330,7 +330,7 @@ class LUTSurface(Surface):
 
         # Ensure the point is contained in the lut grid
         for i, grid_axis in enumerate(self.lut_grid):
-            point[i] = np.clip(point[i], grid_axis.min(), grid_axis.max())
+            point[i] = max(grid_axis[0], min(point[i], grid_axis[-1]))
 
         return point
 
