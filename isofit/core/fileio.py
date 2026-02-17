@@ -480,6 +480,10 @@ class IO:
         data = dict([(i, None) for i in self.config.input.get_all_element_names()])
         logging.debug(f"Row {row} Column {col}")
 
+        # Set up terrain configs
+        self.max_slope = self.config.forward_model.radiative_transfer.max_slope
+        self.terrain_style = self.config.forward_model.radiative_transfer.terrain_style
+
         # Read data from any of the input files that are defined.
         for source in self.input_datasets:
             data[source] = self.input_datasets[source].read_spectrum(row, col)
@@ -525,6 +529,8 @@ class IO:
             esd=self.esd,
             bg_rfl=data["background_reflectance_file"],
             svf=data["skyview_factor_file"],
+            terrain_style=self.terrain_style,
+            max_slope=self.max_slope,
         )
 
         self.current_input_data.geom = geom
