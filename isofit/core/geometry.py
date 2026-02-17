@@ -143,8 +143,8 @@ class Geometry:
             cos_i = coszen
 
         # Ensure coszen, cos_i respect 0-1 bounds.
-        valid_data["coszen"] = np.clip(coszen, self.min_cosi, 1.0)
-        valid_data["cos_i"] = np.clip(cos_i, self.min_cosi, 1.0)
+        valid_data["coszen"] = max(self.min_cosi, min(coszen, 1.0))
+        valid_data["cos_i"] = max(self.min_cosi, min(cos_i, 1.0))
 
         # Assume skyview of 1.0 if outside 0-1 (e.g., NaN data).
         valid_data["skyview_factor"] = (
