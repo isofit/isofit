@@ -850,7 +850,11 @@ def build_config(
 
     for key, sigma, scale in zip(statekeys, statesigmas, statescale):
         if key in lut_grid:
-            grid = lut_grid[key]
+            grid = (
+                lut_grid[key]
+                if isinstance(lut_grid[key], list)
+                else list(lut_grid[key].values())
+            )
             radiative_transfer_config["statevector"][key] = {
                 "bounds": [grid[0], grid[-1]],
                 "scale": scale,
