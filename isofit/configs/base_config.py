@@ -172,6 +172,6 @@ class BaseConfigSection(object):
         elements, element_names = self.get_elements()
         return element_names
 
-    def get_single_element_by_name(self, name):
+    def get(self, name):
         elements, element_names = self.get_elements()
         return elements[element_names.index(name)]

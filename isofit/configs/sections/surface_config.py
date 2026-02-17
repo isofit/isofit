@@ -23,6 +23,43 @@ from typing import Dict, List, Type
 import numpy as np
 
 from isofit.configs.base_config import BaseConfigSection
+from isofit.configs.sections.statevector_config import (
+    StateVectorConfig,
+    StateVectorElementConfig,
+)
+from isofit.surface.surface_glint_model import (
+    DefaultSkyGlintPrior,
+    DefaultSunGlintPrior,
+)
+from isofit.surface.surface_thermal import DefaultSurfTempKPrior
+
+
+class SurfaceStateVectorConfig(StateVectorConfig):
+    """
+    Surface State vector configuration.
+    """
+
+    def __init__(self, sub_configdic: dict = None):
+        super().__init__(sub_configdic)
+
+        self._SURF_TEMP_K_type = StateVectorElementConfig
+        self.SURF_TEMP_K: StateVectorElementConfig = StateVectorElementConfig(
+            DefaultSurfTempKPrior._asdict()
+        )
+
+        self._SKY_GLINT_type = StateVectorElementConfig
+        self.SKY_GLINT: StateVectorElementConfig = StateVectorElementConfig(
+            DefaultSkyGlintPrior._asdict()
+        )
+
+        self._SUN_GLINT_type = StateVectorElementConfig
+        self.SUN_GLINT: StateVectorElementConfig = StateVectorElementConfig(
+            DefaultSunGlintPrior._asdict()
+        )
+
+        assert len(self.get_all_elements()) == len(self._get_nontype_attributes())
+
+        self._set_statevector_config_options(sub_configdic)
 
 
 class SurfaceConfig(BaseConfigSection):
@@ -60,19 +97,13 @@ class SurfaceConfig(BaseConfigSection):
         self._selection_metric_type = str
         self.selection_metric = "Euclidean"
 
+        self._statevector_type = SurfaceStateVectorConfig
+        self.statevector: StateVectorConfig = SurfaceStateVectorConfig({})
+
         # Surface Thermal
         """ Initial Value recommended by Glynn Hulley."""
         self._emissivity_for_surface_T_init_type = float
         self.emissivity_for_surface_T_init = 0.98
-
-        self._surface_T_prior_sigma_degK_type = float
-        self.surface_T_prior_sigma_degK = 1.0
-
-        self._sun_glint_prior_sigma_type = float
-        self.sun_glint_prior_sigma = 0.1
-
-        self._sky_glint_prior_sigma_type = float
-        self.sky_glint_prior_sigma = 0.001
 
         self.set_config_options(sub_configdic)
 
