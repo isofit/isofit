@@ -76,8 +76,6 @@ class RadiativeTransfer:
 
         self.lut_grid = config.lut_grid
         self.statevec_names = config.statevector.get_element_names()
-        self.terrain_style = config.terrain_style
-        self.max_slope = config.max_slope
 
         self.rt_engines = []
         for idx in range(len(config.radiative_transfer_engines)):
@@ -278,11 +276,6 @@ class RadiativeTransfer:
         """
         L_atms = []
 
-        verified_geom = geom.verify(
-            self.coszen, max_slope=self.max_slope, terrain_style=self.terrain_style
-        )
-        coszen, cos_i = verified_geom["coszen"], verified_geom["cos_i"]
-
         for RT in self.rt_engines:
             if RT.treat_as_emissive:
                 r = RT.get(x_RT, geom)
@@ -294,7 +287,7 @@ class RadiativeTransfer:
                     L_atm = r["rhoatm"]
                 else:
                     rho_atm = r["rhoatm"]
-                    L_atm = units.transm_to_rdn(rho_atm, coszen, self.solar_irr)
+                    L_atm = units.transm_to_rdn(rho_atm, geom.coszen, self.solar_irr)
                 L_atms.append(L_atm)
         return np.hstack(L_atms)
 
@@ -314,15 +307,6 @@ class RadiativeTransfer:
             L_dir_dif => downward direct * upward diffuse
             L_dif_dif => downward diffuse * upward diffuse
         """
-        # Check coszen against cos_i
-        verified_geom = geom.verify(
-            self.coszen, max_slope=self.max_slope, terrain_style=self.terrain_style
-        )
-        coszen, cos_i, skyview_factor = (
-            verified_geom["coszen"],
-            verified_geom["cos_i"],
-            verified_geom["skyview_factor"],
-        )
 
         # radiances along all optical paths
         L_coupled = []
@@ -343,7 +327,9 @@ class RadiativeTransfer:
         else:
             for key in self.rt_engines[0].coupling_terms:
                 L_coupled.append(
-                    units.transm_to_rdn(r[key], coszen=coszen, solar_irr=self.solar_irr)
+                    units.transm_to_rdn(
+                        r[key], coszen=geom.coszen, solar_irr=self.solar_irr
+                    )
                     if self.rt_engines[0].rt_mode == "transm"
                     else r[key]
                 )
@@ -352,23 +338,23 @@ class RadiativeTransfer:
         b = 1.0
 
         # Assumption of the topography of the background
-        cos_i_bg = coszen
+        cos_i_bg = geom.coszen
         skyview_factor_bg = 1.0
 
         # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.
         # Downward diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
-        L_dir_dir = L_coupled[0] / coszen * cos_i * b
+        L_dir_dir = L_coupled[0] / geom.coszen * geom.cos_i * b
         L_dif_dir = L_coupled[1]
-        L_dir_dif = L_coupled[2] / coszen * cos_i_bg
+        L_dir_dif = L_coupled[2] / geom.coszen * cos_i_bg
         L_dif_dif = L_coupled[3]
 
         # Note - we should really be doing the multiplication upstream before convolution - this is an approximation
         # Correct downward diffuse term for topographic assuming Hay's model (Hay 1979; Richter 1998; Guanter et al., 2009)
         t_down_dir = r["transm_down_dir"]
-        L_dif_dir *= (b * t_down_dir * (cos_i / coszen)) + (
-            (1 - b * t_down_dir) * skyview_factor
+        L_dif_dir *= (b * t_down_dir * (geom.cos_i / geom.coszen)) + (
+            (1 - b * t_down_dir) * geom.skyview_factor
         )
-        L_dif_dif *= (t_down_dir * (cos_i_bg / coszen)) + (
+        L_dif_dif *= (t_down_dir * (cos_i_bg / geom.coszen)) + (
             (1 - t_down_dir) * skyview_factor_bg
         )
 
@@ -398,9 +384,6 @@ class RadiativeTransfer:
 
         # Handle 1c L_tot. NOTE: transm_down_dif = total transm for 1c case.
         if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
-            coszen = geom.verify(
-                self.coszen, max_slope=self.max_slope, terrain_style=self.terrain_style
-            )["coszen"]
             L_tots = []
             for RT in self.rt_engines:
                 r = RT.get(x_RT, geom)
@@ -413,7 +396,7 @@ class RadiativeTransfer:
                     else:
                         L_tot = units.transm_to_rdn(
                             r["transm_down_dif"],
-                            coszen,
+                            geom.coszen,
                             self.solar_irr,
                         )
                     L_tots.append(L_tot)
