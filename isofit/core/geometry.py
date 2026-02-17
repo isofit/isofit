@@ -38,6 +38,8 @@ class Geometry:
         esd: np.array = None,
         bg_rfl: np.array = None,
         svf: float = 1,
+        terrain_style: str = "flat",
+        max_slope: float = 45.0,
     ):
         """Initialize geometry object.
         Args:
@@ -109,6 +111,14 @@ class Geometry:
         if dt is not None:
             self.esd_factor = self.get_esd_factor(dt)
 
+        # Bring in config settings for terrain everytime geom is loaded
+        verified_geom = self.verify(
+            coszen=np.nan, max_slope=max_slope, terrain_style=terrain_style
+        )
+        self.coszen = verified_geom["coszen"]
+        self.cos_i = verified_geom["cos_i"]
+        self.skyview_factor = verified_geom["skyview_factor"]
+
     def get_esd_factor(self, date_time: datetime):
         """Get distance ratio from sun based on time of year, relative to day 1
         Args:
@@ -126,7 +136,7 @@ class Geometry:
         valid_data = {}
 
         # Populate coszen if NaN
-        coszen = np.cos(np.deg2rad(self.solar_zenith)) if np.isnan(coszen) else coszen
+        coszen = np.cos(np.radians(self.solar_zenith)) if np.isnan(coszen) else coszen
 
         # set min cosi (which is at max slope facing away from sun)
         self.min_cosi = max(
