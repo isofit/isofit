@@ -23,6 +23,7 @@ from typing import Dict, List, Type
 import numpy as np
 
 from isofit.configs.base_config import BaseConfigSection
+from isofit.configs.sections.statevector_config import StateVectorConfig
 
 
 class SurfaceConfig(BaseConfigSection):
@@ -59,6 +60,9 @@ class SurfaceConfig(BaseConfigSection):
 
         self._selection_metric_type = str
         self.selection_metric = "Euclidean"
+
+        self._statevector_type = StateVectorConfig
+        self.statevector: StateVectorConfig = StateVectorConfig({})
 
         # Surface Thermal
         """ Initial Value recommended by Glynn Hulley."""

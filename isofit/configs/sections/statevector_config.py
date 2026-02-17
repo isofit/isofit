@@ -98,6 +98,12 @@ class StateVectorConfig(BaseConfigSection):
         self._surface_elevation_km_type = StateVectorElementConfig
         self.surface_elevation_km: StateVectorElementConfig = None
 
+        self._SKY_GLINT = StateVectorElementConfig
+        self.SKY_GLINT: StateVectorElementConfig = None
+
+        self._SUN_GLINT = StateVectorElementConfig
+        self.SUN_GLINT: StateVectorElementConfig = None
+
         assert len(self.get_all_elements()) == len(self._get_nontype_attributes())
 
         self._set_statevector_config_options(sub_configdic)

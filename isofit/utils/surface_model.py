@@ -104,6 +104,9 @@ def surface_model(
     # Get selection metric if it exists
     selection_metric = config.get("selection_metric", "Euclidean")
 
+    # Get surface statevector if present
+    statevector = config.get("statevector")
+
     # load wavelengths file, and change units to nm if needed
     if os.path.splitext(wavelength_file)[-1] == ".hdr":
         ds = envi.open(wavelength_file)
@@ -138,6 +141,12 @@ def surface_model(
         "attributes": [],
         "refwl": refwl,
         "surface_categories": [],
+        "statevec": list(statevector.keys()),
+        "prior_bounds": [k["bounds"] for n, k in statevector.items()],
+        "prior_init": [k["init"] for n, k in statevector.items()],
+        "prior_mean": [k["prior_mean"] for n, k in statevector.items()],
+        "prior_sigma": [k["prior_sigma"] for n, k in statevector.items()],
+        "prior_scale": [k["scale"] for n, k in statevector.items()],
     }
 
     # each "source" (i.e. spectral library) is treated separately
