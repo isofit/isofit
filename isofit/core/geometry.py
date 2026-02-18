@@ -110,9 +110,7 @@ class Geometry:
             self.esd_factor = self.get_esd_factor(dt)
 
         # Bring in config settings for terrain everytime geom is loaded
-        verified_geom = self.verify(
-            coszen=np.nan, max_slope=max_slope, terrain_style=terrain_style
-        )
+        verified_geom = self.verify(max_slope=max_slope, terrain_style=terrain_style)
         self.coszen = verified_geom["coszen"]
         self.cos_i = verified_geom["cos_i"]
         self.skyview_factor = verified_geom["skyview_factor"]
@@ -129,12 +127,15 @@ class Geometry:
         day_of_year = date_time.timetuple().tm_yday
         return float(self.earth_sun_distance[day_of_year - 1, 1])
 
-    def verify(self, coszen, max_slope, terrain_style):
+    def verify(self, max_slope, terrain_style):
         """Verify important geometry data such as coszen, cos_i, slope, aspect, and sky view prior to inversion."""
         valid_data = {}
 
-        # Populate coszen if NaN
-        coszen = np.cos(np.radians(self.solar_zenith)) if np.isnan(coszen) else coszen
+        # Populate coszen based on solar zenith in geom.
+        try:
+            coszen = np.cos(np.radians(self.solar_zenith))
+        except:
+            raise ValueError("Verify solar zenith angle in the input OBS data.")
 
         # set min cosi (which is at max slope facing away from sun)
         self.min_cosi = max(
@@ -145,12 +146,14 @@ class Geometry:
             + coszen * np.cos(np.radians(max_slope)),
         )
 
-        # Local solar zenith angle as a function of surface slope and aspect
-        cos_i = self.cos_i if self.cos_i is not None else coszen
-
         # Pretend that the surface is flat, regardless of input geometry
         if terrain_style == "flat":
             cos_i = coszen
+        else:
+            # Local solar zenith angle as a function of surface slope and aspect
+            cos_i = self.cos_i
+            if cos_i is None or np.isnan(cos_i):
+                raise ValueError("Verify cos_i in the input OBS data.")
 
         # Ensure coszen, cos_i respect 0-1 bounds.
         valid_data["coszen"] = max(self.min_cosi, min(coszen, 1.0))
