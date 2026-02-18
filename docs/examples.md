@@ -14,11 +14,9 @@ Before running any examples, ensure you have:
    isofit build
    ```
 
-<blockquote style="border-left: 5px solid lightblue; padding: 0.5em 1em; margin: 1em 0;" markdown="1">
+???+ info
 
-:information_source: Examples will be available under `~/.isofit/examples/` after building. You can override this location using `isofit -p examples /your/custom/path` before downloading.
-
-</blockquote>
+    Examples will be available under `~/.isofit/examples/` after building. You can override this location using `isofit -p examples /your/custom/path` before downloading.
 
 ## Available Examples
 
