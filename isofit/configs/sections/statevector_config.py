@@ -23,6 +23,11 @@ from typing import Dict, List, Type
 import numpy as np
 
 from isofit.configs.base_config import BaseConfigSection
+from isofit.surface.surface_glint_model import (
+    DefaultSkyGlintPrior,
+    DefaultSunGlintPrior,
+)
+from isofit.surface.surface_thermal import DefaultSurfTempKPrior
 
 
 class StateVectorElementConfig(BaseConfigSection):
@@ -98,11 +103,20 @@ class StateVectorConfig(BaseConfigSection):
         self._surface_elevation_km_type = StateVectorElementConfig
         self.surface_elevation_km: StateVectorElementConfig = None
 
-        self._SKY_GLINT = StateVectorElementConfig
-        self.SKY_GLINT: StateVectorElementConfig = None
+        self._SURF_TEMP_K_type = StateVectorElementConfig
+        self.SURF_TEMP_K: StateVectorElementConfig = StateVectorElementConfig(
+            DefaultSurfTempKPrior._asdict()
+        )
 
-        self._SUN_GLINT = StateVectorElementConfig
-        self.SUN_GLINT: StateVectorElementConfig = None
+        self._SKY_GLINT_type = StateVectorElementConfig
+        self.SKY_GLINT: StateVectorElementConfig = StateVectorElementConfig(
+            DefaultSkyGlintPrior._asdict()
+        )
+
+        self._SUN_GLINT_type = StateVectorElementConfig
+        self.SUN_GLINT: StateVectorElementConfig = StateVectorElementConfig(
+            DefaultSunGlintPrior._asdict()
+        )
 
         assert len(self.get_all_elements()) == len(self._get_nontype_attributes())
 

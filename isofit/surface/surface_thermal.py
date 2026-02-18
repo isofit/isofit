@@ -23,7 +23,16 @@ import numpy as np
 from scipy.linalg import block_diag
 
 from isofit.core.common import emissive_radiance, svd_inv_sqrt
+from isofit.surface.surface import DefaultState
 from isofit.surface.surface_multicomp import MultiComponentSurface
+
+DefaultSurfTempKPrior = DefaultState(
+    bounds=[250.0, 400.0],
+    scale=100.0,
+    prior_mean=300.0,
+    prior_sigma=1.0,
+    init=300.0,
+)
 
 
 class ThermalSurface(MultiComponentSurface):
@@ -39,11 +48,23 @@ class ThermalSurface(MultiComponentSurface):
 
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         # Handle additional state vector elements
-        if "SURF_TEMP_K" not in self.statevec_names:
-            self.statevec_names.extend(["SURF_TEMP_K"])
-            self.init.extend([300.0])  # This is overwritten below
-            self.scale.extend([100.0])
-            self.bounds.extend([[250.0, 400.0]])
+        self.statevec_names.extend(["SURF_TEMP_K"])
+        self.init.extend(
+            [config.statevector.SURF_TEMP_K.get_single_element_by_name("init")]
+        )
+        self.scale.extend(
+            [config.statevector.SURF_TEMP_K.get_single_element_by_name("scale")]
+        )
+        self.bounds.extend(
+            [config.statevector.SURF_TEMP_K.get_single_element_by_name("bounds")]
+        )
+
+        self.surface_T_prior_mean_degK = (
+            config.statevector.SURF_TEMP_K.get_single_element_by_name("prior_mean")
+        )
+        self.surface_T_prior_sigma_degK = (
+            config.statevector.SURF_TEMP_K.get_single_element_by_name("prior_sigma")
+        )
 
         self.idx_surface = np.arange(len(self.statevec_names))
         self.surf_temp_ind = len(self.statevec_names) - 1
@@ -51,7 +72,6 @@ class ThermalSurface(MultiComponentSurface):
         self.n_state = len(self.init)
 
         self.emissivity_for_surface_T_init = config.emissivity_for_surface_T_init
-        self.surface_T_prior_sigma_degK = config.surface_T_prior_sigma_degK
 
         # Compute and and cache normalized Sa inversions for thermal case
         Cov = np.array([[self.surface_T_prior_sigma_degK**2]])
@@ -65,7 +85,7 @@ class ThermalSurface(MultiComponentSurface):
         normalize the result for the calling function."""
 
         mu = MultiComponentSurface.xa(self, x_surface, geom)
-        mu[self.surf_temp_ind] = self.init[self.surf_temp_ind]
+        mu[self.surf_temp_ind] = self.surface_T_prior_mean_degK
 
         return mu
 
