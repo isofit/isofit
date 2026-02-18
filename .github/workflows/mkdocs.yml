@@ -1,4 +1,4 @@
-name: MkDocs
+name: Deploy MkDocs
 
 on:
   push:
@@ -13,7 +13,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # required for mike
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -26,4 +33,10 @@ jobs:
           uv pip install -e .
       - name: Build and deploy docs
         run: |
-          uv run mkdocs gh-deploy --force
+          VERSION=$(uv run isofit --version)
+          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+            uv run mike deploy --push --update-aliases "$VERSION" latest
+            uv run mike set-default --push latest
+          else
+            uv run mike deploy --push dev
+          fi

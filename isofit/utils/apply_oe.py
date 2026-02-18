@@ -111,7 +111,7 @@ def apply_oe(
     eof_path=None,
     terrain_style="dem",
 ):
-    """\
+    """
     Applies OE over a flightline using a radiative transfer engine. This executes
     ISOFIT in a generalized way, accounting for the types of variation that might be
     considered typical.
@@ -120,7 +120,6 @@ def apply_oe(
     geometry lookup tables and provide a heuristic means of determining atmospheric
     water ranges.
 
-    \b
     Parameters
     ----------
     input_radiance : str
@@ -254,7 +253,6 @@ def apply_oe(
     terrain_style : str, default=dem
         Flag to set the terrain style.  dem uses provided obs values, flat sets the surface to the spheroid
 
-    \b
     References
     ----------
     D.R. Thompson, A. Braverman,P.G. Brodrick, A. Candela, N. Carbon, R.N. Clark,D. Connelly, R.O. Green, R.F.
@@ -262,7 +260,6 @@ def apply_oe(
     D.S. Wettergreen. Quantifying Uncertainty for Remote Spectroscopy of Surface Composition. Remote Sensing of
     Environment, 2020. doi: https://doi.org/10.1016/j.rse.2020.111898.
 
-    \b
     sRTMnet emulator:
     P.G. Brodrick, D.R. Thompson, J.E. Fahlen, M.L. Eastwood, C.M. Sarture, S.R. Lundeen, W. Olson-Duvall,
     N. Carmon, and R.O. Green. Generalized radiative transfer emulation for imaging spectroscopy reflectance
@@ -888,7 +885,7 @@ def apply_oe(
 
 
 # Input arguments
-@click.command(name="apply_oe", help=apply_oe.__doc__, no_args_is_help=True)
+@click.command(name="apply_oe", no_args_is_help=True)
 @click.argument("input_radiance")
 @click.argument("input_loc")
 @click.argument("input_obs")
@@ -961,6 +958,8 @@ def cli(debug_args, profile, **kwargs):
 
     print("Done")
 
+
+cli.__doc_source__ = apply_oe
 
 if __name__ == "__main__":
     raise NotImplementedError(

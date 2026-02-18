@@ -61,9 +61,10 @@ docker = [
   "matplotlib",
 ]
 docs = [
+  "mike>=2.1.3",
   "mkapi>=4.5.0",
   "mkdocs>=1.6.1",
-  "mkdocs-material>=9.7.1",
+  "mkdocs-material[imaging]>=9.7.1",
 ]
 
 [tool.uv.sources]

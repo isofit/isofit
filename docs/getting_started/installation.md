@@ -32,12 +32,9 @@ $ conda install -c conda-forge isofit
 
 ## PyPI (`pip`)
 
-<blockquote style="border-left: 5px solid yellow; padding: 0.5em 1em; margin: 1em 0;" markdown="1">
+???+ warning
 
-:warning: The commands below use ``$ pip``, however `$ python -m pip` is often a safer choice. It is possible for the `pip` executable to point to a different version of Python than the `python` executable. Using `python -m pip` at least ensures that the package is installed against the Python interpreter in use. The issue is further compounded on systems that also have `python3` and `pip3` executables, or executables for specific versions of Python like `python3.11` and `pip3.11`.
-
-</blockquote>
-
+    The commands below use ``$ pip``, however `$ python -m pip` is often a safer choice. It is possible for the `pip` executable to point to a different version of Python than the `python` executable. Using `python -m pip` at least ensures that the package is installed against the Python interpreter in use. The issue is further compounded on systems that also have `python3` and `pip3` executables, or executables for specific versions of Python like `python3.11` and `pip3.11`.
 
 ISOFIT can be installed from the [Python Package Index](https://pypi.org/project/isofit/) with:
 
@@ -109,12 +106,9 @@ $ uv sync
 
 Once ISOFIT is installed, the CLI provides an easy way to download additional files that may be useful. These can be acquired via the `isofit download` command, and the current list of downloads we support is available via `isofit download --help`. See [data](../extra_downloads/data.md) for more information.
 
-<blockquote style="border-left: 5px solid lightblue; padding: 0.5em 1em; margin: 1em 0;" markdown="1">
+???+ note
 
-:information_source: The default location for downloading extra files is ``~/.isofit/``. First time invoking the ISOFIT CLI will instantiate this directory and an ``isofit.ini`` file for storing the paths to downloaded products.
-
-</blockquote>
-
+    The default location for downloading extra files is ``~/.isofit/``. First time invoking the ISOFIT CLI will instantiate this directory and an ``isofit.ini`` file for storing the paths to downloaded products.
 
 # Setting Environment Variables
 
