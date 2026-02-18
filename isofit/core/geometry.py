@@ -134,7 +134,7 @@ class Geometry:
 
         # coszen should ideally come from RT because of how simulation constructed.
         # However, if SZA is in the lut grid, then falling back to self.solar_zenith is best.
-        # This method is called again in get_coszen(), right before computing radiative transfer quantities.
+        # This method is called again in prior to inversion within the forward model.
         if not np.isnan(coszen):
             pass
         elif self.solar_zenith is not None and not np.isnan(self.solar_zenith):

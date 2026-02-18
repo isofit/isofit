@@ -361,6 +361,7 @@ class Worker(object):
                 # intepreted either as samples from the posterior (MCMC case)
                 # or as a gradient descent trajectory (standard case). For
                 # a trajectory, the last spectrum is the converged solution.
+                self.fm.update_geom(input_data.geom)
                 states = self.iv.invert(input_data.meas, input_data.geom)
 
                 logging.debug("Write chunk of spectra")

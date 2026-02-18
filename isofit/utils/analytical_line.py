@@ -529,6 +529,9 @@ class Worker(object):
                 max_slope=self.max_slope,
             )
 
+            # Update geometry for correct topography and coszen assumptions
+            self.fm.update_geom(geom)
+
             # "Atmospheric" state ALWAYS comes from all bands in the
             # atm_interpolated file
             x_RT = self.rt_state[r, c, :]
