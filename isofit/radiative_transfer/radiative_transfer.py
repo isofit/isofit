@@ -163,21 +163,6 @@ class RadiativeTransfer:
 
         return self.pack_arrays(ret)
 
-    def get_coszen(self, geom):
-        """
-        Updates geometry to determine most accurate coszen to use given the LUT config.
-        """
-
-        if np.isnan(geom.coszen) or "solar_zenith" not in self.lut_grid:
-            rt_coszen = self.rt_engines[0].coszen
-            if isinstance(rt_coszen, np.ndarray):
-                coszen = np.array(rt_coszen).flat[0]
-            else:
-                coszen = rt_coszen
-            geom.verify(coszen, geom.max_slope, geom.terrain_style)
-
-        return
-
     def calc_rdn(
         self,
         x_RT,
@@ -288,8 +273,6 @@ class RadiativeTransfer:
                 L_atms.append(rdn)
             else:
                 r = RT.get(x_RT, geom)
-                # Update coszen based on RT Engine
-                self.get_coszen(geom)
                 if RT.rt_mode == "rdn":
                     L_atm = r["rhoatm"]
                 else:
@@ -384,9 +367,6 @@ class RadiativeTransfer:
 
         # Propogate LUT
         r = self.get_shared_rtm_quantities(x_RT, geom)
-
-        # Update coszen based on RT Engine
-        self.get_coszen(geom)
 
         # Default: get directional radiances
         L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(r, geom)
