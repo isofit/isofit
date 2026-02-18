@@ -317,7 +317,7 @@ class LUTSurface(Surface):
         if self.cos_i_idx is not None:
             cos_i = x_surface[self.cos_i_idx]
         else:
-            cos_i = geom.verify(geom.solar_zenith)["cos_i"]
+            cos_i = geom.cos_i
 
         if self.sza_ind is not None:
             point[self.sza_ind] = np.degrees(np.arccos(cos_i))
