@@ -318,6 +318,7 @@ class Worker(object):
                     continue
 
                 geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :], esd=esd)
+                self.fm.update_geom(geom)
 
                 # "Atmospheric" state ALWAYS comes from all bands in the
                 # atm_interpolated file
