@@ -130,8 +130,6 @@ class Geometry:
 
     def verify(self, coszen, max_slope, terrain_style):
         """Verify important geometry data such as coszen, cos_i, slope, aspect, and sky view prior to inversion."""
-        valid_data = {}
-
         # coszen should ideally come from RT because of how simulation constructed.
         # However, if SZA is in the lut grid, then falling back to self.solar_zenith is best.
         # This method is called again in prior to inversion within the forward model.
@@ -140,9 +138,9 @@ class Geometry:
         elif self.solar_zenith is not None and not np.isnan(self.solar_zenith):
             coszen = np.cos(np.radians(self.solar_zenith))
         else:
-            valid_data["coszen"] = np.nan
-            valid_data["cos_i"] = np.nan
-            valid_data["skyview_factor"] = np.nan
+            self.coszen = np.nan
+            self.cos_i = np.nan
+            self.skyview_factor = np.nan
             return
 
         # set min cosi (which is at max slope facing away from sun)
@@ -164,12 +162,8 @@ class Geometry:
                 raise ValueError("Verify cos_i in the input OBS data.")
 
         # Check bounds
-        valid_data["coszen"] = max(self.min_cosi, min(coszen, 1.0))
-        valid_data["cos_i"] = max(self.min_cosi, min(cos_i, 1.0))
-        valid_data["skyview_factor"] = (
+        self.coszen = max(self.min_cosi, min(coszen, 1.0))
+        self.cos_i = max(self.min_cosi, min(cos_i, 1.0))
+        self.skyview_factor = (
             1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
         )
-
-        self.coszen = valid_data["coszen"]
-        self.cos_i = valid_data["cos_i"]
-        self.skyview_factor = valid_data["skyview_factor"]
