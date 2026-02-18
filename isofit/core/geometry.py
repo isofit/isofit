@@ -110,10 +110,11 @@ class Geometry:
             self.esd_factor = self.get_esd_factor(dt)
 
         # Bring in config settings for terrain everytime geom is loaded
-        verified_geom = self.verify(max_slope=max_slope, terrain_style=terrain_style)
-        self.coszen = verified_geom["coszen"]
-        self.cos_i = verified_geom["cos_i"]
-        self.skyview_factor = verified_geom["skyview_factor"]
+        self.max_slope = max_slope
+        self.terrain_style = terrain_style
+        self.verify(
+            coszen=np.nan, max_slope=self.max_slope, terrain_style=self.terrain_style
+        )
 
     def get_esd_factor(self, date_time: datetime):
         """Get distance ratio from sun based on time of year, relative to day 1
@@ -127,15 +128,22 @@ class Geometry:
         day_of_year = date_time.timetuple().tm_yday
         return float(self.earth_sun_distance[day_of_year - 1, 1])
 
-    def verify(self, max_slope, terrain_style):
+    def verify(self, coszen, max_slope, terrain_style):
         """Verify important geometry data such as coszen, cos_i, slope, aspect, and sky view prior to inversion."""
         valid_data = {}
 
-        # Populate coszen based on solar zenith in geom.
-        try:
+        # coszen should ideally come from RT because of how simulation constructed.
+        # However, if SZA is in the lut grid, then falling back to self.solar_zenith is best.
+        # This method is called again in get_coszen(), right before computing radiative transfer quantities.
+        if not np.isnan(coszen):
+            pass
+        elif self.solar_zenith is not None and not np.isnan(self.solar_zenith):
             coszen = np.cos(np.radians(self.solar_zenith))
-        except:
-            raise ValueError("Verify solar zenith angle in the input OBS data.")
+        else:
+            valid_data["coszen"] = np.nan
+            valid_data["cos_i"] = np.nan
+            valid_data["skyview_factor"] = np.nan
+            return
 
         # set min cosi (which is at max slope facing away from sun)
         self.min_cosi = max(
@@ -155,13 +163,13 @@ class Geometry:
             if cos_i is None or np.isnan(cos_i):
                 raise ValueError("Verify cos_i in the input OBS data.")
 
-        # Ensure coszen, cos_i respect 0-1 bounds.
+        # Check bounds
         valid_data["coszen"] = max(self.min_cosi, min(coszen, 1.0))
         valid_data["cos_i"] = max(self.min_cosi, min(cos_i, 1.0))
-
-        # Assume skyview of 1.0 if outside 0-1 (e.g., NaN data).
         valid_data["skyview_factor"] = (
             1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
         )
 
-        return valid_data
+        self.coszen = valid_data["coszen"]
+        self.cos_i = valid_data["cos_i"]
+        self.skyview_factor = valid_data["skyview_factor"]
