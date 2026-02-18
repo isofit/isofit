@@ -283,29 +283,13 @@ def invert_analytical(
     # Get all the surface quantities for the super pixel
     sub_surface, sub_RT, sub_instrument = fm.unpack(sub_state)
 
-    # Get target pixel reflectance
-    rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
-
-    # Set background rfl if it exists
-    bg_rfl = geom.bg_rfl if geom.bg_rfl is not None else rho_dif_dir
-
     # Surface reflectance at the wl resolution of fm.RT
+    rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
+    rho_dir_dir = fm.upsample(fm.surface.wl, rho_dir_dir)
     rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
-    bg_rfl = fm.upsample(fm.surface.wl, bg_rfl)
 
-    # Estimation of background radiance
-    svf = geom.verify(fm.RT.coszen)["skyview_factor"]
-
-    # For svf=1, this collapses back to s_alb. Safe assumption if bgrfl not present.
-    if not isinstance(geom.bg_rfl, np.ndarray):
-        svf = 1.0
-    s_eff = (s * svf) + (bg_rfl * (1 - svf))
-
-    atm_surface_scattering = s_eff * bg_rfl
-
-    L_bg = (L_dir_dif + L_dif_dif) * bg_rfl + L_tot * (
-        atm_surface_scattering * bg_rfl
-    ) / (1 - s_eff * bg_rfl)
+    # Background conditions equal to the superpixel reflectance
+    bg = s * rho_dif_dir
 
     # Get superpixel EOF shift if used
     eof_offset = fm.eof_offset(sub_surface, sub_RT, sub_instrument)
@@ -319,8 +303,9 @@ def invert_analytical(
 
     # The H matrix does not change as a function of x-vector
     H = fm.surface.analytical_model(
-        L_tot,
-        geom,
+        bg,
+        L_tot=L_tot,
+        geom=geom,
         L_dir_dir=L_dir_dir,
         L_dir_dif=L_dir_dif,
         L_dif_dir=L_dif_dir,
@@ -363,7 +348,7 @@ def invert_analytical(
         xk = dsymv(
             1,
             C_rcond,
-            (L.T @ dsymv(1, P, y - L_bg[winidx]) + prprod[iv_idx]),
+            (L.T @ dsymv(1, P, y) + prprod[iv_idx]),
         )
 
         # Save trajectory step:

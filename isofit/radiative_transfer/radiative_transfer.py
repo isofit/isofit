@@ -77,6 +77,7 @@ class RadiativeTransfer:
         self.lut_grid = config.lut_grid
         self.statevec_names = config.statevector.get_element_names()
         self.terrain_style = config.terrain_style
+        self.min_cos_i = config.min_cos_i
 
         self.rt_engines = []
         for idx in range(len(config.radiative_transfer_engines)):
@@ -192,8 +193,6 @@ class RadiativeTransfer:
         Physics-based forward model to calculate at-sensor radiance.
         Includes topography, background reflectance, and glint.
         """
-        skyview_factor = geom.verify(self.coszen)["skyview_factor"]
-
         # Adjacency effects
         # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
         #  or from the surface model, i.e., the same way as we do with the target pixel reflectance
@@ -208,15 +207,9 @@ class RadiativeTransfer:
         # Atmospheric path radiance
         L_atm = self.get_L_atm(x_RT, geom)
 
-        # Spherical albedo
+        # Atmospheric spherical albedo
         s_alb = r["sphalb"]
-
-        # For svf=1, this collapses back to s_alb. Safe assumption if bgrfl not present.
-        if not isinstance(geom.bg_rfl, np.ndarray):
-            skyview_factor = 1.0
-        s_eff = (s_alb * skyview_factor) + (rho_dif_dif * (1 - skyview_factor))
-
-        atm_surface_scattering = s_eff * rho_dif_dif
+        atm_surface_scattering = s_alb * rho_dif_dif
         eq_11_term = 1 - atm_surface_scattering
 
         # Special case: 1-component model
@@ -267,7 +260,7 @@ class RadiativeTransfer:
             + L_dif_dir * rho_dif_dir / eq_11_term
             + L_dir_dif * rho_dir_dif
             + L_dif_dif * rho_dif_dif / eq_11_term
-            + (L_tot * atm_surface_scattering * rho_dif_dif) / (1 - s_eff * rho_dif_dif)
+            + (L_tot * atm_surface_scattering * rho_dif_dif) / (1 - s_alb * rho_dif_dif)
             + L_up
         )
 
@@ -330,6 +323,8 @@ class RadiativeTransfer:
         if self.terrain_style == "flat":
             cos_i = coszen
 
+        cos_i = max(self.min_cos_i, cos_i)
+
         # radiances along all optical paths
         L_coupled = []
 
@@ -373,6 +368,19 @@ class RadiativeTransfer:
         # applies to the downward diffuse terms
         L_dif_dir *= hays_model
         L_dif_dif *= hays_model
+
+        # Re-reflection from nearby surface contributing to at surface signal
+        # Assumptions: no atmospheric attenuation, and reflectance is isotropic over the field of view
+        if geom.bg_rfl is not None:
+            skyview_factor_avg = 1.0
+            t = 1 + (
+                (geom.bg_rfl * (1 - skyview_factor))
+                / (1 - geom.bg_rfl * (1 - skyview_factor_avg))
+            )
+            L_dir_dir *= t
+            L_dif_dir *= t
+            L_dir_dif *= t
+            L_dif_dif *= t
 
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
