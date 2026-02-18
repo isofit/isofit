@@ -25,8 +25,45 @@ from typing import Dict, List, Type
 import numpy as np
 
 from isofit.configs.base_config import BaseConfigSection
-from isofit.configs.sections.statevector_config import StateVectorConfig
+from isofit.configs.sections.statevector_config import (
+    StateVectorConfig,
+    StateVectorElementConfig,
+)
 from isofit.data import env
+
+
+class RTStateVectorConfig(StateVectorConfig):
+    """
+    RT State vector configuration.
+    """
+
+    def __init__(self, sub_configdic: dict = None):
+        super().__init__(sub_configdic)
+
+        self._H2OSTR_type = StateVectorElementConfig
+        self.H2OSTR: StateVectorElementConfig = None
+
+        self._AOT550_type = StateVectorElementConfig
+        self.AOT550: StateVectorElementConfig = None
+
+        self._AERFRAC_1_type = StateVectorElementConfig
+        self.AERFRAC_1: StateVectorElementConfig = None
+
+        self._AERFRAC_2_type = StateVectorElementConfig
+        self.AERFRAC_2: StateVectorElementConfig = None
+
+        self._AERFRAC_3_type = StateVectorElementConfig
+        self.AERFRAC_3: StateVectorElementConfig = None
+
+        self._AIRT_DELTA_K_type = StateVectorElementConfig
+        self.AIRT_DELTA_K: StateVectorElementConfig = None
+
+        self._surface_elevation_km_type = StateVectorElementConfig
+        self.surface_elevation_km: StateVectorElementConfig = None
+
+        assert len(self.get_all_elements()) == len(self._get_nontype_attributes())
+
+        self._set_statevector_config_options(sub_configdic)
 
 
 class RadiativeTransferEngineConfig(BaseConfigSection):
@@ -326,8 +363,8 @@ class RadiativeTransferConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        self._statevector_type = StateVectorConfig
-        self.statevector: StateVectorConfig = StateVectorConfig({})
+        self._statevector_type = RTStateVectorConfig
+        self.statevector: StateVectorConfig = RTStateVectorConfig({})
 
         self._lut_grid_type = OrderedDict
         self.lut_grid = None

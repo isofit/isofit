@@ -59,68 +59,8 @@ class StateVectorElementConfig(BaseConfigSection):
 
 
 class StateVectorConfig(BaseConfigSection):
-    """
-    State vector configuration.
-    """
-
     def __init__(self, sub_configdic: dict = None):
-        self._H2OSTR_type = StateVectorElementConfig
-        self.H2OSTR: StateVectorElementConfig = None
-
-        self._AOT550_type = StateVectorElementConfig
-        self.AOT550: StateVectorElementConfig = None
-
-        self._AERFRAC_1_type = StateVectorElementConfig
-        self.AERFRAC_1: StateVectorElementConfig = None
-
-        self._AERFRAC_2_type = StateVectorElementConfig
-        self.AERFRAC_2: StateVectorElementConfig = None
-
-        self._AERFRAC_3_type = StateVectorElementConfig
-        self.AERFRAC_3: StateVectorElementConfig = None
-
-        self._EOF_1_type = StateVectorElementConfig
-        self.EOF_1: StateVectorElementConfig = None
-
-        self._EOF_2_type = StateVectorElementConfig
-        self.EOF_2: StateVectorElementConfig = None
-
-        self._EOF_3_type = StateVectorElementConfig
-        self.EOF_3: StateVectorElementConfig = None
-
-        self._GROW_FWHM_type = StateVectorElementConfig
-        self.GROW_FWHM: StateVectorElementConfig = None
-
-        self._WL_SHIFT_type = StateVectorElementConfig
-        self.WL_SHIFT: StateVectorElementConfig = None
-
-        self._WL_SPACE_type = StateVectorElementConfig
-        self.WL_SPACE: StateVectorElementConfig = None
-
-        self._AIRT_DELTA_K_type = StateVectorElementConfig
-        self.AIRT_DELTA_K: StateVectorElementConfig = None
-
-        self._surface_elevation_km_type = StateVectorElementConfig
-        self.surface_elevation_km: StateVectorElementConfig = None
-
-        self._SURF_TEMP_K_type = StateVectorElementConfig
-        self.SURF_TEMP_K: StateVectorElementConfig = StateVectorElementConfig(
-            DefaultSurfTempKPrior._asdict()
-        )
-
-        self._SKY_GLINT_type = StateVectorElementConfig
-        self.SKY_GLINT: StateVectorElementConfig = StateVectorElementConfig(
-            DefaultSkyGlintPrior._asdict()
-        )
-
-        self._SUN_GLINT_type = StateVectorElementConfig
-        self.SUN_GLINT: StateVectorElementConfig = StateVectorElementConfig(
-            DefaultSunGlintPrior._asdict()
-        )
-
-        assert len(self.get_all_elements()) == len(self._get_nontype_attributes())
-
-        self._set_statevector_config_options(sub_configdic)
+        super().__init__()
 
     def _check_config_validity(self):
         errors = list()
