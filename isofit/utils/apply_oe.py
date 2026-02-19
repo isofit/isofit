@@ -753,22 +753,27 @@ def apply_oe(
         ][0]
 
         aot_est = h2o.read_band(band_names.index(aot_name))[:].flatten()
-        p98_aot = np.percentile(aot_est, 98)
-        lut_params.aot_550_range[1] = min(1.0, p98_aot)
+        aot_est = aot_est[~np.isnan(aot_est)]
 
-        # update aerosol grid for main solve
-        aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
-            tmpl.load_climatology(
-                paths.aerosol_climatology,
-                mean_latitude,
-                mean_longitude,
-                dt,
-                lut_params=lut_params,
+        # Abitrary number, but however many DDV (super)pixels we would want to trust a statistic.
+        # If condition is not met, then the aerosol range is left as it was before presolve
+        if len(aot_est) >= 25:
+            # update aerosol grid for main solve
+            p98_aot = np.percentile(aot_est, 98)
+            lut_params.aot_550_range[1] = min(1.0, p98_aot)
+
+            aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
+                tmpl.load_climatology(
+                    paths.aerosol_climatology,
+                    mean_latitude,
+                    mean_longitude,
+                    dt,
+                    lut_params=lut_params,
+                )
             )
-        )
-        config_params["aerosol_model_file"] = aerosol_model_path
-        config_params["aerosol_lut_grid"] = aerosol_lut_grid
-        config_params["aerosol_state_vector"] = aerosol_state_vector
+            config_params["aerosol_model_file"] = aerosol_model_path
+            config_params["aerosol_lut_grid"] = aerosol_lut_grid
+            config_params["aerosol_state_vector"] = aerosol_state_vector
 
     h2o_lut_grid = lut_params.get_grid(
         lut_params.h2o_range[0],

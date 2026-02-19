@@ -77,34 +77,7 @@ def heuristic_atmosphere(
     h2o_grid = fm.RT.rt_engines[0].lut_grid[h2o_name]
     aod_grid = fm.RT.rt_engines[0].lut_grid[aod_name]
 
-    # Find a rough estimate of aod
-    aods, costs = [], []
-
-    for aod in aod_grid:
-        for wv in h2o_grid:
-            x_step = x_new.copy()
-            x_step[idx_h2o], x_step[idx_aod] = wv, aod
-
-            r, _ = invert_algebraic(
-                fm.surface,
-                fm.RT,
-                fm.instrument,
-                x_surface,
-                x_step,
-                x_instrument,
-                meas,
-                geom,
-            )
-            r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
-
-            # normalize to better isolate AOD signal
-            vals = np.interp(wl[blo:bhi], [wl[blo], wl[bhi]], [r[blo], r[bhi]])
-            costs.append(np.sum(np.abs(1.0 - (r[blo:bhi] / vals))))
-            aods.append(aod)
-
-    x_new[idx_aod] = aods[np.argmin(costs)]
-
-    # Now, fixing AOD, resolve water vapor
+    # Fixing AOD, resolve water vapor
     h2os, areas = [], []
     for h2o in h2o_grid:
         x_step = x_new.copy()
@@ -134,6 +107,39 @@ def heuristic_atmosphere(
         method="bounded",
     )
     x_new[idx_h2o] = res.x
+
+    # Indicies needed for AOD approx
+    idx_550 = np.argmin(abs(wl - 550))
+    idx_660 = np.argmin(abs(wl - 660))
+    idx_2100 = np.argmin(abs(wl - 2100))
+
+    # Estimate red reflectance assuming DDV algorithm
+    aod_costs = []
+    for aod in aod_grid:
+        x_step = x_new.copy()
+        x_step[idx_aod] = aod
+        r, _ = invert_algebraic(
+            fm.surface,
+            fm.RT,
+            fm.instrument,
+            x_surface,
+            x_step,
+            x_instrument,
+            meas,
+            geom,
+        )
+        r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
+
+        rho_red = 0.5 * r[idx_2100]
+
+        aod_costs.append(np.abs(r[idx_660] - rho_red))
+
+    x_new[idx_aod] = aod_grid[np.argmin(aod_costs)]
+
+    # If snow, bright soil, dark water, default to no-data
+    ndsi = (r[idx_550] - r[idx_2100]) / (r[idx_550] + r[idx_2100] + 1e-6)
+    if ndsi > 0.1 or r[idx_2100] > 0.12 or r[idx_2100] < 0.01:
+        x_new[idx_aod] = np.nan
 
     return x_new
 
