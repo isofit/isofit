@@ -18,16 +18,16 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 
 import logging
-from os.path import join, isfile, isdir
+import os
 import shutil
+from os.path import join, isfile, isdir
 import time
 import warnings
 
 import click
 import numpy as np
 import ray
-import xarray as xr
-import zarr
+import netCDF4 as nc
 from spectral.io import envi
 
 from isofit.core.common import envi_header, eps
@@ -194,6 +194,10 @@ def skyview(
         }
         ray.init(**rayargs)
 
+        horizon_dir = join(output_directory, "horizon_files")
+        if not isdir(horizon_dir):
+            os.makedirs(horizon_dir)
+
         # prep data for horizon method
         slope, aspect = gradient_d8(
             dem_data, dx=resolution, dy=resolution, aspect_rad=True
@@ -204,9 +208,6 @@ def skyview(
 
         # -180 is North
         angles = np.linspace(-180, 180, num=n_angles, endpoint=False)
-
-        # Create zarr.
-        init_horizon(output_directory, angles, (dem_data.shape[0], dem_data.shape[1]))
 
         # Share needed ray objects
         dem_ray = ray.put(dem_data)
@@ -221,7 +222,7 @@ def skyview(
                 spacing=resolution,
                 aspect=aspect_ray,
                 tan_slope=tan_slope_ray,
-                output_directory=output_directory,
+                output_directory=horizon_dir,
                 logging_level=logging_level,
                 log_file=log_file,
             )
@@ -232,7 +233,8 @@ def skyview(
         # set up integral for skyview
         qIntegrand = np.zeros_like(dem_data, dtype=np.float32)
         for a in angles:
-            h = load_horizon(output_directory=output_directory, angle=a)
+            file_path = join(horizon_dir, f"horizon_angle_{np.round(a,5)}.nc")
+            h = load_horizon(file_path=file_path)
             azimuth = np.radians(a)
             cos_aspect = np.cos(aspect - azimuth)
 
@@ -256,10 +258,8 @@ def skyview(
         del out_mm
 
         if not keep_horizon_files:
-            logging.info("Removing temporary horizon Zarr directories...")
-            horizon_files = join(output_directory, "horizons.zarr")
-            if isdir(horizon_files):
-                shutil.rmtree(horizon_files)
+            logging.info("Removing temporary horizon files...")
+            shutil.rmtree(horizon_dir, ignore_errors=True)
 
     else:
         err_str = "method must be either 'horizon' or 'slope'."
@@ -306,75 +306,57 @@ def horizon_worker(
     return
 
 
-def init_horizon(output_directory, angles, shape):
-    """
-    Creates a zarr dataset for the horizon computations.
-    """
-    h_nodata = 65535
-    ds = xr.Dataset(
-        {
-            f"horizon_{np.round(a,5)}": xr.DataArray(
-                np.full(shape, h_nodata, dtype=np.uint16),
-                dims=("row", "col"),
-                attrs={
-                    "units": "radians",
-                    "scale_factor": np.pi / 65534,
-                    "add_offset": 0.0,
-                    "nodata": h_nodata,
-                },
-            )
-            for a in angles
-        }
-    )
-
-    horizon_files = join(output_directory, "horizons.zarr")
-    ds.to_zarr(
-        horizon_files,
-        mode="w",
-        consolidated=False,
-        encoding={
-            f"horizon_{np.round(a,5)}": {"dtype": "uint16", "_FillValue": h_nodata}
-            for a in angles
-        },
-    )
-    ds.close()
-
-    return
-
-
 def save_horizon(h, angle, output_directory):
     """utility function to house metadata and information for saving horizon angles"""
 
-    # scale factor
+    # Scale h to uint16 with nodata=65535
     h_nodata = 65535
     h_sf = np.pi / 65534
 
-    # apply scale factor to the data
+    # loss of data, but still accurate to ~0.003 degrees.
     h_scaled = (h / h_sf).astype(np.uint16)
-    h_scaled[(np.isnan(h)) | (h == -9999)] = h_nodata
+    h_scaled[(np.isnan(h)) | (h == -9999)] = h_nodata  # nodata
 
-    # append to the zarr dir
-    horizon_files = join(output_directory, "horizons.zarr")
-    angle_name = f"horizon_{np.round(angle, 5)}"
-    z = zarr.open(horizon_files, mode="a")
-    z[angle_name][:] = h_scaled
-
-    logging.info(f"Flushed horizon angle: {angle_name} to disk.")
+    # write h to disk (scaled data reduced ~3-5x file size.)
+    angle_to_write = np.round(angle, 5)
+    logging.info(f"Flushing horizon angle: {angle_to_write} to disk.")
+    filename = join(output_directory, f"horizon_angle_{angle_to_write}.nc")
+    with nc.Dataset(filename, "w", format="NETCDF4") as ds:
+        ds.createDimension("row", h.shape[0])
+        ds.createDimension("col", h.shape[1])
+        var = ds.createVariable(
+            "horizon",
+            "u2",
+            ("row", "col"),
+            fill_value=h_nodata,
+            zlib=True,
+            complevel=4,
+        )
+        var[:] = h_scaled
+        var.units = "radians"
+        var.long_name = "Horizon angle (radians)"
+        var.scale_factor = h_sf
+        var.add_offset = 0.0
+        var.nodata = h_nodata
+        var.note = (
+            "Values scaled as uint16 from 0 to pi radians;"
+            "convert back with np.pi / 65534 ;"
+            "65535 is nodata."
+            "NOTE: angle is from zenith."
+        )
 
     return
 
 
-def load_horizon(output_directory, angle):
-    horizon_files = join(output_directory, "horizons.zarr")
-    angle_name = f"horizon_{np.round(angle,5)}"
-    ds = xr.open_zarr(horizon_files, decode_cf=False, consolidated=False)
-    da = ds[angle_name]
-    h_nodata = da.attrs["nodata"]
-    h_sf = da.attrs["scale_factor"]
-    h_scaled = da.astype(np.float32).values
-    h_scaled[h_scaled == h_nodata] = np.nan
-    h = h_scaled * h_sf
-    ds.close()
+def load_horizon(file_path):
+    """load horizon netcdf in for skyview calc using scale factors defined in save."""
+    with nc.Dataset(file_path) as ds:
+        ds.set_auto_scale(False)
+        h_nodata = ds.variables["horizon"].nodata
+        h_sf = ds.variables["horizon"].scale_factor
+        h_scaled = ds.variables["horizon"][:].astype(np.float32)
+        h_scaled[h_scaled == h_nodata] = np.nan
+        h = h_scaled * h_sf
     return h
 
 
