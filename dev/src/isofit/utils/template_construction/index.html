@@ -6710,7 +6710,11 @@
 <span class="normal">1868</span>
 <span class="normal">1869</span>
 <span class="normal">1870</span>
-<span class="normal">1871</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1871</span>
+<span class="normal">1872</span>
+<span class="normal">1873</span>
+<span class="normal">1874</span>
+<span class="normal">1875</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick and Niklas Bohn</span>
 <span class="c1">#</span>
@@ -7562,7 +7566,11 @@
 
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">statekeys</span><span class="p">,</span> <span class="n">statesigmas</span><span class="p">,</span> <span class="n">statescale</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="p">:</span>
-            <span class="n">grid</span> <span class="o">=</span> <span class="n">lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">grid</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span>
+                <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="p">)</span>
             <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;statevector&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span>
                 <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="n">scale</span><span class="p">,</span>
