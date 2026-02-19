@@ -42,7 +42,7 @@ dependencies = [
   "scipy >= 1.3.0",
   "spectral >= 0.19",
   "xarray",
-  "xxhash >= 1.2.0",
+  "xxhash",
   "zarr >= 2,<3",
 ]
 
