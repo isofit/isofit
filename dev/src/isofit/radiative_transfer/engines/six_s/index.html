@@ -5101,7 +5101,10 @@
 <span class="normal">436</span>
 <span class="normal">437</span>
 <span class="normal">438</span>
-<span class="normal">439</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
 <span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
@@ -5349,6 +5352,9 @@
 
         <span class="k">if</span> <span class="s2">&quot;observer_altitude_km&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
             <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;alt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;observer_altitude_km&quot;</span><span class="p">],</span> <span class="mi">99</span><span class="p">)</span>
+
+        <span class="c1">### ASL to AGL</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;alt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;alt&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;elev&quot;</span><span class="p">],</span> <span class="mi">99</span><span class="p">),</span> <span class="mf">0.01</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="s2">&quot;observer_azimuth&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
             <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;viewaz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;observer_azimuth&quot;</span><span class="p">]</span>
