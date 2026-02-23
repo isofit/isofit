@@ -4593,17 +4593,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#isofit.radiative_transfer.engines.libradtran.LibRadTranRT.ext550_to_vis" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ext550_to_vis
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -4897,7 +4886,231 @@
 <span class="normal">243</span>
 <span class="normal">244</span>
 <span class="normal">245</span>
-<span class="normal">246</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
 <span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
@@ -4917,49 +5130,82 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="kn">import</span> <span class="n">getenv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">abspath</span><span class="p">,</span> <span class="n">join</span><span class="p">,</span> <span class="n">exists</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">common</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">IO</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">env</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.units</span><span class="w"> </span><span class="kn">import</span> <span class="n">cm_to_mm</span><span class="p">,</span> <span class="n">transm_to_rdn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">json_load_ascii</span><span class="p">,</span>
+    <span class="n">calculate_resample_matrix</span><span class="p">,</span>
+    <span class="n">resample_spectrum</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.radiative_transfer.radiative_transfer_engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">RadiativeTransferEngine</span>
+
 
 <span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="n">SCRIPT_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;\</span>
-<span class="s2">#!/bin/bash</span>
-<span class="si">{env}</span>
-<span class="si">{uvspecs}</span>
-<span class="si">{libradtran}</span><span class="s2">/bin/zenith -s 0 -q -a </span><span class="si">{lat}</span><span class="s2"> -o </span><span class="si">{lon}</span><span class="s2"> -y </span><span class="si">{date}</span><span class="s2"> &gt; </span><span class="si">{output}</span>
-<span class="s2">&quot;&quot;&quot;</span>
-
 
 <span class="k">class</span><span class="w"> </span><span class="nc">LibRadTranRT</span><span class="p">(</span><span class="n">RadiativeTransferEngine</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.engines.libradtran.LibRadTranRT"><a href="../../../../../api/isofit/radiative_transfer/engines/libradtran/#isofit.radiative_transfer.engines.libradtran.LibRadTranRT" title="Go to docs">[docs]</a></div>
-    <span class="n">albedos</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine_config</span><span class="p">:</span> <span class="n">RadiativeTransferEngineConfig</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="c1"># Retrieve the path to LibRadTran</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">albedos</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wl_1</span> <span class="o">=</span> <span class="mf">340.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wl_2</span> <span class="o">=</span> <span class="mf">2510.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wl_res_out</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+        <span class="c1"># aerosol_default = rural type aerosol in the boundary layer,</span>
+        <span class="c1"># background aerosol above 2km, spring-summer conditions, and a visibility of 50km.</span>
+        <span class="c1"># NOTE: for radiance quantities libRadtran will always override DISORT to run with at least 16 streams.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">libradtran_inp_template</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;source solar </span><span class="si">{path_solar}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;wavelength </span><span class="si">{wl_1}</span><span class="s2"> </span><span class="si">{wl_2}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;spline </span><span class="si">{wl_1}</span><span class="s2"> </span><span class="si">{wl_2}</span><span class="s2"> </span><span class="si">{wl_res_out}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;albedo </span><span class="si">{albedo}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;atmosphere_file </span><span class="si">{libradtran_dir}</span><span class="s2">/data/atmmod/</span><span class="si">{atmos}</span><span class="s2">.dat</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;umu </span><span class="si">{cos_vza}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;phi0 </span><span class="si">{saa_deg}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;phi </span><span class="si">{vaa_deg}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;sza </span><span class="si">{sza_deg}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;rte_solver disort</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;number_of_streams </span><span class="si">{nstr}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;mol_modify O3 </span><span class="si">{o3_inp}</span><span class="s2"> DU</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;mixing_ratio CO2 </span><span class="si">{co2_inp}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;mol_abs_param reptran </span><span class="si">{band_model}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;mol_modify H2O </span><span class="si">{h2o_mm}</span><span class="s2"> MM</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;crs_model rayleigh bodhaine</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;aerosol_default</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;zout </span><span class="si">{zout}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;altitude </span><span class="si">{elev}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;output_quantity transmittance</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;output_user lambda uu eglo edir</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sh_template</span> <span class="o">=</span> <span class="s2">&quot;#!/bin/bash</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="s2">&quot;cd </span><span class="si">{lrt_bin_dir}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="s2">&quot;</span><span class="si">{uvspecs}</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Retrieve the path to libRadtran</span>
         <span class="k">if</span> <span class="n">engine_config</span><span class="o">.</span><span class="n">engine_base_dir</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span> <span class="o">=</span> <span class="n">engine_config</span><span class="o">.</span><span class="n">engine_base_dir</span>
             <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Using engine_config.engine_base_dir for libradtran path: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Using engine_config.engine_base_dir for libRadtran path: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;libradtran&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;libradtran.version&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span>
-                    <span class="s2">&quot;LIBRADTRAN_DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;LIBRADTRAN_DIR NOT SET&gt;&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span>
+                    <span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;LIBRADTRAN_DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;LIBRADTRAN_DIR NOT SET&gt;&quot;</span><span class="p">)</span>
                 <span class="p">)</span>
                 <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;Using environment $LIBRADTRAN_DIR for libradtran path: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using ISOFIT ini for libradtran path: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using ISOFIT ini for libRadtran path: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># Validate the path exists</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="p">)</span>
@@ -4973,25 +5219,92 @@
             <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="n">engine_config</span><span class="o">.</span><span class="n">template_file</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">error</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Template file does not exist: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">environment</span> <span class="o">=</span> <span class="n">engine_config</span><span class="o">.</span><span class="n">environment</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lrt_bin_dir</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="p">,</span> <span class="s2">&quot;bin&quot;</span><span class="p">))</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">engine_config</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">preSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.engines.libradtran.LibRadTranRT.preSim"><a href="../../../../../api/isofit/radiative_transfer/engines/libradtran/#isofit.radiative_transfer.engines.libradtran.LibRadTranRT.preSim" title="Go to docs">[docs]</a></div>
-        <span class="k">pass</span>
+
+        <span class="c1"># define the output wl grid [nm], and stash matrix H</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lrt_wl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_2</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_res_out</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">matrix_H</span> <span class="o">=</span> <span class="n">calculate_resample_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lrt_wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">)</span>
+
+        <span class="c1"># load static information from MODTRAN template</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="n">json_load_ascii</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">template_file</span><span class="p">)[</span><span class="s2">&quot;MODTRAN&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modtran_geom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modtran_surf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;SURFACE&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modtran_atmos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_atmos</span><span class="p">[</span><span class="s2">&quot;M1&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">day_of_year</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_geom</span><span class="p">[</span><span class="s2">&quot;IDAY&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nstr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;RTOPTIONS&quot;</span><span class="p">][</span><span class="s2">&quot;NSTR&quot;</span><span class="p">]</span>
+
+        <span class="n">atmos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="c1"># Possible libRadtran mappings for atmosphere type (either the libradtran or modtran names)</span>
+        <span class="n">atm_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;afglt&quot;</span><span class="p">:</span> <span class="s2">&quot;afglt&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;afglms&quot;</span><span class="p">:</span> <span class="s2">&quot;afglms&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;afglmw&quot;</span><span class="p">:</span> <span class="s2">&quot;afglmw&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;afglss&quot;</span><span class="p">:</span> <span class="s2">&quot;afglss&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;afglsw&quot;</span><span class="p">:</span> <span class="s2">&quot;afglsw&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;afglus&quot;</span><span class="p">:</span> <span class="s2">&quot;afglus&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;atm_tropical&quot;</span><span class="p">:</span> <span class="s2">&quot;afglt&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;atm_midlat_summer&quot;</span><span class="p">:</span> <span class="s2">&quot;afglms&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;atm_midlat_winter&quot;</span><span class="p">:</span> <span class="s2">&quot;afglmw&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;atm_subarc_summer&quot;</span><span class="p">:</span> <span class="s2">&quot;afglss&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;atm_subarc_winter&quot;</span><span class="p">:</span> <span class="s2">&quot;afglsw&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;atm_us_standard_1976&quot;</span><span class="p">:</span> <span class="s2">&quot;afglus&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">atmos</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">atm_map</span><span class="p">:</span>
+            <span class="n">valid</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">atm_map</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unknown atmosphere type &#39;</span><span class="si">{</span><span class="n">atmos</span><span class="si">}</span><span class="s2">&#39;.</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="sa">f</span><span class="s2">&quot;Valid options are:</span><span class="se">\n</span><span class="s2">  </span><span class="si">{</span><span class="n">valid</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type_lrt</span> <span class="o">=</span> <span class="n">atm_map</span><span class="p">[</span><span class="n">atmos</span><span class="p">]</span>
+
+        <span class="c1"># Set up the irradiance spectrum</span>
+        <span class="c1"># NOTE this is hard coded for tsis spectrum, but could be defined in RTE config also</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_solar</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;oci&quot;</span><span class="p">,</span> <span class="s2">&quot;tsis_f0_0p1.txt&quot;</span><span class="p">)</span>
+        <span class="n">solar_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_solar</span><span class="p">)</span>
+        <span class="n">wl_solar</span> <span class="o">=</span> <span class="n">solar_data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">solar_irr</span> <span class="o">=</span> <span class="n">solar_data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="c1"># Decide units of solar irradiance</span>
+        <span class="c1"># assuming we want to go to uW/nm/cm2 based on any unit input</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">solar_irr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">300.0</span><span class="p">:</span>
+            <span class="n">solar_irr</span> <span class="o">=</span> <span class="n">solar_irr</span> <span class="o">/</span> <span class="mf">10.0</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">solar_irr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">30.0</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">solar_irr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">3.0</span><span class="p">:</span>
+            <span class="n">solar_irr</span> <span class="o">=</span> <span class="n">solar_irr</span> <span class="o">*</span> <span class="mf">10.0</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">solar_irr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">3.0</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">solar_irr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.3</span><span class="p">:</span>
+            <span class="n">solar_irr</span> <span class="o">=</span> <span class="n">solar_irr</span> <span class="o">*</span> <span class="mf">100.0</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">solar_irr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">300.0</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">solar_irr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">30.0</span><span class="p">:</span>
+            <span class="k">pass</span>  <span class="c1"># range is already within ~ 0-250</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Verify units of solar irradiance are in uW/nm/cm2.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># apply ESD correction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">esd</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">load_esd</span><span class="p">()</span>
+        <span class="n">irr_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">esd</span><span class="p">[</span><span class="mi">200</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">irr_cur</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">esd</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">day_of_year</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">solar_irr</span> <span class="o">=</span> <span class="n">solar_irr</span> <span class="o">*</span> <span class="n">irr_ref</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">irr_cur</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="c1"># stash this for other calcs (in sensor grid)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solar_irr_sensor</span> <span class="o">=</span> <span class="n">resample_spectrum</span><span class="p">(</span>
+            <span class="n">solar_irr</span><span class="p">,</span> <span class="n">wl_solar</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;coszen&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modtran_geom</span><span class="p">[</span><span class="s2">&quot;PARM2&quot;</span><span class="p">])),</span>
+            <span class="s2">&quot;solzen&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_geom</span><span class="p">[</span><span class="s2">&quot;PARM2&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;solar_irr&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">solar_irr_sensor</span><span class="p">,</span>
+        <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">makeSim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.engines.libradtran.LibRadTranRT.makeSim"><a href="../../../../../api/isofit/radiative_transfer/engines/libradtran/#isofit.radiative_transfer.engines.libradtran.LibRadTranRT.makeSim" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Perform LibRadTran simulations</span>
+<span class="sd">        Perform libRadtran simulations</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -5001,148 +5314,272 @@
         <span class="c1"># Retrieve the files to process</span>
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_to_filename</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
-        <span class="c1"># Only execute when the .zen file is missing</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.zen&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;LibRadTran sim files already exist for point </span><span class="si">{</span><span class="n">point</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span>
-
+        <span class="c1"># always rebuild inp files to be able to gather sza/vza if re-running...</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rebuild_cmd</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="c1"># Only execute when the .out file is missing (for now jsut checking first out)</span>
+        <span class="n">sim1_out</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_sim1_alb-0.0.out&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">exists</span><span class="p">(</span><span class="n">sim1_out</span><span class="p">):</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;libRadtran sim files already exist for point </span><span class="si">{</span><span class="n">point</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">rte_configure_and_exit</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-                <span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span>
+                <span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lrt_bin_dir</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">stdout</span><span class="p">:</span>
                 <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">readSim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.engines.libradtran.LibRadTranRT.readSim"><a href="../../../../../api/isofit/radiative_transfer/engines/libradtran/#isofit.radiative_transfer.engines.libradtran.LibRadTranRT.readSim" title="Go to docs">[docs]</a></div>
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_to_filename</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+        <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">albedos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">albedos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
 
-        <span class="n">_</span><span class="p">,</span> <span class="n">rdn0</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_albedo-0.0.out&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">rdn025</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_albedo-0.25.out&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">wl</span><span class="p">,</span> <span class="n">rdn05</span><span class="p">,</span> <span class="n">irr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_albedo-0.5.out&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="c1"># load all sims, see `output_user` for definitions</span>
+        <span class="n">u1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_sim1_alb-0.0.out&quot;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">e2</span><span class="p">,</span> <span class="n">d2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_sim2_alb-0.0.out&quot;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">e3</span><span class="p">,</span> <span class="n">d3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_sim3_alb-0.0.out&quot;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">e4</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_sim4_alb-</span><span class="si">{</span><span class="n">a1</span><span class="si">}</span><span class="s2">.out&quot;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">e5</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_sim5_alb-</span><span class="si">{</span><span class="n">a2</span><span class="si">}</span><span class="s2">.out&quot;</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
-        <span class="c1"># Replace a few zeros in the irradiance spectrum via interpolation</span>
-        <span class="n">good</span> <span class="o">=</span> <span class="n">irr</span> <span class="o">&gt;</span> <span class="mf">1e-15</span>
-        <span class="n">bad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">good</span><span class="p">)</span>
-        <span class="n">irr</span><span class="p">[</span><span class="n">bad</span><span class="p">]</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">wl</span><span class="p">[</span><span class="n">good</span><span class="p">],</span> <span class="n">irr</span><span class="p">[</span><span class="n">good</span><span class="p">])(</span><span class="n">wl</span><span class="p">[</span><span class="n">bad</span><span class="p">])</span>
+        <span class="c1"># Read cos_vza and cos_sza from sim1</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_sim1_alb-0.0.inp&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span> <span class="k">if</span> <span class="p">(</span><span class="n">p</span> <span class="o">:=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">}</span>
+        <span class="n">cos_vza</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;umu&quot;</span><span class="p">])</span>
+        <span class="n">cos_sza</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;sza&quot;</span><span class="p">])))</span>
 
-        <span class="c1"># Translate to Top of Atmosphere (TOA) reflectance</span>
-        <span class="n">rhoatm</span> <span class="o">=</span> <span class="n">rdn0</span> <span class="o">/</span> <span class="mf">10.0</span> <span class="o">/</span> <span class="n">irr</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>  <span class="c1"># Translate to uW nm-1 cm-2 sr-1</span>
-        <span class="n">rho025</span> <span class="o">=</span> <span class="n">rdn025</span> <span class="o">/</span> <span class="mf">10.0</span> <span class="o">/</span> <span class="n">irr</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-        <span class="n">rho05</span> <span class="o">=</span> <span class="n">rdn05</span> <span class="o">/</span> <span class="mf">10.0</span> <span class="o">/</span> <span class="n">irr</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+        <span class="c1"># total downward transmittance</span>
+        <span class="n">total_down</span> <span class="o">=</span> <span class="n">e2</span> <span class="o">/</span> <span class="n">cos_sza</span>
+        <span class="n">total_down</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">total_down</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="c1"># Resample TOA reflectances to simulate the instrument observation</span>
-        <span class="n">rhoatm</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">resample_spectrum</span><span class="p">(</span><span class="n">rhoatm</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">)</span>
-        <span class="n">rho025</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">resample_spectrum</span><span class="p">(</span><span class="n">rho025</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">)</span>
-        <span class="n">rho05</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">resample_spectrum</span><span class="p">(</span><span class="n">rho05</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">)</span>
-        <span class="n">irr</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">resample_spectrum</span><span class="p">(</span><span class="n">irr</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">)</span>
+        <span class="c1"># total upward transmittance</span>
+        <span class="n">total_up</span> <span class="o">=</span> <span class="n">e3</span> <span class="o">/</span> <span class="n">cos_vza</span>
+        <span class="n">total_up</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">total_up</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="c1"># Calculate some atmospheric optical constants NOTE: This calc is not</span>
-        <span class="c1"># numerically stable for cases where rho025 and rho05 are the same.</span>
-        <span class="c1"># Anecdotally, in all of these cases, they are also the same as rhoatm,</span>
-        <span class="c1"># so the equation reduces to 0 / 0. Therefore, we assume that spherical</span>
-        <span class="c1"># albedo here is zero. Any other non-finite results are (currently)</span>
-        <span class="c1"># unexpected, so we convert them to errors.</span>
-        <span class="n">bad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">rho025</span> <span class="o">==</span> <span class="n">rhoatm</span><span class="p">,</span> <span class="n">rho05</span> <span class="o">==</span> <span class="n">rhoatm</span><span class="p">)</span>
-        <span class="n">sphalb</span> <span class="o">=</span> <span class="mf">2.8</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">rho025</span> <span class="o">-</span> <span class="n">rhoatm</span> <span class="o">-</span> <span class="n">rho05</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">rho025</span> <span class="o">-</span> <span class="n">rho05</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">bad</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Setting sphalb = 0 where rho025 == rho05 == rhoatm.&quot;</span><span class="p">)</span>
-            <span class="n">sphalb</span><span class="p">[</span><span class="n">bad</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># path reflectance for zero albedo</span>
+        <span class="n">rhoatm</span> <span class="o">=</span> <span class="n">u1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">cos_sza</span>
+        <span class="n">rhoatm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">rhoatm</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">sphalb</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Non-finite values in spherical albedo calculation&quot;</span><span class="p">)</span>
+        <span class="c1"># spherical albedo</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">albedos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">e5</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">albedos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">e4</span>
+        <span class="n">sphalb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">denom</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="p">(</span><span class="n">e5</span> <span class="o">-</span> <span class="n">e4</span><span class="p">)</span> <span class="o">/</span> <span class="n">denom</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">sphalb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">sphalb</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="n">transm</span> <span class="o">=</span> <span class="p">(</span><span class="n">rho05</span> <span class="o">-</span> <span class="n">rhoatm</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">-</span> <span class="n">sphalb</span><span class="p">)</span>
+        <span class="c1"># down direct transmittance</span>
+        <span class="n">transm_down_dir</span> <span class="o">=</span> <span class="n">d2</span> <span class="o">/</span> <span class="n">cos_sza</span>
+        <span class="n">transm_down_dir</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">transm_down_dir</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="c1"># For now, don&#39;t estimate this term!!</span>
-        <span class="c1"># TODO: Have LibRadTran calculate it directly</span>
-        <span class="n">transup</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="c1"># down diffuse transmittance</span>
+        <span class="c1"># transm_down_dif = (eglo4 * (1 - a1 * sphalb) - edir2) / (cos_sza) #same</span>
+        <span class="n">transm_down_dif</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">total_down</span> <span class="o">-</span> <span class="n">transm_down_dir</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">transm_down_dif</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">transm_down_dif</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="c1"># Get solar zenith, translate to irradiance at zenith = 0</span>
-        <span class="c1"># HACK: If a file called `prescribed_geom` exists in the LUT directory,</span>
-        <span class="c1"># use that instead of the LibRadtran calculated zenith angle. This is</span>
-        <span class="c1"># not the most elegant or efficient solution, but it seems to work.</span>
-        <span class="n">zenfile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span> <span class="o">/</span> <span class="s2">&quot;prescribed_geom&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">zenfile</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">zenfile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.zen&quot;</span>
+        <span class="c1"># upward direct transmittance</span>
+        <span class="n">transm_up_dir</span> <span class="o">=</span> <span class="n">d3</span> <span class="o">/</span> <span class="n">cos_vza</span>
+        <span class="n">transm_up_dir</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">transm_up_dir</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">zenfile</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fin</span><span class="p">:</span>
-            <span class="n">output</span> <span class="o">=</span> <span class="n">fin</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-            <span class="n">solzen</span><span class="p">,</span> <span class="n">solaz</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">output</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
-
-        <span class="n">coszen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">solzen</span> <span class="o">/</span> <span class="mf">360.0</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
-        <span class="n">irr</span> <span class="o">/=</span> <span class="n">coszen</span>
+        <span class="c1"># upward diffuse transmittance</span>
+        <span class="n">transm_up_dif</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">total_up</span> <span class="o">-</span> <span class="n">transm_up_dir</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">transm_up_dif</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">transm_up_dif</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 
         <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;solzen&quot;</span><span class="p">:</span> <span class="n">solzen</span><span class="p">,</span>
-            <span class="s2">&quot;coszen&quot;</span><span class="p">:</span> <span class="n">coszen</span><span class="p">,</span>
-            <span class="s2">&quot;solar_irr&quot;</span><span class="p">:</span> <span class="n">irr</span><span class="p">,</span>
             <span class="s2">&quot;rhoatm&quot;</span><span class="p">:</span> <span class="n">rhoatm</span><span class="p">,</span>
-            <span class="s2">&quot;transm_down_dif&quot;</span><span class="p">:</span> <span class="n">transm</span><span class="p">,</span>
             <span class="s2">&quot;sphalb&quot;</span><span class="p">:</span> <span class="n">sphalb</span><span class="p">,</span>
-            <span class="s2">&quot;transm_up_dir&quot;</span><span class="p">:</span> <span class="n">transup</span><span class="p">,</span>
+            <span class="s2">&quot;transm_down_dif&quot;</span><span class="p">:</span> <span class="n">transm_down_dif</span><span class="p">,</span>
+            <span class="s2">&quot;transm_down_dir&quot;</span><span class="p">:</span> <span class="n">transm_down_dir</span><span class="p">,</span>
+            <span class="s2">&quot;transm_up_dif&quot;</span><span class="p">:</span> <span class="n">transm_up_dif</span><span class="p">,</span>
+            <span class="s2">&quot;transm_up_dir&quot;</span><span class="p">:</span> <span class="n">transm_up_dir</span><span class="p">,</span>
+            <span class="s2">&quot;dir-dir&quot;</span><span class="p">:</span> <span class="n">transm_down_dir</span> <span class="o">*</span> <span class="n">transm_up_dir</span><span class="p">,</span>
+            <span class="s2">&quot;dif-dir&quot;</span><span class="p">:</span> <span class="n">transm_down_dif</span> <span class="o">*</span> <span class="n">transm_up_dir</span><span class="p">,</span>
+            <span class="s2">&quot;dir-dif&quot;</span><span class="p">:</span> <span class="n">transm_down_dir</span> <span class="o">*</span> <span class="n">transm_up_dif</span><span class="p">,</span>
+            <span class="s2">&quot;dif-dif&quot;</span><span class="p">:</span> <span class="n">transm_down_dif</span> <span class="o">*</span> <span class="n">transm_up_dif</span><span class="p">,</span>
         <span class="p">}</span>
+
+        <span class="c1"># resample all quantities to sensor wavelengths using H matrix</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="n">resample_spectrum</span><span class="p">(</span>
+                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lrt_wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">,</span> <span class="n">H</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix_H</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="c1"># set these keys to be appropriate for rdn mode</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;rhoatm&quot;</span><span class="p">,</span> <span class="s2">&quot;dir-dir&quot;</span><span class="p">,</span> <span class="s2">&quot;dif-dir&quot;</span><span class="p">,</span> <span class="s2">&quot;dir-dif&quot;</span><span class="p">,</span> <span class="s2">&quot;dif-dif&quot;</span><span class="p">]:</span>
+            <span class="n">results</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">transm_to_rdn</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">solar_irr_sensor</span><span class="p">,</span> <span class="n">cos_sza</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">results</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">postSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.engines.libradtran.LibRadTranRT.postSim"><a href="../../../../../api/isofit/radiative_transfer/engines/libradtran/#isofit.radiative_transfer.engines.libradtran.LibRadTranRT.postSim" title="Go to docs">[docs]</a></div>
-        <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">=</span> <span class="s2">&quot;rdn&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">&quot;RT_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;rdn&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">rebuild_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.engines.libradtran.LibRadTranRT.rebuild_cmd"><a href="../../../../../api/isofit/radiative_transfer/engines/libradtran/#isofit.radiative_transfer.engines.libradtran.LibRadTranRT.rebuild_cmd" title="Go to docs">[docs]</a></div>
-        <span class="n">vals</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;atmosphere&quot;</span><span class="p">:</span> <span class="s2">&quot;midlatitude_summer&quot;</span><span class="p">}</span>
-        <span class="n">vals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">,</span> <span class="n">point</span><span class="p">))</span>
+        <span class="c1"># using the MODTRAN template file</span>
+        <span class="n">translation</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">:</span> <span class="s2">&quot;GNDALT&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;observer_altitude_km&quot;</span><span class="p">:</span> <span class="s2">&quot;H1ALT&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;observer_azimuth&quot;</span><span class="p">:</span> <span class="s2">&quot;TRUEAZ&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;observer_zenith&quot;</span><span class="p">:</span> <span class="s2">&quot;OBSZEN&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
 
-        <span class="k">if</span> <span class="s2">&quot;AOT550&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;aerosol_visibility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ext550_to_vis</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;AOT550&quot;</span><span class="p">])</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="p">{</span><span class="n">translation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">,</span> <span class="n">point</span><span class="p">)}</span>
 
-        <span class="k">if</span> <span class="s2">&quot;H2OSTR&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;h2o_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">10.0</span>
-
-        <span class="c1"># Create input files from the template</span>
-        <span class="n">files</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">albedo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">albedos</span><span class="p">:</span>
-            <span class="n">files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_albedo-</span><span class="si">{</span><span class="n">albedo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">files</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">.inp&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                <span class="c1"># **env to insert paths into the template, such as isofit {data}</span>
-                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">albedo</span><span class="o">=</span><span class="n">albedo</span><span class="p">,</span> <span class="o">**</span><span class="n">vals</span><span class="p">,</span> <span class="o">**</span><span class="n">env</span><span class="p">))</span>
-
-        <span class="c1"># Single regex pattern to capture time, latitude, longitude</span>
-        <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-            <span class="sa">r</span><span class="s2">&quot;time\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*?&quot;</span>
-            <span class="sa">r</span><span class="s2">&quot;latitude\s+([NS])\s+([0-9.]+).*?&quot;</span>
-            <span class="sa">r</span><span class="s2">&quot;longitude\s+([WE])\s+([0-9.]+)&quot;</span><span class="p">,</span>
-            <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">,</span>
+        <span class="n">vals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;wl_1&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_1</span><span class="p">,</span>
+                <span class="s2">&quot;wl_2&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_2</span><span class="p">,</span>
+                <span class="s2">&quot;wl_res_out&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_res_out</span><span class="p">,</span>
+                <span class="s2">&quot;path_solar&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_solar</span><span class="p">,</span>
+                <span class="s2">&quot;band_model&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">reptran_band_model</span><span class="p">,</span>
+                <span class="s2">&quot;atmos&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type_lrt</span><span class="p">,</span>
+                <span class="s2">&quot;libradtran_dir&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="p">,</span>
+                <span class="s2">&quot;nstr&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nstr</span><span class="p">,</span>
+                <span class="s2">&quot;ssa_scale&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">ssa_scale</span><span class="p">,</span>
+                <span class="s2">&quot;gg_set&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">gg_set</span><span class="p">,</span>
+                <span class="s2">&quot;tau_file&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">tau_file</span><span class="p">,</span>
+                <span class="s2">&quot;ssa_file&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">ssa_file</span><span class="p">,</span>
+                <span class="s2">&quot;gg_file&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">gg_file</span><span class="p">,</span>
+                <span class="s2">&quot;moments_file&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">moments_file</span><span class="p">,</span>
+            <span class="p">}</span>
         <span class="p">)</span>
 
-        <span class="c1"># Extract needed info from that template</span>
-        <span class="k">if</span> <span class="n">match</span> <span class="o">:=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">):</span>
-            <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">,</span> <span class="n">hour</span><span class="p">,</span> <span class="n">minute</span><span class="p">,</span> <span class="n">second</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()[:</span><span class="mi">6</span><span class="p">])</span>
-            <span class="n">lat_dir</span><span class="p">,</span> <span class="n">lat_val</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">7</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
-            <span class="n">lon_dir</span><span class="p">,</span> <span class="n">lon_val</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">9</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
-            <span class="n">lat</span> <span class="o">=</span> <span class="n">lat_val</span> <span class="k">if</span> <span class="n">lat_dir</span> <span class="o">==</span> <span class="s2">&quot;N&quot;</span> <span class="k">else</span> <span class="o">-</span><span class="n">lat_val</span>
-            <span class="n">lon</span> <span class="o">=</span> <span class="n">lon_val</span> <span class="k">if</span> <span class="n">lon_dir</span> <span class="o">==</span> <span class="s2">&quot;E&quot;</span> <span class="k">else</span> <span class="o">-</span><span class="n">lon_val</span>
+        <span class="c1"># Sensor altitude above sea level (for libradtran, toa is used for satellite alt)</span>
+        <span class="n">alt</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;H1ALT&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_geom</span><span class="p">[</span><span class="s2">&quot;H1ALT&quot;</span><span class="p">])</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;alt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;toa&quot;</span> <span class="k">if</span> <span class="n">alt</span> <span class="o">&gt;</span> <span class="mf">98.0</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">alt</span><span class="p">,</span> <span class="mf">99.0</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.sh&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-                <span class="n">SCRIPT_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                    <span class="n">env</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="p">,</span>
-                    <span class="n">uvspecs</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="si">}</span><span class="s2">/bin/uvspec &lt; </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">.inp &gt; </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">.out&quot;</span>
-                        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span>
-                    <span class="p">),</span>
-                    <span class="n">libradtran</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="p">,</span>
-                    <span class="n">lat</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span>
-                    <span class="n">lon</span><span class="o">=</span><span class="n">lon</span><span class="p">,</span>
-                    <span class="n">date</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">day</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">month</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">hour</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">minute</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                    <span class="n">output</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.zen&quot;</span><span class="p">,</span>
-                <span class="p">)</span>
+        <span class="c1"># Observer zenith, 0-90 [deg]</span>
+        <span class="n">vza</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;OBSZEN&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_geom</span><span class="p">[</span><span class="s2">&quot;OBSZEN&quot;</span><span class="p">])</span>
+        <span class="n">vza</span> <span class="o">=</span> <span class="mf">180.0</span> <span class="o">-</span> <span class="n">vza</span> <span class="k">if</span> <span class="n">vza</span> <span class="o">&gt;</span> <span class="mf">90.0</span> <span class="k">else</span> <span class="n">vza</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;vza_deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">vza</span><span class="p">)</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;cos_vza&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;vza_deg&quot;</span><span class="p">]))</span>
+
+        <span class="c1"># observer azimuth [deg]</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;vaa_deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;TRUEAZ&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_geom</span><span class="p">[</span><span class="s2">&quot;TRUEAZ&quot;</span><span class="p">])</span>
+
+        <span class="c1"># surface elevation [km]</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;elev&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">vals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;GNDALT&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_surf</span><span class="p">[</span><span class="s2">&quot;GNDALT&quot;</span><span class="p">]),</span> <span class="mf">0.0</span><span class="p">))</span>
+
+        <span class="c1"># solar zenith [deg], same as PARM2</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;sza_deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_geom</span><span class="p">[</span><span class="s2">&quot;PARM2&quot;</span><span class="p">]</span>
+
+        <span class="c1"># relative azimuth [deg], same as PARM1</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;relative_azimuth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_geom</span><span class="p">[</span><span class="s2">&quot;PARM1&quot;</span><span class="p">]</span>
+
+        <span class="c1"># solar azimuth, 0-360 [deg]</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;saa_deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;vaa_deg&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;relative_azimuth&quot;</span><span class="p">])</span> <span class="o">%</span> <span class="mi">360</span>
+
+        <span class="c1"># co2 is always populated in MODTRAN template file</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;co2_inp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_atmos</span><span class="p">[</span><span class="s2">&quot;CO2MX&quot;</span><span class="p">]</span>
+
+        <span class="c1"># o3, convert a to DU</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;o3_inp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_atmos</span><span class="p">[</span><span class="s2">&quot;O3STR&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1000.0</span>
+
+        <span class="c1"># could be empty depending on presolve implementation</span>
+        <span class="c1"># TODO: what is the default aot for presolve?</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;aot&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.10</span>
+
+        <span class="c1"># default water vapor</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;h2o_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cm_to_mm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modtran_atmos</span><span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Now, override if in LUT</span>
+        <span class="k">if</span> <span class="s2">&quot;solar_zenith&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;sza_deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;solar_zenith&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s2">&quot;relative_azimuth&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;saa_deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;vaa_deg&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;relative_azimuth&quot;</span><span class="p">])</span> <span class="o">%</span> <span class="mi">360</span>
+
+        <span class="k">if</span> <span class="s2">&quot;CO2&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;co2_inp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;CO2&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s2">&quot;H2OSTR&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;h2o_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cm_to_mm</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">])</span>
+
+        <span class="c1"># assuming only one aerosol value from LUT can be used right now</span>
+        <span class="k">if</span> <span class="s2">&quot;AOT550&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;aot&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;AOT550&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s2">&quot;AERFRAC_2&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;aot&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;AERFRAC_2&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s2">&quot;AERFRAC_1&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;aot&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;AERFRAC_1&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Update the libRadtran input file based on the aerosol settings by the user</span>
+        <span class="c1"># see docs page for more information here, https://www.libradtran.org</span>
+        <span class="c1"># King-Byrne vs. internal libradtran spline-interp based AOD at 550 and aerosol profile.</span>
+        <span class="n">lrt_run_inp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">libradtran_inp_template</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">kb_alpha_1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;alpha_0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;aot&quot;</span><span class="p">])</span>
+                <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">kb_alpha_1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.550</span><span class="p">))</span>
+                <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">kb_alpha_2</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.550</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
             <span class="p">)</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;alpha_1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">kb_alpha_1</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;alpha_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">kb_alpha_2</span>
 
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;bash </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.sh&quot;</span>
+            <span class="n">lrt_run_inp</span> <span class="o">+=</span> <span class="s2">&quot;aerosol_king_byrne </span><span class="si">{alpha_0}</span><span class="s2"> </span><span class="si">{alpha_1}</span><span class="s2"> </span><span class="si">{alpha_2}</span><span class="se">\n</span><span class="s2">&quot;</span>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">ext550_to_vis</span><span class="p">(</span><span class="n">ext550</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.engines.libradtran.LibRadTranRT.ext550_to_vis"><a href="../../../../../api/isofit/radiative_transfer/engines/libradtran/#isofit.radiative_transfer.engines.libradtran.LibRadTranRT.ext550_to_vis" title="Go to docs">[docs]</a></div>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">50.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ext550</span> <span class="o">+</span> <span class="mf">0.01159</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lrt_run_inp</span> <span class="o">+=</span> <span class="s2">&quot;aerosol_set_tau_at_wvl 550 </span><span class="si">{aot}</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">ssa_scale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lrt_run_inp</span> <span class="o">+=</span> <span class="s2">&quot;aerosol_modify ssa scale </span><span class="si">{ssa_scale}</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">gg_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lrt_run_inp</span> <span class="o">+=</span> <span class="s2">&quot;aerosol_modify gg set </span><span class="si">{gg_set}</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">tau_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lrt_run_inp</span> <span class="o">+=</span> <span class="s2">&quot;aerosol_file tau </span><span class="si">{tau_file}</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">ssa_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lrt_run_inp</span> <span class="o">+=</span> <span class="s2">&quot;aerosol_file ssa </span><span class="si">{ssa_file}</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">gg_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lrt_run_inp</span> <span class="o">+=</span> <span class="s2">&quot;aerosol_file gg </span><span class="si">{gg_file}</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">moments_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lrt_run_inp</span> <span class="o">+=</span> <span class="s2">&quot;aerosol_file moments </span><span class="si">{moments_file}</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="n">runs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">dict</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">&quot;sim1&quot;</span><span class="p">,</span> <span class="n">albedo</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">zout</span><span class="o">=</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;alt&quot;</span><span class="p">]),</span>
+            <span class="nb">dict</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">&quot;sim2&quot;</span><span class="p">,</span> <span class="n">albedo</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">zout</span><span class="o">=</span><span class="s2">&quot;sur&quot;</span><span class="p">),</span>
+            <span class="nb">dict</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">&quot;sim3&quot;</span><span class="p">,</span> <span class="n">albedo</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">zout</span><span class="o">=</span><span class="s2">&quot;sur&quot;</span><span class="p">),</span>
+            <span class="nb">dict</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">&quot;sim4&quot;</span><span class="p">,</span> <span class="n">albedo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">albedos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">zout</span><span class="o">=</span><span class="s2">&quot;sur&quot;</span><span class="p">),</span>
+            <span class="nb">dict</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">&quot;sim5&quot;</span><span class="p">,</span> <span class="n">albedo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">albedos</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">zout</span><span class="o">=</span><span class="s2">&quot;sur&quot;</span><span class="p">),</span>
+        <span class="p">]</span>
+
+        <span class="n">files</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># create the 5 sim files</span>
+        <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">runs</span><span class="p">:</span>
+            <span class="n">run_vals</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">run_vals</span><span class="p">[</span><span class="s2">&quot;albedo&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">run</span><span class="p">[</span><span class="s2">&quot;albedo&quot;</span><span class="p">]</span>
+            <span class="n">run_vals</span><span class="p">[</span><span class="s2">&quot;zout&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">run</span><span class="p">[</span><span class="s2">&quot;zout&quot;</span><span class="p">]</span>
+
+            <span class="c1"># Reciprocal geometry for transm_up_total for sim3</span>
+            <span class="k">if</span> <span class="n">run</span><span class="p">[</span><span class="s2">&quot;tag&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;sim3&quot;</span><span class="p">:</span>
+                <span class="n">run_vals</span><span class="p">[</span><span class="s2">&quot;sza_deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">run_vals</span><span class="p">[</span><span class="s2">&quot;vza_deg&quot;</span><span class="p">]</span>
+
+            <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">run</span><span class="p">[</span><span class="s1">&#39;tag&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_alb-</span><span class="si">{</span><span class="n">run</span><span class="p">[</span><span class="s1">&#39;albedo&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+
+            <span class="n">inp_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">abspath</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">.inp&quot;</span><span class="p">)))</span>
+            <span class="n">inp_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">lrt_run_inp</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">run_vals</span><span class="p">))</span>
+
+        <span class="c1"># create shell script to run sims 1-5</span>
+        <span class="n">sh_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">abspath</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.sh&quot;</span><span class="p">)))</span>
+        <span class="n">uvspecs</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lrt_bin_dir</span><span class="si">}</span><span class="s2">/uvspec &lt; </span><span class="si">{</span><span class="n">abspath</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span><span class="n">fn</span><span class="p">))</span><span class="si">}</span><span class="s2">.inp &gt; </span><span class="si">{</span><span class="n">abspath</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span><span class="n">fn</span><span class="p">))</span><span class="si">}</span><span class="s2">.out&quot;</span>
+                <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">files</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">sh_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sh_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lrt_bin_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lrt_bin_dir</span><span class="p">,</span> <span class="n">uvspecs</span><span class="o">=</span><span class="n">uvspecs</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;bash </span><span class="si">{</span><span class="n">sh_file</span><span class="si">}</span><span class="s2">&quot;</span>
 </code></pre></div></td></tr></table></div>
 
 

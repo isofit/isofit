@@ -5027,6 +5027,51 @@ Keep to a small number for systems with little memory and slow read.</p>
 6s-only irradiance file.</p>
 </li>
 <li>
+<p><span class="mkapi-item-name">reptran_band_model</span> : 
+<span class="mkapi-item-type">str</span> <span class="mkapi-dash">&mdash;</span>
+libRadtran-only band model. REPTRAN options are coarse (15cm-1), medium (5 cm-1), and fine (1 cm-1).</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">kb_alpha_1</span> : 
+<span class="mkapi-item-type">float</span> <span class="mkapi-dash">&mdash;</span>
+libRadtran-only King-Byrne Angstrom parameter (alpha 1). Setting to None uses default aerosol profile.</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">kb_alpha_2</span> : 
+<span class="mkapi-item-type">float</span> <span class="mkapi-dash">&mdash;</span>
+libRadtran-only King-Byrne Angstrom parameter (alpha 2). Setting to None uses default aerosol profile.</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">ssa_scale</span> : 
+<span class="mkapi-item-type">float</span> <span class="mkapi-dash">&mdash;</span>
+libRadtran-only scaling of single scattering albedo from aerosol profile. Setting to None uses profile default.</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">gg_set</span> : 
+<span class="mkapi-item-type">float</span> <span class="mkapi-dash">&mdash;</span>
+libRadtran-only setting of constant asymmetry parameter to represent aerosols. Setting to None uses profile default.</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">tau_file</span> : 
+<span class="mkapi-item-type">str</span> <span class="mkapi-dash">&mdash;</span>
+libRadtran-only path to optical depth file that overwrites default profile.</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">ssa_file</span> : 
+<span class="mkapi-item-type">str</span> <span class="mkapi-dash">&mdash;</span>
+libRadtran-only path to single scattering albedo file that overwrites default profile.</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">gg_file</span> : 
+<span class="mkapi-item-type">str</span> <span class="mkapi-dash">&mdash;</span>
+libRadtran-only path to asymmetry parameter file that overwrites default profile.</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">moments_file</span> : 
+<span class="mkapi-item-type">str</span> <span class="mkapi-dash">&mdash;</span>
+libRadtran-only path to phase function moments file. Uses custom phase function instead of default Henyey-Greenstein.</p>
+</li>
+<li>
 <p><span class="mkapi-item-name">rte_configure_and_exit</span> : 
 <span class="mkapi-item-type">bool</span> <span class="mkapi-dash">&mdash;</span>
 Indicates that code should terminate as soon as all radiative transfer engine configuration files are
