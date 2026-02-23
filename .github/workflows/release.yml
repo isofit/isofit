@@ -13,7 +13,7 @@ jobs:
         with:
           version: "0.9.25"
       - name: Set up Python
-        run: uv python install 3.13
+        run: uv python install 3.12
       - name: Install dependencies
         run: |
           uv sync
