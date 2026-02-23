@@ -18,17 +18,17 @@
 from __future__ import annotations
 
 import logging
-import os
+from os import getenv
+from os.path import abspath, join, exists
 import subprocess
 from pathlib import Path
 
 import numpy as np
 
 from isofit.core.fileio import IO
-from isofit.core import common
 from isofit.data import env
+from isofit.core.units import cm_to_mm, transm_to_rdn
 from isofit.core.common import (
-    units,
     json_load_ascii,
     calculate_resample_matrix,
     resample_spectrum,
@@ -87,7 +87,7 @@ class LibRadTranRT(RadiativeTransferEngine):
             self.libradtran = env.path("libradtran", key="libradtran.version")
             if not self.libradtran.exists():
                 self.libradtran = Path(
-                    os.environ.get("LIBRADTRAN_DIR", "<LIBRADTRAN_DIR NOT SET>")
+                    getenv("LIBRADTRAN_DIR", "<LIBRADTRAN_DIR NOT SET>")
                 )
                 Logger.debug(
                     f"Using environment $LIBRADTRAN_DIR for libradtran path: {self.libradtran}"
@@ -107,7 +107,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             Logger.error(error)
             raise FileNotFoundError(error)
 
-        self.lrt_bin_dir = self.libradtran / "bin"
+        self.lrt_bin_dir = abspath(join(self.libradtran, "bin"))
 
         super().__init__(engine_config, **kwargs)
 
@@ -154,6 +154,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         self.atmosphere_type_lrt = atm_map[atmos]
 
         # Set up the irradiance spectrum
+        # NOTE this is hard coded for tsis spectrum, but could be defined in RTE config also
         self.path_solar = env.path("data", "oci", "tsis_f0_0p1.txt")
         solar_data = np.loadtxt(self.path_solar)
         wl_solar = solar_data[:, 0].T
@@ -179,7 +180,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         solar_irr = solar_irr * irr_ref**2 / irr_cur**2
 
         # stash this for other calcs (in sensor grid)
-        self.solar_irr_sensor = common.resample_spectrum(
+        self.solar_irr_sensor = resample_spectrum(
             solar_irr, wl_solar, self.wl, self.fwhm
         )
 
@@ -205,8 +206,8 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         cmd = self.rebuild_cmd(point, name)
 
         # Only execute when the .out file is missing (for now jsut checking first out)
-        sim1_out = self.sim_path / f"{name}_sim1_alb-0.0.out"
-        if sim1_out.exists():
+        sim1_out = abspath(join(self.sim_path, f"{name}_sim1_alb-0.0.out"))
+        if exists(sim1_out):
             Logger.warning(f"libRadtran sim files already exist for point {point}")
             return
 
@@ -219,7 +220,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
     def readSim(self, point):
         name = self.point_to_filename(point)
-        prefix = str(self.sim_path / name)
+        prefix = abspath(join(self.sim_path, name))
         a1, a2 = self.albedos[1], self.albedos[2]
 
         # load all sims, see `output_user` for definitions
@@ -230,14 +231,10 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         e5 = np.loadtxt(f"{prefix}_sim5_alb-{a2}.out", usecols=2)
 
         # Read cos_vza and cos_sza from sim1
-        inp_path = Path(f"{prefix}_sim1_alb-0.0.inp")
-        lines = {
-            p[0]: p[1]
-            for line in inp_path.read_text().splitlines()
-            if (p := line.strip().split()) and len(p) >= 2
-        }
-        cos_vza = float(lines["umu"])
-        cos_sza = np.cos(np.radians(float(lines["sza"])))
+        with open(f"{prefix}_sim1_alb-0.0.inp") as f:
+            params = {p[0]: p[1] for line in f if (p := line.split()) and len(p) >= 2}
+        cos_vza = float(params["umu"])
+        cos_sza = np.cos(np.radians(float(params["sza"])))
 
         # total downward transmittance
         total_down = e2 / cos_sza
@@ -296,9 +293,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         # set these keys to be appropriate for rdn mode
         for key in ["rhoatm", "dir-dir", "dif-dir", "dir-dif", "dif-dif"]:
-            results[key] = units.transm_to_rdn(
-                results[key], self.solar_irr_sensor, cos_sza
-            )
+            results[key] = transm_to_rdn(results[key], self.solar_irr_sensor, cos_sza)
 
         return results
 
@@ -372,7 +367,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         vals["aot"] = 0.10
 
         # default water vapor
-        vals["h2o_mm"] = units.cm_to_mm(self.modtran_atmos["H2OSTR"])
+        vals["h2o_mm"] = cm_to_mm(self.modtran_atmos["H2OSTR"])
 
         # Now, override if in LUT
         if "solar_zenith" in vals:
@@ -385,7 +380,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             vals["co2_inp"] = vals["CO2"]
 
         if "H2OSTR" in vals:
-            vals["h2o_mm"] = units.cm_to_mm(vals["H2OSTR"])
+            vals["h2o_mm"] = cm_to_mm(vals["H2OSTR"])
 
         # assuming only one aerosol value from LUT can be used right now
         if "AOT550" in vals:
@@ -456,14 +451,14 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             fname = f"{name}_{run['tag']}_alb-{run['albedo']}"
             files.append(fname)
 
-            inp_file = self.sim_path / f"{fname}.inp"
-            inp_file.write_text(lrt_run_inp.format(**run_vals, **env))
+            inp_file = Path(abspath(join(self.sim_path, f"{fname}.inp")))
+            inp_file.write_text(lrt_run_inp.format(**run_vals))
 
         # create shell script to run sims 1-5
-        sh_file = self.sim_path / f"{name}.sh"
+        sh_file = Path(abspath(join(self.sim_path, f"{name}.sh")))
         uvspecs = "\n".join(
             [
-                f"{self.lrt_bin_dir}/uvspec < {self.sim_path / fn}.inp > {self.sim_path / fn}.out"
+                f"{self.lrt_bin_dir}/uvspec < {abspath(join(self.sim_path,fn))}.inp > {abspath(join(self.sim_path,fn))}.out"
                 for fn in files
             ]
         )
