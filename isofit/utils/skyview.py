@@ -940,22 +940,24 @@ def skew(arr, angle, fwd=True, fill_min=True):
     line_indices = np.arange(nlines)
     o_indices = line_indices if negflag else nlines - line_indices - 1
     offsets = o_indices * slope
+
+    output_grid = np.arange(o_nsamps)
+    source_grid = np.arange(nsamps)
+
     if fwd:
         for i in range(nlines):
             offset = offsets[i]
-            output = np.arange(o_nsamps)
-            source = output - offset
+            source = output_grid - offset
             mask = (source >= 0) & (source <= nsamps - 1)
-            y_k = np.interp(source[mask], np.arange(nsamps), arr[i, :])
+            y_k = np.interp(source[mask], source_grid, arr[i, :])
             b[i, mask] = y_k
 
     else:
         for i in range(nlines):
-            source = np.arange(nsamps)
             offset = offsets[i]
-            output = source - offset
+            output = source_grid - offset
             mask = (output >= 0) & (output <= o_nsamps - 1)
-            y_k = np.interp(np.arange(o_nsamps), output[mask], arr[i, source[mask]])
+            y_k = np.interp(output_grid, output[mask], arr[i, source_grid[mask]])
             b[i, :] = y_k
 
     return b
