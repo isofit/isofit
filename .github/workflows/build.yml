@@ -154,3 +154,7 @@ jobs:
   path:
     needs: cache
     uses: ./.github/workflows/test_path.yml
+
+  images:
+    needs: cache
+    uses: ./.github/workflows/images.yml

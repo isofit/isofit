@@ -1,0 +1,105 @@
+name: Generate Plots
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  spectra:
+    - name: Cached Extras
+      id: cache-extras
+      uses: actions/cache/restore@v4
+      with:
+        path: .isofit
+        key: cache-extras
+        fail-on-cache-miss: true
+        enableCrossOsArchive: true
+
+    - name: Move .isofit
+      shell: bash
+      run: mv .isofit ~/.isofit
+
+    - name: Configure git
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+
+    - name: Checkout repo
+      uses: actions/checkout@v6
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        version: "0.9.25"
+
+    - name: Set up Python
+      run: uv python install 3.12
+
+    - name: Install dependencies
+      run: uv sync
+
+    - name: Execute tests
+      run: |
+        source .venv/bin/activate
+        cd $(isofit path examples)/image_cube/medium
+        ./default.sh
+
+    - name: Checkout tests repo
+      uses: actions/checkout@v4
+      with:
+        repository: jammont/isofit-PR-tests
+        token: ${{ secrets.TESTS_REPO }}
+        path: results
+
+    - name: Generate results
+      run: |
+        OUTPUT=results/pr-${{ github.event.pull_request.number }}
+        rm -rf $OUTPUT
+        mkdir -p $OUTPUT
+
+        source .venv/bin/activate
+        DATA=$(isofit path examples)/image_cube/medium/output/
+        isoplots spectra $DATA/ang20170323t202244_rfl -o $OUTPUT/spectra.png
+
+    - name: Commit and push results
+      run: |
+        cd results
+        git add .
+        git commit -m "Add results for PR #${{ github.event.pull_request.number }}" || echo "No changes"
+        git push
+
+    - name: Comment on PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const prNumber = context.payload.pull_request.number;
+          # const url = `https://github.com/isofit/results/tree/main/results/pr-${prNumber}`;
+          const url = `https://github.com/jammont/isofit-PR-tests/tree/main/results/pr-${prNumber}`;
+          const marker = "<!-- results-comment-marker -->";
+          const body = `${marker}📊 Generated results available here:\n\n${url}`;
+
+          // Get existing comments
+          const comments = await github.rest.issues.listComments({
+            context.repo.owner,
+            context.repo.repo,
+            issue_number: prNumber,
+          });
+
+          // Check if our marker already exists
+          const existing = comments.data.find(comment =>
+            comment.body.includes(marker)
+          );
+
+          if (!existing) {
+            await github.rest.issues.createComment({
+              context.repo.owner,
+              context.repo.repo,
+              issue_number: prNumber,
+              body,
+            });
+          } else {
+            console.log("Results comment already exists. Skipping.");
+          }
