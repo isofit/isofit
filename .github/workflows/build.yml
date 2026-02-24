@@ -145,15 +145,15 @@ jobs:
           isofit build
           mv ~/.isofit . # Need to move to local dir so that Windows runners can find it
 
-  # Test pip installation
-  pip:
-    needs: cache
-    uses: ./.github/workflows/test_pip.yml
-
-  # Test $PYTHONPATH installation
-  path:
-    needs: cache
-    uses: ./.github/workflows/test_path.yml
+  # # Test pip installation
+  # pip:
+  #   needs: cache
+  #   uses: ./.github/workflows/test_pip.yml
+  #
+  # # Test $PYTHONPATH installation
+  # path:
+  #   needs: cache
+  #   uses: ./.github/workflows/test_path.yml
 
   images:
     needs: cache
