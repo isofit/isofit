@@ -276,19 +276,19 @@ def apply_oe(
     # This becomes more complicated with backward compatability
     # TODO Could abstract this into template construction
     # TODO collapse modtran - emulator paths into single engine path when we eliminate list-based rt_engines
-    if engine_name == "sRTMnet" and not emulator_base:
+    if engine_name.lower() == "srtmnet" and not emulator_base:
         emulator_base = str(env.path("srtmnet", key="srtmnet.file"))
 
-    if engine_name == "modtran" and not modtran_path:
+    if engine_name.lower() == "modtran" and not modtran_path:
         modtran_path = os.getenv("MODTRAN_DIR", env.modtran)
 
     if emulator_base and emulator_base.endswith(".jld2"):
         engine_name = "KernelFlowsGP"
 
-    if engine_name == "KernelFlowsGP" and not emulator_base:
+    if engine_name.lower() == "kernelflowsgp" and not emulator_base:
         raise ValueError("emulator_base must be specified if using Kernel Flows GP")
 
-    if engine_name == "LibRadTran" and not modtran_path:
+    if engine_name.lower() == "libradtran" and not modtran_path:
         modtran_path = os.getenv("LIBRADTRAN_DIR", env.libradtran)
         if not modtran_path:
             raise ValueError("No LibRadTran installation found. Please set .ini.")
@@ -700,7 +700,7 @@ def apply_oe(
             ihaze_type="AER_NONE",
         )
 
-        if emulator_base is None and prebuilt_lut is None:
+        if engine_name.lower() == "modtran" and prebuilt_lut is None:
             max_water = tmpl.calc_modtran_max_water(paths)
         else:
             max_water = 6
