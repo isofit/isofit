@@ -84,7 +84,7 @@ def skyview(
         Number of angles used in horizon calculations (default is 64).
         As a reference, n=72 computes every 5deg, n=64 every 5.6deg, n=32 every 11.25deg, etc.  
     keep_horizon_files : bool, optional
-        Horizon angles are created in output_dir as a zarr data structure. False deletes files, and True keeps them. These angles are based from zenith.        
+        Horizon angles are created in output_dir as netcdfs. False deletes files, and True keeps them. These angles are based from zenith.        
     logging_level : str, optional
         Logging verbosity level (default is "INFO"); similar to apply_oe.
     log_file : str or None, optional
@@ -282,7 +282,7 @@ def horizon_worker(
     log_file,
 ):
     """
-    Each worker gets an angle and is sent to this function to compute horizons, and save to a compressed/scaled zarr file.
+    Each worker gets an angle and is sent to this function to compute horizons, and save to a compressed/scaled netcdf file.
     """
     # set up logging for each worker.
     logging.basicConfig(
