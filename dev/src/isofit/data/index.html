@@ -2255,6 +2255,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../api/isofit/data/dev/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../api/isofit/data/download/" class="md-nav__link">
         
   
@@ -4697,50 +4725,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#isofit.data.dev" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        dev
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.data.toTemplate" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        toTemplate
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.data.fromTemplate" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        fromTemplate
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.data.installTabCompletion" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        installTabCompletion
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -4784,178 +4768,39 @@
 </span><span class="mkapi-object-kind">package</span>
 <span class="mkapi-object-name"><a href="./#isofit.data" title="isofit.data">isofit.data</a></span>
 </p>
-<div class="mkapi-source no-copy highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">  1</span>
-<span class="normal">  2</span>
-<span class="normal">  3</span>
-<span class="normal">  4</span>
-<span class="normal">  5</span>
-<span class="normal">  6</span>
-<span class="normal">  7</span>
-<span class="normal">  8</span>
-<span class="normal">  9</span>
-<span class="normal"> 10</span>
-<span class="normal"> 11</span>
-<span class="normal"> 12</span>
-<span class="normal"> 13</span>
-<span class="normal"> 14</span>
-<span class="normal"> 15</span>
-<span class="normal"> 16</span>
-<span class="normal"> 17</span>
-<span class="normal"> 18</span>
-<span class="normal"> 19</span>
-<span class="normal"> 20</span>
-<span class="normal"> 21</span>
-<span class="normal"> 22</span>
-<span class="normal"> 23</span>
-<span class="normal"> 24</span>
-<span class="normal"> 25</span>
-<span class="normal"> 26</span>
-<span class="normal"> 27</span>
-<span class="normal"> 28</span>
-<span class="normal"> 29</span>
-<span class="normal"> 30</span>
-<span class="normal"> 31</span>
-<span class="normal"> 32</span>
-<span class="normal"> 33</span>
-<span class="normal"> 34</span>
-<span class="normal"> 35</span>
-<span class="normal"> 36</span>
-<span class="normal"> 37</span>
-<span class="normal"> 38</span>
-<span class="normal"> 39</span>
-<span class="normal"> 40</span>
-<span class="normal"> 41</span>
-<span class="normal"> 42</span>
-<span class="normal"> 43</span>
-<span class="normal"> 44</span>
-<span class="normal"> 45</span>
-<span class="normal"> 46</span>
-<span class="normal"> 47</span>
-<span class="normal"> 48</span>
-<span class="normal"> 49</span>
-<span class="normal"> 50</span>
-<span class="normal"> 51</span>
-<span class="normal"> 52</span>
-<span class="normal"> 53</span>
-<span class="normal"> 54</span>
-<span class="normal"> 55</span>
-<span class="normal"> 56</span>
-<span class="normal"> 57</span>
-<span class="normal"> 58</span>
-<span class="normal"> 59</span>
-<span class="normal"> 60</span>
-<span class="normal"> 61</span>
-<span class="normal"> 62</span>
-<span class="normal"> 63</span>
-<span class="normal"> 64</span>
-<span class="normal"> 65</span>
-<span class="normal"> 66</span>
-<span class="normal"> 67</span>
-<span class="normal"> 68</span>
-<span class="normal"> 69</span>
-<span class="normal"> 70</span>
-<span class="normal"> 71</span>
-<span class="normal"> 72</span>
-<span class="normal"> 73</span>
-<span class="normal"> 74</span>
-<span class="normal"> 75</span>
-<span class="normal"> 76</span>
-<span class="normal"> 77</span>
-<span class="normal"> 78</span>
-<span class="normal"> 79</span>
-<span class="normal"> 80</span>
-<span class="normal"> 81</span>
-<span class="normal"> 82</span>
-<span class="normal"> 83</span>
-<span class="normal"> 84</span>
-<span class="normal"> 85</span>
-<span class="normal"> 86</span>
-<span class="normal"> 87</span>
-<span class="normal"> 88</span>
-<span class="normal"> 89</span>
-<span class="normal"> 90</span>
-<span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
+<div class="mkapi-source no-copy highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.ini</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ini</span>
 
@@ -4988,131 +4833,6 @@
         <span class="n">path</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">sub</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-
-
-<span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;dev&quot;</span><span class="p">,</span> <span class="n">invoke_without_command</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">dev</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.data.dev"><a href="../../../api/isofit/data/#isofit.data.dev" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
-<span class="sd">    Extra commands for developers</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="s2">&quot;DEBUG&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)-8s</span><span class="s2"> </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
-
-
-<span class="n">data</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
-<span class="n">save</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-ns&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;--no-save&quot;</span><span class="p">,</span>
-    <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Disables saving to file, will print to terminal&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">kwargs</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-k&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;--kwargs&quot;</span><span class="p">,</span>
-    <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">nargs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Example: -k working_directory /path/to/output&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-
-
-<span class="nd">@dev</span><span class="o">.</span><span class="n">command</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;totmpl&quot;</span><span class="p">,</span>
-    <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">toTemplate</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span>
-    <span class="n">short_help</span><span class="o">=</span><span class="s2">&quot;Convert a config to a template&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="nd">@data</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="s2">&quot;--replace&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">&quot;dirs&quot;</span><span class="p">,</span> <span class="s2">&quot;keys&quot;</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]),</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;dirs&quot;</span>
-<span class="p">)</span>
-<span class="nd">@save</span>
-<span class="nd">@kwargs</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">toTemplate</span><span class="p">(</span><span class="n">no_save</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">opts</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.toTemplate"><a href="../../../api/isofit/data/#isofit.data.toTemplate" title="Go to docs">[docs]</a></div>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">toTemplate</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="ow">not</span> <span class="n">no_save</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">),</span> <span class="o">**</span><span class="n">opts</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">no_save</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
-
-
-<span class="nd">@dev</span><span class="o">.</span><span class="n">command</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;fromtmpl&quot;</span><span class="p">,</span>
-    <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">fromTemplate</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span>
-    <span class="n">short_help</span><span class="o">=</span><span class="s2">&quot;Convert a template to a config&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="nd">@data</span>
-<span class="nd">@save</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="s2">&quot;--prepend&quot;</span><span class="p">)</span>
-<span class="nd">@kwargs</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">fromTemplate</span><span class="p">(</span><span class="n">no_save</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">opts</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.fromTemplate"><a href="../../../api/isofit/data/#isofit.data.fromTemplate" title="Go to docs">[docs]</a></div>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">fromTemplate</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="ow">not</span> <span class="n">no_save</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">),</span> <span class="o">**</span><span class="n">opts</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">no_save</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
-
-
-<span class="nd">@dev</span><span class="o">.</span><span class="n">command</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;install_tab_completion&quot;</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Installs ISOFIT tab completion for your current shell&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">installTabCompletion</span><span class="p">(</span><span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;isofit&quot;</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.installTabCompletion"><a href="../../../api/isofit/data/#isofit.data.installTabCompletion" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generates the Click shell completion script for a user&#39;s shell, if it is supported.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    command : str, default=&quot;isofit&quot;</span>
-<span class="sd">        Name of the CLI program</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">shell</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SHELL&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">home</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span>
-
-    <span class="c1"># Only shells supported by Click</span>
-    <span class="k">if</span> <span class="s2">&quot;zsh&quot;</span> <span class="ow">in</span> <span class="n">shell</span><span class="p">:</span>
-        <span class="n">shell</span> <span class="o">=</span> <span class="s2">&quot;zsh&quot;</span>
-        <span class="n">rc_file</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">&quot;.zshrc&quot;</span>
-    <span class="k">elif</span> <span class="s2">&quot;bash&quot;</span> <span class="ow">in</span> <span class="n">shell</span><span class="p">:</span>
-        <span class="n">shell</span> <span class="o">=</span> <span class="s2">&quot;bash&quot;</span>
-        <span class="n">rc_file</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">&quot;.bashrc&quot;</span>
-    <span class="k">elif</span> <span class="s2">&quot;fish&quot;</span> <span class="ow">in</span> <span class="n">shell</span><span class="p">:</span>
-        <span class="n">shell</span> <span class="o">=</span> <span class="s2">&quot;fish&quot;</span>
-        <span class="n">rc_file</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">&quot;.config&quot;</span> <span class="o">/</span> <span class="s2">&quot;fish&quot;</span> <span class="o">/</span> <span class="s2">&quot;config.fish&quot;</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported or undetected shell: </span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Get the source command</span>
-    <span class="n">source</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="n">command</span>
-
-    <span class="c1"># Generate the completion script</span>
-    <span class="n">completion_script</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">command</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">_COMPLETE=</span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2">_source </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">stdout</span>
-
-    <span class="c1"># Save the completion script</span>
-    <span class="n">root</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">&quot;.isofit&quot;</span>
-    <span class="n">root</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="n">completion_path</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">_completion.</span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">completion_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">completion_script</span><span class="p">)</span>
-
-    <span class="c1"># Append source line to shell rc if not already present</span>
-    <span class="n">source_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"># </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2"> tab completion</span><span class="se">\n</span><span class="s2">source </span><span class="si">{</span><span class="n">completion_path</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-    <span class="k">if</span> <span class="n">rc_file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">content</span> <span class="o">=</span> <span class="n">rc_file</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
-        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">completion_path</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
-            <span class="n">rc_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">content</span> <span class="o">+</span> <span class="n">source_line</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">rc_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">source_line</span><span class="p">)</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2"> tab completion for shell </span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2"> installed in </span><span class="si">{</span><span class="n">rc_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span>
-        <span class="s2">&quot;It is recommended to set the isofit CLI into laziest mode via: isofit -k cli_laziest 1&quot;</span>
-    <span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;You must restart your shell or run: source </span><span class="si">{</span><span class="n">rc_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 
