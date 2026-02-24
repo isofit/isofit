@@ -18,10 +18,10 @@ name: Build
 on:
   push:
     branches: ["dev"]
-    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml"]
+    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/workflows/*"]
   pull_request:
     branches: ["dev"]
-    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml"]
+    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/workflows/*"]
 
 concurrency:
   group: ${{ github.ref }}
