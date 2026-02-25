@@ -22,7 +22,6 @@ on:
   pull_request_target:
     branches: ["dev"]
     paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/workflows/*"]
-    types: [opened, synchronize, reopened]
 
 concurrency:
   group: ${{ github.ref }}
