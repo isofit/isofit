@@ -6714,7 +6714,11 @@
 <span class="normal">1872</span>
 <span class="normal">1873</span>
 <span class="normal">1874</span>
-<span class="normal">1875</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1875</span>
+<span class="normal">1876</span>
+<span class="normal">1877</span>
+<span class="normal">1878</span>
+<span class="normal">1879</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick and Niklas Bohn</span>
 <span class="c1">#</span>
@@ -6841,6 +6845,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">state_working_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
             <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span><span class="p">,</span> <span class="n">rdn_fname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_rdn&quot;</span><span class="p">,</span> <span class="s2">&quot;_state&quot;</span><span class="p">))</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h2o_working_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
+            <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span><span class="p">,</span> <span class="n">rdn_fname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_rdn&quot;</span><span class="p">,</span> <span class="s2">&quot;_h2o&quot;</span><span class="p">))</span>
+        <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">surface_template_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_directory</span><span class="p">,</span> <span class="s2">&quot;surface.mat&quot;</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">surface_working_paths</span> <span class="o">=</span> <span class="p">{}</span>
 

@@ -5557,7 +5557,10 @@
 <span class="normal">964</span>
 <span class="normal">965</span>
 <span class="normal">966</span>
-<span class="normal">967</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">967</span>
+<span class="normal">968</span>
+<span class="normal">969</span>
+<span class="normal">970</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: David R Thompson and Philip G. Brodrick</span>
 <span class="c1">#</span>
@@ -6239,10 +6242,13 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">max_water</span> <span class="o">=</span> <span class="mi">6</span>
 
+        <span class="k">if</span> <span class="n">use_superpixels</span><span class="p">:</span>
+            <span class="n">h2o_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">h2o_subs_path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">h2o_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">h2o_working_path</span>
+
         <span class="c1"># run H2O grid as necessary</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">exists</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">h2o_subs_path</span><span class="p">))</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">exists</span><span class="p">(</span>
-            <span class="n">paths</span><span class="o">.</span><span class="n">h2o_subs_path</span>
-        <span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">exists</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">h2o_path</span><span class="p">))</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">exists</span><span class="p">(</span><span class="n">h2o_path</span><span class="p">):</span>
             <span class="c1"># Write the presolve connfiguration file</span>
             <span class="n">h2o_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">max_water</span> <span class="o">-</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pre-solve H2O grid: </span><span class="si">{</span><span class="n">h2o_grid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -6276,7 +6282,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Existing h2o-presolve solutions found, using those.&quot;</span><span class="p">)</span>
 
-        <span class="n">h2o</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">h2o_subs_path</span><span class="p">))</span>
+        <span class="n">h2o</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">h2o_path</span><span class="p">))</span>
         <span class="c1"># Find the band that is H2O. Should be stable with constant H2O name</span>
         <span class="n">h2o_band</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">h2o</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;band names&quot;</span><span class="p">])</span> <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;H2OSTR&quot;</span>
