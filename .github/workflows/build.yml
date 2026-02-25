@@ -19,9 +19,10 @@ on:
   push:
     branches: ["dev"]
     paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/workflows/*"]
-  pull_request:
+  pull_request_target:
     branches: ["dev"]
     paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/workflows/*"]
+    types: [opened, synchronize, reopened]
 
 concurrency:
   group: ${{ github.ref }}
@@ -33,7 +34,10 @@ jobs:
     if: "!startsWith(github.event.head_commit.message, 'Merge pull request')"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
       - name: Print concurrency group
         run: echo '${{ github.workflow }}-${{ github.ref }}'
       - uses: psf/black@stable
@@ -45,7 +49,10 @@ jobs:
   package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -103,7 +110,10 @@ jobs:
         shell: bash
         run: mv .isofit ~/.isofit
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -156,19 +166,19 @@ jobs:
           isofit build
           mv ~/.isofit . # Need to move to local dir so that Windows runners can find it
 
-  # # Test pip installation
-  # pip:
-  #   needs: cache
-  #   uses: ./.github/workflows/test_pip.yml
-  #   with:
-  #     rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
-  #
-  # # Test $PYTHONPATH installation
-  # path:
-  #   needs: cache
-  #   uses: ./.github/workflows/test_path.yml
-  #   with:
-  #     rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
+  # Test pip installation
+  pip:
+    needs: cache
+    uses: ./.github/workflows/test_pip.yml
+    with:
+      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
+
+  # Test $PYTHONPATH installation
+  path:
+    needs: cache
+    uses: ./.github/workflows/test_path.yml
+    with:
+      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
 
   images:
     needs: cache
@@ -176,4 +186,4 @@ jobs:
     with:
       rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
     secrets:
-      TESTS_REPO: "${{ secrets.TESTS_REPO }}"
+      RESULTS_REPO: "${{ secrets.RESULTS_REPO }}"
