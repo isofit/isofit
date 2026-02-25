@@ -50,7 +50,7 @@ jobs:
       - name: Execute tests
         run: |
           source .venv/bin/activate
-          cd $(isofit path examples)/image_cube/medium
+          cd $(isofit path examples)/image_cube/small
           ./default.sh --log_file default.log --resources
 
       - name: Checkout tests repo
@@ -67,7 +67,7 @@ jobs:
           mkdir -p $OUTPUT
 
           source .venv/bin/activate
-          DATA=$(isofit path examples)/image_cube/medium/
+          DATA=$(isofit path examples)/image_cube/small/
           isoplots spectra $DATA/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png
           isoplots resources $DATA/default.resources.jsonl -o $OUTPUT/default.resources.html -l $DATA/default.log --relative --debug
 
