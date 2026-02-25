@@ -2,6 +2,10 @@ name: Generate Plots
 
 on:
   workflow_call:
+    inputs:
+      rebuild-cache:
+        required: true
+        type: boolean
 
 permissions:
   contents: read
@@ -16,7 +20,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .isofit
-          key: cache-extras
+          key: cache-extras${{ inputs.rebuild-cache && format('-{0}', github.run_id) || '' }}
           fail-on-cache-miss: true
           enableCrossOsArchive: true
 
@@ -47,7 +51,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cd $(isofit path examples)/image_cube/medium
-          ./default.sh
+          ./default.sh --log_file default.log --resources
 
       - name: Checkout tests repo
         uses: actions/checkout@v4
@@ -63,8 +67,9 @@ jobs:
           mkdir -p $OUTPUT
 
           source .venv/bin/activate
-          DATA=$(isofit path examples)/image_cube/medium/output/
-          isoplots spectra $DATA/ang20170323t202244_rfl -o $OUTPUT/spectra.png
+          DATA=$(isofit path examples)/image_cube/medium/
+          isoplots spectra $DATA/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png
+          isoplots resources $DATA/default.resources.jsonl -o $OUTPUT/default.resources.html -l $DATA/default.log --relative --debug
 
       - name: Commit and push results
         run: |

@@ -4,6 +4,10 @@ name: Test '$PYTHONPATH' installation
 
 on:
   workflow_call:
+    inputs:
+      rebuild-cache:
+        required: true
+        type: boolean
 
 # concurrency:
 #   group: ${{ github.workflow }}-${{ github.ref }}
@@ -29,7 +33,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .isofit
-          key: cache-extras
+          key: cache-extras${{ inputs.rebuild-cache && format('-{0}', github.run_id) || '' }}
           fail-on-cache-miss: true
           enableCrossOsArchive: true
 

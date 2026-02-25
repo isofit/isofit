@@ -75,7 +75,7 @@ def download_neon(path=None, overwrite=False):
     zipfile = download_file(NEON_URL, output.parent / "NEON-subset-data.zip")
 
     print(f"Unzipping {zipfile}")
-    avail = unzip(zipfile, path=output.parent, rename=output.name)
+    avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
 
     print(f"Done, now available at: {avail}")
 

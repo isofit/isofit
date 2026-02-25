@@ -39,6 +39,13 @@ Pyth = sns(
     template="""\
 #!/usr/bin/env python
 
+# Remove old output directories, if they exist
+import shutil
+
+for d in ["output", "lut_h2o", "lut_full"]:
+    shutil.rmtree(d, ignore_errors=True)
+
+# These are important to set before executing
 import os
 
 os.environ["MKL_NUM_THREADS"] = "1"
@@ -68,12 +75,18 @@ OEScript = sns(
 
 # This is a generated example script to illustrate how to execute this example via the command line
 
+# Remove old output directories, if they exist
+rm -rf output lut_h2o lut_full
+
 # These are important to set before executing
 export MKL_NUM_THREADS=1
 export OMP_NUM_THREADS=1
 
 isofit apply_oe \\
-  {args}\
+  {args} \\
+  "$@"\
+
+# The "$@" will capture any additional options passed into the script
 """
 )
 

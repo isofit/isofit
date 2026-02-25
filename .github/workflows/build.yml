@@ -79,17 +79,28 @@ jobs:
     continue-on-error: true
     runs-on: ubuntu-latest
     steps:
+      - name: Set rebuild flag
+        id: rebuild
+        run: |
+          if [[ "${{ github.event.pull_request.body || '' }}" == *"[rebuild-cache]"* ]]; then
+            echo "suffix=-${{ github.run_id }}" >> $GITHUB_OUTPUT
+          else
+            echo "suffix=" >> $GITHUB_OUTPUT
+          fi
+
       - name: Cache Extras
         id: cache-extras
         uses: actions/cache@v4
         with:
           path: .isofit
-          key: cache-extras
+          key: cache-extras${{ steps.rebuild.outputs.suffix }}
+          restore-keys: |
+            cache-extras
           enableCrossOsArchive: true
 
       - name: Move .isofit
-        shell: bash
         if: steps.cache-extras.outputs.cache-hit == 'true'
+        shell: bash
         run: mv .isofit ~/.isofit
 
       - uses: actions/checkout@v3
@@ -108,8 +119,8 @@ jobs:
           python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python3 -m pip install --editable ".[test]"
 
-      - if: steps.cache-extras.outputs.cache-hit == 'true'
-        name: Check for Updates
+      - name: Check for Updates
+        if: steps.cache-extras.outputs.cache-hit == 'true' && steps.rebuild.outputs.rebuild != 'true'
         shell: bash
         run: |
           # Module must report "[x]" to be detected
@@ -134,8 +145,8 @@ jobs:
             echo "$MSG"
           fi
 
-      - if: steps.cache-extras.outputs.cache-hit != 'true'
-        name: Download Extras
+      - name: Download Extras
+        if: steps.cache-extras.outputs.cache-hit != 'true'
         shell: bash
         run: |
           echo "Downloading extras"
@@ -149,12 +160,18 @@ jobs:
   # pip:
   #   needs: cache
   #   uses: ./.github/workflows/test_pip.yml
+  #   with:
+  #     rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
   #
   # # Test $PYTHONPATH installation
   # path:
   #   needs: cache
   #   uses: ./.github/workflows/test_path.yml
+  #   with:
+  #     rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
 
   images:
     needs: cache
     uses: ./.github/workflows/images.yml
+    with:
+      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
