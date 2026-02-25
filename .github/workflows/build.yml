@@ -175,4 +175,5 @@ jobs:
     uses: ./.github/workflows/images.yml
     with:
       rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
+    secrets:
       repo-pat: ${{ secrets.TESTS_REPO }}
