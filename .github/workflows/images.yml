@@ -6,6 +6,8 @@ on:
       rebuild-cache:
         required: true
         type: boolean
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -14,6 +16,8 @@ permissions:
 jobs:
   spectra:
     runs-on: ubuntu-latest
+    env:
+      OUTPUT: results/pr-${{ github.event.pull_request.number }}
     steps:
       - name: Cached Extras
         id: cache-extras
@@ -33,8 +37,10 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
 
-      - name: Checkout repo
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -47,29 +53,26 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Execute tests
-        run: |
-          source .venv/bin/activate
-          cd $(isofit path examples)/image_cube/small
-          ./default.sh --log_file default.log --resources
-
       - name: Checkout tests repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: jammont/isofit-PR-tests
           token: ${{ secrets.TESTS_REPO }}
           path: results
 
-      - name: Generate results
+      - name: Prepare output
         run: |
-          OUTPUT=results/pr-${{ github.event.pull_request.number }}
           rm -rf $OUTPUT
           mkdir -p $OUTPUT
 
+      - name: Execute tests
+        run: |
           source .venv/bin/activate
-          DATA=$(isofit path examples)/image_cube/small/
-          isoplots spectra $DATA/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png
-          isoplots resources $DATA/default.resources.jsonl -o $OUTPUT/default.resources.html -l $DATA/default.log --relative --debug
+          RUN=$(isofit path examples)/image_cube/small/
+          $RUN/default.sh --log_file $OUTPUT/default.log --resources
+
+          isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png
+          isoplots resources $OUTPUT/default.resources.jsonl -o $OUTPUT/default.resources.html -l $OUTPUT/default.log --relative --debug
 
       - name: Commit and push results
         run: |
