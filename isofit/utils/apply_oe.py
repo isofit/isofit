@@ -680,10 +680,13 @@ def apply_oe(
         else:
             max_water = 6
 
+        if use_superpixels:
+            h2o_path = paths.h2o_subs_path
+        else:
+            h2o_path = paths.h2o_working_path
+
         # run H2O grid as necessary
-        if not exists(envi_header(paths.h2o_subs_path)) or not exists(
-            paths.h2o_subs_path
-        ):
+        if not exists(envi_header(h2o_path)) or not exists(h2o_path):
             # Write the presolve connfiguration file
             h2o_grid = np.linspace(0.2, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")
@@ -717,7 +720,7 @@ def apply_oe(
         else:
             logging.info("Existing h2o-presolve solutions found, using those.")
 
-        h2o = envi.open(envi_header(paths.h2o_subs_path))
+        h2o = envi.open(envi_header(h2o_path))
         # Find the band that is H2O. Should be stable with constant H2O name
         h2o_band = [
             i for i, name in enumerate(h2o.metadata["band names"]) if name == "H2OSTR"

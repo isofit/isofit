@@ -125,6 +125,10 @@ class Pathnames:
         self.state_working_path = abspath(
             join(self.output_directory, rdn_fname.replace("_rdn", "_state"))
         )
+        self.h2o_working_path = abspath(
+            join(self.output_directory, rdn_fname.replace("_rdn", "_h2o"))
+        )
+
         self.surface_template_path = abspath(join(self.data_directory, "surface.mat"))
         self.surface_working_paths = {}
 
