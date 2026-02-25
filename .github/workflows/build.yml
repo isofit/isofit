@@ -176,4 +176,4 @@ jobs:
     with:
       rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
     secrets:
-      repo-pat: "${{ secrets.TESTS_REPO }}"
+      TESTS_REPO: "${{ secrets.TESTS_REPO }}"
