@@ -6,6 +6,11 @@ on:
       rebuild-cache:
         required: true
         type: boolean
+    secrets:
+      repo-pat:
+        description: 'GH PAT for the results repo'
+        required: true
+
 
 permissions:
   contents: read
