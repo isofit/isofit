@@ -5162,7 +5162,20 @@
 <span class="normal">397</span>
 <span class="normal">398</span>
 <span class="normal">399</span>
-<span class="normal">400</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Builds the examples from their template files for a given ISOFIT ini</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -5203,6 +5216,13 @@
     <span class="n">template</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
 <span class="s2">#!/usr/bin/env python</span>
 
+<span class="s2"># Remove old output directories, if they exist</span>
+<span class="s2">import shutil</span>
+
+<span class="s2">for d in [&quot;output&quot;, &quot;lut_h2o&quot;, &quot;lut_full&quot;]:</span>
+<span class="s2">    shutil.rmtree(d, ignore_errors=True)</span>
+
+<span class="s2"># These are important to set before executing</span>
 <span class="s2">import os</span>
 
 <span class="s2">os.environ[&quot;MKL_NUM_THREADS&quot;] = &quot;1&quot;</span>
@@ -5232,12 +5252,18 @@
 
 <span class="s2"># This is a generated example script to illustrate how to execute this example via the command line</span>
 
+<span class="s2"># Remove old output directories, if they exist</span>
+<span class="s2">rm -rf output lut_h2o lut_full</span>
+
 <span class="s2"># These are important to set before executing</span>
 <span class="s2">export MKL_NUM_THREADS=1</span>
 <span class="s2">export OMP_NUM_THREADS=1</span>
 
 <span class="s2">isofit apply_oe </span><span class="se">\\</span>
-<span class="s2">  </span><span class="si">{args}</span><span class="se">\</span>
+<span class="s2">  </span><span class="si">{args}</span><span class="s2"> </span><span class="se">\\</span>
+<span class="s2">  &quot;$@&quot;</span><span class="se">\</span>
+
+<span class="s2"># The &quot;$@&quot; will capture any additional options passed into the script</span>
 <span class="s2">&quot;&quot;&quot;</span>
 <span class="p">)</span>
 
