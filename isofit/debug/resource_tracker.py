@@ -403,6 +403,8 @@ class FileResources(ResourceTracker):
     ResourceTracker
     """
 
+    _lock = threading.Lock()
+
     def __init__(self, file: str, /, reset: bool = False, **kwargs):
         if "callback" in kwargs:
             raise AttributeError(
@@ -410,8 +412,6 @@ class FileResources(ResourceTracker):
             )
 
         super().__init__(callback=self.write, **kwargs)
-
-        self._lock = threading.Lock()
 
         self.file = Path(file)
         self.file.parent.mkdir(exist_ok=True, parents=True)
