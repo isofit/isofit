@@ -4549,17 +4549,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.utils.skyview.init_horizon" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        init_horizon
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#isofit.utils.skyview.save_horizon" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5840,23 +5829,7 @@
 <span class="normal">1038</span>
 <span class="normal">1039</span>
 <span class="normal">1040</span>
-<span class="normal">1041</span>
-<span class="normal">1042</span>
-<span class="normal">1043</span>
-<span class="normal">1044</span>
-<span class="normal">1045</span>
-<span class="normal">1046</span>
-<span class="normal">1047</span>
-<span class="normal">1048</span>
-<span class="normal">1049</span>
-<span class="normal">1050</span>
-<span class="normal">1051</span>
-<span class="normal">1052</span>
-<span class="normal">1053</span>
-<span class="normal">1054</span>
-<span class="normal">1055</span>
-<span class="normal">1056</span>
-<span class="normal">1057</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1041</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5876,16 +5849,16 @@
 <span class="c1"># Author: David R Thompson, david.r.thompson@jpl.nasa.gov</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">join</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">isdir</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">join</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">isdir</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">zarr</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">netCDF4</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nc</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">spectral.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span><span class="p">,</span> <span class="n">eps</span>
@@ -5942,7 +5915,7 @@
 <span class="sd">        Number of angles used in horizon calculations (default is 64).</span>
 <span class="sd">        As a reference, n=72 computes every 5deg, n=64 every 5.6deg, n=32 every 11.25deg, etc.  </span>
 <span class="sd">    keep_horizon_files : bool, optional</span>
-<span class="sd">        Horizon angles are created in output_dir as a zarr data structure. False deletes files, and True keeps them. These angles are based from zenith.        </span>
+<span class="sd">        Horizon angles are created in output_dir as netcdfs. False deletes files, and True keeps them. These angles are based from zenith.        </span>
 <span class="sd">    logging_level : str, optional</span>
 <span class="sd">        Logging verbosity level (default is &quot;INFO&quot;); similar to apply_oe.</span>
 <span class="sd">    log_file : str or None, optional</span>
@@ -6052,6 +6025,10 @@
         <span class="p">}</span>
         <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="n">rayargs</span><span class="p">)</span>
 
+        <span class="n">horizon_dir</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="s2">&quot;horizon_files&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">isdir</span><span class="p">(</span><span class="n">horizon_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">horizon_dir</span><span class="p">)</span>
+
         <span class="c1"># prep data for horizon method</span>
         <span class="n">slope</span><span class="p">,</span> <span class="n">aspect</span> <span class="o">=</span> <span class="n">gradient_d8</span><span class="p">(</span>
             <span class="n">dem_data</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">resolution</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">resolution</span><span class="p">,</span> <span class="n">aspect_rad</span><span class="o">=</span><span class="kc">True</span>
@@ -6062,9 +6039,6 @@
 
         <span class="c1"># -180 is North</span>
         <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">n_angles</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-        <span class="c1"># Create zarr.</span>
-        <span class="n">init_horizon</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="p">(</span><span class="n">dem_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dem_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
 
         <span class="c1"># Share needed ray objects</span>
         <span class="n">dem_ray</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">dem_data</span><span class="p">)</span>
@@ -6079,7 +6053,7 @@
                 <span class="n">spacing</span><span class="o">=</span><span class="n">resolution</span><span class="p">,</span>
                 <span class="n">aspect</span><span class="o">=</span><span class="n">aspect_ray</span><span class="p">,</span>
                 <span class="n">tan_slope</span><span class="o">=</span><span class="n">tan_slope_ray</span><span class="p">,</span>
-                <span class="n">output_directory</span><span class="o">=</span><span class="n">output_directory</span><span class="p">,</span>
+                <span class="n">output_directory</span><span class="o">=</span><span class="n">horizon_dir</span><span class="p">,</span>
                 <span class="n">logging_level</span><span class="o">=</span><span class="n">logging_level</span><span class="p">,</span>
                 <span class="n">log_file</span><span class="o">=</span><span class="n">log_file</span><span class="p">,</span>
             <span class="p">)</span>
@@ -6090,7 +6064,8 @@
         <span class="c1"># set up integral for skyview</span>
         <span class="n">qIntegrand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">dem_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">angles</span><span class="p">:</span>
-            <span class="n">h</span> <span class="o">=</span> <span class="n">load_horizon</span><span class="p">(</span><span class="n">output_directory</span><span class="o">=</span><span class="n">output_directory</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">horizon_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;horizon_angle_</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="si">}</span><span class="s2">.nc&quot;</span><span class="p">)</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">load_horizon</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">)</span>
             <span class="n">azimuth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
             <span class="n">cos_aspect</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">aspect</span> <span class="o">-</span> <span class="n">azimuth</span><span class="p">)</span>
 
@@ -6114,10 +6089,8 @@
         <span class="k">del</span> <span class="n">out_mm</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">keep_horizon_files</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Removing temporary horizon Zarr directories...&quot;</span><span class="p">)</span>
-            <span class="n">horizon_files</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="s2">&quot;horizons.zarr&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">isdir</span><span class="p">(</span><span class="n">horizon_files</span><span class="p">):</span>
-                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">horizon_files</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Removing temporary horizon files...&quot;</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">horizon_dir</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="n">err_str</span> <span class="o">=</span> <span class="s2">&quot;method must be either &#39;horizon&#39; or &#39;slope&#39;.&quot;</span>
@@ -6140,7 +6113,7 @@
     <span class="n">log_file</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Each worker gets an angle and is sent to this function to compute horizons, and save to a compressed/scaled zarr file.</span>
+<span class="sd">    Each worker gets an angle and is sent to this function to compute horizons, and save to a compressed/scaled netcdf file.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># set up logging for each worker.</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
@@ -6164,75 +6137,57 @@
     <span class="k">return</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">init_horizon</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.init_horizon"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.init_horizon" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Creates a zarr dataset for the horizon computations.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">h_nodata</span> <span class="o">=</span> <span class="mi">65535</span>
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
-        <span class="p">{</span>
-            <span class="sa">f</span><span class="s2">&quot;horizon_</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">h_nodata</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">),</span>
-                <span class="n">dims</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;row&quot;</span><span class="p">,</span> <span class="s2">&quot;col&quot;</span><span class="p">),</span>
-                <span class="n">attrs</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;units&quot;</span><span class="p">:</span> <span class="s2">&quot;radians&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;scale_factor&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">65534</span><span class="p">,</span>
-                    <span class="s2">&quot;add_offset&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
-                    <span class="s2">&quot;nodata&quot;</span><span class="p">:</span> <span class="n">h_nodata</span><span class="p">,</span>
-                <span class="p">},</span>
-            <span class="p">)</span>
-            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">angles</span>
-        <span class="p">}</span>
-    <span class="p">)</span>
-
-    <span class="n">horizon_files</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="s2">&quot;horizons.zarr&quot;</span><span class="p">)</span>
-    <span class="n">ds</span><span class="o">.</span><span class="n">to_zarr</span><span class="p">(</span>
-        <span class="n">horizon_files</span><span class="p">,</span>
-        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
-        <span class="n">consolidated</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">encoding</span><span class="o">=</span><span class="p">{</span>
-            <span class="sa">f</span><span class="s2">&quot;horizon_</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dtype&quot;</span><span class="p">:</span> <span class="s2">&quot;uint16&quot;</span><span class="p">,</span> <span class="s2">&quot;_FillValue&quot;</span><span class="p">:</span> <span class="n">h_nodata</span><span class="p">}</span>
-            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">angles</span>
-        <span class="p">},</span>
-    <span class="p">)</span>
-    <span class="n">ds</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-    <span class="k">return</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">save_horizon</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">output_directory</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.save_horizon"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.save_horizon" title="Go to docs">[docs]</a></div>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;utility function to house metadata and information for saving horizon angles&quot;&quot;&quot;</span>
 
-    <span class="c1"># scale factor</span>
+    <span class="c1"># Scale h to uint16 with nodata=65535</span>
     <span class="n">h_nodata</span> <span class="o">=</span> <span class="mi">65535</span>
     <span class="n">h_sf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">65534</span>
 
-    <span class="c1"># apply scale factor to the data</span>
+    <span class="c1"># loss of data, but still accurate to ~0.003 degrees.</span>
     <span class="n">h_scaled</span> <span class="o">=</span> <span class="p">(</span><span class="n">h</span> <span class="o">/</span> <span class="n">h_sf</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
-    <span class="n">h_scaled</span><span class="p">[(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">h</span><span class="p">))</span> <span class="o">|</span> <span class="p">(</span><span class="n">h</span> <span class="o">==</span> <span class="o">-</span><span class="mi">9999</span><span class="p">)]</span> <span class="o">=</span> <span class="n">h_nodata</span>
+    <span class="n">h_scaled</span><span class="p">[(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">h</span><span class="p">))</span> <span class="o">|</span> <span class="p">(</span><span class="n">h</span> <span class="o">==</span> <span class="o">-</span><span class="mi">9999</span><span class="p">)]</span> <span class="o">=</span> <span class="n">h_nodata</span>  <span class="c1"># nodata</span>
 
-    <span class="c1"># append to the zarr dir</span>
-    <span class="n">horizon_files</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="s2">&quot;horizons.zarr&quot;</span><span class="p">)</span>
-    <span class="n">angle_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;horizon_</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">z</span> <span class="o">=</span> <span class="n">zarr</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">horizon_files</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
-    <span class="n">z</span><span class="p">[</span><span class="n">angle_name</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">h_scaled</span>
-
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Flushed horizon angle: </span><span class="si">{</span><span class="n">angle_name</span><span class="si">}</span><span class="s2"> to disk.&quot;</span><span class="p">)</span>
+    <span class="c1"># write h to disk (scaled data reduced ~3-5x file size.)</span>
+    <span class="n">angle_to_write</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Flushing horizon angle: </span><span class="si">{</span><span class="n">angle_to_write</span><span class="si">}</span><span class="s2"> to disk.&quot;</span><span class="p">)</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;horizon_angle_</span><span class="si">{</span><span class="n">angle_to_write</span><span class="si">}</span><span class="s2">.nc&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">nc</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;NETCDF4&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="s2">&quot;row&quot;</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="s2">&quot;col&quot;</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span>
+            <span class="s2">&quot;horizon&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;u2&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;row&quot;</span><span class="p">,</span> <span class="s2">&quot;col&quot;</span><span class="p">),</span>
+            <span class="n">fill_value</span><span class="o">=</span><span class="n">h_nodata</span><span class="p">,</span>
+            <span class="n">zlib</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">complevel</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">var</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">h_scaled</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="s2">&quot;radians&quot;</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">long_name</span> <span class="o">=</span> <span class="s2">&quot;Horizon angle (radians)&quot;</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">scale_factor</span> <span class="o">=</span> <span class="n">h_sf</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">add_offset</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">nodata</span> <span class="o">=</span> <span class="n">h_nodata</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">note</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;Values scaled as uint16 from 0 to pi radians;&quot;</span>
+            <span class="s2">&quot;convert back with np.pi / 65534 ;&quot;</span>
+            <span class="s2">&quot;65535 is nodata.&quot;</span>
+            <span class="s2">&quot;NOTE: angle is from zenith.&quot;</span>
+        <span class="p">)</span>
 
     <span class="k">return</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">load_horizon</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.load_horizon"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.load_horizon" title="Go to docs">[docs]</a></div>
-    <span class="n">horizon_files</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="s2">&quot;horizons.zarr&quot;</span><span class="p">)</span>
-    <span class="n">angle_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;horizon_</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_zarr</span><span class="p">(</span><span class="n">horizon_files</span><span class="p">,</span> <span class="n">decode_cf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">consolidated</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">da</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">angle_name</span><span class="p">]</span>
-    <span class="n">h_nodata</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;nodata&quot;</span><span class="p">]</span>
-    <span class="n">h_sf</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;scale_factor&quot;</span><span class="p">]</span>
-    <span class="n">h_scaled</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
-    <span class="n">h_scaled</span><span class="p">[</span><span class="n">h_scaled</span> <span class="o">==</span> <span class="n">h_nodata</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-    <span class="n">h</span> <span class="o">=</span> <span class="n">h_scaled</span> <span class="o">*</span> <span class="n">h_sf</span>
-    <span class="n">ds</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_horizon</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.load_horizon"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.load_horizon" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;load horizon netcdf in for skyview calc using scale factors defined in save.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">nc</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">set_auto_scale</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">h_nodata</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;horizon&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">nodata</span>
+        <span class="n">h_sf</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;horizon&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">scale_factor</span>
+        <span class="n">h_scaled</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;horizon&quot;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">h_scaled</span><span class="p">[</span><span class="n">h_scaled</span> <span class="o">==</span> <span class="n">h_nodata</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">h_scaled</span> <span class="o">*</span> <span class="n">h_sf</span>
     <span class="k">return</span> <span class="n">h</span>
 
 
@@ -6816,22 +6771,24 @@
     <span class="n">line_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nlines</span><span class="p">)</span>
     <span class="n">o_indices</span> <span class="o">=</span> <span class="n">line_indices</span> <span class="k">if</span> <span class="n">negflag</span> <span class="k">else</span> <span class="n">nlines</span> <span class="o">-</span> <span class="n">line_indices</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="n">offsets</span> <span class="o">=</span> <span class="n">o_indices</span> <span class="o">*</span> <span class="n">slope</span>
+
+    <span class="n">output_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">o_nsamps</span><span class="p">)</span>
+    <span class="n">source_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nsamps</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">fwd</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nlines</span><span class="p">):</span>
             <span class="n">offset</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="n">output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">o_nsamps</span><span class="p">)</span>
-            <span class="n">source</span> <span class="o">=</span> <span class="n">output</span> <span class="o">-</span> <span class="n">offset</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">output_grid</span> <span class="o">-</span> <span class="n">offset</span>
             <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">source</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">source</span> <span class="o">&lt;=</span> <span class="n">nsamps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">y_k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">source</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nsamps</span><span class="p">),</span> <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:])</span>
+            <span class="n">y_k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">source</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">source_grid</span><span class="p">,</span> <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:])</span>
             <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_k</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nlines</span><span class="p">):</span>
-            <span class="n">source</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nsamps</span><span class="p">)</span>
             <span class="n">offset</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="n">output</span> <span class="o">=</span> <span class="n">source</span> <span class="o">-</span> <span class="n">offset</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">source_grid</span> <span class="o">-</span> <span class="n">offset</span>
             <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">output</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">output</span> <span class="o">&lt;=</span> <span class="n">o_nsamps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">y_k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">o_nsamps</span><span class="p">),</span> <span class="n">output</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">source</span><span class="p">[</span><span class="n">mask</span><span class="p">]])</span>
+            <span class="n">y_k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">output_grid</span><span class="p">,</span> <span class="n">output</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">source_grid</span><span class="p">[</span><span class="n">mask</span><span class="p">]])</span>
             <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">y_k</span>
 
     <span class="k">return</span> <span class="n">b</span>

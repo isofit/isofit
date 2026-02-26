@@ -4428,17 +4428,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.utils.skyview.init_horizon" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        init_horizon
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#isofit.utils.skyview.save_horizon" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4844,17 +4833,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.utils.skyview.init_horizon" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        init_horizon
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#isofit.utils.skyview.save_horizon" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5202,12 +5180,7 @@ sky view is computed with n angles = 64 which in most cases is of sufficient acc
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.utils.skyview.horizon_worker" title="isofit.utils.skyview.horizon_worker">horizon_worker</a></span>
  <span class="mkapi-dash">&mdash;</span>
-Each worker gets an angle and is sent to this function to compute horizons, and save to a compressed/scaled zarr file.</p>
-</li>
-<li>
-<p><span class="mkapi-item-name"><a href="./#isofit.utils.skyview.init_horizon" title="isofit.utils.skyview.init_horizon">init_horizon</a></span>
- <span class="mkapi-dash">&mdash;</span>
-Creates a zarr dataset for the horizon computations.</p>
+Each worker gets an angle and is sent to this function to compute horizons, and save to a compressed/scaled netcdf file.</p>
 </li>
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.utils.skyview.save_horizon" title="isofit.utils.skyview.save_horizon">save_horizon</a></span>
@@ -5215,7 +5188,9 @@ Creates a zarr dataset for the horizon computations.</p>
 utility function to house metadata and information for saving horizon angles</p>
 </li>
 <li>
-<p><span class="mkapi-item-name"><a href="./#isofit.utils.skyview.load_horizon" title="isofit.utils.skyview.load_horizon">load_horizon</a></span></p>
+<p><span class="mkapi-item-name"><a href="./#isofit.utils.skyview.load_horizon" title="isofit.utils.skyview.load_horizon">load_horizon</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+load horizon netcdf in for skyview calc using scale factors defined in save.</p>
 </li>
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.utils.skyview.create_shadow_mask" title="isofit.utils.skyview.create_shadow_mask">create_shadow_mask</a></span>
@@ -5341,7 +5316,7 @@ n_angles : int, optional
     Number of angles used in horizon calculations (default is 64).
     As a reference, n=72 computes every 5deg, n=64 every 5.6deg, n=32 every 11.25deg, etc.<br />
 keep_horizon_files : bool, optional
-    Horizon angles are created in output_dir as a zarr data structure. False deletes files, and True keeps them. These angles are based from zenith.      <br />
+    Horizon angles are created in output_dir as netcdfs. False deletes files, and True keeps them. These angles are based from zenith.      <br />
 logging_level : str, optional
     Logging verbosity level (default is "INFO"); similar to apply_oe.
 log_file : str or None, optional
@@ -5380,21 +5355,7 @@ n_cores : int, optional
 <span class="mkapi-object-name"><a href="./#isofit.utils.skyview.horizon_worker" title="isofit.utils.skyview.horizon_worker">horizon_worker</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">angle</span><span class="mkapi-comma">, </span><span class="mkapi-arg">dem</span><span class="mkapi-comma">, </span><span class="mkapi-arg">spacing</span><span class="mkapi-comma">, </span><span class="mkapi-arg">aspect</span><span class="mkapi-comma">, </span><span class="mkapi-arg">tan_slope</span><span class="mkapi-comma">, </span><span class="mkapi-arg">output_directory</span><span class="mkapi-comma">, </span><span class="mkapi-arg">logging_level</span><span class="mkapi-comma">, </span><span class="mkapi-arg">log_file</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
-<p>Each worker gets an angle and is sent to this function to compute horizons, and save to a compressed/scaled zarr file.</p>
-</div>
-<p class="mkapi-object mkapi-page-source" id="isofit.utils.skyview.init_horizon">
-<span class="mkapi-object-link">
-
-
-<a href="../../../../src/isofit/utils/skyview/#isofit.utils.skyview.init_horizon" title="Go to source">source</a>
-<span class="mkapi-document-toggle" title="Toggle all docs">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-object-name"><a href="./#isofit.utils.skyview.init_horizon" title="isofit.utils.skyview.init_horizon">init_horizon</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">output_directory</span><span class="mkapi-comma">, </span><span class="mkapi-arg">angles</span><span class="mkapi-comma">, </span><span class="mkapi-arg">shape</span><span class="mkapi-paren">)</span></span>
-</p>
-<div class="mkapi-document">
-<p>Creates a zarr dataset for the horizon computations.</p>
+<p>Each worker gets an angle and is sent to this function to compute horizons, and save to a compressed/scaled netcdf file.</p>
 </div>
 <p class="mkapi-object mkapi-page-source" id="isofit.utils.skyview.save_horizon">
 <span class="mkapi-object-link">
@@ -5419,9 +5380,11 @@ n_cores : int, optional
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span>
-<span class="mkapi-object-name"><a href="./#isofit.utils.skyview.load_horizon" title="isofit.utils.skyview.load_horizon">load_horizon</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">output_directory</span><span class="mkapi-comma">, </span><span class="mkapi-arg">angle</span><span class="mkapi-paren">)</span></span>
+<span class="mkapi-object-name"><a href="./#isofit.utils.skyview.load_horizon" title="isofit.utils.skyview.load_horizon">load_horizon</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">file_path</span><span class="mkapi-paren">)</span></span>
 </p>
-<div class="mkapi-document"></div>
+<div class="mkapi-document">
+<p>load horizon netcdf in for skyview calc using scale factors defined in save.</p>
+</div>
 <p class="mkapi-object mkapi-page-source" id="isofit.utils.skyview.create_shadow_mask">
 <span class="mkapi-object-link">
 
