@@ -411,6 +411,8 @@ class FileResources(ResourceTracker):
 
         super().__init__(callback=self.write, **kwargs)
 
+        self._lock = threading.Lock()
+
         self.file = Path(file)
         self.file.parent.mkdir(exist_ok=True, parents=True)
 
@@ -435,19 +437,20 @@ class FileResources(ResourceTracker):
         """
         data = json.dumps(info) + "\n"
 
-        try:
-            self.io.write(data)
-            self.io.flush()
-        except ValueError:
-            # Raised when the file is closed, likely caused by the main process hitting an exception
-            # In those cases, just quietly stop the thread
-            self.stop()
-        except:
-            # Other reasons should report
-            logging.exception(
-                "Encountered unknown exception when attempting to write resources"
-            )
-            self.stop()
+        with self._lock:
+            try:
+                self.io.write(data)
+                self.io.flush()
+            except ValueError:
+                # Raised when the file is closed, likely caused by the main process hitting an exception
+                # In those cases, just quietly stop the thread
+                self.stop()
+            except:
+                # Other reasons should report
+                logging.exception(
+                    "Encountered unknown exception when attempting to write resources"
+                )
+                self.stop()
 
 
 def stream(file: str, sleep: float = 0.2) -> dict:
