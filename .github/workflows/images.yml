@@ -1,0 +1,117 @@
+name: Generate Plots
+
+on:
+  workflow_call:
+    inputs:
+      rebuild-cache:
+        required: true
+        type: boolean
+    secrets:
+      RESULTS_REPO:
+        description: 'GH PAT for the results repo'
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  spectra:
+    runs-on: ubuntu-latest
+    env:
+      OUTPUT: results/pr-${{ github.event.pull_request.number }}
+    steps:
+      - name: Cached Extras
+        id: cache-extras
+        uses: actions/cache/restore@v4
+        with:
+          path: .isofit
+          key: cache-extras${{ inputs.rebuild-cache && format('-{0}', github.run_id) || '' }}
+          fail-on-cache-miss: true
+          enableCrossOsArchive: true
+
+      - name: Move .isofit
+        shell: bash
+        run: mv .isofit ~/.isofit
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.25"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Checkout tests repo
+        uses: actions/checkout@v6
+        with:
+          repository: jammont/isofit-PR-tests
+          token: ${{ secrets.RESULTS_REPO }}
+          path: results
+
+      - name: Prepare output
+        run: |
+          rm -rf $OUTPUT
+          mkdir -p $OUTPUT
+
+      - name: Execute tests
+        run: |
+          source .venv/bin/activate
+          RUN=$(isofit path examples)/image_cube/small/
+          $RUN/default.sh --log_file $OUTPUT/default.log --resources
+
+          isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png
+          isoplots resources $OUTPUT/default.resources.jsonl -o $OUTPUT/default.resources.html -l $OUTPUT/default.log --relative --debug
+
+      - name: Commit and push results
+        run: |
+          cd results
+          git add .
+          git commit -m "Add results for PR #${{ github.event.pull_request.number }}" || echo "No changes"
+          git push
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            # const url = `https://github.com/isofit/results/tree/main/results/pr-${prNumber}`;
+            const url = `https://github.com/jammont/isofit-PR-tests/tree/main/results/pr-${prNumber}`;
+            const marker = "<!-- results-comment-marker -->";
+            const body = `${marker}📊 Generated results available here:\n\n${url}`;
+
+            // Get existing comments
+            const comments = await github.rest.issues.listComments({
+              context.repo.owner,
+              context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            // Check if our marker already exists
+            const existing = comments.data.find(comment =>
+              comment.body.includes(marker)
+            );
+
+            if (!existing) {
+              await github.rest.issues.createComment({
+                context.repo.owner,
+                context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            } else {
+              console.log("Results comment already exists. Skipping.");
+            }
