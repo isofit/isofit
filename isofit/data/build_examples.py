@@ -18,6 +18,9 @@ Bash = sns(
 
 # This is a generated example script to illustrate how to execute this example via the command line
 
+# Remove old output directories, if they exist
+rm -rf {path}/output {path}/lut_h2o {path}/lut_full
+
 # These are important to set before executing
 export MKL_NUM_THREADS=1
 export OMP_NUM_THREADS=1
@@ -41,9 +44,11 @@ Pyth = sns(
 
 # Remove old output directories, if they exist
 import shutil
+from pathlib import Path
 
+path = Path("{path}")
 for d in ["output", "lut_h2o", "lut_full"]:
-    shutil.rmtree(d, ignore_errors=True)
+    shutil.rmtree(path / d, ignore_errors=True)
 
 # These are important to set before executing
 import os
@@ -76,7 +81,7 @@ OEScript = sns(
 # This is a generated example script to illustrate how to execute this example via the command line
 
 # Remove old output directories, if they exist
-rm -rf output lut_h2o lut_full
+rm -rf {path}/output {path}/lut_h2o {path}/lut_full
 
 # These are important to set before executing
 export MKL_NUM_THREADS=1
@@ -214,7 +219,7 @@ class IsofitExample(Example):
             pyth.append(Pyth.command.format(**fmt))
 
         # Shared arguments for both scripts
-        args = {"surface_name": surface.name, "surface": surface}
+        args = {"surface_name": surface.name, "surface": surface, "path": path}
 
         # Write bash script
         args["commands"] = "\n\n".join(bash)
@@ -252,7 +257,7 @@ class ApplyOEExample(Example):
             name = arg.name.split(".")[0]
 
             file = path / f"{name}.sh"
-            tmpl = OEScript.template.format(args=args)
+            tmpl = OEScript.template.format(args=args, path=path)
 
             createScript(file, tmpl)
 
