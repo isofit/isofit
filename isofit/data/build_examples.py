@@ -219,7 +219,7 @@ class IsofitExample(Example):
             pyth.append(Pyth.command.format(**fmt))
 
         # Shared arguments for both scripts
-        args = {"surface_name": surface.name, "surface": surface, "path": path}
+        args = {"surface_name": surface.name, "surface": surface, "path": self.path}
 
         # Write bash script
         args["commands"] = "\n\n".join(bash)
