@@ -30,6 +30,7 @@ import numpy as np
 # sc Adding in xarray for non-gauss SRF file io
 import xarray as xr
 import xxhash
+from numba import float64, int32, njit
 from scipy.interpolate import RegularGridInterpolator
 
 from isofit.core import units
@@ -41,6 +42,105 @@ eps = 1e-5
 Cache = {"stats": {}}
 
 
+@njit(inline="always")
+def fast_searchsorted(array, target):
+    """
+    Numba-optimized binary search to find the insertion index of a target value.
+    Same as np.searchsorted(...,side='left'), but opptimized
+
+    Args:
+        array: 1D array of floats, representing a sorted grid dimension (must be
+               monotonically increasing)
+        target: float value to locate within the grid dimension
+
+    Returns:
+        low: integer index indicating the first element greater than or equal
+             to the target.
+    """
+    low = 0
+    high = len(array) - 1
+    while low < high:
+        mid = (low + high) // 2
+        if array[mid] < target:
+            low = mid + 1
+        else:
+            high = mid
+    return low
+
+
+@njit(cache=True)
+def _numba_mlg_kernel(point, grid_tuples, data):
+    """
+    Numba-accelerated n-dimensional multilinear interpolator kernel. Performs
+    linear interpolation across a multi-dimensional look-up table for a single
+    point, outputting a vector of values.
+
+    Args:
+        point: 1D array of floats, representing the coordinate to interpolate
+               within the n-dimensional grid.
+        grid_tuples: Tuple of 1D arrays of floats, where each array defines the
+                     sorted grid points for a single dimension.
+        data: N+1 dimensional array of floats, where the first N dimensions
+              correspond to grid_tuples and the last dimension contains the
+              output vector (channels).
+
+    Returns:
+        result: 1D array of floats, the interpolated output vector of length
+                equal to data.shape[-1].
+    """
+    dims = len(point)
+    low_indices = np.zeros(dims, dtype=int32)
+    deltas = np.zeros(dims, dtype=float64)
+
+    for i in range(dims):
+        grid = grid_tuples[i]
+        p = point[i]
+
+        # Clamp to grid bounds
+        if p <= grid[0]:
+            low_indices[i] = 0
+            deltas[i] = 0.0
+        elif p >= grid[-1]:
+            low_indices[i] = len(grid) - 2
+            deltas[i] = 1.0
+        else:
+            idx = fast_searchsorted(grid, p) - 1
+            if idx < 0:
+                idx = 0
+            low_indices[i] = idx
+            deltas[i] = (p - grid[idx]) / (grid[idx + 1] - grid[idx])
+
+    num_channels = data.shape[-1]
+    num_corners = 1 << dims
+    result = np.zeros(num_channels)
+
+    # Manual stride calculation for flat indexing
+    strides = np.zeros(dims + 1, dtype=int32)
+    current_stride = 1
+    for i in range(dims, -1, -1):
+        strides[i] = current_stride
+        current_stride *= data.shape[i]
+
+    flat_data = data.ravel()
+
+    for c in range(num_corners):
+        weight = 1.0
+        flat_idx = 0
+        for d in range(dims):
+            if (c >> d) & 1:
+                weight *= deltas[d]
+                flat_idx += (low_indices[d] + 1) * strides[d]
+            else:
+                weight *= 1.0 - deltas[d]
+                flat_idx += low_indices[d] * strides[d]
+
+        start = flat_idx
+        end = start + num_channels
+        result += flat_data[start:end] * weight
+
+    return result
+
+
 class VectorInterpolator:
     """Linear look up table interpolator.  Support linear interpolation through radial space by expanding the look
     up tables with sin and cos dimensions.
@@ -49,14 +149,15 @@ class VectorInterpolator:
         grid_input: list of lists of floats, indicating the gridpoint elements in each grid dimension
         data_input: n dimensional array of radiative transfer engine outputs (each dimension size corresponds to the
                     given grid_input list length, with the last dimensions equal to the number of sensor channels)
-        version: version to use: 'rg' for scipy RegularGridInterpolator, 'mlg' for multilinear grid interpolator
+        version: version to use: 'rg' for scipy RegularGridInterpolator, 'mlg' for multilinear grid interpolator,
+                 'mlg_numba' for numba-accelerated multilinear grid interpolator
     """
 
     def __init__(
         self,
         grid_input: List[List[float]],
         data_input: np.array,
-        version="mlg",
+        version="mlg_numba",
     ):
         # Determine if this a singular unique value, if so just return that directly
         val = data_input[(0,) * data_input.ndim]
@@ -97,6 +198,19 @@ class VectorInterpolator:
                 t[1:] - t[:-1] for t in self.gridtuples
             ]  # binwidth arrays for each dimension
             self.maxbaseinds = np.array([len(t) - 1 for t in self.gridtuples])
+
+        elif version == "mlg_numba":
+            self.method = 3
+            # Need to keep types picklable...better performance with numba lists,
+            # but it doesn't play nicely with ray.
+            self.grid_tuples = tuple(
+                [np.array(g, dtype=np.float64) for g in grid_input]
+            )
+            self.gridarrays = data_input.astype(np.float64)
+
+            # run a warm-up for numba
+            dummy_point = np.array([g[0] for g in self.grid_tuples], dtype=np.float64)
+            _ = _numba_mlg_kernel(dummy_point, self.grid_tuples, self.gridarrays)
 
         else:
             raise AttributeError(f"Unknown interpolator version: {version!r}")
@@ -197,6 +311,8 @@ class VectorInterpolator:
             return self._interpolate(*args, **kwargs)
         elif self.method == 2:
             return self._multilinear_grid(*args, **kwargs)
+        if self.method == 3:
+            return _numba_mlg_kernel(args[0], self.grid_tuples, self.gridarrays)
 
 
 def load_wavelen(wavelength_file: str):
