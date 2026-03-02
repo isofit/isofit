@@ -19,7 +19,8 @@ jobs:
   spectra:
     runs-on: ubuntu-latest
     env:
-      OUTPUT: results/pr-${{ github.event.pull_request.number }}
+      # OUTPUT: results/pr-${{ github.event.pull_request.number }}
+      OUTPUT: results/dev
     steps:
       - name: Cached Extras
         id: cache-extras
@@ -62,13 +63,11 @@ jobs:
           token: ${{ secrets.RESULTS_REPO }}
           path: results
 
-      - name: Prepare output
-        run: |
-          rm -rf $OUTPUT
-          mkdir -p $OUTPUT
-
       - name: Execute tests
         run: |
+          mkdir -p $OUTPUT
+          rm -rf $OUTPUT/*
+
           source .venv/bin/activate
           RUN=$(isofit path examples)/image_cube/small/
           $RUN/default.sh --log_file $OUTPUT/default.log --resources
@@ -76,42 +75,66 @@ jobs:
           isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png
           isoplots resources $OUTPUT/default.resources.jsonl -o $OUTPUT/default.resources.html -l $OUTPUT/default.log --relative --debug
 
-      - name: Commit and push results
-        run: |
-          cd results
-          git add .
-          git commit -m "Add results for PR #${{ github.event.pull_request.number }}" || echo "No changes"
-          git push
+      - name: Create PR in Tests Results Repo
+        id: cpr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.RESULTS_REPO }}
+          path: results
+          commit-message: "Compare results for PR ${{ github.event.client_payload.pr_branch }}"
+          branch: "${{ github.event.client_payload.pr_branch }}"
+          base: main
+          title: "Results for PR ${{ github.event.client_payload.pr_branch }}"
+          body: "Automatically generated results from PR branch `${{ github.event.client_payload.pr_branch }}`."
 
-      - name: Comment on PR
+      - name: Comment on original PR
         uses: actions/github-script@v7
+        env:
+          RESULTS_PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
+          SOURCE_REPO: ${{ github.event.client_payload.pr_repo }}
+          SOURCE_PR_NUMBER: ${{ github.event.client_payload.pr_number }}
+          SOURCE_SHA: ${{ github.event.client_payload.sha }}
         with:
           script: |
-            const prNumber = context.payload.pull_request.number;
-            # const url = `https://github.com/isofit/results/tree/main/results/pr-${prNumber}`;
-            const url = `https://github.com/jammont/isofit-PR-tests/tree/main/results/pr-${prNumber}`;
             const marker = "<!-- results-comment-marker -->";
-            const body = `${marker}📊 Generated results available here:\n\n${url}`;
+
+            const resultsUrl = process.env.RESULTS_PR_URL;
+            const prNumber = Number(process.env.SOURCE_PR_NUMBER);
+            const sha = process.env.SOURCE_SHA;
+
+            const [owner, repo] = process.env.SOURCE_REPO.split("/");
+
+            const body =
+              `${marker}📊 Generated results:\n\nURL: ${resultsUrl}\nSHA: \`${sha}\``;
 
             // Get existing comments
-            const comments = await github.rest.issues.listComments({
-              context.repo.owner,
-              context.repo.repo,
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
               issue_number: prNumber,
             });
 
-            // Check if our marker already exists
-            const existing = comments.data.find(comment =>
-              comment.body.includes(marker)
+            // Look for an existing bot comment
+            const existing = comments.find(comment =>
+              comment.body && comment.body.includes(marker)
             );
 
-            if (!existing) {
+            if (existing) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+              console.log("Updated existing results comment.");
+            } else {
+              // Create new comment
               await github.rest.issues.createComment({
-                context.repo.owner,
-                context.repo.repo,
+                owner,
+                repo,
                 issue_number: prNumber,
                 body,
               });
-            } else {
-              console.log("Results comment already exists. Skipping.");
+              console.log("Created results comment.");
             }
