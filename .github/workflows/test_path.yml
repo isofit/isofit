@@ -47,7 +47,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Print concurrency group
-        run: echo '${{ github.ref }}'
+        run: echo '${{ github.event.pull_request.head.ref }}'
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5

@@ -24,7 +24,7 @@ on:
     paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/workflows/*"]
 
 concurrency:
-  group: ${{ github.ref }}
+  group: ${{ github.event.pull_request.head.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -38,7 +38,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
       - name: Print concurrency group
-        run: echo '${{ github.workflow }}-${{ github.ref }}'
+        run: echo '${{ github.event.pull_request.head.ref }}'
       - uses: psf/black@stable
         with:
           src: "./isofit"
