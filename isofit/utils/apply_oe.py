@@ -19,6 +19,7 @@ from spectral.io import envi
 import isofit.utils.template_construction as tmpl
 from isofit.core import isofit, units
 from isofit.core.common import envi_header
+from isofit.data import env
 from isofit.debug.resource_tracker import FileResources
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
@@ -72,6 +73,7 @@ def apply_oe(
     working_directory,
     sensor,
     surface_path,
+    engine_name="sRTMnet",
     copy_input_files=False,
     modtran_path=None,
     wavelength_path=None,
@@ -139,6 +141,8 @@ def apply_oe(
         settings
     surface_path : str
         Path to surface model or json dict of surface model configuration
+    engine_name : str, default=sRTMnet
+        Name of the RT engine to use for radiative transfer simulations
     copy_input_files : bool, default=False
         Flag to choose to copy input_radiance, input_loc, and input_obs locally into
         the working_directory
@@ -268,6 +272,27 @@ def apply_oe(
     use_superpixels = empirical_line or analytical_line
     use_multisurface = True if classify_multisurface or surface_class_file else False
 
+    # Logic to match engine paths with engine names
+    # This becomes more complicated with backward compatability
+    # TODO Could abstract this into template construction
+    # TODO collapse modtran - emulator paths into single engine path when we eliminate list-based rt_engines
+    if engine_name.lower() == "srtmnet" and not emulator_base:
+        emulator_base = str(env.path("srtmnet", key="srtmnet.file"))
+
+    if engine_name.lower() == "modtran" and not modtran_path:
+        modtran_path = os.getenv("MODTRAN_DIR", env.modtran)
+
+    if emulator_base and emulator_base.endswith(".jld2"):
+        engine_name = "KernelFlowsGP"
+
+    if engine_name.lower() == "kernelflowsgp" and not emulator_base:
+        raise ValueError("emulator_base must be specified if using Kernel Flows GP")
+
+    if engine_name.lower() == "libradtran" and not modtran_path:
+        modtran_path = os.getenv("LIBRADTRAN_DIR", env.libradtran)
+        if not modtran_path:
+            raise ValueError("No LibRadTran installation found. Please set .ini.")
+
     # Determine if we run in multipart-transmittance (4c) mode
     if emulator_base is not None:
         if emulator_base.endswith(".jld2"):
@@ -284,7 +309,6 @@ def apply_oe(
 
     else:
         # This is the MODTRAN case.
-        # Do we want to enable the 4c mode by default?
         multipart_transmittance = True
 
     if sensor not in SUPPORTED_SENSORS:
@@ -409,6 +433,7 @@ def apply_oe(
         working_directory=working_directory,
         copy_input_files=copy_input_files,
         modtran_path=modtran_path,
+        emulator_base=emulator_base,
         rdn_factors_path=rdn_factors_path,
         model_discrepancy_path=model_discrepancy_path,
         aerosol_climatology_path=aerosol_climatology_path,
@@ -646,10 +671,10 @@ def apply_oe(
 
     config_params = {
         "paths": paths,
+        "engine_name": engine_name,
         "n_cores": n_cores,
         "use_superpixels": use_superpixels,
         "surface_category": surface_category,
-        "emulator_base": emulator_base,
         "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
         "dn_uncertainty_file": dn_uncertainty_file,
         "prebuilt_lut_path": prebuilt_lut,
@@ -675,7 +700,7 @@ def apply_oe(
             ihaze_type="AER_NONE",
         )
 
-        if emulator_base is None and prebuilt_lut is None:
+        if engine_name.lower() == "modtran" and prebuilt_lut is None:
             max_water = tmpl.calc_modtran_max_water(paths)
         else:
             max_water = 6
@@ -895,6 +920,7 @@ def apply_oe(
 @click.argument("working_directory")
 @click.argument("sensor")
 @click.option("--surface_path", "-sp", required=True, type=str)
+@click.option("--engine_name", default="sRTMnet")
 @click.option("--copy_input_files", is_flag=True, default=False)
 @click.option("--modtran_path")
 @click.option("--wavelength_path")
