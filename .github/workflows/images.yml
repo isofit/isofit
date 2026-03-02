@@ -95,7 +95,6 @@ jobs:
           SOURCE_PR_NUMBER: ${{ github.event.client_payload.pr_number }}
           SOURCE_SHA: ${{ github.event.client_payload.sha }}
         with:
-          github-token: ${{ secrets.R_PAT }}
           script: |
             const marker = "<!-- results-comment-marker -->";
 
