@@ -774,7 +774,7 @@ def build_config(
         loc_input_path,
         obs_input_path,
         svf_input_path,
-        paths.rdn_factors_path
+        paths.rdn_factors_path,
     )
     output_config = make_output_config(
         state_output_path,
