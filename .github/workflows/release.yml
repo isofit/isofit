@@ -8,6 +8,7 @@ jobs:
   pypi:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
