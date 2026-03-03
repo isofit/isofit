@@ -34,14 +34,16 @@ def approx_pixel_size(loc, nodata_value=-9999):
     """Average, approximate pixel size assuming planar locally (units in m)."""
     R = 6371000.0
 
-    lat = np.radians(loc[..., 0])
-    lon = np.radians(loc[..., 1])
     valid_pixels = np.logical_not(np.any(loc == nodata_value, axis=2))
 
-    # NOTE: assuming the alternative is something in meters
-    is_in_lat_lon = np.max(np.abs(loc[valid_pixels])) <= 180
+    # determine if lat/lon or N/E
+    sample_coords = loc[np.where(np.all(loc != nodata_value, axis=-1))]
+    is_lat_lon = np.nanmax(np.abs(sample_coords[0, :2])) <= 180
 
-    if is_in_lat_lon:
+    if is_lat_lon:
+        lon = np.radians(loc[..., 0])
+        lat = np.radians(loc[..., 1])
+
         dx = R * np.sqrt(
             (lat[:, 1:] - lat[:, :-1]) ** 2
             + (np.cos(lat[:, :-1]) * (lon[:, 1:] - lon[:, :-1])) ** 2
@@ -51,8 +53,8 @@ def approx_pixel_size(loc, nodata_value=-9999):
             + (np.cos(lat[:-1, :]) * (lon[1:, :] - lon[:-1, :])) ** 2
         )
     else:
-        dx = np.sqrt(np.sum(np.diff(loc, axis=1) ** 2, axis=-1))
-        dy = np.sqrt(np.sum(np.diff(loc, axis=0) ** 2, axis=-1))
+        dx = np.sqrt(np.sum(np.diff(loc[..., :2], axis=1) ** 2, axis=-1))
+        dy = np.sqrt(np.sum(np.diff(loc[..., :2], axis=0) ** 2, axis=-1))
 
     pix_size = 0.5 * (
         np.nanmean(dx[valid_pixels[:, 1:]]) + np.nanmean(dy[valid_pixels[1:, :]])
@@ -176,9 +178,9 @@ def background_reflectance(
         bg_rfl[:, :, :] = np.squeeze(rfl_samples[labels, :])
 
     # For now, this applies a uniform window average based on adjacency range.
-    kernel_radius = int(np.ceil(np.max(adj_range) / pixel_size))
+    kernel_diameter = int(np.ceil(2 * np.max(adj_range) / pixel_size + 1))
     bg_rfl[:, :, :] = uniform_filter(
-        bg_rfl, size=(kernel_radius, kernel_radius, 1), mode="nearest"
+        bg_rfl, size=(kernel_diameter, kernel_diameter, 1), mode="nearest"
     )
 
     del bg_rfl, loc

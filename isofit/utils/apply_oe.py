@@ -822,6 +822,11 @@ def apply_oe(
             config_params["co2_lut_grid"] = lut_params.co2_range
             config_params["retrieve_co2"] = True
 
+        # Super pixels set to False now after presolve if not using AOE
+        # This is here to allow presolve and bg_rfl to use superpixel speed up.
+        if not (analytical_line or empirical_line):
+            config_params["use_superpixels"] = False
+
         tmpl.build_config(
             h2o_lut_grid=h2o_lut_grid,
             **config_params,
