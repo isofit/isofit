@@ -1,0 +1,44 @@
+name: Version Check
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.25"
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Install dependencies
+        run: |
+          uv sync
+      - name: Check version
+        run: |
+          # Module must report "[x]" to be detected
+          SUMMARY="$(uv run isofit dev check-version)"
+
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if echo "$SUMMARY" | grep "\[x]"; then
+            MSG="The version tag in the pyproject.toml may not have been updated, please double check before merging"
+
+            echo ":x: $MSG" >> $GITHUB_STEP_SUMMARY
+
+            echo "$SUMMARY"
+            echo "::error::$MSG"
+            exit 1
+          else
+            MSG="Version tag is updated!"
+            echo ":white_check_mark: $MSG" >> $GITHUB_STEP_SUMMARY
+            echo "$MSG"
+          fi

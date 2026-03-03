@@ -29,11 +29,9 @@ $ pytest -m examples
 $ pytest -m slow
 ```
 
-<blockquote style="border-left: 5px solid lightblue; padding: 0.5em 1em; margin: 1em 0;" markdown="1">
+???+ note
 
-:information_source: You may see an <span style="color: yellow; background: black">x</span> for some test cases. These are *expected* failures and are considered as a **pass**
-
-</blockquote>
+    You may see an <span style="color: yellow; background: black">x</span> for some test cases. These are *expected* failures and are considered as a **pass**
 
 ## Examples
 
@@ -65,11 +63,9 @@ Which can then be visualized:
 $ snakeviz profile.dat
 ```
 
-<blockquote style="border-left: 5px solid yellow; padding: 0.5em 1em; margin: 1em 0;" markdown="1">
+???+ warning
 
-:warning: cProfile does not capture Ray processes well. ISOFIT has a ray wrapper to circumvent it and force the entire system into serial by setting the environment variable `ISOFIT_DEBUG=1`.
-
-</blockquote>
+    cProfile does not capture Ray processes well. ISOFIT has a ray wrapper to circumvent it and force the entire system into serial by setting the environment variable `ISOFIT_DEBUG=1`.
 
 ### Outputs and Analysis
 

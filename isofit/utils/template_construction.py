@@ -126,6 +126,10 @@ class Pathnames:
         self.state_working_path = abspath(
             join(self.output_directory, rdn_fname.replace("_rdn", "_state"))
         )
+        self.h2o_working_path = abspath(
+            join(self.output_directory, rdn_fname.replace("_rdn", "_h2o"))
+        )
+
         self.surface_template_path = abspath(join(self.data_directory, "surface.mat"))
         self.surface_working_paths = {}
 
@@ -703,7 +707,6 @@ def build_config(
     multipart_transmittance: bool = False,
     surface_mapping: dict = None,
     retrieve_co2: bool = False,
-    eof_path: str = None,
     presolve: bool = False,
     terrain_style: str = "flat",
     cos_i_min: float = 0.3,
@@ -737,7 +740,6 @@ def build_config(
         multipart_transmittance:              flag to indicate whether a 4-component transmittance model is to be used
         surface_mapping:                      optional object to pass mapping between surface class and surface model
         retrieve_co2:                         flag to include CO2 in lut and retrieval
-        eof_path:                             path to the EOF file
         presolve:                             set this up as a presolve configuration
         terrain_style:                        style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
         cos_i_min:                            minimum cosine of incidence angle to allow isofit to use in the forward model
@@ -871,7 +873,11 @@ def build_config(
 
     for key, sigma, scale in zip(statekeys, statesigmas, statescale):
         if key in lut_grid:
-            grid = lut_grid[key]
+            grid = (
+                lut_grid[key]
+                if isinstance(lut_grid[key], list)
+                else list(lut_grid[key].values())
+            )
             radiative_transfer_config["statevector"][key] = {
                 "bounds": [grid[0], grid[-1]],
                 "scale": scale,

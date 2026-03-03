@@ -55,7 +55,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: jammont/isofit
-          readme-filepath: docs/source/custom/docker.md
+          readme-filepath: docs/docker.md
 
   slim:
     runs-on: ubuntu-latest

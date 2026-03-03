@@ -364,6 +364,7 @@ def multicomponent_classification(
             "data type": 4,
             "file type": "ENVI Standard",
             "byte order": 0,
+            "band names": ["Classification"],
         },
         out_file,
         (rdns[0], 1, rdns[1]),
@@ -371,7 +372,6 @@ def multicomponent_classification(
         samples=rdn_meta["samples"],
         interleave="bil",
         bands="1",
-        band_names=["Classification"],
         description=("Per-pixel multicomponent classification"),
     )
 

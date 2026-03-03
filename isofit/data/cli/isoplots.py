@@ -3,6 +3,8 @@ Downloads the extra ISOFIT plotting utilities from the repository https://github
 """
 
 import importlib.metadata
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -30,7 +32,14 @@ def install(path=None):
 
     print(f"Installing {path}")
     try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", path])
+        # Attempt with pip
+        command = [sys.executable, "-m", "pip", "install", "-e", path]
+
+        # uv venv
+        if os.environ.get("VIRTUAL_ENV") and (uv := shutil.which("uv")):
+            command = [uv, "pip", "install", "-e", path]
+
+        subprocess.check_call(command)
     except:
         print(f"Failed to install isoplots, you may need to do so manually: {path}")
 

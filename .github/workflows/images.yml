@@ -1,0 +1,140 @@
+name: Generate Plots
+
+on:
+  workflow_call:
+    inputs:
+      rebuild-cache:
+        required: true
+        type: boolean
+    secrets:
+      RESULTS_REPO:
+        description: 'GH PAT for the results repo'
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  spectra:
+    runs-on: ubuntu-latest
+    env:
+      # OUTPUT: results/pr-${{ github.event.pull_request.number }}
+      OUTPUT: results/dev
+    steps:
+      - name: Cached Extras
+        id: cache-extras
+        uses: actions/cache/restore@v4
+        with:
+          path: .isofit
+          key: cache-extras${{ inputs.rebuild-cache && format('-{0}', github.run_id) || '' }}
+          fail-on-cache-miss: true
+          enableCrossOsArchive: true
+
+      - name: Move .isofit
+        shell: bash
+        run: mv .isofit ~/.isofit
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.25"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Checkout tests repo
+        uses: actions/checkout@v6
+        with:
+          repository: jammont/isofit-PR-tests
+          token: ${{ secrets.RESULTS_REPO }}
+          path: results
+
+      - name: Execute tests
+        run: |
+          mkdir -p $OUTPUT
+          rm -rf $OUTPUT/*
+
+          source .venv/bin/activate
+          RUN=$(isofit path examples)/image_cube/small/
+          $RUN/default.sh --log_file $OUTPUT/default.log --resources
+
+          isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png
+          isoplots resources $OUTPUT/default.resources.jsonl -o $OUTPUT/default.resources.html -l $OUTPUT/default.log --relative --debug
+
+      - name: Create PR in Tests Results Repo
+        id: cpr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.RESULTS_REPO }}
+          path: results
+          commit-message: "Compare results for PR ${{ github.event.client_payload.pr_branch }}"
+          branch: "${{ github.event.client_payload.pr_branch }}"
+          base: main
+          title: "Results for PR ${{ github.event.client_payload.pr_branch }}"
+          body: "Automatically generated results from PR branch `${{ github.event.client_payload.pr_branch }}`."
+
+      - name: Comment on original PR
+        uses: actions/github-script@v7
+        env:
+          RESULTS_PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
+          SOURCE_REPO: ${{ github.event.client_payload.pr_repo }}
+          SOURCE_PR_NUMBER: ${{ github.event.client_payload.pr_number }}
+          SOURCE_SHA: ${{ github.event.client_payload.sha }}
+        with:
+          script: |
+            const marker = "<!-- results-comment-marker -->";
+
+            const resultsUrl = process.env.RESULTS_PR_URL;
+            const prNumber = Number(process.env.SOURCE_PR_NUMBER);
+            const sha = process.env.SOURCE_SHA;
+
+            const [owner, repo] = process.env.SOURCE_REPO.split("/");
+
+            const body =
+              `${marker}📊 Generated results:\n\nURL: ${resultsUrl}\nSHA: \`${sha}\``;
+
+            // Get existing comments
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: prNumber,
+            });
+
+            // Look for an existing bot comment
+            const existing = comments.find(comment =>
+              comment.body && comment.body.includes(marker)
+            );
+
+            if (existing) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+              console.log("Updated existing results comment.");
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body,
+              });
+              console.log("Created results comment.");
+            }
