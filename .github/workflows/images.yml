@@ -54,7 +54,9 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync
+        run: |
+          uv sync
+          uv add $(uv run isofit path plots)
 
       - name: Checkout tests repo
         uses: actions/checkout@v6
@@ -72,7 +74,7 @@ jobs:
           RUN=$(isofit path examples)/image_cube/small/
           $RUN/default.sh --log_file $OUTPUT/default.log --resources
 
-          isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png
+          isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png -p 2 4 -p 8 2 -p 5 6
           isoplots resources $OUTPUT/default.resources.jsonl -o $OUTPUT/default.resources.html -l $OUTPUT/default.log --relative --debug
 
       - name: Create PR in Tests Results Repo
