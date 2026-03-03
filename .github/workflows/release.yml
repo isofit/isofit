@@ -27,8 +27,8 @@ jobs:
         run: |
           VERSION=$(uv run isofit --version)
           echo "Tag: $TAG_NAME"
-          echo "Installed version: $VERSION"
-          if [ "$TAG_NAME" != "$VERSION" ]; then
+          echo "Installed version: v$VERSION"
+          if [ "$TAG_NAME" != "v$VERSION" ]; then
             echo "::error::Tag version does not match installed version"
             exit 1
           fi
