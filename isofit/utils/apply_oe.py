@@ -269,7 +269,7 @@ def apply_oe(
     N. Carmon, and R.O. Green. Generalized radiative transfer emulation for imaging spectroscopy reflectance
     retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
     """
-    use_superpixels = empirical_line or analytical_line
+    use_superpixels = empirical_line or analytical_line or use_background_rfl
     use_multisurface = True if classify_multisurface or surface_class_file else False
 
     # Determine if we run in multipart-transmittance (4c) mode
