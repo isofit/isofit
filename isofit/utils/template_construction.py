@@ -562,6 +562,9 @@ def check_surface_model(
         wl: instrument center wavelengths
         surface_wavelength_path: path to wavelength file
     """
+    if surface_category == "lut_surface":
+        return {surface_category: surface_path}
+
     if os.path.isfile(surface_path):
         if surface_path.endswith(".mat"):
             # check wavelength grid of surface model if provided
@@ -1871,9 +1874,16 @@ def make_surface_config(
 
     # Single surface run
     else:
-        surface_config_dict["surface_file"] = paths.surface_working_paths[
-            surface_category
-        ]
-        surface_config_dict["surface_category"] = surface_category
+        # For now, the LUTSurface is just for single surface run
+        if surface_category == "lut_surface":
+            surface_config_dict["surface_file"] = paths.surface_path
+            surface_config_dict["surface_category"] = surface_category
+            surface_config_dict["wavelength_file"] = paths.wavelength_path
+        else:
+
+            surface_config_dict["surface_file"] = paths.surface_working_paths[
+                surface_category
+            ]
+            surface_config_dict["surface_category"] = surface_category
 
     return surface_config_dict
