@@ -516,6 +516,12 @@ class IO:
         if "skyview_factor_file" not in data or data["skyview_factor_file"] is None:
             data["skyview_factor_file"] = 1.0
 
+        if (
+            "background_reflectance_file" not in data
+            or data["background_reflectance_file"] is None
+        ):
+            data["background_reflectance_file"] = None
+
         # We build the geometry object for this spectrum.  For files not
         # specified in the input configuration block, the associated entries
         # will be 'None'. The Geometry object will use reasonable defaults.

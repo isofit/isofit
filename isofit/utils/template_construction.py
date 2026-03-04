@@ -59,6 +59,7 @@ class Pathnames:
         skyview_factor=None,
         subs: bool = False,
         classify_multisurface: bool = False,
+        use_background_rfl: bool = True,
         eof_path=None,
     ):
         # Determine FID based on sensor name
@@ -131,6 +132,17 @@ class Pathnames:
 
         self.surface_template_path = abspath(join(self.data_directory, "surface.mat"))
         self.surface_working_paths = {}
+
+        if use_background_rfl:
+            self.bgrfl_working_path = abspath(
+                join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl"))
+            )
+            self.atm_presolve = abspath(
+                join(self.output_directory, rdn_fname.replace("_rdn", "_atm_presolve"))
+            )
+        else:
+            self.bgrfl_working_path = None
+            self.atm_presolve = None
 
         if copy_input_files is True:
             self.radiance_working_path = abspath(
@@ -216,6 +228,13 @@ class Pathnames:
         self.svf_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_svf")
         )
+
+        if use_background_rfl:
+            self.bgrfl_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_bgrfl")
+            )
+        else:
+            self.bgrfl_subs_path = None
 
         self.rdn_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_rdn")
@@ -920,6 +939,10 @@ def build_config(
             output["estimated_state_file"] = paths.state_subs_path
             output["posterior_uncertainty_file"] = paths.uncert_subs_path
             output["estimated_reflectance_file"] = paths.rfl_subs_path
+            if paths.bgrfl_subs_path:
+                isofit_config_modtran["input"][
+                    "background_reflectance_file"
+                ] = paths.bgrfl_subs_path
     else:
         input["measured_radiance_file"] = paths.radiance_working_path
         input["loc_file"] = paths.loc_working_path
@@ -933,6 +956,10 @@ def build_config(
             output["posterior_uncertainty_file"] = paths.uncert_working_path
             output["estimated_reflectance_file"] = paths.rfl_working_path
             output["estimated_state_file"] = paths.state_working_path
+            if paths.bgrfl_working_path:
+                isofit_config_modtran["input"][
+                    "background_reflectance_file"
+                ] = paths.bgrfl_working_path
     isofit_config_modtran["output"].update(output)
     isofit_config_modtran["input"].update(input)
 
