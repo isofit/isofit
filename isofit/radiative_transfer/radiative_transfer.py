@@ -369,6 +369,23 @@ class RadiativeTransfer:
         L_dif_dir *= hays_model
         L_dif_dif *= hays_model
 
+        # Re-reflection from nearby surface contributing to at surface signal
+        # Assumptions: no atmospheric attenuation, and reflectance is isotropic over the field of view
+        if geom.bg_rfl is not None:
+
+            # Assumed flat surface and background sky view of 1 for converting to terrain view
+            skyview_factor_avg = 1.0
+            cos_slope = 1.0
+
+            v_t = (1 + cos_slope) / 2 - skyview_factor
+            v_t_avg = (1 + cos_slope) / 2 - skyview_factor_avg
+            t = 1 + ((geom.bg_rfl * v_t) / (1 - geom.bg_rfl * v_t_avg))
+
+            L_dir_dir *= t
+            L_dif_dir *= t
+            L_dir_dif *= t
+            L_dif_dif *= t
+
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
     def calc_RT_quantities(self, x_RT: np.ndarray, geom: Geometry):
