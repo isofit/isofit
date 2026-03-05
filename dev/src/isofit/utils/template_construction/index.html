@@ -4787,10 +4787,65 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.utils.template_construction.make_rt_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        make_rt_config
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.utils.template_construction.make_surface_config" class="md-nav__link">
     <span class="md-ellipsis">
       
         make_surface_config
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.utils.template_construction.make_instrument_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        make_instrument_config
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.utils.template_construction.make_implementation_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        make_implementation_config
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.utils.template_construction.make_input_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        make_input_config
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.utils.template_construction.make_output_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        make_output_config
       
     </span>
   </a>
@@ -6718,7 +6773,114 @@
 <span class="normal">1876</span>
 <span class="normal">1877</span>
 <span class="normal">1878</span>
-<span class="normal">1879</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1879</span>
+<span class="normal">1880</span>
+<span class="normal">1881</span>
+<span class="normal">1882</span>
+<span class="normal">1883</span>
+<span class="normal">1884</span>
+<span class="normal">1885</span>
+<span class="normal">1886</span>
+<span class="normal">1887</span>
+<span class="normal">1888</span>
+<span class="normal">1889</span>
+<span class="normal">1890</span>
+<span class="normal">1891</span>
+<span class="normal">1892</span>
+<span class="normal">1893</span>
+<span class="normal">1894</span>
+<span class="normal">1895</span>
+<span class="normal">1896</span>
+<span class="normal">1897</span>
+<span class="normal">1898</span>
+<span class="normal">1899</span>
+<span class="normal">1900</span>
+<span class="normal">1901</span>
+<span class="normal">1902</span>
+<span class="normal">1903</span>
+<span class="normal">1904</span>
+<span class="normal">1905</span>
+<span class="normal">1906</span>
+<span class="normal">1907</span>
+<span class="normal">1908</span>
+<span class="normal">1909</span>
+<span class="normal">1910</span>
+<span class="normal">1911</span>
+<span class="normal">1912</span>
+<span class="normal">1913</span>
+<span class="normal">1914</span>
+<span class="normal">1915</span>
+<span class="normal">1916</span>
+<span class="normal">1917</span>
+<span class="normal">1918</span>
+<span class="normal">1919</span>
+<span class="normal">1920</span>
+<span class="normal">1921</span>
+<span class="normal">1922</span>
+<span class="normal">1923</span>
+<span class="normal">1924</span>
+<span class="normal">1925</span>
+<span class="normal">1926</span>
+<span class="normal">1927</span>
+<span class="normal">1928</span>
+<span class="normal">1929</span>
+<span class="normal">1930</span>
+<span class="normal">1931</span>
+<span class="normal">1932</span>
+<span class="normal">1933</span>
+<span class="normal">1934</span>
+<span class="normal">1935</span>
+<span class="normal">1936</span>
+<span class="normal">1937</span>
+<span class="normal">1938</span>
+<span class="normal">1939</span>
+<span class="normal">1940</span>
+<span class="normal">1941</span>
+<span class="normal">1942</span>
+<span class="normal">1943</span>
+<span class="normal">1944</span>
+<span class="normal">1945</span>
+<span class="normal">1946</span>
+<span class="normal">1947</span>
+<span class="normal">1948</span>
+<span class="normal">1949</span>
+<span class="normal">1950</span>
+<span class="normal">1951</span>
+<span class="normal">1952</span>
+<span class="normal">1953</span>
+<span class="normal">1954</span>
+<span class="normal">1955</span>
+<span class="normal">1956</span>
+<span class="normal">1957</span>
+<span class="normal">1958</span>
+<span class="normal">1959</span>
+<span class="normal">1960</span>
+<span class="normal">1961</span>
+<span class="normal">1962</span>
+<span class="normal">1963</span>
+<span class="normal">1964</span>
+<span class="normal">1965</span>
+<span class="normal">1966</span>
+<span class="normal">1967</span>
+<span class="normal">1968</span>
+<span class="normal">1969</span>
+<span class="normal">1970</span>
+<span class="normal">1971</span>
+<span class="normal">1972</span>
+<span class="normal">1973</span>
+<span class="normal">1974</span>
+<span class="normal">1975</span>
+<span class="normal">1976</span>
+<span class="normal">1977</span>
+<span class="normal">1978</span>
+<span class="normal">1979</span>
+<span class="normal">1980</span>
+<span class="normal">1981</span>
+<span class="normal">1982</span>
+<span class="normal">1983</span>
+<span class="normal">1984</span>
+<span class="normal">1985</span>
+<span class="normal">1986</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick and Niklas Bohn</span>
 <span class="c1">#</span>
@@ -6779,6 +6941,7 @@
         <span class="n">skyview_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">subs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">classify_multisurface</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">dn_uncertainty_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">eof_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="c1"># Determine FID based on sensor name</span>
@@ -6921,6 +7084,8 @@
             <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_directory</span><span class="p">,</span> <span class="s2">&quot;model_discrepancy.mat&quot;</span><span class="p">)</span>
         <span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">dn_uncertainty_file</span> <span class="o">=</span> <span class="n">dn_uncertainty_file</span>
+
         <span class="k">if</span> <span class="n">eof_path</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eof_path</span> <span class="o">=</span> <span class="n">eof_path</span>
         <span class="k">else</span><span class="p">:</span>
@@ -6930,12 +7095,12 @@
 
         <span class="k">if</span> <span class="n">skyview_factor</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">svf_working_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">skyview_factor</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">svf_subs_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
+                <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_data_directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">+</span> <span class="s2">&quot;_subs_svf&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">svf_working_path</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">svf_subs_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
-            <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_data_directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">+</span> <span class="s2">&quot;_subs_svf&quot;</span><span class="p">)</span>
-        <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">svf_subs_path</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">rdn_subs_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
             <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_data_directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">+</span> <span class="s2">&quot;_subs_rdn&quot;</span><span class="p">)</span>
@@ -7109,6 +7274,7 @@
         <span class="n">emulator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">no_min_lut_spacing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">atmosphere_type</span><span class="o">=</span><span class="s2">&quot;ATM_MIDLAT_SUMMER&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">lut_config_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">lut_config_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -7160,22 +7326,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_2_spacing_min</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="c1"># Units of AOD</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_0_range</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">ModtranRT</span><span class="o">.</span><span class="n">modtran_aot_lowerbound_polynomials</span><span class="p">()[</span><span class="n">atmosphere_type</span><span class="p">](</span><span class="mi">0</span><span class="p">),</span>
-            <span class="mi">1</span><span class="p">,</span>
-        <span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_1_range</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">ModtranRT</span><span class="o">.</span><span class="n">modtran_aot_lowerbound_polynomials</span><span class="p">()[</span><span class="n">atmosphere_type</span><span class="p">](</span><span class="mi">0</span><span class="p">),</span>
-            <span class="mi">1</span><span class="p">,</span>
-        <span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_2_range</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">ModtranRT</span><span class="o">.</span><span class="n">modtran_aot_lowerbound_polynomials</span><span class="p">()[</span><span class="n">atmosphere_type</span><span class="p">](</span><span class="mi">0</span><span class="p">),</span>
-            <span class="mi">1</span><span class="p">,</span>
-        <span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">aot_550_range</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">ModtranRT</span><span class="o">.</span><span class="n">modtran_aot_lowerbound_polynomials</span><span class="p">()[</span><span class="n">atmosphere_type</span><span class="p">](</span><span class="mi">0</span><span class="p">),</span>
-            <span class="mi">1</span><span class="p">,</span>
-        <span class="p">]</span>
+        <span class="n">modtran_min_aerosol</span> <span class="o">=</span> <span class="n">ModtranRT</span><span class="o">.</span><span class="n">modtran_aot_lowerbound_polynomials</span><span class="p">()[</span>
+            <span class="n">atmosphere_type</span>
+        <span class="p">](</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_0_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">modtran_min_aerosol</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_1_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">modtran_min_aerosol</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_2_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">modtran_min_aerosol</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aot_550_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">modtran_min_aerosol</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">aot_550_spacing</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aot_550_spacing_min</span> <span class="o">=</span> <span class="mi">0</span>
@@ -7187,12 +7344,31 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">no_min_lut_spacing</span> <span class="o">=</span> <span class="n">no_min_lut_spacing</span>
 
-        <span class="c1"># overwrite anything that comes in from the config file</span>
-        <span class="k">if</span> <span class="n">lut_config_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">lut_config</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
-                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">lut_config</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="n">aerosol_keys</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;aerosol_0_range&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;aerosol_1_range&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;aerosol_2_range&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;aot_550_range&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
 
+        <span class="c1"># Overwrite anything that comes from kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Overwrite anything that comes from config file</span>
+        <span class="k">if</span> <span class="n">lut_config_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">lut_config</span><span class="p">)</span>
+
+        <span class="c1"># Update aerosol ranges for Modtran ranges</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">aerosol_keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+                <span class="n">config_range</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="n">valid_range</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="nb">max</span><span class="p">(</span><span class="n">modtran_min_aerosol</span><span class="p">,</span> <span class="n">config_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                    <span class="n">config_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="p">]</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">valid_range</span><span class="p">)</span>
+
+        <span class="c1"># Make sure the low end of the aerosol range is used</span>
         <span class="k">if</span> <span class="n">emulator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">emulator</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;.jld2&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">aot_550_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_2_range</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">aot_550_spacing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_2_spacing</span>
@@ -7398,7 +7574,6 @@
     <span class="n">surface_category</span><span class="o">=</span><span class="s2">&quot;multicomponent_surface&quot;</span><span class="p">,</span>
     <span class="n">emulator_base</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">uncorrelated_radiometric_uncertainty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-    <span class="n">dn_uncertainty_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">multiple_restarts</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">segmentation_size</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span>
     <span class="n">pressure_elevation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -7433,7 +7608,6 @@
 <span class="sd">        surface_category:                     type of surface to use</span>
 <span class="sd">        emulator_base:                        the basename of the emulator, if used</span>
 <span class="sd">        uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit</span>
-<span class="sd">        dn_uncertainty_file:                       Path to a linearity .mat file to augment S matrix with linearity uncertainty</span>
 <span class="sd">        multiple_restarts:                    if true, use multiple restarts</span>
 <span class="sd">        segmentation_size:                    image segmentation size if empirical line is used</span>
 <span class="sd">        pressure_elevation:                   if true, retrieve pressure elevation</span>
@@ -7446,299 +7620,129 @@
 <span class="sd">        cos_i_min:                            minimum cosine of incidence angle to allow isofit to use in the forward model</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">avc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
-        <span class="p">[</span>
-            <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">aerosol_lut_grid</span><span class="p">,</span> <span class="n">aerosol_model_file</span><span class="p">,</span> <span class="n">aerosol_state_vector</span><span class="p">]</span>
-        <span class="p">]</span>
-    <span class="p">)</span>
-    <span class="k">if</span> <span class="n">avc</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">avc</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;To use aerosol in LUT, need lut_grid, model_path, and state_vector&quot;</span>
-        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">use_superpixels</span><span class="p">:</span>
+        <span class="n">rdn_input_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">rdn_subs_path</span>
+        <span class="n">loc_input_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">loc_subs_path</span>
+        <span class="n">obs_input_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">obs_subs_path</span>
+        <span class="n">svf_input_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">svf_subs_path</span>
 
-    <span class="n">lut_dir</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">lut_h2o_directory</span> <span class="k">if</span> <span class="n">presolve</span> <span class="k">else</span> <span class="n">paths</span><span class="o">.</span><span class="n">full_lut_directory</span>
-    <span class="n">lut_path</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">join</span><span class="p">(</span><span class="n">lut_dir</span><span class="p">,</span> <span class="s2">&quot;lut.nc&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">prebuilt_lut_path</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">else</span> <span class="n">abspath</span><span class="p">(</span><span class="n">prebuilt_lut_path</span><span class="p">)</span>
-    <span class="p">)</span>
+        <span class="k">if</span> <span class="n">presolve</span><span class="p">:</span>
+            <span class="n">state_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">h2o_subs_path</span>
+            <span class="n">posterior_output_path</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">rfl_output_path</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">engine_name</span> <span class="o">=</span> <span class="s2">&quot;modtran&quot;</span>
-    <span class="k">elif</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.jld2&quot;</span><span class="p">):</span>
-        <span class="n">engine_name</span> <span class="o">=</span> <span class="s2">&quot;KernelFlowsGP&quot;</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">engine_name</span> <span class="o">=</span> <span class="s2">&quot;sRTMnet&quot;</span>
-
-    <span class="n">radiative_transfer_config</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;radiative_transfer_engines&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;vswir&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;engine_name&quot;</span><span class="p">:</span> <span class="n">engine_name</span><span class="p">,</span>
-                <span class="s2">&quot;multipart_transmittance&quot;</span><span class="p">:</span> <span class="n">multipart_transmittance</span><span class="p">,</span>
-                <span class="s2">&quot;sim_path&quot;</span><span class="p">:</span> <span class="n">lut_dir</span><span class="p">,</span>
-                <span class="s2">&quot;lut_path&quot;</span><span class="p">:</span> <span class="n">lut_path</span><span class="p">,</span>
-                <span class="s2">&quot;aerosol_template_file&quot;</span><span class="p">:</span> <span class="n">paths</span><span class="o">.</span><span class="n">aerosol_tpl_path</span><span class="p">,</span>
-                <span class="s2">&quot;template_file&quot;</span><span class="p">:</span> <span class="p">(</span>
-                    <span class="n">paths</span><span class="o">.</span><span class="n">modtran_template_path</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">presolve</span>
-                    <span class="k">else</span> <span class="n">paths</span><span class="o">.</span><span class="n">h2o_template_path</span>
-                <span class="p">),</span>
-            <span class="p">}</span>
-        <span class="p">},</span>
-        <span class="s2">&quot;statevector&quot;</span><span class="p">:</span> <span class="p">{},</span>
-        <span class="s2">&quot;lut_grid&quot;</span><span class="p">:</span> <span class="p">{},</span>
-        <span class="s2">&quot;unknowns&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;H2O_ABSCO&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
-        <span class="s2">&quot;terrain_style&quot;</span><span class="p">:</span> <span class="n">terrain_style</span><span class="p">,</span>
-        <span class="s2">&quot;cos_i_min&quot;</span><span class="p">:</span> <span class="n">cos_i_min</span><span class="p">,</span>
-    <span class="p">}</span>
-
-    <span class="n">vswir</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;emulator_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">emulator_base</span><span class="p">)</span>
-        <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;earth_sun_distance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">earth_sun_distance_path</span>
-        <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;irradiance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">irradiance_file</span>
-        <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;engine_base_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">sixs_path</span>
-        <span class="k">if</span> <span class="n">multipart_transmittance</span><span class="p">:</span>
-            <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;emulator_aux_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">emulator_base</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;emulator_aux_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">emulator_base</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;_aux.npz&quot;</span>
-            <span class="p">)</span>
+            <span class="n">state_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">state_subs_path</span>
+            <span class="n">posterior_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">uncert_subs_path</span>
+            <span class="n">rfl_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">rfl_subs_path</span>
+
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;engine_base_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">modtran_path</span>
-    <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;radiative_transfer_engines&quot;</span><span class="p">][</span><span class="s2">&quot;vswir&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">vswir</span><span class="p">)</span>
+        <span class="n">rdn_input_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">radiance_working_path</span>
+        <span class="n">loc_input_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">loc_working_path</span>
+        <span class="n">obs_input_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">obs_working_path</span>
+        <span class="n">svf_input_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">svf_working_path</span>
 
-    <span class="k">if</span> <span class="n">aerosol_model_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;radiative_transfer_engines&quot;</span><span class="p">][</span><span class="s2">&quot;vswir&quot;</span><span class="p">][</span>
-            <span class="s2">&quot;aerosol_model_file&quot;</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="n">aerosol_model_file</span>
-
-    <span class="c1"># First, build the general lut grid</span>
-    <span class="n">lut_grid</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;H2OSTR&quot;</span><span class="p">:</span> <span class="n">h2o_lut_grid</span><span class="p">,</span>
-        <span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">:</span> <span class="n">elevation_lut_grid</span><span class="p">,</span>
-        <span class="s2">&quot;observer_zenith&quot;</span><span class="p">:</span> <span class="n">to_sensor_zenith_lut_grid</span><span class="p">,</span>
-        <span class="s2">&quot;solar_zenith&quot;</span><span class="p">:</span> <span class="n">to_sun_zenith_lut_grid</span><span class="p">,</span>
-        <span class="s2">&quot;relative_azimuth&quot;</span><span class="p">:</span> <span class="n">relative_azimuth_lut_grid</span><span class="p">,</span>
-        <span class="s2">&quot;CO2&quot;</span><span class="p">:</span> <span class="n">co2_lut_grid</span><span class="p">,</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="n">aerosol_lut_grid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">lut_grid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aerosol_lut_grid</span><span class="p">)</span>
-
-    <span class="n">to_remove</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">gn</span><span class="p">,</span> <span class="n">gc</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">gc</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">gc</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gn</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">presolve</span><span class="p">:</span>
+            <span class="n">state_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">h2o_working_path</span>
+            <span class="n">posterior_output_path</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">rfl_output_path</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">lut_grid</span><span class="p">[</span><span class="n">gn</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gc</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">state_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">state_working_path</span>
+            <span class="n">posterior_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">uncert_working_path</span>
+            <span class="n">rfl_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">rfl_working_path</span>
 
-    <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">emulator_base</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.jld2&quot;</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.radiative_transfer.engines.kernel_flows</span><span class="w"> </span><span class="kn">import</span> <span class="n">bounds_check</span>
+    <span class="n">input_config</span> <span class="o">=</span> <span class="n">make_input_config</span><span class="p">(</span>
+        <span class="n">rdn_input_path</span><span class="p">,</span>
+        <span class="n">loc_input_path</span><span class="p">,</span>
+        <span class="n">obs_input_path</span><span class="p">,</span>
+        <span class="n">svf_input_path</span><span class="p">,</span>
+        <span class="n">paths</span><span class="o">.</span><span class="n">rdn_factors_path</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">output_config</span> <span class="o">=</span> <span class="n">make_output_config</span><span class="p">(</span>
+        <span class="n">state_output_path</span><span class="p">,</span>
+        <span class="n">posterior_output_path</span><span class="p">,</span>
+        <span class="n">rfl_output_path</span><span class="p">,</span>
+    <span class="p">)</span>
 
-        <span class="c1"># Should only modify H2OSTR and surface_elevation_km</span>
-        <span class="n">bounds_check</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">,</span> <span class="n">emulator_base</span><span class="p">,</span> <span class="n">modify</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="n">ncds</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="n">prebuilt_lut_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">ncds</span> <span class="o">=</span> <span class="n">nc</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">prebuilt_lut_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">gn</span><span class="p">,</span> <span class="n">gc</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">gn</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ncds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">gn</span><span class="si">}</span><span class="s2"> not found in prebuilt LUT, removing it from LUT.&quot;</span>
-                <span class="p">)</span>
-                <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gn</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">lut_grid</span><span class="p">[</span><span class="n">gn</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_lut_subset</span><span class="p">(</span><span class="n">gc</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">to_remove</span><span class="p">):</span>
-        <span class="n">lut_grid</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">tr</span><span class="p">)</span>
-
-    <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;lut_grid&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">)</span>
-    <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;radiative_transfer_engines&quot;</span><span class="p">][</span><span class="s2">&quot;vswir&quot;</span><span class="p">][</span><span class="s2">&quot;lut_names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">key</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-    <span class="p">}</span>
-
-    <span class="c1"># Now do statevector</span>
-    <span class="n">statekeys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">]</span>
-    <span class="n">statesigmas</span> <span class="o">=</span> <span class="p">[</span><span class="mf">100.0</span><span class="p">]</span>
-    <span class="n">statescale</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">pressure_elevation</span> <span class="ow">and</span> <span class="n">presolve</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
-        <span class="n">statekeys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">)</span>
-        <span class="n">statesigmas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1000.0</span><span class="p">)</span>
-        <span class="n">statescale</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">retrieve_co2</span> <span class="ow">and</span> <span class="n">presolve</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
-        <span class="n">statekeys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;CO2&quot;</span><span class="p">)</span>
-        <span class="n">statesigmas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">100.0</span><span class="p">)</span>
-        <span class="n">statescale</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">statekeys</span><span class="p">,</span> <span class="n">statesigmas</span><span class="p">,</span> <span class="n">statescale</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="p">:</span>
-            <span class="n">grid</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span>
-                <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-            <span class="p">)</span>
-            <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;statevector&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span>
-                <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="n">scale</span><span class="p">,</span>
-                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="n">sigma</span><span class="p">,</span>
-                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span>
-            <span class="p">}</span>
-
-    <span class="k">if</span> <span class="n">aerosol_state_vector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">presolve</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
-        <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;statevector&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aerosol_state_vector</span><span class="p">)</span>
-
-    <span class="c1"># MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in</span>
-    <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;radiative_transfer_engines&quot;</span><span class="p">][</span><span class="s2">&quot;vswir&quot;</span><span class="p">][</span>
-        <span class="s2">&quot;statevector_names&quot;</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;statevector&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-
-    <span class="c1"># make isofit configuration</span>
-    <span class="n">isofit_config_modtran</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="p">{},</span>
-        <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;forward_model&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;instrument&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;wavelength_file&quot;</span><span class="p">:</span> <span class="n">paths</span><span class="o">.</span><span class="n">wavelength_path</span><span class="p">,</span>
-                <span class="s2">&quot;integrations&quot;</span><span class="p">:</span> <span class="n">segmentation_size</span> <span class="k">if</span> <span class="n">use_superpixels</span> <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="s2">&quot;unknowns&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;uncorrelated_radiometric_uncertainty&quot;</span><span class="p">:</span> <span class="n">uncorrelated_radiometric_uncertainty</span><span class="p">,</span>
-                    <span class="s2">&quot;dn_uncertainty_file&quot;</span><span class="p">:</span> <span class="n">dn_uncertainty_file</span><span class="p">,</span>
-                <span class="p">},</span>
-            <span class="p">},</span>
+            <span class="s2">&quot;instrument&quot;</span><span class="p">:</span> <span class="n">make_instrument_config</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">wavelength_path</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">input_channelized_uncertainty_path</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">channelized_uncertainty_working_path</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">eof_path</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">eof_working_path</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">noise_path</span><span class="p">,</span>
+                <span class="n">segmentation_size</span><span class="p">,</span>
+                <span class="n">use_superpixels</span><span class="p">,</span>
+                <span class="n">uncorrelated_radiometric_uncertainty</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">dn_uncertainty_file</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;radiative_transfer&quot;</span><span class="p">:</span> <span class="n">make_rt_config</span><span class="p">(</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">lut_h2o_directory</span> <span class="k">if</span> <span class="n">presolve</span> <span class="k">else</span> <span class="n">paths</span><span class="o">.</span><span class="n">full_lut_directory</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">h2o_template_path</span> <span class="k">if</span> <span class="n">presolve</span> <span class="k">else</span> <span class="n">paths</span><span class="o">.</span><span class="n">modtran_template_path</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">aerosol_tpl_path</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">earth_sun_distance_path</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">irradiance_file</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">sixs_path</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">modtran_path</span><span class="p">,</span>
+                <span class="n">h2o_lut_grid</span><span class="p">,</span>
+                <span class="n">aerosol_lut_grid</span><span class="p">,</span>
+                <span class="n">aerosol_model_file</span><span class="p">,</span>
+                <span class="n">aerosol_state_vector</span><span class="p">,</span>
+                <span class="n">co2_lut_grid</span><span class="p">,</span>
+                <span class="n">elevation_lut_grid</span><span class="p">,</span>
+                <span class="n">emulator_base</span><span class="p">,</span>
+                <span class="n">multipart_transmittance</span><span class="p">,</span>
+                <span class="n">prebuilt_lut_path</span><span class="p">,</span>
+                <span class="n">presolve</span><span class="p">,</span>
+                <span class="n">pressure_elevation</span><span class="p">,</span>
+                <span class="n">retrieve_co2</span><span class="p">,</span>
+                <span class="n">relative_azimuth_lut_grid</span><span class="p">,</span>
+                <span class="n">to_sensor_zenith_lut_grid</span><span class="p">,</span>
+                <span class="n">to_sun_zenith_lut_grid</span><span class="p">,</span>
+                <span class="n">terrain_style</span><span class="p">,</span>
+                <span class="n">cos_i_min</span><span class="p">,</span>
+            <span class="p">),</span>
             <span class="s2">&quot;surface&quot;</span><span class="p">:</span> <span class="n">make_surface_config</span><span class="p">(</span>
-                <span class="n">paths</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">surface_class_working_path</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">surface_class_subs_path</span><span class="p">,</span>
+                <span class="n">paths</span><span class="o">.</span><span class="n">surface_working_paths</span><span class="p">,</span>
                 <span class="n">surface_category</span><span class="p">,</span>
                 <span class="n">pressure_elevation</span><span class="p">,</span>
-                <span class="n">elevation_lut_grid</span><span class="p">,</span>
-                <span class="n">surface_mapping</span><span class="o">=</span><span class="n">surface_mapping</span><span class="p">,</span>
-                <span class="n">use_superpixels</span><span class="o">=</span><span class="n">use_superpixels</span><span class="p">,</span>
+                <span class="n">use_superpixels</span><span class="p">,</span>
             <span class="p">),</span>
-            <span class="s2">&quot;radiative_transfer&quot;</span><span class="p">:</span> <span class="n">radiative_transfer_config</span><span class="p">,</span>
         <span class="p">},</span>
-        <span class="s2">&quot;implementation&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;ray_temp_dir&quot;</span><span class="p">:</span> <span class="n">paths</span><span class="o">.</span><span class="n">ray_temp_dir</span><span class="p">,</span>
-            <span class="s2">&quot;inversion&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;windows&quot;</span><span class="p">:</span> <span class="n">inversion_windows</span><span class="p">},</span>
-            <span class="s2">&quot;n_cores&quot;</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">,</span>
-            <span class="s2">&quot;debug_mode&quot;</span><span class="p">:</span> <span class="n">debug</span><span class="p">,</span>
-            <span class="s2">&quot;isofit_version&quot;</span><span class="p">:</span> <span class="n">__version__</span><span class="p">,</span>
-        <span class="p">},</span>
+        <span class="s2">&quot;implementation&quot;</span><span class="p">:</span> <span class="n">make_implementation_config</span><span class="p">(</span>
+            <span class="n">ray_temp_dir</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">ray_temp_dir</span><span class="p">,</span>
+            <span class="n">inversion_windows</span><span class="o">=</span><span class="n">inversion_windows</span><span class="p">,</span>
+            <span class="n">n_cores</span><span class="o">=</span><span class="n">n_cores</span><span class="p">,</span>
+            <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="n">input_config</span><span class="p">,</span>
+        <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output_config</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="nb">input</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
-    <span class="k">if</span> <span class="n">use_superpixels</span><span class="p">:</span>
-        <span class="nb">input</span><span class="p">[</span><span class="s2">&quot;measured_radiance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">rdn_subs_path</span>
-        <span class="nb">input</span><span class="p">[</span><span class="s2">&quot;loc_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">loc_subs_path</span>
-        <span class="nb">input</span><span class="p">[</span><span class="s2">&quot;obs_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">obs_subs_path</span>
-        <span class="k">if</span> <span class="n">paths</span><span class="o">.</span><span class="n">svf_working_path</span><span class="p">:</span>
-            <span class="nb">input</span><span class="p">[</span><span class="s2">&quot;skyview_factor_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">svf_subs_path</span>
-        <span class="k">if</span> <span class="n">presolve</span><span class="p">:</span>
-            <span class="n">output</span><span class="p">[</span><span class="s2">&quot;estimated_state_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">h2o_subs_path</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">output</span><span class="p">[</span><span class="s2">&quot;estimated_state_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">state_subs_path</span>
-            <span class="n">output</span><span class="p">[</span><span class="s2">&quot;posterior_uncertainty_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">uncert_subs_path</span>
-            <span class="n">output</span><span class="p">[</span><span class="s2">&quot;estimated_reflectance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">rfl_subs_path</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="nb">input</span><span class="p">[</span><span class="s2">&quot;measured_radiance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">radiance_working_path</span>
-        <span class="nb">input</span><span class="p">[</span><span class="s2">&quot;loc_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">loc_working_path</span>
-        <span class="nb">input</span><span class="p">[</span><span class="s2">&quot;obs_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">obs_working_path</span>
-        <span class="k">if</span> <span class="n">paths</span><span class="o">.</span><span class="n">svf_working_path</span><span class="p">:</span>
-            <span class="nb">input</span><span class="p">[</span><span class="s2">&quot;skyview_factor_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">svf_working_path</span>
-
-        <span class="k">if</span> <span class="n">presolve</span><span class="p">:</span>
-            <span class="n">output</span><span class="p">[</span><span class="s2">&quot;estimated_state_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">h2o_working_path</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">output</span><span class="p">[</span><span class="s2">&quot;posterior_uncertainty_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">uncert_working_path</span>
-            <span class="n">output</span><span class="p">[</span><span class="s2">&quot;estimated_reflectance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">rfl_working_path</span>
-            <span class="n">output</span><span class="p">[</span><span class="s2">&quot;estimated_state_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">state_working_path</span>
-    <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
-    <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;input&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">multiple_restarts</span><span class="p">:</span>
-        <span class="n">grid</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="n">h2o_lut_grid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">h2o_delta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">h2o_lut_grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">h2o_lut_grid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">grid</span><span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="nb">round</span><span class="p">(</span><span class="n">h2o_lut_grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">h2o_delta</span> <span class="o">*</span> <span class="mf">0.02</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="nb">round</span><span class="p">(</span><span class="n">h2o_lut_grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">h2o_delta</span> <span class="o">*</span> <span class="mf">0.02</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
-            <span class="p">]</span>
-
-        <span class="c1"># We will initialize using different AODs for the first aerosol in the LUT</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">aerosol_lut_grid</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">key</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">aerosol_lut_grid</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">aer_delta</span> <span class="o">=</span> <span class="n">aerosol_lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">aerosol_lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">grid</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="nb">round</span><span class="p">(</span><span class="n">aerosol_lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">aer_delta</span> <span class="o">*</span> <span class="mf">0.02</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="nb">round</span><span class="p">(</span><span class="n">aerosol_lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">aer_delta</span> <span class="o">*</span> <span class="mf">0.02</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
-            <span class="p">]</span>
-        <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;implementation&quot;</span><span class="p">][</span><span class="s2">&quot;inversion&quot;</span><span class="p">][</span><span class="s2">&quot;integration_grid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid</span>
-        <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;implementation&quot;</span><span class="p">][</span><span class="s2">&quot;inversion&quot;</span><span class="p">][</span>
-            <span class="s2">&quot;inversion_grid_as_preseed&quot;</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-
-    <span class="k">if</span> <span class="n">paths</span><span class="o">.</span><span class="n">input_channelized_uncertainty_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span><span class="s2">&quot;unknowns&quot;</span><span class="p">][</span>
-            <span class="s2">&quot;channelized_radiometric_uncertainty_file&quot;</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">channelized_uncertainty_working_path</span>
-
-    <span class="k">if</span> <span class="n">paths</span><span class="o">.</span><span class="n">eof_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span>
-            <span class="s2">&quot;eof_path&quot;</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">eof_working_path</span>
-
-        <span class="c1"># Add a state vector element for each column in the EOF file</span>
-        <span class="n">eof</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">eof_path</span><span class="p">)</span>
-        <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span><span class="s2">&quot;statevector&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">eof</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
-            <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;EOF_</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span><span class="s2">&quot;statevector&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
-                <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="p">}</span>
-
     <span class="k">if</span> <span class="n">paths</span><span class="o">.</span><span class="n">input_model_discrepancy_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span>
             <span class="s2">&quot;model_discrepancy_file&quot;</span>
         <span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">model_discrepancy_working_path</span>
 
-    <span class="k">if</span> <span class="n">paths</span><span class="o">.</span><span class="n">noise_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span>
-            <span class="s2">&quot;parametric_noise_file&quot;</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">noise_path</span>
-
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span><span class="s2">&quot;SNR&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">500</span>
-
-    <span class="k">if</span> <span class="n">paths</span><span class="o">.</span><span class="n">rdn_factors_path</span><span class="p">:</span>
-        <span class="n">isofit_config_modtran</span><span class="p">[</span><span class="s2">&quot;input&quot;</span><span class="p">][</span>
-            <span class="s2">&quot;radiometry_correction_file&quot;</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">rdn_factors_path</span>
-
     <span class="c1"># write main config file</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">isofit_full_config_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
-        <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
-                <span class="n">isofit_config_modtran</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">SerialEncoder</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
+        <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">SerialEncoder</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
     <span class="c1"># Create a template version of the config</span>
     <span class="k">if</span> <span class="n">presolve</span><span class="p">:</span>
         <span class="n">outfile</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">h2o_config_path</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">outfile</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">isofit_full_config_path</span>
+
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
-        <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
-                <span class="n">isofit_config_modtran</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">SerialEncoder</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
+        <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">SerialEncoder</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
     <span class="n">env</span><span class="o">.</span><span class="n">toTemplate</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">working_directory</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">working_directory</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">config</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_lut_subset</span><span class="p">(</span><span class="n">vals</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.template_construction.get_lut_subset"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.get_lut_subset" title="Go to docs">[docs]</a></div>
@@ -8530,23 +8534,189 @@
     <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">wl_data</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">make_rt_config</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.utils.template_construction.make_rt_config"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.make_rt_config" title="Go to docs">[docs]</a></div>
+    <span class="n">lut_directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">modtran_template_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">aerosol_tpl_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">earth_sun_distance_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">irradiance_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sixs_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">modtran_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">h2o_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">aerosol_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">aerosol_model_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">aerosol_state_vector</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">co2_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">elevation_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">emulator_base</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">multipart_transmittance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">prebuilt_lut_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">presolve</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">pressure_elevation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">retrieve_co2</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">relative_azimuth_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">to_sensor_zenith_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">to_sun_zenith_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">terrain_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;flat&quot;</span><span class="p">,</span>
+    <span class="n">cos_i_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">avc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">aerosol_lut_grid</span><span class="p">,</span> <span class="n">aerosol_model_file</span><span class="p">,</span> <span class="n">aerosol_state_vector</span><span class="p">]</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">avc</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">avc</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;To use aerosol in LUT, need lut_grid, model_path, and state_vector&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">lut_dir</span> <span class="o">=</span> <span class="n">lut_directory</span>
+    <span class="n">lut_path</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">join</span><span class="p">(</span><span class="n">lut_dir</span><span class="p">,</span> <span class="s2">&quot;lut.nc&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">prebuilt_lut_path</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="n">abspath</span><span class="p">(</span><span class="n">prebuilt_lut_path</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">engine_name</span> <span class="o">=</span> <span class="s2">&quot;modtran&quot;</span>
+    <span class="k">elif</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.jld2&quot;</span><span class="p">):</span>
+        <span class="n">engine_name</span> <span class="o">=</span> <span class="s2">&quot;KernelFlowsGP&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">engine_name</span> <span class="o">=</span> <span class="s2">&quot;sRTMnet&quot;</span>
+
+    <span class="n">radiative_transfer_config</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;radiative_transfer_engines&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;vswir&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;engine_name&quot;</span><span class="p">:</span> <span class="n">engine_name</span><span class="p">,</span>
+                <span class="s2">&quot;multipart_transmittance&quot;</span><span class="p">:</span> <span class="n">multipart_transmittance</span><span class="p">,</span>
+                <span class="s2">&quot;sim_path&quot;</span><span class="p">:</span> <span class="n">lut_dir</span><span class="p">,</span>
+                <span class="s2">&quot;lut_path&quot;</span><span class="p">:</span> <span class="n">lut_path</span><span class="p">,</span>
+                <span class="s2">&quot;aerosol_template_file&quot;</span><span class="p">:</span> <span class="n">aerosol_tpl_path</span><span class="p">,</span>
+                <span class="s2">&quot;template_file&quot;</span><span class="p">:</span> <span class="n">modtran_template_path</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;statevector&quot;</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s2">&quot;lut_grid&quot;</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s2">&quot;unknowns&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;H2O_ABSCO&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
+        <span class="s2">&quot;terrain_style&quot;</span><span class="p">:</span> <span class="n">terrain_style</span><span class="p">,</span>
+        <span class="s2">&quot;cos_i_min&quot;</span><span class="p">:</span> <span class="n">cos_i_min</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">vswir</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;emulator_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">emulator_base</span><span class="p">)</span>
+        <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;earth_sun_distance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">earth_sun_distance_path</span>
+        <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;irradiance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">irradiance_file</span>
+        <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;engine_base_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sixs_path</span>
+        <span class="k">if</span> <span class="n">multipart_transmittance</span><span class="p">:</span>
+            <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;emulator_aux_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">emulator_base</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;emulator_aux_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">emulator_base</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;_aux.npz&quot;</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vswir</span><span class="p">[</span><span class="s2">&quot;engine_base_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">modtran_path</span>
+    <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;radiative_transfer_engines&quot;</span><span class="p">][</span><span class="s2">&quot;vswir&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">vswir</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">aerosol_model_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;radiative_transfer_engines&quot;</span><span class="p">][</span><span class="s2">&quot;vswir&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;aerosol_model_file&quot;</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">aerosol_model_file</span>
+
+    <span class="c1"># First, build the general lut grid</span>
+    <span class="n">lut_grid</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;H2OSTR&quot;</span><span class="p">:</span> <span class="n">h2o_lut_grid</span><span class="p">,</span>
+        <span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">:</span> <span class="n">elevation_lut_grid</span><span class="p">,</span>
+        <span class="s2">&quot;observer_zenith&quot;</span><span class="p">:</span> <span class="n">to_sensor_zenith_lut_grid</span><span class="p">,</span>
+        <span class="s2">&quot;solar_zenith&quot;</span><span class="p">:</span> <span class="n">to_sun_zenith_lut_grid</span><span class="p">,</span>
+        <span class="s2">&quot;relative_azimuth&quot;</span><span class="p">:</span> <span class="n">relative_azimuth_lut_grid</span><span class="p">,</span>
+        <span class="s2">&quot;CO2&quot;</span><span class="p">:</span> <span class="n">co2_lut_grid</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">aerosol_lut_grid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lut_grid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aerosol_lut_grid</span><span class="p">)</span>
+
+    <span class="n">to_remove</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">gn</span><span class="p">,</span> <span class="n">gc</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">gc</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">gc</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gn</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lut_grid</span><span class="p">[</span><span class="n">gn</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gc</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">emulator_base</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.jld2&quot;</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.radiative_transfer.engines.kernel_flows</span><span class="w"> </span><span class="kn">import</span> <span class="n">bounds_check</span>
+
+        <span class="c1"># Should only modify H2OSTR and surface_elevation_km</span>
+        <span class="n">bounds_check</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">,</span> <span class="n">emulator_base</span><span class="p">,</span> <span class="n">modify</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">ncds</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">prebuilt_lut_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ncds</span> <span class="o">=</span> <span class="n">nc</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">prebuilt_lut_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">gn</span><span class="p">,</span> <span class="n">gc</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">gn</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ncds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">gn</span><span class="si">}</span><span class="s2"> not found in prebuilt LUT, removing it from LUT.&quot;</span>
+                <span class="p">)</span>
+                <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gn</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lut_grid</span><span class="p">[</span><span class="n">gn</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_lut_subset</span><span class="p">(</span><span class="n">gc</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">to_remove</span><span class="p">):</span>
+        <span class="n">lut_grid</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">tr</span><span class="p">)</span>
+
+    <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;lut_grid&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">)</span>
+    <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;radiative_transfer_engines&quot;</span><span class="p">][</span><span class="s2">&quot;vswir&quot;</span><span class="p">][</span><span class="s2">&quot;lut_names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">key</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Now do statevector</span>
+    <span class="n">statekeys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">]</span>
+    <span class="n">statesigmas</span> <span class="o">=</span> <span class="p">[</span><span class="mf">100.0</span><span class="p">]</span>
+    <span class="n">statescale</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">pressure_elevation</span> <span class="ow">and</span> <span class="n">presolve</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">statekeys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">)</span>
+        <span class="n">statesigmas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1000.0</span><span class="p">)</span>
+        <span class="n">statescale</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">retrieve_co2</span> <span class="ow">and</span> <span class="n">presolve</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">statekeys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;CO2&quot;</span><span class="p">)</span>
+        <span class="n">statesigmas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">100.0</span><span class="p">)</span>
+        <span class="n">statescale</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">statekeys</span><span class="p">,</span> <span class="n">statesigmas</span><span class="p">,</span> <span class="n">statescale</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="p">:</span>
+            <span class="n">grid</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span>
+                <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="p">)</span>
+            <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;statevector&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span>
+                <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="n">scale</span><span class="p">,</span>
+                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span>
+                <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="n">sigma</span><span class="p">,</span>
+                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span>
+            <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">aerosol_state_vector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">presolve</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;statevector&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aerosol_state_vector</span><span class="p">)</span>
+
+    <span class="c1"># MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in</span>
+    <span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;radiative_transfer_engines&quot;</span><span class="p">][</span><span class="s2">&quot;vswir&quot;</span><span class="p">][</span>
+        <span class="s2">&quot;statevector_names&quot;</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">radiative_transfer_config</span><span class="p">[</span><span class="s2">&quot;statevector&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">radiative_transfer_config</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">make_surface_config</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.utils.template_construction.make_surface_config"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.make_surface_config" title="Go to docs">[docs]</a></div>
-    <span class="n">paths</span><span class="p">:</span> <span class="n">Pathnames</span><span class="p">,</span>
+    <span class="n">surface_class_working_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">surface_class_subs_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">surface_working_paths</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">surface_category</span><span class="o">=</span><span class="s2">&quot;multicomponent_surface&quot;</span><span class="p">,</span>
-    <span class="n">pressure_elevation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">elevation_lut_grid</span><span class="o">=</span><span class="p">[],</span>
-    <span class="n">surface_mapping</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pressure_elevation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">use_superpixels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Constructs the surface component of the config</span>
-<span class="sd">    Args:</span>
-<span class="sd">        paths: Pathnames object with all key values passed from apply_oe</span>
-<span class="sd">        surface_category: Base surface category</span>
-<span class="sd">    Returns:</span>
-<span class="sd">        surface_config_dict: Dictionary with all surface parameters and file</span>
-<span class="sd">                             locations.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Initialize config dict</span>
     <span class="n">surface_config_dict</span> <span class="o">=</span> <span class="p">{</span>
@@ -8555,23 +8725,21 @@
 
     <span class="c1"># Check to see if a classification file is being propogated</span>
     <span class="c1"># If so, use multisurface</span>
-    <span class="k">if</span> <span class="n">paths</span><span class="o">.</span><span class="n">surface_class_working_path</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">surface_class_working_path</span><span class="p">:</span>
         <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;Surfaces&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="k">if</span> <span class="n">use_superpixels</span><span class="p">:</span>
-            <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;surface_class_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">surface_class_subs_path</span>
+            <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;surface_class_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">surface_class_subs_path</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;surface_class_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">surface_class_working_path</span>
+            <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;surface_class_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">surface_class_working_path</span>
 
-        <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;base_surface_class_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">paths</span><span class="o">.</span><span class="n">surface_class_working_path</span>
-        <span class="p">)</span>
+        <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;base_surface_class_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">surface_class_working_path</span>
 
         <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;multi_surface_flag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="c1"># Get the surface categories present.</span>
         <span class="n">surface_classes_present</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">surface_class_working_path</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span>
+            <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">surface_class_working_path</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span>
                 <span class="n">inteleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span>
             <span class="p">)</span>
         <span class="p">)</span>
@@ -8580,7 +8748,7 @@
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">surface_classes_present</span><span class="p">:</span>
             <span class="n">surface_category</span> <span class="o">=</span> <span class="n">SurfaceMapping</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
             <span class="c1"># If surface_path given, use for all surfaces</span>
-            <span class="n">surface_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">surface_working_paths</span><span class="p">[</span><span class="n">surface_category</span><span class="p">]</span>
+            <span class="n">surface_path</span> <span class="o">=</span> <span class="n">surface_working_paths</span><span class="p">[</span><span class="n">surface_category</span><span class="p">]</span>
 
             <span class="c1"># Set up &quot;Surfaces&quot; component of surface config</span>
             <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;Surfaces&quot;</span><span class="p">][</span><span class="n">surface_category</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
@@ -8591,12 +8759,113 @@
 
     <span class="c1"># Single surface run</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;surface_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">surface_working_paths</span><span class="p">[</span>
-            <span class="n">surface_category</span>
-        <span class="p">]</span>
+        <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;surface_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">surface_working_paths</span><span class="p">[</span><span class="n">surface_category</span><span class="p">]</span>
         <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;surface_category&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">surface_category</span>
 
     <span class="k">return</span> <span class="n">surface_config_dict</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_instrument_config</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.utils.template_construction.make_instrument_config"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.make_instrument_config" title="Go to docs">[docs]</a></div>
+    <span class="n">wavelength_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">input_channelized_uncertainty_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">channelized_uncertainty_working_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">eof_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">eof_working_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">noise_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">segmentation_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">400</span><span class="p">,</span>
+    <span class="n">use_superpixels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">uncorrelated_radiometric_uncertainty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">dn_uncertainty_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;wavelength_file&quot;</span><span class="p">:</span> <span class="n">wavelength_path</span><span class="p">,</span>
+        <span class="s2">&quot;integrations&quot;</span><span class="p">:</span> <span class="n">segmentation_size</span> <span class="k">if</span> <span class="n">use_superpixels</span> <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;unknowns&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;uncorrelated_radiometric_uncertainty&quot;</span><span class="p">:</span> <span class="n">uncorrelated_radiometric_uncertainty</span><span class="p">,</span>
+            <span class="s2">&quot;dn_uncertainty_file&quot;</span><span class="p">:</span> <span class="n">dn_uncertainty_file</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">input_channelized_uncertainty_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;unknowns&quot;</span><span class="p">][</span>
+            <span class="s2">&quot;channelized_radiometric_uncertainty_file&quot;</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">channelized_uncertainty_working_path</span>
+
+    <span class="k">if</span> <span class="n">eof_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;eof_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eof_working_path</span>
+
+        <span class="c1"># Add a state vector element for each column in the EOF file</span>
+        <span class="n">eof</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">eof_path</span><span class="p">)</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;statevector&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">eof</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;EOF_</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">config</span><span class="p">[</span><span class="s2">&quot;statevector&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+                <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">noise_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;parametric_noise_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">noise_path</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;SNR&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">500</span>
+
+    <span class="k">return</span> <span class="n">config</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_implementation_config</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.utils.template_construction.make_implementation_config"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.make_implementation_config" title="Go to docs">[docs]</a></div>
+    <span class="n">ray_temp_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;/tmp/ray&quot;</span><span class="p">,</span>
+    <span class="n">ray_ip_head</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">inversion_windows</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">350.0</span><span class="p">,</span> <span class="mf">1360.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1410</span><span class="p">,</span> <span class="mf">1800.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1970.0</span><span class="p">,</span> <span class="mf">2500.0</span><span class="p">]],</span>
+    <span class="n">n_cores</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">debug</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;ray_temp_dir&quot;</span><span class="p">:</span> <span class="n">ray_temp_dir</span><span class="p">,</span>
+        <span class="s2">&quot;ray_address&quot;</span><span class="p">:</span> <span class="n">ray_ip_head</span><span class="p">,</span>
+        <span class="s2">&quot;inversion&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;windows&quot;</span><span class="p">:</span> <span class="n">inversion_windows</span><span class="p">},</span>
+        <span class="s2">&quot;n_cores&quot;</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">,</span>
+        <span class="s2">&quot;debug_mode&quot;</span><span class="p">:</span> <span class="n">debug</span><span class="p">,</span>
+        <span class="s2">&quot;isofit_version&quot;</span><span class="p">:</span> <span class="n">__version__</span><span class="p">,</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_input_config</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.utils.template_construction.make_input_config"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.make_input_config" title="Go to docs">[docs]</a></div>
+    <span class="n">rdn_input_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">loc_input_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">obs_input_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">svf_input_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rdn_factors_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">input_config</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">input_config</span><span class="p">[</span><span class="s2">&quot;measured_radiance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rdn_input_path</span>
+    <span class="n">input_config</span><span class="p">[</span><span class="s2">&quot;loc_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loc_input_path</span>
+    <span class="n">input_config</span><span class="p">[</span><span class="s2">&quot;obs_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs_input_path</span>
+    <span class="k">if</span> <span class="n">svf_input_path</span><span class="p">:</span>
+        <span class="n">input_config</span><span class="p">[</span><span class="s2">&quot;skyview_factor_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">svf_input_path</span>
+    <span class="k">if</span> <span class="n">rdn_factors_path</span><span class="p">:</span>
+        <span class="n">input_config</span><span class="p">[</span><span class="s2">&quot;radiometry_correction_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rdn_factors_path</span>
+
+    <span class="k">return</span> <span class="n">input_config</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_output_config</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.utils.template_construction.make_output_config"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.make_output_config" title="Go to docs">[docs]</a></div>
+    <span class="n">state_output_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">posterior_output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rfl_output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">output_config</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">output_config</span><span class="p">[</span><span class="s2">&quot;estimated_state_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_output_path</span>
+    <span class="k">if</span> <span class="n">posterior_output_path</span><span class="p">:</span>
+        <span class="n">output_config</span><span class="p">[</span><span class="s2">&quot;posterior_uncertainty_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">posterior_output_path</span>
+    <span class="k">if</span> <span class="n">rfl_output_path</span><span class="p">:</span>
+        <span class="n">output_config</span><span class="p">[</span><span class="s2">&quot;estimated_reflectance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rfl_output_path</span>
+
+    <span class="k">return</span> <span class="n">output_config</span>
 </code></pre></div></td></tr></table></div>
 
 
