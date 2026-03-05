@@ -83,19 +83,18 @@ jobs:
         with:
           token: ${{ secrets.RESULTS_REPO }}
           path: results
-          commit-message: "Results for ${{ github.event.client_payload.sha }}"
-          branch: "${{ github.event.client_payload.pr_branch }}"
+          commit-message: "Results for ${{ github.event.pull_request.head.sha }}"
+          branch: "${{ github.event.pull_request.number }}"
           base: main
-          title: "Results for PR ${{ github.event.client_payload.pr_branch }}"
-          body: "Automatically generated results from PR branch `${{ github.event.client_payload.pr_branch }}`."
+          title: "Results for PR ${{ github.event.pull_request.number }}"
+          body: "Automatically generated results from PR branch `${{ github.event.pull_request.number }}`."
 
       - name: Comment on original PR
         uses: actions/github-script@v7
         env:
           RESULTS_PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
-          SOURCE_REPO: ${{ github.event.client_payload.pr_repo }}
-          SOURCE_PR_NUMBER: ${{ github.event.client_payload.pr_number }}
-          SOURCE_SHA: ${{ github.event.client_payload.sha }}
+          SOURCE_PR_NUMBER: ${{ github.event.pull_request.number }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
         with:
           script: |
             const marker = "<!-- results-comment-marker -->";
@@ -104,7 +103,7 @@ jobs:
             const prNumber = Number(process.env.SOURCE_PR_NUMBER);
             const sha = process.env.SOURCE_SHA;
 
-            const [owner, repo] = process.env.SOURCE_REPO.split("/");
+            const [owner, repo] = context.repo;
 
             const body =
               `${marker}📊 Generated results:\n\nURL: ${resultsUrl}\nSHA: \`${sha}\``;
