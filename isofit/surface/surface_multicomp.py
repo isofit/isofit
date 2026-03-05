@@ -83,7 +83,7 @@ class MultiComponentSurface(Surface):
         # Change this if you don't want to analytical solve for all the full statevector elements.
         self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
-        self.bounds = [[rmin, rmax] for w in self.wl]
+        self.bounds = [[-np.inf, np.inf] for w in self.wl]
         self.scale = [1.0 for w in self.wl]
         self.init = [0.15 * (rmax - rmin) + rmin for v in self.wl]
         self.idx_lamb = np.arange(self.n_wl)
