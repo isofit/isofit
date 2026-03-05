@@ -480,6 +480,10 @@ class IO:
         data = dict([(i, None) for i in self.config.input.get_all_element_names()])
         logging.debug(f"Row {row} Column {col}")
 
+        # Set up terrain configs
+        self.max_slope = self.config.forward_model.radiative_transfer.max_slope
+        self.terrain_style = self.config.forward_model.radiative_transfer.terrain_style
+
         # Read data from any of the input files that are defined.
         for source in self.input_datasets:
             data[source] = self.input_datasets[source].read_spectrum(row, col)
@@ -525,6 +529,8 @@ class IO:
             esd=self.esd,
             bg_rfl=data["background_reflectance_file"],
             svf=data["skyview_factor_file"],
+            terrain_style=self.terrain_style,
+            max_slope=self.max_slope,
         )
 
         self.current_input_data.geom = geom
@@ -745,14 +751,12 @@ class IO:
 
             if "atmospheric_coefficients_file" in self.output_datasets:
                 rhoatm, sphalb, L_tot, transup, L_Up = coeffs
-                verified_geom = geom.verify(fm.RT.coszen)
-                coszen, cos_i = verified_geom["coszen"], verified_geom["cos_i"]
                 solar_irr = fm.RT.rt_engines[0].solar_irr
 
                 atm_vars = [rhoatm, sphalb, L_tot, solar_irr]
 
                 atm = np.column_stack(
-                    atm_vars + [np.ones((len(self.meas_wl), 1)) * coszen]
+                    atm_vars + [np.ones((len(self.meas_wl), 1)) * geom.coszen]
                 )
 
                 atm = atm.T.reshape((len(self.meas_wl) * 5,))
