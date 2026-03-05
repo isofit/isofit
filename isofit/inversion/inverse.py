@@ -104,20 +104,13 @@ class Inversion:
         self.x_fixed = None
 
         # Set least squares params that come from the forward model
-        lb = np.full(self.fm.nstate, fill_value=-np.inf)
-        ub = np.full(self.fm.nstate, fill_value=np.inf)
-
-        bounded_idxs = np.concatenate(
-            [self.fm.idx_surf_nonrfl, self.fm.idx_RT, self.fm.idx_instrument]
-        )
-
-        lb[bounded_idxs] = self.fm.bounds[0][bounded_idxs]
-        ub[bounded_idxs] = self.fm.bounds[1][bounded_idxs]
-
         self.least_squares_params = {
             "method": "trf",
             "max_nfev": 20,
-            "bounds": (lb[self.inds_free], ub[self.inds_free]),
+            "bounds": (
+                self.fm.bounds[0][self.inds_free],
+                self.fm.bounds[1][self.inds_free],
+            ),
             "x_scale": self.fm.scale[self.inds_free],
         }
 

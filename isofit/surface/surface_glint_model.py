@@ -47,6 +47,8 @@ class GlintModelSurface(MultiComponentSurface):
         self.init.extend([1 / np.pi, 0.02])
 
         # Gege (2021), WASI user manual
+        rmin, rmax = -0.05, 2.0
+        self.bounds = [[rmin, rmax] for w in self.wl]
         self.bounds.extend([[0, 10], [0, 10]])
 
         self.n_state = self.n_state + 2
