@@ -103,10 +103,9 @@ jobs:
             const prNumber = Number(process.env.SOURCE_PR_NUMBER);
             const sha = process.env.SOURCE_SHA;
 
-            const [owner, repo] = context.repo;
+            const { owner, repo } = context.repo;
 
-            const body =
-              `${marker}📊 Generated results:\n\nURL: ${resultsUrl}\nSHA: \`${sha}\``;
+            const body = `${marker}📊 Generated results:\n\nURL: ${resultsUrl}\nSHA: \`${sha}\``;
 
             // Get existing comments
             const { data: comments } = await github.rest.issues.listComments({
