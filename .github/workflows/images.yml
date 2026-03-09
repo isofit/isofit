@@ -7,7 +7,7 @@ on:
         required: true
         type: boolean
     secrets:
-      RESULTS_REPO:
+      ISOFIT_TEST_RESULTS:
         description: 'GH PAT for the results repo'
         required: true
 
@@ -62,7 +62,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: jammont/isofit-PR-tests
-          token: ${{ secrets.RESULTS_REPO }}
+          token: ${{ secrets.ISOFIT_TEST_RESULTS }}
           path: results
 
       - name: Execute tests
@@ -81,13 +81,13 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.RESULTS_REPO }}
+          token: ${{ secrets.ISOFIT_TEST_RESULTS }}
           path: results
           commit-message: "${{ github.event.pull_request.head.sha }}"
           branch: "${{ github.event.pull_request.number }}"
           base: main
           title: "${{ github.event.pull_request.number }}"
-          body: "Automatically generated results for ${{ github.event.pull_request.html_url }}"
+          body: "Automatically generated results for ${{ github.event.pull_request.html_url }}\n SHA: https://github.com/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha }}"
 
       - name: Comment on original PR
         uses: actions/github-script@v7
