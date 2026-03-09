@@ -49,21 +49,15 @@ class ThermalSurface(MultiComponentSurface):
         # TODO: Enforce this attribute in the config, not here (this is hidden)
         # Handle additional state vector elements
         self.statevec_names.extend(["SURF_TEMP_K"])
-        self.init.extend(
-            [config.statevector.SURF_TEMP_K.get_single_element_by_name("init")]
-        )
-        self.scale.extend(
-            [config.statevector.SURF_TEMP_K.get_single_element_by_name("scale")]
-        )
-        self.bounds.extend(
-            [config.statevector.SURF_TEMP_K.get_single_element_by_name("bounds")]
-        )
+        self.init.extend([config.statevector.SURF_TEMP_K.get("init")])
+        self.scale.extend([config.statevector.SURF_TEMP_K.get("scale")])
+        self.bounds.extend([config.statevector.SURF_TEMP_K.get("bounds")])
 
-        self.surface_T_prior_mean_degK = (
-            config.statevector.SURF_TEMP_K.get_single_element_by_name("prior_mean")
+        self.surface_T_prior_mean_degK = config.statevector.SURF_TEMP_K.get(
+            "prior_mean"
         )
-        self.surface_T_prior_sigma_degK = (
-            config.statevector.SURF_TEMP_K.get_single_element_by_name("prior_sigma")
+        self.surface_T_prior_sigma_degK = config.statevector.SURF_TEMP_K.get(
+            "prior_sigma"
         )
 
         self.idx_surface = np.arange(len(self.statevec_names))

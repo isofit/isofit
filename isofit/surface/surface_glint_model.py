@@ -64,38 +64,30 @@ class GlintModelSurface(MultiComponentSurface):
 
         self.init.extend(
             [
-                config.statevector.SKY_GLINT.get_single_element_by_name("init"),
-                config.statevector.SUN_GLINT.get_single_element_by_name("init"),
+                config.statevector.SKY_GLINT.get("init"),
+                config.statevector.SUN_GLINT.get("init"),
             ]
         )
 
         self.scale.extend(
             [
-                config.statevector.SKY_GLINT.get_single_element_by_name("scale"),
-                config.statevector.SUN_GLINT.get_single_element_by_name("scale"),
+                config.statevector.SKY_GLINT.get("scale"),
+                config.statevector.SUN_GLINT.get("scale"),
             ]
         )
 
         self.bounds.extend(
             [
-                config.statevector.SKY_GLINT.get_single_element_by_name("bounds"),
-                config.statevector.SUN_GLINT.get_single_element_by_name("bounds"),
+                config.statevector.SKY_GLINT.get("bounds"),
+                config.statevector.SUN_GLINT.get("bounds"),
             ]
         )
 
-        self.sky_glint_mean = config.statevector.SKY_GLINT.get_single_element_by_name(
-            "prior_mean"
-        )
-        self.sky_glint_sigma = (
-            config.statevector.SKY_GLINT.get_single_element_by_name("prior_sigma")
-        ) ** 2
+        self.sky_glint_mean = config.statevector.SKY_GLINT.get("prior_mean")
+        self.sky_glint_sigma = (config.statevector.SKY_GLINT.get("prior_sigma")) ** 2
 
-        self.sun_glint_mean = config.statevector.SUN_GLINT.get_single_element_by_name(
-            "prior_mean"
-        )
-        self.sun_glint_sigma = (
-            config.statevector.SUN_GLINT.get_single_element_by_name("prior_sigma")
-        ) ** 2
+        self.sun_glint_mean = config.statevector.SUN_GLINT.get("prior_mean")
+        self.sun_glint_sigma = (config.statevector.SUN_GLINT.get("prior_sigma")) ** 2
 
         # Compute and and cache normalized Sa inversions for glint case
         Cov = np.array([[self.sky_glint_sigma, 0], [0, self.sun_glint_sigma]])
