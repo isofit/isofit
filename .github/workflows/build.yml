@@ -182,4 +182,4 @@ jobs:
     with:
       rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
     secrets:
-      RESULTS_REPO: "${{ secrets.RESULTS_REPO }}"
+      ISOFIT_TEST_RESULTS: "${{ secrets.ISOFIT_TEST_RESULTS }}"
