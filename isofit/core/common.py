@@ -69,7 +69,9 @@ def fast_searchsorted(array, target):
 
 
 @njit(cache=True)
-def _numba_mlg_kernel(point, grid_tuples, data):
+def _numba_mlg_kernel(
+    point, grid_tuples, flat_data, strides, low_indices, deltas, num_channels
+):
     """
     Numba-accelerated n-dimensional multilinear interpolator kernel. Performs
     linear interpolation across a multi-dimensional look-up table for a single
@@ -80,7 +82,14 @@ def _numba_mlg_kernel(point, grid_tuples, data):
                within the n-dimensional grid.
         grid_tuples: Tuple of 1D arrays of floats, where each array defines the
                      sorted grid points for a single dimension.
-        data: N+1 dimensional array of floats, where the first N dimensions
+        flat_data: 1D array of floats, the flattened n-dimensional data array.
+        strides: 1D array of integers, the strides for each dimension in the
+                 flattened data array.
+        low_indices: 1D array of integers, pre-allocated buffer for storing the
+                     lower indices for each dimension.
+        deltas: 1D array of floats, pre-allocated buffer for storing the
+                interpolation weights for each dimension.
+        num_channels: Integer, the number of channels in the output vector.
               correspond to grid_tuples and the last dimension contains the
               output vector (channels).
 
@@ -89,14 +98,12 @@ def _numba_mlg_kernel(point, grid_tuples, data):
                 equal to data.shape[-1].
     """
     dims = len(point)
-    low_indices = np.zeros(dims, dtype=int32)
-    deltas = np.zeros(dims, dtype=float64)
 
+    # Bound the search
     for i in range(dims):
         grid = grid_tuples[i]
         p = point[i]
 
-        # Clamp to grid bounds
         if p <= grid[0]:
             low_indices[i] = 0
             deltas[i] = 0.0
@@ -110,19 +117,9 @@ def _numba_mlg_kernel(point, grid_tuples, data):
             low_indices[i] = idx
             deltas[i] = (p - grid[idx]) / (grid[idx + 1] - grid[idx])
 
-    num_channels = data.shape[-1]
+    # Do the actual interpolation, using pre-calculated strides
     num_corners = 1 << dims
-    result = np.zeros(num_channels)
-
-    # Manual stride calculation for flat indexing
-    strides = np.zeros(dims + 1, dtype=int32)
-    current_stride = 1
-    for i in range(dims, -1, -1):
-        strides[i] = current_stride
-        current_stride *= data.shape[i]
-
-    flat_data = data.ravel()
-
+    result = np.zeros(num_channels, dtype=np.float64)
     for c in range(num_corners):
         weight = 1.0
         flat_idx = 0
@@ -201,16 +198,32 @@ class VectorInterpolator:
 
         elif version == "mlg_numba":
             self.method = 3
-            # Need to keep types picklable...better performance with numba lists,
-            # but it doesn't play nicely with ray.
             self.grid_tuples = tuple(
                 [np.array(g, dtype=np.float64) for g in grid_input]
             )
             self.gridarrays = data_input.astype(np.float64)
 
-            # run a warm-up for numba
+            self.dims = len(grid_input)
+            self.num_channels = self.n
+
+            # Precompute Strides for flat indexing
+            strides = np.zeros(self.dims + 1, dtype=np.int32)
+            current_stride = 1
+            for i in range(self.dims, -1, -1):
+                strides[i] = current_stride
+                current_stride *= data_input.shape[i]
+            self.strides = strides
+
+            # Pre-flatten the data array
+            self.flat_data = self.gridarrays.ravel()
+
+            # Allocate workspace buffers to prevent Numba heap allocation, which does bad things with Ray
+            self.low_indices_workspace = np.zeros(self.dims, dtype=np.int32)
+            self.deltas_workspace = np.zeros(self.dims, dtype=np.float64)
+
+            # Warm-up call to force numba to compile before runtime
             dummy_point = np.array([g[0] for g in self.grid_tuples], dtype=np.float64)
-            _ = _numba_mlg_kernel(dummy_point, self.grid_tuples, self.gridarrays)
+            self(dummy_point)
 
         else:
             raise AttributeError(f"Unknown interpolator version: {version!r}")
@@ -312,7 +325,22 @@ class VectorInterpolator:
         elif self.method == 2:
             return self._multilinear_grid(*args, **kwargs)
         if self.method == 3:
-            return _numba_mlg_kernel(args[0], self.grid_tuples, self.gridarrays)
+
+            # Ray's plasma-store makes zero-copy arrays read-only, so  do a check and
+            # make a local copy on this worker if needed.
+            if not self.low_indices_workspace.flags.writeable:
+                self.low_indices_workspace = np.zeros(self.dims, dtype=np.int32)
+                self.deltas_workspace = np.zeros(self.dims, dtype=np.float64)
+
+            return _numba_mlg_kernel(
+                args[0],
+                self.grid_tuples,
+                self.flat_data,
+                self.strides,
+                self.low_indices_workspace,
+                self.deltas_workspace,
+                self.num_channels,
+            )
 
 
 def load_wavelen(wavelength_file: str):
