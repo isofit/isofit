@@ -87,7 +87,6 @@ def apply_oe(
     dn_uncertainty_file=None,
     model_discrepancy_path=None,
     lut_config_file=None,
-    multiple_restarts=False,
     logging_level="INFO",
     log_file=None,
     n_cores=1,
@@ -171,10 +170,6 @@ def apply_oe(
     lut_config_file : str, default=None
         Path to a look up table configuration file, which will override defaults
         choices
-    multiple_restarts : bool, default=False
-        Use multiple initial starting poitns for each OE ptimization run, using
-        the corners of the atmospheric variables as starting points.  This gives
-        a more robust, albeit more expensive, solution.
     logging_level : str, default="INFO"
         Logging level with which to run ISOFIT
     log_file : str, default=None
@@ -816,7 +811,6 @@ def apply_oe(
 
             config_params[gridkey] = grid if grid is not None else [mean]
 
-        config_params["multiple_restarts"] = (multiple_restarts,)
         config_params["pressure_elevation"] = pressure_elevation
         if retrieve_co2:
             config_params["co2_lut_grid"] = lut_params.co2_range
@@ -945,7 +939,6 @@ def apply_oe(
 @click.option("--dn_uncertainty_file", "-dnf", type=str, default=None)
 @click.option("--model_discrepancy_path")
 @click.option("--lut_config_file")
-@click.option("--multiple_restarts", is_flag=True, default=False)
 @click.option("--logging_level", default="INFO")
 @click.option("--log_file")
 @click.option("--n_cores", type=int, default=1)
