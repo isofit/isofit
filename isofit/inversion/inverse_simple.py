@@ -278,7 +278,7 @@ def invert_analytical(
 
     # Path radiance and spherical albedo
     L_atm = fm.RT.get_L_atm(x_RT, geom)
-    s = r["sphalb"]
+    s_alb = r["sphalb"]
 
     # Get all the surface quantities for the super pixel
     sub_surface, sub_RT, sub_instrument = fm.unpack(sub_state)
@@ -286,15 +286,19 @@ def invert_analytical(
     # Get target pixel reflectance
     rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
 
-    # Set background rfl if it exists
-    bg_rfl = geom.bg_rfl if geom.bg_rfl is not None else rho_dif_dir
-
     # Surface reflectance at the wl resolution of fm.RT
     rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
-    bg_rfl = fm.upsample(fm.surface.wl, bg_rfl)
 
     # Estimation of background radiance
-    L_bg = (L_dir_dif + L_dif_dif) * bg_rfl + L_tot * (s * bg_rfl**2) / (1 - s * bg_rfl)
+    L_bg, eq_11_term = fm.RT.calc_rdn_bg(
+        rho_dir_dir=rho_dir_dir,
+        rho_dif_dir=rho_dir_dir,
+        L_dir_dif=L_dir_dif,
+        L_dif_dif=L_dif_dif,
+        L_tot=L_tot,
+        s_alb=s_alb,
+        geom=geom,
+    )
 
     # Get superpixel EOF shift if used
     eof_offset = fm.eof_offset(sub_surface, sub_RT, sub_instrument)
@@ -312,8 +316,8 @@ def invert_analytical(
         geom,
         L_dir_dir=L_dir_dir,
         L_dir_dif=L_dir_dif,
-        L_dif_dir=L_dif_dir,
-        L_dif_dif=L_dif_dif,
+        L_dif_dir=L_dif_dir / eq_11_term,
+        L_dif_dif=L_dif_dif / eq_11_term,
     )
     # Sample just the wavelengths and states of interest
     L = H[winidx, :][:, iv_idx]
@@ -348,11 +352,11 @@ def invert_analytical(
         LI_rcond = dpotrf(P_rcond)[0]
         C_rcond = dpotri(LI_rcond)[0]
 
-        y = meas[winidx] - L_atm[winidx] - eof_offset[winidx]
+        y = meas[winidx] - L_atm[winidx] - eof_offset[winidx] - L_bg[winidx]
         xk = dsymv(
             1,
             C_rcond,
-            (L.T @ dsymv(1, P, y - L_bg[winidx]) + prprod[iv_idx]),
+            (L.T @ dsymv(1, P, y) + prprod[iv_idx]),
         )
 
         # Save trajectory step:
