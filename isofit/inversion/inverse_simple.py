@@ -18,9 +18,9 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 from __future__ import annotations
 
-import os
 from typing import OrderedDict
 
+import xxhash
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import least_squares, minimize
@@ -314,37 +314,43 @@ def invert_analytical(
     # Sample just the wavelengths and states of interest
     L = H[winidx, :][:, iv_idx]
 
-    # Use cached scaling factor from inital normalized inverse (outside of loop).
-    Sa, Sa_inv, Sa_inv_sqrt = fm.Sa(x, geom)
-    Sa_inv = Sa_inv[fm.idx_surface, :][:, fm.idx_surface]
-    Sa_inv_sqrt = Sa_inv_sqrt[fm.idx_surface, :][:, fm.idx_surface]
+    # Assuming x0 is very close (K does not change), we can pull out Seps, Sa and use hashing
+    # NOTE assuming uW/cm2 for rounding for hash table
+    i = None
+    if hash_table is not None:
+        i = xxhash.xxh64_digest(np.round(meas, 0))
+
+        if i in hash_table:
+            P, C_rcond, prprod = hash_table[i]
+        else:
+            # Use cached scaling factor from inital normalized inverse
+            _, Sa_inv_full, _ = fm.Sa(x, geom)
+            Sa_inv = Sa_inv_full[fm.idx_surface, :][:, fm.idx_surface]
+            xa_surface = fm.xa(x, geom)[fm.idx_surface]
+
+            # Save the product of the prior covariance and mean
+            prprod = Sa_inv @ xa_surface
+
+            # Measurement uncertainty
+            Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
+            P = dpotri(dpotrf(Seps, 1)[0], 1)[0]
+
+            P_tilde = ((L.T @ P) @ L).T
+            P_rcond = Sa_inv[iv_idx, :][:, iv_idx] + P_tilde
+
+            LI_rcond = dpotrf(P_rcond)[0]
+            C_rcond = dpotri(LI_rcond)[0]
+
+            hash_table[i] = (P, C_rcond, prprod)
+
+    y = meas[winidx] - L_atm[winidx] - eof_offset[winidx]
 
     trajectory = np.zeros((num_iter + 1, len(x)))
     trajectory[0, :] = x
     for n in range(num_iter):
 
-        # Measurement uncertainty
-        Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
-
-        # Prior mean
-        xa_full = fm.xa(x, geom)
-        xa_surface = xa_full[fm.idx_surface]
-
-        # Save the product of the prior covariance and mean
-        prprod = Sa_inv @ xa_surface
-
         x_surface, x_RT, x_instrument = fm.unpack(x)
 
-        C = dpotrf(Seps, 1)[0]
-        P = dpotri(C, 1)[0]
-
-        P_tilde = ((L.T @ P) @ L).T
-        P_rcond = Sa_inv[iv_idx, :][:, iv_idx] + P_tilde
-
-        LI_rcond = dpotrf(P_rcond)[0]
-        C_rcond = dpotri(LI_rcond)[0]
-
-        y = meas[winidx] - L_atm[winidx] - eof_offset[winidx]
         xk = dsymv(
             1,
             C_rcond,
