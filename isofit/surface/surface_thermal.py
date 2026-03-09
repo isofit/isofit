@@ -46,9 +46,14 @@ class ThermalSurface(MultiComponentSurface):
 
         super().__init__(full_config)
 
-        # TODO: Enforce this attribute in the config, not here (this is hidden)
         # Handle additional state vector elements
         self.statevec_names.extend(["SURF_TEMP_K"])
+
+        # Old syntax:
+        # self.surface_T_prior_mean_degK = config.statevector.SURF_TEMP_K.get(
+        #     "prior_mean"
+        # )
+        # New syntax from config object:
         self.init.extend([config.statevector.SURF_TEMP_K.get("init")])
         self.scale.extend([config.statevector.SURF_TEMP_K.get("scale")])
         self.bounds.extend([config.statevector.SURF_TEMP_K.get("bounds")])

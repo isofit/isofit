@@ -59,9 +59,17 @@ class GlintModelSurface(MultiComponentSurface):
         self.sun_glint_ind = self.glint_ind + 1
         self.n_state = self.n_state + 2
         self.idx_surface = np.arange(len(self.statevec_names))
-        # Change this if you don't want to analytical solve for all the full statevector elements.
+
+        # TODO Remove or update ability to smooth on any statevector idx
         self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
+        # Old syntax (setting optimizaion and prior directly from config:
+        # self.sun_glint_sigma = (
+        #     config.sun_glint_prior_sigma
+        #     * np.array(self.scale[self.sun_glint_ind])
+        # ) ** 2
+
+        # New syntax pulling from populated config object
         self.init.extend(
             [
                 config.statevector.SKY_GLINT.get("init"),
