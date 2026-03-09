@@ -429,6 +429,7 @@ def apply_oe(
         subs=True if analytical_line or empirical_line else False,
         classify_multisurface=classify_multisurface,
         use_background_rfl=use_background_rfl,
+        dn_uncertainty_file=dn_uncertainty_file,
         eof_path=eof_path,
     )
     paths.make_directories()
@@ -661,7 +662,6 @@ def apply_oe(
         "surface_category": surface_category,
         "emulator_base": emulator_base,
         "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
-        "dn_uncertainty_file": dn_uncertainty_file,
         "prebuilt_lut_path": prebuilt_lut,
         "inversion_windows": INVERSION_WINDOWS,
         "multipart_transmittance": multipart_transmittance,

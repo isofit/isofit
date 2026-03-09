@@ -54,7 +54,9 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync
+        run: |
+          uv sync
+          uv add --editable $(uv run isofit path plots)
 
       - name: Checkout tests repo
         uses: actions/checkout@v6
@@ -72,7 +74,7 @@ jobs:
           RUN=$(isofit path examples)/image_cube/small/
           $RUN/default.sh --log_file $OUTPUT/default.log --resources
 
-          isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png
+          isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png -p 2 4 -p 8 2 -p 5 6
           isoplots resources $OUTPUT/default.resources.jsonl -o $OUTPUT/default.resources.html -l $OUTPUT/default.log --relative --debug
 
       - name: Create PR in Tests Results Repo
@@ -81,19 +83,18 @@ jobs:
         with:
           token: ${{ secrets.RESULTS_REPO }}
           path: results
-          commit-message: "Compare results for PR ${{ github.event.client_payload.pr_branch }}"
-          branch: "${{ github.event.client_payload.pr_branch }}"
+          commit-message: "Results for ${{ github.event.pull_request.head.sha }}"
+          branch: "${{ github.event.pull_request.number }}"
           base: main
-          title: "Results for PR ${{ github.event.client_payload.pr_branch }}"
-          body: "Automatically generated results from PR branch `${{ github.event.client_payload.pr_branch }}`."
+          title: "Results for PR ${{ github.event.pull_request.number }}"
+          body: "Automatically generated results from PR branch `${{ github.event.pull_request.number }}`."
 
       - name: Comment on original PR
         uses: actions/github-script@v7
         env:
           RESULTS_PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
-          SOURCE_REPO: ${{ github.event.client_payload.pr_repo }}
-          SOURCE_PR_NUMBER: ${{ github.event.client_payload.pr_number }}
-          SOURCE_SHA: ${{ github.event.client_payload.sha }}
+          SOURCE_PR_NUMBER: ${{ github.event.pull_request.number }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
         with:
           script: |
             const marker = "<!-- results-comment-marker -->";
@@ -102,7 +103,7 @@ jobs:
             const prNumber = Number(process.env.SOURCE_PR_NUMBER);
             const sha = process.env.SOURCE_SHA;
 
-            const [owner, repo] = process.env.SOURCE_REPO.split("/");
+            const [owner, repo] = context.repo;
 
             const body =
               `${marker}📊 Generated results:\n\nURL: ${resultsUrl}\nSHA: \`${sha}\``;

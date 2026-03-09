@@ -60,6 +60,7 @@ class Pathnames:
         subs: bool = False,
         classify_multisurface: bool = False,
         use_background_rfl: bool = True,
+        dn_uncertainty_file: str = None,
         eof_path=None,
     ):
         # Determine FID based on sensor name
@@ -213,6 +214,8 @@ class Pathnames:
             join(self.data_directory, "model_discrepancy.mat")
         )
 
+        self.dn_uncertainty_file = dn_uncertainty_file
+
         if eof_path:
             self.eof_path = eof_path
         else:
@@ -222,12 +225,12 @@ class Pathnames:
 
         if skyview_factor:
             self.svf_working_path = abspath(skyview_factor)
+            self.svf_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_svf")
+            )
         else:
             self.svf_working_path = None
-
-        self.svf_subs_path = abspath(
-            join(self.input_data_directory, self.fid + "_subs_svf")
-        )
+            self.svf_subs_path = None
 
         if use_background_rfl:
             self.bgrfl_subs_path = abspath(
@@ -408,6 +411,7 @@ class LUTConfig:
         emulator: str = None,
         no_min_lut_spacing: bool = False,
         atmosphere_type="ATM_MIDLAT_SUMMER",
+        **kwargs,
     ):
         if lut_config_file is not None:
             with open(lut_config_file, "r") as f:
@@ -459,22 +463,13 @@ class LUTConfig:
         self.aerosol_2_spacing_min = 0
 
         # Units of AOD
-        self.aerosol_0_range = [
-            ModtranRT.modtran_aot_lowerbound_polynomials()[atmosphere_type](0),
-            1,
-        ]
-        self.aerosol_1_range = [
-            ModtranRT.modtran_aot_lowerbound_polynomials()[atmosphere_type](0),
-            1,
-        ]
-        self.aerosol_2_range = [
-            ModtranRT.modtran_aot_lowerbound_polynomials()[atmosphere_type](0),
-            1,
-        ]
-        self.aot_550_range = [
-            ModtranRT.modtran_aot_lowerbound_polynomials()[atmosphere_type](0),
-            1,
-        ]
+        modtran_min_aerosol = ModtranRT.modtran_aot_lowerbound_polynomials()[
+            atmosphere_type
+        ](0)
+        self.aerosol_0_range = [modtran_min_aerosol, 1]
+        self.aerosol_1_range = [modtran_min_aerosol, 1]
+        self.aerosol_2_range = [modtran_min_aerosol, 1]
+        self.aot_550_range = [modtran_min_aerosol, 1]
 
         self.aot_550_spacing = 0
         self.aot_550_spacing_min = 0
@@ -486,12 +481,31 @@ class LUTConfig:
 
         self.no_min_lut_spacing = no_min_lut_spacing
 
-        # overwrite anything that comes in from the config file
-        if lut_config_file is not None:
-            for key in lut_config:
-                if key in self.__dict__:
-                    setattr(self, key, lut_config[key])
+        aerosol_keys = [
+            "aerosol_0_range",
+            "aerosol_1_range",
+            "aerosol_2_range",
+            "aot_550_range",
+        ]
 
+        # Overwrite anything that comes from kwargs
+        self.__dict__.update(kwargs)
+
+        # Overwrite anything that comes from config file
+        if lut_config_file is not None:
+            self.__dict__.update(lut_config)
+
+        # Update aerosol ranges for Modtran ranges
+        for key in aerosol_keys:
+            if key in self.__dict__:
+                config_range = getattr(self, key, [0, 1])
+                valid_range = [
+                    max(modtran_min_aerosol, config_range[0]),
+                    config_range[1],
+                ]
+                setattr(self, key, valid_range)
+
+        # Make sure the low end of the aerosol range is used
         if emulator is not None and os.path.splitext(emulator)[1] != ".jld2":
             self.aot_550_range = self.aerosol_2_range
             self.aot_550_spacing = self.aerosol_2_spacing
@@ -697,7 +711,6 @@ def build_config(
     surface_category="multicomponent_surface",
     emulator_base: str = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
-    dn_uncertainty_file: str = None,
     multiple_restarts: bool = False,
     segmentation_size=400,
     pressure_elevation: bool = False,
@@ -732,7 +745,6 @@ def build_config(
         surface_category:                     type of surface to use
         emulator_base:                        the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
-        dn_uncertainty_file:                       Path to a linearity .mat file to augment S matrix with linearity uncertainty
         multiple_restarts:                    if true, use multiple restarts
         segmentation_size:                    image segmentation size if empirical line is used
         pressure_elevation:                   if true, retrieve pressure elevation
@@ -745,307 +757,137 @@ def build_config(
         cos_i_min:                            minimum cosine of incidence angle to allow isofit to use in the forward model
     """
 
-    avc = np.sum(
-        [
-            x is not None
-            for x in [aerosol_lut_grid, aerosol_model_file, aerosol_state_vector]
-        ]
-    )
-    if avc >= 1 and avc != 3:
-        raise ValueError(
-            "To use aerosol in LUT, need lut_grid, model_path, and state_vector"
-        )
-
-    lut_dir = paths.lut_h2o_directory if presolve else paths.full_lut_directory
-    lut_path = (
-        join(lut_dir, "lut.nc")
-        if prebuilt_lut_path is None
-        else abspath(prebuilt_lut_path)
-    )
-
-    if emulator_base is None:
-        engine_name = "modtran"
-    elif emulator_base.endswith(".jld2"):
-        engine_name = "KernelFlowsGP"
-    else:
-        engine_name = "sRTMnet"
-
-    radiative_transfer_config = {
-        "radiative_transfer_engines": {
-            "vswir": {
-                "engine_name": engine_name,
-                "multipart_transmittance": multipart_transmittance,
-                "sim_path": lut_dir,
-                "lut_path": lut_path,
-                "aerosol_template_file": paths.aerosol_tpl_path,
-                "template_file": (
-                    paths.modtran_template_path
-                    if not presolve
-                    else paths.h2o_template_path
-                ),
-            }
-        },
-        "statevector": {},
-        "lut_grid": {},
-        "unknowns": {"H2O_ABSCO": 0.0},
-        "terrain_style": terrain_style,
-        "cos_i_min": cos_i_min,
-    }
-
-    vswir = {}
-    if emulator_base is not None:
-        vswir["emulator_file"] = abspath(emulator_base)
-        vswir["earth_sun_distance_file"] = paths.earth_sun_distance_path
-        vswir["irradiance_file"] = paths.irradiance_file
-        vswir["engine_base_dir"] = paths.sixs_path
-        if multipart_transmittance:
-            vswir["emulator_aux_file"] = abspath(emulator_base)
-        else:
-            vswir["emulator_aux_file"] = abspath(
-                os.path.splitext(emulator_base)[0] + "_aux.npz"
-            )
-    else:
-        vswir["engine_base_dir"] = paths.modtran_path
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"].update(vswir)
-
-    if aerosol_model_file is None:
-        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-            "aerosol_model_file"
-        ] = aerosol_model_file
-
-    # First, build the general lut grid
-    lut_grid = {
-        "H2OSTR": h2o_lut_grid,
-        "surface_elevation_km": elevation_lut_grid,
-        "observer_zenith": to_sensor_zenith_lut_grid,
-        "solar_zenith": to_sun_zenith_lut_grid,
-        "relative_azimuth": relative_azimuth_lut_grid,
-        "CO2": co2_lut_grid,
-    }
-    if aerosol_lut_grid is not None:
-        lut_grid.update(aerosol_lut_grid)
-
-    to_remove = []
-    for gn, gc in lut_grid.items():
-        if gc is None or len(gc) == 1:
-            to_remove.append(gn)
-        else:
-            lut_grid[gn] = np.array(gc).tolist()
-
-    if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
-        from isofit.radiative_transfer.engines.kernel_flows import bounds_check
-
-        # Should only modify H2OSTR and surface_elevation_km
-        bounds_check(lut_grid, emulator_base, modify=True)
-
-    ncds = None
-    if prebuilt_lut_path is not None:
-        ncds = nc.Dataset(prebuilt_lut_path, "r")
-        for gn, gc in lut_grid.items():
-            if gn not in ncds.variables:
-                logging.warning(
-                    f"Key {gn} not found in prebuilt LUT, removing it from LUT."
-                )
-                to_remove.append(gn)
-            else:
-                lut_grid[gn] = get_lut_subset(gc)
-
-    for tr in np.unique(to_remove):
-        lut_grid.pop(tr)
-
-    radiative_transfer_config["lut_grid"].update(lut_grid)
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = {
-        key: None for key in lut_grid.keys()
-    }
-
-    # Now do statevector
-    statekeys = ["H2OSTR"]
-    statesigmas = [100.0]
-    statescale = [1]
-    if pressure_elevation and presolve is False:
-        statekeys.append("surface_elevation_km")
-        statesigmas.append(1000.0)
-        statescale.append(100)
-    if retrieve_co2 and presolve is False:
-        statekeys.append("CO2")
-        statesigmas.append(100.0)
-        statescale.append(10)
-
-    for key, sigma, scale in zip(statekeys, statesigmas, statescale):
-        if key in lut_grid:
-            grid = (
-                lut_grid[key]
-                if isinstance(lut_grid[key], list)
-                else list(lut_grid[key].values())
-            )
-            radiative_transfer_config["statevector"][key] = {
-                "bounds": [grid[0], grid[-1]],
-                "scale": scale,
-                "init": (grid[0] + grid[-1]) / 2.0,
-                "prior_sigma": sigma,
-                "prior_mean": (grid[0] + grid[-1]) / 2.0,
-            }
-
-    if aerosol_state_vector is not None and presolve is False:
-        radiative_transfer_config["statevector"].update(aerosol_state_vector)
-
-    # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-        "statevector_names"
-    ] = list(radiative_transfer_config["statevector"].keys())
-
-    # make isofit configuration
-    isofit_config_modtran = {
-        "input": {},
-        "output": {},
-        "forward_model": {
-            "instrument": {
-                "wavelength_file": paths.wavelength_path,
-                "integrations": segmentation_size if use_superpixels else 1,
-                "unknowns": {
-                    "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
-                    "dn_uncertainty_file": dn_uncertainty_file,
-                },
-            },
-            "surface": make_surface_config(
-                paths,
-                surface_category,
-                pressure_elevation,
-                elevation_lut_grid,
-                surface_mapping=surface_mapping,
-                use_superpixels=use_superpixels,
-            ),
-            "radiative_transfer": radiative_transfer_config,
-        },
-        "implementation": {
-            "ray_temp_dir": paths.ray_temp_dir,
-            "inversion": {"windows": inversion_windows},
-            "n_cores": n_cores,
-            "debug_mode": debug,
-            "isofit_version": __version__,
-        },
-    }
-
-    input, output = {}, {}
     if use_superpixels:
-        input["measured_radiance_file"] = paths.rdn_subs_path
-        input["loc_file"] = paths.loc_subs_path
-        input["obs_file"] = paths.obs_subs_path
-        if paths.svf_working_path:
-            input["skyview_factor_file"] = paths.svf_subs_path
+        rdn_input_path = paths.rdn_subs_path
+        loc_input_path = paths.loc_subs_path
+        obs_input_path = paths.obs_subs_path
+        svf_input_path = paths.svf_subs_path
+
         if presolve:
-            output["estimated_state_file"] = paths.h2o_subs_path
+            state_output_path = paths.h2o_subs_path
+            posterior_output_path = None
+            rfl_output_path = None
+
         else:
-            output["estimated_state_file"] = paths.state_subs_path
-            output["posterior_uncertainty_file"] = paths.uncert_subs_path
-            output["estimated_reflectance_file"] = paths.rfl_subs_path
+            state_output_path = paths.state_subs_path
+            posterior_output_path = paths.uncert_subs_path
+            rfl_output_path = paths.rfl_subs_path
             if paths.bgrfl_subs_path:
                 isofit_config_modtran["input"][
                     "background_reflectance_file"
                 ] = paths.bgrfl_subs_path
+
     else:
-        input["measured_radiance_file"] = paths.radiance_working_path
-        input["loc_file"] = paths.loc_working_path
-        input["obs_file"] = paths.obs_working_path
-        if paths.svf_working_path:
-            input["skyview_factor_file"] = paths.svf_working_path
+        rdn_input_path = paths.radiance_working_path
+        loc_input_path = paths.loc_working_path
+        obs_input_path = paths.obs_working_path
+        svf_input_path = paths.svf_working_path
 
         if presolve:
-            output["estimated_state_file"] = paths.h2o_working_path
+            state_output_path = paths.h2o_working_path
+            posterior_output_path = None
+            rfl_output_path = None
         else:
-            output["posterior_uncertainty_file"] = paths.uncert_working_path
-            output["estimated_reflectance_file"] = paths.rfl_working_path
-            output["estimated_state_file"] = paths.state_working_path
+            state_output_path = paths.state_working_path
+            posterior_output_path = paths.uncert_working_path
+            rfl_output_path = paths.rfl_working_path
             if paths.bgrfl_working_path:
                 isofit_config_modtran["input"][
                     "background_reflectance_file"
                 ] = paths.bgrfl_working_path
-    isofit_config_modtran["output"].update(output)
-    isofit_config_modtran["input"].update(input)
 
-    if multiple_restarts:
-        grid = {}
-        if h2o_lut_grid is not None:
-            h2o_delta = float(h2o_lut_grid[-1]) - float(h2o_lut_grid[0])
-            grid["H2OSTR"] = [
-                round(h2o_lut_grid[0] + h2o_delta * 0.02, 4),
-                round(h2o_lut_grid[-1] - h2o_delta * 0.02, 4),
-            ]
+    input_config = make_input_config(
+        rdn_input_path,
+        loc_input_path,
+        obs_input_path,
+        svf_input_path,
+        paths.rdn_factors_path,
+    )
+    output_config = make_output_config(
+        state_output_path,
+        posterior_output_path,
+        rfl_output_path,
+    )
 
-        # We will initialize using different AODs for the first aerosol in the LUT
-        if len(aerosol_lut_grid) > 0:
-            key = list(aerosol_lut_grid.keys())[0]
-            aer_delta = aerosol_lut_grid[key][-1] - aerosol_lut_grid[key][0]
-            grid[key] = [
-                round(aerosol_lut_grid[key][0] + aer_delta * 0.02, 4),
-                round(aerosol_lut_grid[key][-1] - aer_delta * 0.02, 4),
-            ]
-        isofit_config_modtran["implementation"]["inversion"]["integration_grid"] = grid
-        isofit_config_modtran["implementation"]["inversion"][
-            "inversion_grid_as_preseed"
-        ] = True
-
-    if paths.input_channelized_uncertainty_path is not None:
-        isofit_config_modtran["forward_model"]["instrument"]["unknowns"][
-            "channelized_radiometric_uncertainty_file"
-        ] = paths.channelized_uncertainty_working_path
-
-    if paths.eof_path is not None:
-        isofit_config_modtran["forward_model"]["instrument"][
-            "eof_path"
-        ] = paths.eof_working_path
-
-        # Add a state vector element for each column in the EOF file
-        eof = np.loadtxt(paths.eof_path)
-        isofit_config_modtran["forward_model"]["instrument"]["statevector"] = {}
-        for idx in range(eof.shape[1]):
-            key = "EOF_%i" % (idx + 1)
-            isofit_config_modtran["forward_model"]["instrument"]["statevector"][key] = {
-                "bounds": [-10, 10],
-                "scale": 1,
-                "init": 0,
-                "prior_sigma": 100.0,
-                "prior_mean": 0,
-            }
+    config = {
+        "forward_model": {
+            "instrument": make_instrument_config(
+                paths.wavelength_path,
+                paths.input_channelized_uncertainty_path,
+                paths.channelized_uncertainty_working_path,
+                paths.eof_path,
+                paths.eof_working_path,
+                paths.noise_path,
+                segmentation_size,
+                use_superpixels,
+                uncorrelated_radiometric_uncertainty,
+                paths.dn_uncertainty_file,
+            ),
+            "radiative_transfer": make_rt_config(
+                paths.lut_h2o_directory if presolve else paths.full_lut_directory,
+                paths.h2o_template_path if presolve else paths.modtran_template_path,
+                paths.aerosol_tpl_path,
+                paths.earth_sun_distance_path,
+                paths.irradiance_file,
+                paths.sixs_path,
+                paths.modtran_path,
+                h2o_lut_grid,
+                aerosol_lut_grid,
+                aerosol_model_file,
+                aerosol_state_vector,
+                co2_lut_grid,
+                elevation_lut_grid,
+                emulator_base,
+                multipart_transmittance,
+                prebuilt_lut_path,
+                presolve,
+                pressure_elevation,
+                retrieve_co2,
+                relative_azimuth_lut_grid,
+                to_sensor_zenith_lut_grid,
+                to_sun_zenith_lut_grid,
+                terrain_style,
+                cos_i_min,
+            ),
+            "surface": make_surface_config(
+                paths.surface_class_working_path,
+                paths.surface_class_subs_path,
+                paths.surface_working_paths,
+                surface_category,
+                pressure_elevation,
+                use_superpixels,
+            ),
+        },
+        "implementation": make_implementation_config(
+            ray_temp_dir=paths.ray_temp_dir,
+            inversion_windows=inversion_windows,
+            n_cores=n_cores,
+            debug=debug,
+        ),
+        "input": input_config,
+        "output": output_config,
+    }
 
     if paths.input_model_discrepancy_path is not None:
-        isofit_config_modtran["forward_model"][
+        config["forward_model"][
             "model_discrepancy_file"
         ] = paths.model_discrepancy_working_path
 
-    if paths.noise_path is not None:
-        isofit_config_modtran["forward_model"]["instrument"][
-            "parametric_noise_file"
-        ] = paths.noise_path
-
-    else:
-        isofit_config_modtran["forward_model"]["instrument"]["SNR"] = 500
-
-    if paths.rdn_factors_path:
-        isofit_config_modtran["input"][
-            "radiometry_correction_file"
-        ] = paths.rdn_factors_path
-
     # write main config file
     with open(paths.isofit_full_config_path, "w") as fout:
-        fout.write(
-            json.dumps(
-                isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True
-            )
-        )
+        fout.write(json.dumps(config, cls=SerialEncoder, indent=4, sort_keys=True))
 
     # Create a template version of the config
     if presolve:
         outfile = paths.h2o_config_path
     else:
         outfile = paths.isofit_full_config_path
+
     with open(outfile, "w") as fout:
-        fout.write(
-            json.dumps(
-                isofit_config_modtran, cls=SerialEncoder, indent=4, sort_keys=True
-            )
-        )
+        fout.write(json.dumps(config, cls=SerialEncoder, indent=4, sort_keys=True))
     env.toTemplate(outfile, working_directory=paths.working_directory)
+
+    return config
 
 
 def get_lut_subset(vals):
@@ -1837,23 +1679,189 @@ def write_wavelength_file(filename, wl, fwhm):
     np.savetxt(filename, wl_data, delimiter=" ")
 
 
+def make_rt_config(
+    lut_directory: str,
+    modtran_template_path: str,
+    aerosol_tpl_path: str = None,
+    earth_sun_distance_path: str = None,
+    irradiance_file: str = None,
+    sixs_path: str = None,
+    modtran_path: str = None,
+    h2o_lut_grid: np.array = None,
+    aerosol_lut_grid: np.array = None,
+    aerosol_model_file: str = None,
+    aerosol_state_vector: dict = None,
+    co2_lut_grid: np.array = None,
+    elevation_lut_grid: np.array = None,
+    emulator_base: str = None,
+    multipart_transmittance: bool = False,
+    prebuilt_lut_path: str = None,
+    presolve: bool = False,
+    pressure_elevation: bool = False,
+    retrieve_co2: bool = False,
+    relative_azimuth_lut_grid: np.array = None,
+    to_sensor_zenith_lut_grid: np.array = None,
+    to_sun_zenith_lut_grid: np.array = None,
+    terrain_style: str = "flat",
+    cos_i_min: float = 0.3,
+):
+    avc = np.sum(
+        [
+            x is not None
+            for x in [aerosol_lut_grid, aerosol_model_file, aerosol_state_vector]
+        ]
+    )
+
+    if avc >= 1 and avc != 3:
+        raise ValueError(
+            "To use aerosol in LUT, need lut_grid, model_path, and state_vector"
+        )
+
+    lut_dir = lut_directory
+    lut_path = (
+        join(lut_dir, "lut.nc")
+        if prebuilt_lut_path is None
+        else abspath(prebuilt_lut_path)
+    )
+
+    if emulator_base is None:
+        engine_name = "modtran"
+    elif emulator_base.endswith(".jld2"):
+        engine_name = "KernelFlowsGP"
+    else:
+        engine_name = "sRTMnet"
+
+    radiative_transfer_config = {
+        "radiative_transfer_engines": {
+            "vswir": {
+                "engine_name": engine_name,
+                "multipart_transmittance": multipart_transmittance,
+                "sim_path": lut_dir,
+                "lut_path": lut_path,
+                "aerosol_template_file": aerosol_tpl_path,
+                "template_file": modtran_template_path,
+            }
+        },
+        "statevector": {},
+        "lut_grid": {},
+        "unknowns": {"H2O_ABSCO": 0.0},
+        "terrain_style": terrain_style,
+        "cos_i_min": cos_i_min,
+    }
+
+    vswir = {}
+    if emulator_base is not None:
+        vswir["emulator_file"] = abspath(emulator_base)
+        vswir["earth_sun_distance_file"] = earth_sun_distance_path
+        vswir["irradiance_file"] = irradiance_file
+        vswir["engine_base_dir"] = sixs_path
+        if multipart_transmittance:
+            vswir["emulator_aux_file"] = abspath(emulator_base)
+        else:
+            vswir["emulator_aux_file"] = abspath(
+                os.path.splitext(emulator_base)[0] + "_aux.npz"
+            )
+    else:
+        vswir["engine_base_dir"] = modtran_path
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"].update(vswir)
+
+    if aerosol_model_file is None:
+        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+            "aerosol_model_file"
+        ] = aerosol_model_file
+
+    # First, build the general lut grid
+    lut_grid = {
+        "H2OSTR": h2o_lut_grid,
+        "surface_elevation_km": elevation_lut_grid,
+        "observer_zenith": to_sensor_zenith_lut_grid,
+        "solar_zenith": to_sun_zenith_lut_grid,
+        "relative_azimuth": relative_azimuth_lut_grid,
+        "CO2": co2_lut_grid,
+    }
+    if aerosol_lut_grid is not None:
+        lut_grid.update(aerosol_lut_grid)
+
+    to_remove = []
+    for gn, gc in lut_grid.items():
+        if gc is None or len(gc) == 1:
+            to_remove.append(gn)
+        else:
+            lut_grid[gn] = np.array(gc).tolist()
+
+    if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
+        from isofit.radiative_transfer.engines.kernel_flows import bounds_check
+
+        # Should only modify H2OSTR and surface_elevation_km
+        bounds_check(lut_grid, emulator_base, modify=True)
+
+    ncds = None
+    if prebuilt_lut_path is not None:
+        ncds = nc.Dataset(prebuilt_lut_path, "r")
+        for gn, gc in lut_grid.items():
+            if gn not in ncds.variables:
+                logging.warning(
+                    f"Key {gn} not found in prebuilt LUT, removing it from LUT."
+                )
+                to_remove.append(gn)
+            else:
+                lut_grid[gn] = get_lut_subset(gc)
+
+    for tr in np.unique(to_remove):
+        lut_grid.pop(tr)
+
+    radiative_transfer_config["lut_grid"].update(lut_grid)
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = {
+        key: None for key in lut_grid.keys()
+    }
+
+    # Now do statevector
+    statekeys = ["H2OSTR"]
+    statesigmas = [100.0]
+    statescale = [1]
+    if pressure_elevation and presolve is False:
+        statekeys.append("surface_elevation_km")
+        statesigmas.append(1000.0)
+        statescale.append(100)
+    if retrieve_co2 and presolve is False:
+        statekeys.append("CO2")
+        statesigmas.append(100.0)
+        statescale.append(10)
+
+    for key, sigma, scale in zip(statekeys, statesigmas, statescale):
+        if key in lut_grid:
+            grid = (
+                lut_grid[key]
+                if isinstance(lut_grid[key], list)
+                else list(lut_grid[key].values())
+            )
+            radiative_transfer_config["statevector"][key] = {
+                "bounds": [grid[0], grid[-1]],
+                "scale": scale,
+                "init": (grid[0] + grid[-1]) / 2.0,
+                "prior_sigma": sigma,
+                "prior_mean": (grid[0] + grid[-1]) / 2.0,
+            }
+
+    if aerosol_state_vector is not None and presolve is False:
+        radiative_transfer_config["statevector"].update(aerosol_state_vector)
+
+    # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+        "statevector_names"
+    ] = list(radiative_transfer_config["statevector"].keys())
+
+    return radiative_transfer_config
+
+
 def make_surface_config(
-    paths: Pathnames,
+    surface_class_working_path=None,
+    surface_class_subs_path=None,
+    surface_working_paths: dict = None,
     surface_category="multicomponent_surface",
-    pressure_elevation=None,
-    elevation_lut_grid=[],
-    surface_mapping: dict = None,
+    pressure_elevation=False,
     use_superpixels=False,
 ):
-    """
-    Constructs the surface component of the config
-    Args:
-        paths: Pathnames object with all key values passed from apply_oe
-        surface_category: Base surface category
-    Returns:
-        surface_config_dict: Dictionary with all surface parameters and file
-                             locations.
-    """
 
     # Initialize config dict
     surface_config_dict = {
@@ -1862,23 +1870,21 @@ def make_surface_config(
 
     # Check to see if a classification file is being propogated
     # If so, use multisurface
-    if paths.surface_class_working_path:
+    if surface_class_working_path:
         surface_config_dict["Surfaces"] = {}
 
         if use_superpixels:
-            surface_config_dict["surface_class_file"] = paths.surface_class_subs_path
+            surface_config_dict["surface_class_file"] = surface_class_subs_path
         else:
-            surface_config_dict["surface_class_file"] = paths.surface_class_working_path
+            surface_config_dict["surface_class_file"] = surface_class_working_path
 
-        surface_config_dict["base_surface_class_file"] = (
-            paths.surface_class_working_path
-        )
+        surface_config_dict["base_surface_class_file"] = surface_class_working_path
 
         surface_config_dict["multi_surface_flag"] = True
 
         # Get the surface categories present.
         surface_classes_present = np.unique(
-            envi.open(envi_header(paths.surface_class_working_path)).open_memmap(
+            envi.open(envi_header(surface_class_working_path)).open_memmap(
                 inteleave="bip"
             )
         )
@@ -1887,7 +1893,7 @@ def make_surface_config(
         for i in surface_classes_present:
             surface_category = SurfaceMapping[int(i)]
             # If surface_path given, use for all surfaces
-            surface_path = paths.surface_working_paths[surface_category]
+            surface_path = surface_working_paths[surface_category]
 
             # Set up "Surfaces" component of surface config
             surface_config_dict["Surfaces"][surface_category] = {
@@ -1898,9 +1904,110 @@ def make_surface_config(
 
     # Single surface run
     else:
-        surface_config_dict["surface_file"] = paths.surface_working_paths[
-            surface_category
-        ]
+        surface_config_dict["surface_file"] = surface_working_paths[surface_category]
         surface_config_dict["surface_category"] = surface_category
 
     return surface_config_dict
+
+
+def make_instrument_config(
+    wavelength_path: str,
+    input_channelized_uncertainty_path: str = None,
+    channelized_uncertainty_working_path: str = None,
+    eof_path: str = None,
+    eof_working_path: str = None,
+    noise_path: str = None,
+    segmentation_size: int = 400,
+    use_superpixels: bool = True,
+    uncorrelated_radiometric_uncertainty: float = 0.0,
+    dn_uncertainty_file: str = None,
+):
+    config = {
+        "wavelength_file": wavelength_path,
+        "integrations": segmentation_size if use_superpixels else 1,
+        "unknowns": {
+            "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
+            "dn_uncertainty_file": dn_uncertainty_file,
+        },
+    }
+
+    if input_channelized_uncertainty_path is not None:
+        config["unknowns"][
+            "channelized_radiometric_uncertainty_file"
+        ] = channelized_uncertainty_working_path
+
+    if eof_path is not None:
+        config["eof_path"] = eof_working_path
+
+        # Add a state vector element for each column in the EOF file
+        eof = np.loadtxt(eof_path)
+        config["statevector"] = {}
+        for idx in range(eof.shape[1]):
+            key = "EOF_%i" % (idx + 1)
+            config["statevector"][key] = {
+                "bounds": [-10, 10],
+                "scale": 1,
+                "init": 0,
+                "prior_sigma": 100.0,
+                "prior_mean": 0,
+            }
+
+    if noise_path is not None:
+        config["parametric_noise_file"] = noise_path
+
+    else:
+        config["SNR"] = 500
+
+    return config
+
+
+def make_implementation_config(
+    ray_temp_dir: str = "/tmp/ray",
+    ray_ip_head: str = None,
+    inversion_windows: list = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
+    n_cores: int = -1,
+    debug: bool = False,
+):
+
+    return {
+        "ray_temp_dir": ray_temp_dir,
+        "ray_address": ray_ip_head,
+        "inversion": {"windows": inversion_windows},
+        "n_cores": n_cores,
+        "debug_mode": debug,
+        "isofit_version": __version__,
+    }
+
+
+def make_input_config(
+    rdn_input_path: str,
+    loc_input_path: str,
+    obs_input_path: str,
+    svf_input_path: str = None,
+    rdn_factors_path: str = None,
+):
+    input_config = {}
+    input_config["measured_radiance_file"] = rdn_input_path
+    input_config["loc_file"] = loc_input_path
+    input_config["obs_file"] = obs_input_path
+    if svf_input_path:
+        input_config["skyview_factor_file"] = svf_input_path
+    if rdn_factors_path:
+        input_config["radiometry_correction_file"] = rdn_factors_path
+
+    return input_config
+
+
+def make_output_config(
+    state_output_path: str,
+    posterior_output_path: str = None,
+    rfl_output_path: str = None,
+):
+    output_config = {}
+    output_config["estimated_state_file"] = state_output_path
+    if posterior_output_path:
+        output_config["posterior_uncertainty_file"] = posterior_output_path
+    if rfl_output_path:
+        output_config["estimated_reflectance_file"] = rfl_output_path
+
+    return output_config
