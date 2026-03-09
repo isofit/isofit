@@ -75,7 +75,7 @@ jobs:
           $RUN/default.sh --log_file $OUTPUT/default.log --resources
 
           isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png -p 2 4 -p 8 2 -p 5 6
-          isoplots resources $OUTPUT/default.resources.jsonl -o $OUTPUT/default.resources.html -l $OUTPUT/default.log --relative --debug
+          isoplots resources $OUTPUT/default.resources.jsonl -o $OUTPUT/default.resources.html -l $OUTPUT/default.log --relative --png --debug
 
       - name: Create PR in Tests Results Repo
         id: cpr
@@ -83,18 +83,18 @@ jobs:
         with:
           token: ${{ secrets.RESULTS_REPO }}
           path: results
-          commit-message: "Results for ${{ github.event.pull_request.head.sha }}"
+          commit-message: "${{ github.event.pull_request.head.sha }}"
           branch: "${{ github.event.pull_request.number }}"
           base: main
-          title: "Results for PR ${{ github.event.pull_request.number }}"
-          body: "Automatically generated results from PR branch `${{ github.event.pull_request.number }}`."
+          title: "${{ github.event.pull_request.number }}"
+          body: "Automatically generated results for `${{ github.event.pull_request.html_url }}`."
 
       - name: Comment on original PR
         uses: actions/github-script@v7
         env:
           RESULTS_PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
           SOURCE_PR_NUMBER: ${{ github.event.pull_request.number }}
-          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          SOURCE_SHA: https://github.com/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha }}
         with:
           script: |
             const marker = "<!-- results-comment-marker -->";
