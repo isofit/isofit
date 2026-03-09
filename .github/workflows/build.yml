@@ -16,15 +16,12 @@
 name: Build
 
 on:
-  push:
-    branches: ["dev", "main"]
-    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml"]
-  pull_request:
-    branches: ["dev", "main"]
-    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml"]
+  pull_request_target:
+    branches: ["dev"]
+    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/workflows/*"]
 
 concurrency:
-  group: ${{ github.ref }}
+  group: ${{ github.event.pull_request.head.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -33,9 +30,12 @@ jobs:
     if: "!startsWith(github.event.head_commit.message, 'Merge pull request')"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
       - name: Print concurrency group
-        run: echo '${{ github.workflow }}-${{ github.ref }}'
+        run: echo '${{ github.event.pull_request.head.ref }}'
       - uses: psf/black@stable
         with:
           src: "./isofit"
@@ -43,10 +43,12 @@ jobs:
 
   # Test building the package
   package:
-    if: "!startsWith(github.event.head_commit.message, 'Merge pull request')"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -77,24 +79,37 @@ jobs:
 
   # Either build the cache or check for updates, fail if updates are needed: does not block tests on failure
   cache:
-    if: "!startsWith(github.event.head_commit.message, 'Merge pull request')"
     continue-on-error: true
     runs-on: ubuntu-latest
     steps:
+      - name: Set rebuild flag
+        id: rebuild
+        run: |
+          if [[ "${{ github.event.pull_request.body || '' }}" == *"[rebuild-cache]"* ]]; then
+            echo "suffix=-${{ github.run_id }}" >> $GITHUB_OUTPUT
+          else
+            echo "suffix=" >> $GITHUB_OUTPUT
+          fi
+
       - name: Cache Extras
         id: cache-extras
         uses: actions/cache@v4
         with:
           path: .isofit
-          key: cache-extras
+          key: cache-extras${{ steps.rebuild.outputs.suffix }}
+          restore-keys: |
+            cache-extras
           enableCrossOsArchive: true
 
       - name: Move .isofit
-        shell: bash
         if: steps.cache-extras.outputs.cache-hit == 'true'
+        shell: bash
         run: mv .isofit ~/.isofit
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -110,8 +125,8 @@ jobs:
           python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python3 -m pip install --editable ".[test]"
 
-      - if: steps.cache-extras.outputs.cache-hit == 'true'
-        name: Check for Updates
+      - name: Check for Updates
+        if: steps.cache-extras.outputs.cache-hit == 'true' && steps.rebuild.outputs.rebuild != 'true'
         shell: bash
         run: |
           # Module must report "[x]" to be detected
@@ -136,8 +151,8 @@ jobs:
             echo "$MSG"
           fi
 
-      - if: steps.cache-extras.outputs.cache-hit != 'true'
-        name: Download Extras
+      - name: Download Extras
+        if: steps.cache-extras.outputs.cache-hit != 'true'
         shell: bash
         run: |
           echo "Downloading extras"
@@ -151,8 +166,20 @@ jobs:
   pip:
     needs: cache
     uses: ./.github/workflows/test_pip.yml
+    with:
+      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
 
   # Test $PYTHONPATH installation
   path:
     needs: cache
     uses: ./.github/workflows/test_path.yml
+    with:
+      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
+
+  images:
+    needs: cache
+    uses: ./.github/workflows/images.yml
+    with:
+      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
+    secrets:
+      RESULTS_REPO: "${{ secrets.RESULTS_REPO }}"

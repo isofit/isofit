@@ -254,7 +254,7 @@ class CLI(click.Group):
         "download": "isofit.data.download",
         "validate": "isofit.data.validate",
         "path": "isofit.data",
-        "dev": "isofit.data:dev",
+        "dev": "isofit.data.dev",
         "HRRR_to_modtran": "isofit.utils.add_HRRR_profiles_to_modtran_config",
         "apply_oe": "isofit.utils.apply_oe",
         "skyview": "isofit.utils.skyview",

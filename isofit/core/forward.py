@@ -501,7 +501,7 @@ class ForwardModel:
         close = len(wl) == len(self.RT.wl) and np.allclose(wl, self.RT.wl)
 
         # or if any dimension is the wrong size
-        interp = (np.array(q.shape) == len(self.RT.wl)).all()
+        interp = (np.array(q.shape) != len(self.RT.wl)).all()
 
         if not close or interp:
             if q.ndim > 1:
