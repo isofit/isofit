@@ -83,11 +83,11 @@ jobs:
         with:
           token: ${{ secrets.RESULTS_REPO }}
           path: results
-          commit-message: "Results for ${{ github.event.pull_request.head.sha }}"
+          commit-message: "${{ github.event.pull_request.head.sha }}"
           branch: "${{ github.event.pull_request.number }}"
           base: main
-          title: "Results for PR ${{ github.event.pull_request.number }}"
-          body: "Automatically generated results from PR branch `${{ github.event.pull_request.number }}`."
+          title: "${{ github.event.pull_request.number }}"
+          body: "Automatically generated results for `${{ github.event.pull_request.html_url }}`."
 
       - name: Comment on original PR
         uses: actions/github-script@v7
