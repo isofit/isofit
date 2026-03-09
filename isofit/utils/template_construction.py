@@ -765,6 +765,7 @@ def build_config(
             state_output_path = paths.h2o_subs_path
             posterior_output_path = None
             rfl_output_path = None
+            bgrfl_input_path = None
 
         else:
             state_output_path = paths.state_subs_path
@@ -782,6 +783,8 @@ def build_config(
             state_output_path = paths.h2o_working_path
             posterior_output_path = None
             rfl_output_path = None
+            bgrfl_input_path = None
+
         else:
             state_output_path = paths.state_working_path
             posterior_output_path = paths.uncert_working_path
@@ -789,11 +792,11 @@ def build_config(
             bgrfl_input_path = paths.bgrfl_working_path
 
     input_config = make_input_config(
-        rdn_factors_path=rdn_input_path,
+        rdn_input_path=rdn_input_path,
         loc_input_path=loc_input_path,
         obs_input_path=obs_input_path,
         svf_input_path=svf_input_path,
-        rdn_input_path=paths.rdn_factors_path,
+        rdn_factors_path=paths.rdn_factors_path,
         bgrfl_path=bgrfl_input_path,
     )
     output_config = make_output_config(

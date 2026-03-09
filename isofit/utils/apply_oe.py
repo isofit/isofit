@@ -841,7 +841,7 @@ def apply_oe(
                 mean_altitude_km=mean_altitude_km,
                 mean_elevation_km=mean_elevation_km,
                 smoothing_sigma=atm_sigma,
-                use_slic_rfls=False,
+                use_slic_rfls=True,
                 use_superpixels=use_superpixels,
                 nodata_value=-9999,
                 chunksize=CHUNKSIZE,

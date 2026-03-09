@@ -96,7 +96,7 @@ def background_reflectance(
     logging_level,
     log_file,
     chunksize,
-    use_slic_rfls=False,
+    use_slic_rfls=True,
     use_superpixels=True,
     nodata_value=-9999,
 ):
