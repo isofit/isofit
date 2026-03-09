@@ -94,7 +94,7 @@ jobs:
         env:
           RESULTS_PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
           SOURCE_PR_NUMBER: ${{ github.event.pull_request.number }}
-          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          SOURCE_SHA: https://github.com/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha }}
         with:
           script: |
             const marker = "<!-- results-comment-marker -->";
