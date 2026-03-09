@@ -1881,7 +1881,7 @@ def make_surface_config(
         surface_config_dict["surface_category"] = surface_category
 
     # Accumulate statevector
-    for category, path in paths.surface_working_paths.items():
+    for category, path in surface_working_paths.items():
         surface_mat = loadmat(path)
         statevec_names = surface_mat.get("statevec_names", [])
         if len(statevec_names):
