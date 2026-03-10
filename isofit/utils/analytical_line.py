@@ -441,6 +441,19 @@ class Worker(object):
         self.hash_table = OrderedDict()
         self.hash_size = config.implementation.max_hash_table_size
 
+        # Set priors cache to speed up math in AOE
+        self.priors_cache = {}
+        tmp_x = self.fm.init.copy()
+        tmp_geom = Geometry(obs=self.obs[0, 0, :], loc=self.loc[0, 0, :], esd=self.esd)
+        for i in range(getattr(self.fm.surface, "n_comp", 1)):
+            tmp_geom.surf_cmp_init = i
+            _, Sa_inv_full, _ = self.fm.Sa(tmp_x, tmp_geom)
+            Sa_inv = Sa_inv_full[self.fm.idx_surface, :][:, self.fm.idx_surface]
+            xa_surface = self.fm.xa(tmp_x, tmp_geom)[self.fm.idx_surface]
+            prprod = Sa_inv @ xa_surface
+            self.priors_cache[i] = (Sa_inv, xa_surface, prprod)
+        del tmp_geom, tmp_x
+
         # Can't see any reason to leave these as optional
         self.subs_state_file = subs_state_file
         self.lbl_file = lbl_file
@@ -586,6 +599,7 @@ class Worker(object):
 
             # NOTE: this line needs to be here to ensure geom.surf_cmp_init is populated
             geom.x_surf_init = x0[self.fm.idx_surface]
+            self.fm.surface.xa(geom.x_surf_init, geom)
 
             states, unc = invert_analytical(
                 self.fm,
@@ -597,6 +611,7 @@ class Worker(object):
                 self.num_iter,
                 self.hash_table,
                 self.hash_size,
+                priors_cache=self.priors_cache,
             )
             state_est = states[-1]
 

@@ -241,6 +241,7 @@ def invert_analytical(
     num_iter: int = 1,
     hash_table: OrderedDict = None,
     hash_size: int = None,
+    priors_cache: dict = None,
     diag_uncert: bool = True,
     outside_ret_const: float = -0.01,
     fill_value: float = -9999.0,
@@ -314,8 +315,10 @@ def invert_analytical(
     # Sample just the wavelengths and states of interest
     L = H[winidx, :][:, iv_idx]
 
-    # Assuming x0 is very close (K does not change), we can pull out Seps, Sa and use hashing
-    # NOTE assuming uW/cm2 for rounding for hash table
+    # Use cached priors (computed during Worker init)
+    Sa_inv, xa_surface, prprod = priors_cache[geom.surf_cmp_init]
+
+    # NOTE assuming uW/cm2 for rounding for hash table for Seps
     i = None
     if hash_table is not None:
         i = xxhash.xxh64_digest(np.round(meas, 0))
@@ -323,14 +326,6 @@ def invert_analytical(
         if i in hash_table:
             P, C_rcond, prprod = hash_table[i]
         else:
-            # Use cached scaling factor from inital normalized inverse
-            _, Sa_inv_full, _ = fm.Sa(x, geom)
-            Sa_inv = Sa_inv_full[fm.idx_surface, :][:, fm.idx_surface]
-            xa_surface = fm.xa(x, geom)[fm.idx_surface]
-
-            # Save the product of the prior covariance and mean
-            prprod = Sa_inv @ xa_surface
-
             # Measurement uncertainty
             Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
             P = dpotri(dpotrf(Seps, 1)[0], 1)[0]
