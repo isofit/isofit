@@ -324,7 +324,7 @@ def invert_analytical(
         i = xxhash.xxh64_digest(np.round(meas, 0))
 
         if i in hash_table:
-            P, C_rcond, prprod = hash_table[i]
+            P, C_rcond = hash_table[i]
         else:
             # Measurement uncertainty
             Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
@@ -336,7 +336,7 @@ def invert_analytical(
             LI_rcond = dpotrf(P_rcond)[0]
             C_rcond = dpotri(LI_rcond)[0]
 
-            hash_table[i] = (P, C_rcond, prprod)
+            hash_table[i] = (P, C_rcond)
 
     y = meas[winidx] - L_atm[winidx] - eof_offset[winidx]
 
