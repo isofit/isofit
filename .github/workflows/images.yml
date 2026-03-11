@@ -61,7 +61,7 @@ jobs:
       - name: Checkout tests repo
         uses: actions/checkout@v6
         with:
-          repository: jammont/isofit-PR-tests
+          repository: isofit/isofit-PR-tests
           token: ${{ secrets.ISOFIT_TEST_RESULTS }}
           path: results
 
@@ -74,7 +74,7 @@ jobs:
           RUN=$(isofit path examples)/image_cube/small/
           $RUN/default.sh --log_file $OUTPUT/default.log --resources
 
-          isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png -p 2 4 -p 8 2 -p 5 6
+          isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png -p 2 4 -p 8 2 -p 5 6 -y -.05 .5
           isoplots resources $OUTPUT/default.resources.jsonl -o $OUTPUT/default.resources.html -l $OUTPUT/default.log --relative --png --debug
 
       - name: Create PR in Tests Results Repo
