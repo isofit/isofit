@@ -11,8 +11,6 @@ from isofit.data.download import download_file, prepare_output, release_metadata
 
 ESSENTIAL = False
 CMD = "examples"
-NEON_URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip"
-CUBE_URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip"
 
 # url: path to download
 Extras = {
@@ -72,71 +70,6 @@ def download_extra(name, path=None, overwrite=False, **kwargs):
 
     url = extra["url"].format(**kwargs)
     zipfile = download_file(url, output.parent / f"{output.name}.zip")
-
-    print(f"Unzipping {zipfile}")
-    avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
-
-    print(f"Done, now available at: {avail}")
-
-
-def download_image_cube(path=None, size="both", overwrite=False):
-    """
-    Downloads the image_cube dataset from "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip".
-
-    Parameters
-    ----------
-    examples : Path
-        Path to the examples directory
-    size : str
-        Specify which of the two image_cube datasets to download.
-    overwrite : bool
-        Flag to overwrite current installed files
-    """
-    if size == "both":
-        download_image_cube(path, "small", overwrite)
-        download_image_cube(path, "medium", overwrite)
-        return
-
-    if size not in ("small", "medium"):
-        raise AttributeError(
-            f"Image cube chunk size must be either 'small' or 'medium', got: {size}"
-        )
-
-    print(f"Downloading ISOFIT image cube data: {size}")
-
-    output = Path(path or env.examples) / "image_cube" / size
-    output = prepare_output(output, None, overwrite=overwrite)
-    if not output:
-        return
-
-    url = CUBE_URL.format(size=size)
-
-    print(f"Pulling {url}")
-    zipfile = download_file(url, output.parent / f"{size}_chunk.zip")
-
-    print(f"Unzipping {zipfile}")
-    avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
-
-    print(f"Done, now available at: {avail}")
-
-
-def download_neon(path=None, overwrite=False):
-    """
-    Downloads the NEON dataset from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip.
-
-    Parameters
-    ----------
-    examples : Path
-        Path to the examples directory
-    overwrite : bool
-        Flag to overwrite current installed files
-    """
-    print("Downloading NEON data for the example")
-    output = prepare_output(path / "NEON/data", "./neon_data", overwrite=overwrite)
-    if not output:
-        return
-
-    zipfile = download_file(NEON_URL, output.parent / "NEON-subset-data.zip")
 
     print(f"Unzipping {zipfile}")
     avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
@@ -409,7 +342,7 @@ def update(check=False, **kwargs):
 )
 @click.option(
     "--image_cube",
-    type=Click.choice(["both", "small", "medium"]),
+    type=click.Choice(["both", "small", "medium"]),
     flag_value="both",
     default=None,
     help="Downloads only the image_cube dataset to the examples directory",
