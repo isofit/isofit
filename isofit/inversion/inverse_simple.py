@@ -289,6 +289,24 @@ def invert_analytical(
     rho_dir_dir = fm.upsample(fm.surface.wl, rho_dir_dir)
     rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
 
+    # Calc rdn rounded to nearest uW/cm2 for rounding for hash table for Seps
+    Ls = fm.calc_Ls(x, geom)
+    Ls = fm.upsample(fm.surface.wl, Ls)
+    rdn = fm.RT.calc_rdn(
+        x_RT,
+        rho_dir_dir=rho_dir_dir,
+        rho_dif_dir=rho_dif_dir,
+        Ls=Ls,
+        L_tot=L_tot,
+        L_dir_dir=L_dir_dir,
+        L_dif_dir=L_dif_dir,
+        L_dir_dif=L_dir_dif,
+        L_dif_dif=L_dif_dif,
+        r=r,
+        geom=geom,
+    )
+    rdn = np.round(rdn, 0)
+
     # Background conditions equal to the superpixel reflectance
     bg = s * rho_dif_dir
 
@@ -318,10 +336,9 @@ def invert_analytical(
     # Use cached priors (computed during Worker init)
     Sa_inv, xa_surface, prprod = priors_cache[geom.surf_cmp_init]
 
-    # NOTE assuming uW/cm2 for rounding for hash table for Seps
     i = None
     if hash_table is not None:
-        i = xxhash.xxh64_digest(np.round(meas, 0))
+        i = xxhash.xxh64_digest(rdn)
 
         if i in hash_table:
             P, C_rcond = hash_table[i]
