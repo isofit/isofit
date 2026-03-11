@@ -14,6 +14,70 @@ CMD = "examples"
 NEON_URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip"
 CUBE_URL = "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip"
 
+# url: path to download
+Extras = {
+    "neon": {
+        "url": "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip",
+        "subpath": "NEON/data",
+    },
+    "image_cube": {
+        "url": "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip",
+        "subpath": "image_cube/{size}",
+    },
+    "lakemary": {
+        "url": "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/LakeMary.zip",
+        "subpath": "LakeMary",
+    },
+}
+
+
+def download_extra(name, path=None, overwrite=False, **kwargs):
+    """
+    Downloads additional data for the examples. Assumes the data is a zip.
+
+    Parameters
+    ----------
+    path : Path
+        Path to the examples directory
+    size : str
+        Specify which of the two image_cube datasets to download.
+    overwrite : bool
+        Flag to overwrite current installed files
+    **kwargs : dict
+        Additional key-word arguments used by one or more extras. For instance,
+        image_cube uses ``size`` to format the url and output subpaths
+    """
+    if name not in Extras:
+        raise AttributeError(f"Extra {name!r} is not one of: {list(Extras)}")
+
+    extra = Extras[name]
+
+    # ImageCube is a special case that downloads two kinds
+    if name == "image_cube":
+        size = kwargs.get("size")
+        if size == "both":
+            download_extra("image_cube", path, overwrite, size="small")
+            download_extra("image_cube", path, overwrite, size="medium")
+            return
+
+        if size not in ("small", "medium"):
+            raise AttributeError(
+                f"Image cube chunk size must be either 'small' or 'medium', got: {size!r}"
+            )
+
+    output = Path(path or env.examples) / extra["subpath"].format(**kwargs)
+    output = prepare_output(output, None, overwrite=overwrite)
+    if not output:
+        return
+
+    url = extra["url"].format(**kwargs)
+    zipfile = download_file(url, output.parent / f"{output.name}.zip")
+
+    print(f"Unzipping {zipfile}")
+    avail = unzip(zipfile, path=output.parent, rename=output.name, overwrite=overwrite)
+
+    print(f"Done, now available at: {avail}")
+
 
 def download_image_cube(path=None, size="both", overwrite=False):
     """
@@ -130,8 +194,9 @@ def download(path=None, overwrite=False, **_):
     """
     print(f"Downloading ISOFIT examples")
     download_tutorials(path=path, overwrite=overwrite)
-    download_neon(path=Path(path or env.examples), overwrite=overwrite)
-    download_image_cube(path=path, overwrite=overwrite)
+    download_extra("neon", path=path, overwrite=overwrite)
+    download_extra("image_cube", path=path, overwrite=overwrite, size="both")
+    download_extra("lakemary", path=path, overwrite=overwrite)
 
     print("[!] Be sure to build the examples for your system via `isofit build`")
 
@@ -335,7 +400,7 @@ def update(check=False, **kwargs):
 @click.option(
     "--tutorials",
     is_flag=True,
-    help="Downloads only the NEON dataset to the examples directory",
+    help="Downloads only the tutorials (no datasets) to the examples directory",
 )
 @click.option(
     "--neon",
@@ -344,10 +409,17 @@ def update(check=False, **kwargs):
 )
 @click.option(
     "--image_cube",
-    is_flag=True,
+    type=Click.choice(["both", "small", "medium"]),
+    flag_value="both",
+    default=None,
     help="Downloads only the image_cube dataset to the examples directory",
 )
-def download_cli(tutorials, neon, image_cube, **kwargs):
+@click.option(
+    "--lakemary",
+    is_flag=True,
+    help="Downloads only the LakeMary dataset to the examples directory",
+)
+def download_cli(tutorials, neon, image_cube, lakemary, **kwargs):
     """\
     Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.
 
@@ -358,26 +430,46 @@ def download_cli(tutorials, neon, image_cube, **kwargs):
         - `isofit download examples --path /path/examples`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
     """
+    dl_all = True
     path = kwargs.get("path") or env.examples
+
     if tutorials:
         download_tutorials(
             tag=kwargs.get("tag", "latest"), overwrite=kwargs.get("overwrite", False)
         )
-    elif neon:
-        download_neon(
-            examples=Path(kwargs.get("path") or env.examples),
+        dl_all = False
+
+    if neon:
+        download_extra(
+            "neon",
+            path=path,
             overwrite=kwargs.get("overwrite", False),
         )
-    elif image_cube:
-        download_image_cube(
+        dl_all = False
+
+    if image_cube:
+        download_extra(
+            "image_cube",
             examples=path,
-            size=kwargs.get("size", "both"),
+            overwrite=kwargs.get("overwrite", False),
+            size=image_cube,
+        )
+        dl_all = False
+
+    if lakemary:
+        download_extra(
+            "lakemary",
+            path=path,
             overwrite=kwargs.get("overwrite", False),
         )
-    elif kwargs.get("overwrite"):
-        download(**kwargs)
-    else:
-        update(**kwargs)
+        dl_all = False
+
+    # Only execute if the --[extra] flags weren't used
+    if dl_all:
+        if kwargs.get("overwrite"):
+            download(**kwargs)
+        else:
+            update(**kwargs)
 
 
 @shared.validate.command(name=CMD)
