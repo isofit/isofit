@@ -82,6 +82,8 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.ISOFIT_TEST_RESULTS }}
+          committer: github-actions[bot] <40919026+github-actions[bot]@users.noreply.github.com>
+          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
           path: results
           commit-message: "${{ github.event.pull_request.head.sha }}"
           branch: "${{ github.event.pull_request.number }}"
