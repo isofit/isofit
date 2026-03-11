@@ -61,7 +61,7 @@ jobs:
       - name: Checkout tests repo
         uses: actions/checkout@v6
         with:
-          repository: isofit/isofit-PR-tests
+          repository: isofit/isofit-test-results
           token: ${{ secrets.ISOFIT_TEST_RESULTS }}
           path: results
 
