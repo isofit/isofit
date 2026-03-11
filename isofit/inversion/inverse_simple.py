@@ -336,24 +336,29 @@ def invert_analytical(
     # Use cached priors (computed during Worker init)
     Sa_inv, xa_surface, prprod = priors_cache[geom.surf_cmp_init]
 
+    # Measurement uncertainty
     i = None
+    hash_hit = False
     if hash_table is not None:
         i = xxhash.xxh64_digest(rdn)
-
         if i in hash_table:
             P, C_rcond = hash_table[i]
-        else:
-            # Measurement uncertainty
-            Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
-            P = dpotri(dpotrf(Seps, 1)[0], 1)[0]
+            hash_hit = True
 
-            P_tilde = ((L.T @ P) @ L).T
-            P_rcond = Sa_inv[iv_idx, :][:, iv_idx] + P_tilde
+    if not hash_hit:
+        Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
+        P = dpotri(dpotrf(Seps, 1)[0], 1)[0]
 
-            LI_rcond = dpotrf(P_rcond)[0]
-            C_rcond = dpotri(LI_rcond)[0]
+        P_tilde = ((L.T @ P) @ L).T
+        P_rcond = Sa_inv[iv_idx, :][:, iv_idx] + P_tilde
 
+        LI_rcond = dpotrf(P_rcond)[0]
+        C_rcond = dpotri(LI_rcond)[0]
+
+        if (hash_table is not None) and (hash_size is not None):
             hash_table[i] = (P, C_rcond)
+            while len(hash_table) > hash_size:
+                hash_table.popitem(last=False)
 
     y = meas[winidx] - L_atm[winidx] - eof_offset[winidx]
 
