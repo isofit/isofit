@@ -373,7 +373,7 @@ class RadiativeTransferConfig(BaseConfigSection):
         self.unknowns: RadiativeTransferUnknownsConfig = None
 
         self._interpolator_style_type = str
-        self.interpolator_style = "mlg"
+        self.interpolator_style = "mlg_numba"
         """str: Style of interpolation.
         - mlg   = Multilinear Grid
         - rg    = RegularGrid
@@ -442,7 +442,12 @@ class RadiativeTransferConfig(BaseConfigSection):
         for rte in self.radiative_transfer_engines:
             errors.extend(rte.check_config_validity())
 
-        kinds = ["rg", "nds", "mlg"]  # Implemented kinds of interpolator functions
+        kinds = [
+            "rg",
+            "nds",
+            "mlg",
+            "mlg_numba",
+        ]  # Implemented kinds of interpolator functions
         kind = self.interpolator_style[:3]
         degrees = self.interpolator_style[4:]
 
