@@ -1,5 +1,6 @@
 import importlib
 import pkgutil
+import platform
 
 from isofit.data import env, shared
 
@@ -11,6 +12,14 @@ Modules = {
 
 # Subset of only essential modules
 Essentials = {name: mod for name, mod in Modules.items() if getattr(mod, "ESSENTIAL")}
+
+# Exclude the windows downloader on non-Windows systems at import time
+if platform.system() != "Windows":
+    Modules.pop("windows", None)
+else:
+    # Ensure windows downloads before sixs
+    win_mod = Modules.pop("windows")
+    Modules = {"windows": win_mod, **Modules}
 
 
 def forEach(modules, func, exclude=[], **kwargs):
