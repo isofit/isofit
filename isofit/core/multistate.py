@@ -22,6 +22,7 @@ from __future__ import annotations
 import logging
 import time
 
+import numba
 import numpy as np
 from scipy.interpolate import interp1d
 from spectral.io import envi
@@ -292,7 +293,46 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
     return config
 
 
-def match_statevector(
+def match_statevector(full_statevec: list, fm_statevec: list):
+    """
+    A multi-class surface requires some merging across statevectors
+    of different length. This function maps the fm-specific state
+    to the io-state that captures all state elements present in the
+    image. The full_state will record a Non
+    Args:
+        full_statevec: [m] list of state-names of the image-universal combined statevector
+        fm_statevec: [n] list of state-names of the fm-specific state vector
+    returns:
+        idx: list(int) mapping for which statevector elements are present in fm
+        miss: list(int) mapping for non-present statevector elements
+
+    """
+    idx = []
+    for fm_name in fm_statevec:
+        for i, full_name in enumerate(full_statevec):
+            if fm_name == full_name:
+                idx.append(i)
+
+    rang = set([i for i in range(len(full_statevec))])
+    idx_rng = set(sorted(idx))
+    miss = sorted(list(rang - idx_rng))
+
+    return idx, miss
+
+
+def fill_statevector(state_est, idx, miss, full_statevector, null_value=-9999.0):
+    """
+    Map a fm output onto a full statevector
+    """
+    output = np.empty((len(full_statevector)))
+    output[idx] = state_est
+    output[miss] = null_value
+
+    return output
+
+
+@numba.jit
+def jit_statevector(
     state_data: np.array, full_statevec: list, fm_statevec: list, null_value=-9999.0
 ):
     """

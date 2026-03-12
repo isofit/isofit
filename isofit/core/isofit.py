@@ -216,6 +216,7 @@ class Isofit:
 
             # Set forward model
             fm = ForwardModel(config, cache_RT=cache_RT)
+            fm.match_statevector(self.full_statevector)
 
             logging.debug(f"Surface: {surface_class_str}")
 
