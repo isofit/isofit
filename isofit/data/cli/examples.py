@@ -24,7 +24,7 @@ Extras = {
     },
     "lakemary": {
         "url": "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/LakeMary.zip",
-        "subpath": "LakeMary",
+        "subpath": "LakeMary/data",
     },
 }
 

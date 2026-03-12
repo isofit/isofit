@@ -141,9 +141,11 @@ def unzip(file, path=None, rename=None, overwrite=False, cleanup=True):
 
         z.extractall(path)
 
-    src = Path(path) / name
     if rename:
-        if dst.exists():
+        src = Path(path) / name
+        if src.resolve() == dst.resolve():
+            pass
+        elif dst.exists():
             shutil.copytree(src, dst, dirs_exist_ok=True)
             shutil.rmtree(src)
         else:
