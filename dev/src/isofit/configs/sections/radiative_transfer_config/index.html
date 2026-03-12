@@ -4930,7 +4930,12 @@
 <span class="normal">466</span>
 <span class="normal">467</span>
 <span class="normal">468</span>
-<span class="normal">469</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5305,7 +5310,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="p">:</span> <span class="n">RadiativeTransferUnknownsConfig</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_interpolator_style_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span> <span class="o">=</span> <span class="s2">&quot;mlg&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span> <span class="o">=</span> <span class="s2">&quot;mlg_numba&quot;</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Style of interpolation.</span>
 <span class="sd">        - mlg   = Multilinear Grid</span>
 <span class="sd">        - rg    = RegularGrid</span>
@@ -5374,7 +5379,12 @@
         <span class="k">for</span> <span class="n">rte</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">radiative_transfer_engines</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">rte</span><span class="o">.</span><span class="n">check_config_validity</span><span class="p">())</span>
 
-        <span class="n">kinds</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;rg&quot;</span><span class="p">,</span> <span class="s2">&quot;nds&quot;</span><span class="p">,</span> <span class="s2">&quot;mlg&quot;</span><span class="p">]</span>  <span class="c1"># Implemented kinds of interpolator functions</span>
+        <span class="n">kinds</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;rg&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;nds&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mlg&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mlg_numba&quot;</span><span class="p">,</span>
+        <span class="p">]</span>  <span class="c1"># Implemented kinds of interpolator functions</span>
         <span class="n">kind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
         <span class="n">degrees</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
 
