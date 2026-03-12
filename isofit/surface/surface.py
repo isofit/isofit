@@ -20,12 +20,24 @@
 from __future__ import annotations
 
 import logging
+from collections import namedtuple
 
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.io import loadmat
 
 from isofit.core.common import load_spectrum, load_wavelen
+
+DefaultState = namedtuple(
+    "DefaultState",
+    [
+        "bounds",
+        "scale",
+        "prior_mean",
+        "prior_sigma",
+        "init",
+    ],
+)
 
 
 class Surface:
@@ -39,10 +51,10 @@ class Surface:
         self.model_dict = loadmat(config.surface_file)
 
         self.statevec_names = []
+        self.bounds, self.scale, self.init = [], [], []
+        self.prior_mean, self.prior_sigma = [], []
+
         self.idx_surface = np.arange(len(self.statevec_names))
-        self.bounds = np.array([])
-        self.scale = np.array([])
-        self.init = np.array([])
         self.bvec = []
         self.bval = np.array([])
         self.idx_lamb = np.empty(shape=0)
