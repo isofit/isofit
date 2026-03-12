@@ -365,6 +365,7 @@ def download_cli(tutorials, neon, image_cube, lakemary, **kwargs):
     """
     dl_all = True
     path = kwargs.get("path") or env.examples
+    overwrite = kwargs.get("overwrite", False)
 
     if tutorials:
         download_tutorials(
@@ -373,18 +374,14 @@ def download_cli(tutorials, neon, image_cube, lakemary, **kwargs):
         dl_all = False
 
     if neon:
-        download_extra(
-            "neon",
-            path=path,
-            overwrite=kwargs.get("overwrite", False),
-        )
+        download_extra("neon", path=path, overwrite=overwrite)
         dl_all = False
 
     if image_cube:
         download_extra(
             "image_cube",
             examples=path,
-            overwrite=kwargs.get("overwrite", False),
+            overwrite=overwrite,
             size=image_cube,
         )
         dl_all = False
@@ -393,13 +390,13 @@ def download_cli(tutorials, neon, image_cube, lakemary, **kwargs):
         download_extra(
             "lakemary",
             path=path,
-            overwrite=kwargs.get("overwrite", False),
+            overwrite=overwrite,
         )
         dl_all = False
 
     # Only execute if the --[extra] flags weren't used
     if dl_all:
-        if kwargs.get("overwrite"):
+        if overwrite:
             download(**kwargs)
         else:
             update(**kwargs)
