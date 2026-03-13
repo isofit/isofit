@@ -23,6 +23,10 @@ name: Test 'pip' Package
 
 on:
   workflow_call:
+    inputs:
+      cache-key:
+        required: true
+        type: string
 
 # concurrency:
 #   group: ${{ github.workflow }}-${{ github.ref }}
@@ -44,7 +48,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .isofit
-          key: cache-extras
+          key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
           enableCrossOsArchive: true
 
@@ -52,10 +56,13 @@ jobs:
         shell: bash
         run: mv .isofit ~/.isofit
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Print concurrency group
-        run: echo '${{ github.ref }}'
+        run: echo '${{ github.event.pull_request.head.ref }}'
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
