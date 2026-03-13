@@ -111,7 +111,7 @@ def apply_oe(
     eof_path=None,
     terrain_style="dem",
 ):
-    """\
+    """
     Applies OE over a flightline using a radiative transfer engine. This executes
     ISOFIT in a generalized way, accounting for the types of variation that might be
     considered typical.
@@ -120,7 +120,6 @@ def apply_oe(
     geometry lookup tables and provide a heuristic means of determining atmospheric
     water ranges.
 
-    \b
     Parameters
     ----------
     input_radiance : str
@@ -254,7 +253,6 @@ def apply_oe(
     terrain_style : str, default=dem
         Flag to set the terrain style.  dem uses provided obs values, flat sets the surface to the spheroid
 
-    \b
     References
     ----------
     D.R. Thompson, A. Braverman,P.G. Brodrick, A. Candela, N. Carbon, R.N. Clark,D. Connelly, R.O. Green, R.F.
@@ -262,7 +260,6 @@ def apply_oe(
     D.S. Wettergreen. Quantifying Uncertainty for Remote Spectroscopy of Surface Composition. Remote Sensing of
     Environment, 2020. doi: https://doi.org/10.1016/j.rse.2020.111898.
 
-    \b
     sRTMnet emulator:
     P.G. Brodrick, D.R. Thompson, J.E. Fahlen, M.L. Eastwood, C.M. Sarture, S.R. Lundeen, W. Olson-Duvall,
     N. Carmon, and R.O. Green. Generalized radiative transfer emulation for imaging spectroscopy reflectance
@@ -427,6 +424,7 @@ def apply_oe(
         skyview_factor=skyview_factor,
         subs=True if analytical_line or empirical_line else False,
         classify_multisurface=classify_multisurface,
+        dn_uncertainty_file=dn_uncertainty_file,
         eof_path=eof_path,
     )
     paths.make_directories()
@@ -501,6 +499,9 @@ def apply_oe(
     # re-stage surface model if needed
     paths.surface_working_paths = {}
     for key, value in paths.surface_paths.items():
+        if key == "lut_surface":
+            paths.surface_working_paths[key] = value
+            continue
         name, ext = os.path.splitext(paths.surface_template_path)
 
         if use_multisurface:
@@ -659,7 +660,6 @@ def apply_oe(
         "surface_category": surface_category,
         "emulator_base": emulator_base,
         "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
-        "dn_uncertainty_file": dn_uncertainty_file,
         "prebuilt_lut_path": prebuilt_lut,
         "inversion_windows": INVERSION_WINDOWS,
         "multipart_transmittance": multipart_transmittance,
@@ -688,10 +688,13 @@ def apply_oe(
         else:
             max_water = 6
 
+        if use_superpixels:
+            h2o_path = paths.h2o_subs_path
+        else:
+            h2o_path = paths.h2o_working_path
+
         # run H2O grid as necessary
-        if not exists(envi_header(paths.h2o_subs_path)) or not exists(
-            paths.h2o_subs_path
-        ):
+        if not exists(envi_header(h2o_path)) or not exists(h2o_path):
             # Write the presolve connfiguration file
             h2o_grid = np.linspace(0.2, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")
@@ -725,7 +728,7 @@ def apply_oe(
         else:
             logging.info("Existing h2o-presolve solutions found, using those.")
 
-        h2o = envi.open(envi_header(paths.h2o_subs_path))
+        h2o = envi.open(envi_header(h2o_path))
         # Find the band that is H2O. Should be stable with constant H2O name
         h2o_band = [
             i for i, name in enumerate(h2o.metadata["band names"]) if name == "H2OSTR"
@@ -893,7 +896,7 @@ def apply_oe(
 
 
 # Input arguments
-@click.command(name="apply_oe", help=apply_oe.__doc__, no_args_is_help=True)
+@click.command(name="apply_oe", no_args_is_help=True)
 @click.argument("input_radiance")
 @click.argument("input_loc")
 @click.argument("input_obs")
@@ -966,6 +969,8 @@ def cli(debug_args, profile, **kwargs):
 
     print("Done")
 
+
+cli.__doc_source__ = apply_oe
 
 if __name__ == "__main__":
     raise NotImplementedError(

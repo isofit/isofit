@@ -70,7 +70,6 @@ class LUTSurface(Surface):
 
         super().__init__(full_config)
         config = full_config.forward_model.surface
-        surface_n_wl = self.n_wl
         self.terrain_style = full_config.forward_model.radiative_transfer.terrain_style
 
         # Optimization parameters, if not set will come from the data, with a default scale of 1.0.
@@ -146,12 +145,6 @@ class LUTSurface(Surface):
         self.idx_lut = np.arange(self.n_state)
         self.idx_lamb = np.arange(self.n_wl)
         self.idx_surface = np.arange(len(self.statevec_names))
-
-        # Ensure the LUT has been convolved to sensor wavelengths
-        if self.n_wl != surface_n_wl:
-            raise ValueError(
-                f"LUTSurface grid (shape:{self.n_wl}) does not match input data (shape:{surface_n_wl})"
-            )
 
         # Checking the statevec names prior to running
         for name in self.statevec_names:
