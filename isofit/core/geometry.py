@@ -38,6 +38,8 @@ class Geometry:
         esd: np.array = None,
         bg_rfl: np.array = None,
         svf: float = 1,
+        terrain_style: str = "flat",
+        max_slope: float = 45.0,
     ):
         """Initialize geometry object.
         Args:
@@ -109,6 +111,13 @@ class Geometry:
         if dt is not None:
             self.esd_factor = self.get_esd_factor(dt)
 
+        # Bring in config settings for terrain everytime geom is loaded
+        self.max_slope = max_slope
+        self.terrain_style = terrain_style
+        self.verify(
+            coszen=np.nan, max_slope=self.max_slope, terrain_style=self.terrain_style
+        )
+
     def get_esd_factor(self, date_time: datetime):
         """Get distance ratio from sun based on time of year, relative to day 1
         Args:
@@ -121,23 +130,42 @@ class Geometry:
         day_of_year = date_time.timetuple().tm_yday
         return float(self.earth_sun_distance[day_of_year - 1, 1])
 
-    def verify(self, coszen):
+    def verify(self, coszen, max_slope, terrain_style):
         """Verify important geometry data such as coszen, cos_i, slope, aspect, and sky view prior to inversion."""
-        valid_data = {}
+        # coszen should ideally come from RT because of how simulation constructed.
+        # However, if SZA is in the lut grid, then falling back to self.solar_zenith is best.
+        # This method is called again in prior to inversion within the forward model.
+        if not np.isnan(coszen):
+            pass
+        elif self.solar_zenith is not None and not np.isnan(self.solar_zenith):
+            coszen = np.cos(np.radians(self.solar_zenith))
+        else:
+            self.coszen = np.nan
+            self.cos_i = np.nan
+            self.skyview_factor = np.nan
+            return
 
-        # Populate coszen if NaN
-        coszen = np.cos(np.deg2rad(self.solar_zenith)) if np.isnan(coszen) else coszen
-
-        # Local solar zenith angle as a function of surface slope and aspect
-        cos_i = self.cos_i if self.cos_i is not None else coszen
-
-        # Ensure coszen, cos_i respect 0-1 bounds.
-        valid_data["coszen"] = np.clip(coszen, 0.0, 1.0)
-        valid_data["cos_i"] = np.clip(cos_i, 0.0, 1.0)
-
-        # Assume skyview of 1.0 if outside 0-1 (e.g., NaN data).
-        valid_data["skyview_factor"] = (
-            1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
+        # set min cosi (which is at max slope facing away from sun)
+        self.min_cosi = max(
+            0,
+            np.sin(np.arccos(coszen))
+            * np.sin(np.radians(max_slope))
+            * np.cos(np.radians(180))
+            + coszen * np.cos(np.radians(max_slope)),
         )
 
-        return valid_data
+        # Pretend that the surface is flat, regardless of input geometry
+        if terrain_style == "flat":
+            cos_i = coszen
+        else:
+            # Local solar zenith angle as a function of surface slope and aspect
+            cos_i = self.cos_i
+            if cos_i is None or np.isnan(cos_i):
+                raise ValueError("Verify cos_i in the input OBS data.")
+
+        # Check bounds
+        self.coszen = max(self.min_cosi, min(coszen, 1.0))
+        self.cos_i = max(self.min_cosi, min(cos_i, 1.0))
+        self.skyview_factor = (
+            1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
+        )
