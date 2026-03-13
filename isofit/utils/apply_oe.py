@@ -30,6 +30,7 @@ from isofit.utils import (
     segment,
 )
 from isofit.utils.skyview import skyview
+from isofit.utils.background_reflectance import background_reflectance
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -108,6 +109,7 @@ def apply_oe(
     skyview_factor=None,
     resources=False,
     retrieve_co2=False,
+    use_background_rfl=False,
     eof_path=None,
     terrain_style="dem",
 ):
@@ -247,6 +249,8 @@ def apply_oe(
         Enables the system resource tracker. Must also have the log_file set.
     retrieve_co2 : bool, default=False
         Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
+    use_background_rfl : bool, default=False
+        Flag to calculate background reflectance based on presolve. Presolve must also be turned on.
     eof_path : str, default=None
         Add 1 or 2 Empirical Orthogonal Functions to the state vector.  File is a 1-2 column text file
         with one number per instrument channel.
@@ -265,7 +269,7 @@ def apply_oe(
     N. Carmon, and R.O. Green. Generalized radiative transfer emulation for imaging spectroscopy reflectance
     retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.
     """
-    use_superpixels = empirical_line or analytical_line
+    use_superpixels = empirical_line or analytical_line or use_background_rfl
     use_multisurface = True if classify_multisurface or surface_class_file else False
 
     # Determine if we run in multipart-transmittance (4c) mode
@@ -303,6 +307,11 @@ def apply_oe(
             raise ValueError(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
+
+    if use_background_rfl and not presolve:
+        raise ValueError(
+            "Background reflectance can only be used if presolve is turned on."
+        )
 
     if os.path.isdir(working_directory) is False:
         os.mkdir(working_directory)
@@ -419,6 +428,7 @@ def apply_oe(
         skyview_factor=skyview_factor,
         subs=True if analytical_line or empirical_line else False,
         classify_multisurface=classify_multisurface,
+        use_background_rfl=use_background_rfl,
         dn_uncertainty_file=dn_uncertainty_file,
         eof_path=eof_path,
     )
@@ -812,6 +822,11 @@ def apply_oe(
             config_params["co2_lut_grid"] = lut_params.co2_range
             config_params["retrieve_co2"] = True
 
+        # Super pixels set to False now after presolve if not using AOE
+        # This is here to allow presolve and bg_rfl to use superpixel speed up.
+        if not (analytical_line or empirical_line):
+            config_params["use_superpixels"] = False
+
         tmpl.build_config(
             h2o_lut_grid=h2o_lut_grid,
             **config_params,
@@ -820,6 +835,26 @@ def apply_oe(
         if config_only:
             logging.info("`config_only` enabled, exiting early")
             return
+
+        # Run background reflectance retrieval after config created
+        if presolve and use_background_rfl:
+            logging.info("Preparing background reflectance...")
+            background_reflectance(
+                input_radiance=input_radiance,
+                input_loc=input_loc,
+                input_obs=input_obs,
+                paths=paths,
+                mean_altitude_km=mean_altitude_km,
+                mean_elevation_km=mean_elevation_km,
+                smoothing_sigma=atm_sigma,
+                use_slic_rfls=True,
+                use_superpixels=use_superpixels,
+                nodata_value=-9999,
+                chunksize=CHUNKSIZE,
+                logging_level=logging_level,
+                log_file=log_file,
+                n_cores=n_cores,
+            )
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
@@ -872,6 +907,7 @@ def apply_oe(
                 output_rfl_file=paths.rfl_working_path,
                 output_unc_file=paths.uncert_working_path,
                 skyview_factor_file=paths.svf_working_path,
+                bgrfl_file=paths.bgrfl_working_path,
                 loglevel=logging_level,
                 logfile=log_file,
                 n_atm_neighbors=nneighbors,
@@ -931,6 +967,7 @@ def apply_oe(
 @click.option("--skyview_factor", type=str, default=None)
 @click.option("-r", "--resources", is_flag=True, default=False)
 @click.option("--retrieve_co2", is_flag=True, default=False)
+@click.option("--use_background_rfl", is_flag=True, default=False)
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
 @click.option(
