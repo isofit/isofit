@@ -20,8 +20,10 @@
 from __future__ import annotations
 
 import numpy as np
+import xarray as xr
+from scipy.io import loadmat
 
-from isofit.core.common import VectorInterpolator, svd_inv_sqrt
+from isofit.core.common import VectorInterpolator, svd_inv_sqrt, eps
 from isofit.surface.surface import Surface
 
 
@@ -33,22 +35,33 @@ class LUTSurface(Surface):
     described with just a few degrees of freedom.
 
     The lookup table must be precalculated based on the wavelengths
-    of the instrument.  It is stored with other metadata in a matlab-
-    format file. For an n-dimensional lookup table, it contains the
-    following fields:
-      - grids: an object array containing n lists of gridpoints
-      - data: an n+1 dimensional array containing the reflectances
-         for each gridpoint
-      - bounds: a list of n [min,max] tuples representing the bounds
-         for all state vector elements
-      - statevec_names: an array of n strings representing state
-         vector element names
-      - mean: an array of n prior mean values, one for each state
-         vector element
-      - sigma: an array of n prior standard deviations, one for each
-         state vector element
-      - scale: an array of n scale values, one for each state vector
-         element
+    of the instrument and can either be in MATLAB (.mat) format or NetCDF (.nc).
+
+    For a MATLAB lookup table, it contains the following fields:
+        - grids: an object array containing n lists of gridpoints
+        - rho_dif_dir: an n+1 dimensional array containing the dif-dir reflectance for each gridpoint
+        - rho_dir_dir: an n+1 dimensional array containing the dir-dir reflectance for each gridpoint [optional]
+        - statevec_names: an array of n strings representing state vector element names
+        - mean: an array of n prior mean values, one for each state vector element [optional]
+        - sigma: an array of n prior standard deviations, one for each state vector element [optional]
+
+    For a NetCDF lookup table, it contains the following fields:
+        - Coordinates:
+            * wl
+            * Other LUT dimensions (e.g., SZA, VZA, RAA, grain size)
+        - Data Variables:
+            * rho_dif_dir: (LUT Axes..., n_wl)
+            * rho_dir_dir: (LUT Axes..., n_wl) [optional]
+            * statevec_names: (n_state) [optional]
+            * mean: (n_state) [optional]
+            * sigma: (n_state) [optional]
+
+    Reflectance keys should either be rho_dif_dir (or both can be included).
+
+    Any of the angles are optional, but if provided should be in degrees and named "SZA", "VZA", and "RAA".
+
+    You can also choose to run a mixed pixel retrieval by adding data variables of length wl with key name "endmember_TYPE".
+    Where you can fill in TYPE for given surface(s) you would like to mix. You may use any number of endmembers.
 
     """
 
@@ -56,24 +69,137 @@ class LUTSurface(Surface):
         """."""
 
         super().__init__(full_config)
+        config = full_config.forward_model.surface
+        self.terrain_style = full_config.forward_model.radiative_transfer.terrain_style
 
-        # Models are stored as dictionaries in .mat format
-        model_dict = loadmat(config.surface_file)
-        self.lut_grid = [grid[0] for grid in model_dict["grids"][0]]
-        self.lut_names = [name.strip() for name in model_dict["lut_names"]]
-        self.statevec_names = [sv.strip() for sv in model_dict["statevec_names"]]
-        self.data = model_dict["data"]
-        self.wl = model_dict["wl"][0]
+        # Optimization parameters, if not set will come from the data, with a default scale of 1.0.
+        # This could potentially live in surface config?
+        self.bounds = None
+        self.scale = None
+        self.init = None
+        self.mean = None
+        self.sigma = None
+
+        # Check if model is stored as dictionaries in .mat format
+        if config.surface_file.endswith(".mat"):
+            data = loadmat(config.surface_file)
+            self.lut_grid = [grid[0].astype(np.float32) for grid in data["grids"][0]]
+            self.lut_names = [name.strip() for name in data["lut_names"]]
+            self.wl = data["wl"][0]
+        # Otherwise assume xarray
+        else:
+            with xr.open_dataset(config.surface_file) as ds:
+                data = {k: ds[k].values for k in ds.data_vars}
+                for k in ds.coords:
+                    data[k] = ds[k].values
+                self.lut_names = [str(n) for n in ds.coords.keys() if n != "wl"]
+                self.lut_grid = [
+                    ds[n].values.astype(np.float32) for n in self.lut_names
+                ]
+                self.wl = ds["wl"].values
+
+        # Load rfl data
+        self.data_rho_dif = data["rho_dif_dir"]
+        self.data_rho_dir = data.get("rho_dir_dir")
+
+        # Set dimensions based on lut (prior to endmembers)
+        self.statevec_names = [n.strip() for n in data["statevec_names"]]
+        self.statevec_idxs = [self.lut_names.index(n) for n in self.statevec_names]
+        self.n_lut_states = len(self.statevec_idxs)
+
+        # Grab endmember data if present and save indicies
+        self.endmembers = {
+            k.replace("endmember_", ""): v
+            for k, v in data.items()
+            if k.startswith("endmember_")
+        }
+        self.em_names = list(self.endmembers.keys())
+        if len(self.em_names) > 0:
+            if "zfrac_data" not in self.statevec_names:
+                self.statevec_names.append("zfrac_data")
+            for em_name in self.em_names:
+                self.statevec_names.append(f"zfrac_{em_name}")
+
+        self.idx_z_data = next(
+            (i for i, n in enumerate(self.statevec_names) if n == "zfrac_data"), None
+        )
+        self.idx_z_ems = {
+            name: i
+            for i, name in enumerate(self.statevec_names)
+            if name.startswith("zfrac_")
+            and name.replace("zfrac_", "") in self.endmembers
+        }
+        self.is_mixed = self.idx_z_data is not None
+
+        # add cos_i to statevector if needed
+        if self.terrain_style == "solved":
+            self.statevec_names.append("cos_i")
+        self.cos_i_idx = next(
+            (i for i, n in enumerate(self.statevec_names) if n == "cos_i"), None
+        )
+
+        # Store important idxs and lengths
         self.n_wl = len(self.wl)
-        self.bounds = self.model_dict["bounds"]
-        self.scale = self.model_dict["scale"][0]
-        self.init = self.model_dict["init"][0]
-        self.mean = self.model_dict["mean"][0]
-        self.sigma = self.model_dict["sigma"][0]
         self.n_state = len(self.statevec_names)
         self.n_lut = len(self.lut_names)
         self.idx_lut = np.arange(self.n_state)
-        self.idx_lamb = np.empty(shape=0)
+        self.idx_lamb = np.arange(self.n_wl)
+        self.idx_surface = np.arange(len(self.statevec_names))
+
+        # Checking the statevec names prior to running
+        for name in self.statevec_names:
+            if name in ["SZA", "VZA", "RAA"]:
+                raise ValueError(
+                    f"Variable:{name} in the statevector is not supported."
+                )
+            if name.startswith("zfrac_"):
+                continue
+            if name not in self.lut_names:
+                raise ValueError(
+                    f"Statevector:{name} not found in LUT dimensions: {self.lut_names}"
+                )
+
+        # Set the optimization parameters based on data if none are provided
+        if self.bounds is None:
+            self.bounds = []
+            for name in self.statevec_names:
+                if name.startswith("zfrac_"):
+                    # for mixed pixel fractions for softmax function
+                    self.bounds.append([-5.0, 5.0])
+                    # assuming 0-1 range for free cosi variable
+                elif name.startswith("cos_i"):
+                    self.bounds.append([0.0, 1.0])
+                else:
+                    idx = self.lut_names.index(name)
+                    self.bounds.append(
+                        [
+                            self.lut_grid[idx].min().item(),
+                            self.lut_grid[idx].max().item(),
+                        ]
+                    )
+
+        if self.init is None:
+            self.init = []
+            for i, name in enumerate(self.statevec_names):
+                if name.startswith("zfrac_"):
+                    self.init.append(0.0)
+                else:
+                    self.init.append((self.bounds[i][0] + self.bounds[i][1]) / 2.0)
+
+        if self.scale is None:
+            self.scale = [1.0 for _ in range(self.n_state)]
+
+        # If no priors given, assume uninformative, flat priors
+        if self.mean is None:
+            self.mean = self.init.copy()
+        if self.sigma is None:
+            self.sigma = np.ones(self.n_state) * 1e6
+
+        # Ensure priors shape is correct
+        if len(self.mean) != len(self.init) or len(self.sigma) != len(self.init):
+            raise ValueError(
+                f"Priors must match length of statevector (statevector length:{len(self.init)})."
+            )
 
         # Cache some important computations
         Cov = np.diag(self.sigma**2)
@@ -82,11 +208,25 @@ class LUTSurface(Surface):
             Cov_normalized
         )
 
-        # build the interpolator
-        self.itp = VectorInterpolator(self.lut_grid, self.data)
+        # Build the interpolator(s)
+        self.itp_dif = None
+        self.itp_dir = None
+        self.itp_dif = VectorInterpolator(
+            self.lut_grid, self.data_rho_dif.astype(np.float32)
+        )
+        if self.data_rho_dir is not None:
+            self.itp_dir = VectorInterpolator(
+                self.lut_grid, self.data_rho_dir.astype(np.float32)
+            )
 
         # Change this if you don't want to analytical solve for all the full statevector elements.
-        self.analytical_iv_idx = np.arange(len(self.statevec_names))
+        self.analytical_iv_idx = np.arange(self.n_state)
+
+        # Find any relevant geometry indices
+        # This assumes LUT is in units of degrees for geometry
+        self.sza_ind = self.lut_names.index("SZA") if "SZA" in self.lut_names else None
+        self.vza_ind = self.lut_names.index("VZA") if "VZA" in self.lut_names else None
+        self.raa_ind = self.lut_names.index("RAA") if "RAA" in self.lut_names else None
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution."""
@@ -110,10 +250,7 @@ class LUTSurface(Surface):
 
     def fit_params(self, rfl_meas, geom, *args):
         """Given a reflectance estimate, fit a state vector."""
-
-        x_surface = self.mean.copy()
-
-        return x_surface
+        return self.init
 
     def calc_rfl(self, x_surface, geom):
         """Non-Lambertian reflectance.
@@ -129,37 +266,66 @@ class LUTSurface(Surface):
             Reflectance quantity for downward direct photon paths
         rho_dif_dir : np.ndarray
             Reflectance quantity for downward diffuse photon paths
-
-        NOTE:
-            We do not handle direct and diffuse photon path reflectance
-            quantities differently for the multicomponent surface model.
-            This is why we return the same quantity for both outputs.
         """
+        point = self.get_point(x_surface, geom)
+        rho_dir_dir = rho_dif_dir = self.itp_dif(point)
 
-        rho_dir_dir = rho_dif_dir = self.calc_lamb(x_surface, geom)
+        if self.itp_dir is not None:
+            rho_dir_dir = self.itp_dir(point)
+
+        # return if not mixed pixel
+        if not self.is_mixed:
+            return rho_dir_dir, rho_dif_dir
+
+        # softmax for fractional components
+        z = [x_surface[self.idx_z_data]]
+        for name in self.em_names:
+            z.append(x_surface[self.idx_z_ems[f"zfrac_{name}"]])
+        f = np.exp(np.array(z)) / np.sum(np.exp(np.array(z)))
+
+        # apply to LUT data
+        rho_dir_dir = rho_dir_dir * f[0]
+        rho_dif_dir = rho_dif_dir * f[0]
+
+        # and then n-number of endmembers
+        for i, name in enumerate(self.em_names):
+            rho_dir_dir += self.endmembers[name] * f[i + 1]
+            rho_dif_dir += self.endmembers[name] * f[i + 1]
 
         return rho_dir_dir, rho_dif_dir
 
     def calc_lamb(self, x_surface, geom):
-        """Lambertian reflectance.  Be sure to incorporate BRDF-related
-        LUT dimensions such as solar and view zenith."""
+        """Lambertian reflectance."""
+        _, rho_dif = self.calc_rfl(x_surface, geom)
+        return rho_dif
 
+    def get_point(self, x_surface, geom):
+        """create point in grid prior to VectorInterpolator."""
         point = np.zeros(self.n_lut)
 
-        for v, name in zip(x_surface, self.statevec_names):
-            point[self.lut_names.index(name)] = v
+        for v, idx in zip(x_surface, self.statevec_idxs):
+            point[idx] = v
 
-        if "SOLZEN" in self.lut_names:
-            solzen_ind = self.lut_names.index("SOLZEN")
-            point[solzen_ind] = geom.solar_zenith
+        # either take cosi from geom or from state, and clip to rte config.
+        if self.cos_i_idx is not None:
+            cos_i = x_surface[self.cos_i_idx]
+        else:
+            cos_i = geom.cos_i
 
-        if "VIEWZEN" in self.lut_names:
-            viewzen_ind = self.lut_names.index("VIEWZEN")
-            point[viewzen_ind] = geom.observer_zenith
+        if self.sza_ind is not None:
+            point[self.sza_ind] = np.degrees(np.arccos(cos_i))
 
-        lamb = self.itp(point)
+        if self.vza_ind is not None:
+            point[self.vza_ind] = geom.observer_zenith
 
-        return lamb
+        if self.raa_ind is not None:
+            point[self.raa_ind] = geom.relative_azimuth
+
+        # Ensure the point is contained in the lut grid
+        for i, grid_axis in enumerate(self.lut_grid):
+            point[i] = max(grid_axis[0], min(point[i], grid_axis[-1]))
+
+        return point
 
     def drfl_dsurface(self, x_surface, geom):
         """Partial derivative of reflectance with respect to state vector,
@@ -173,7 +339,6 @@ class LUTSurface(Surface):
         reflectance with multilinear interpolation so the finite
         difference derivative is exact."""
 
-        eps = 1e-6
         base = self.calc_lamb(x_surface, geom)
         dlamb = []
 
@@ -282,4 +447,6 @@ class LUTSurface(Surface):
         if len(x_surface) < 1:
             return ""
 
-        return "Surface: " + " ".join([("%5.4f" % x) for x in x_surface])
+        return "Surface: " + " ".join(
+            [f"{n}: {v:5.4f}" for n, v in zip(self.statevec_names, x_surface)]
+        )
