@@ -3,11 +3,11 @@ name: Generate Plots
 on:
   workflow_call:
     inputs:
-      rebuild-cache:
+      cache-key:
         required: true
-        type: boolean
+        type: string
     secrets:
-      RESULTS_REPO:
+      ISOFIT_TEST_RESULTS:
         description: 'GH PAT for the results repo'
         required: true
 
@@ -27,7 +27,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .isofit
-          key: cache-extras${{ inputs.rebuild-cache && format('-{0}', github.run_id) || '' }}
+          key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
           enableCrossOsArchive: true
 
@@ -61,8 +61,8 @@ jobs:
       - name: Checkout tests repo
         uses: actions/checkout@v6
         with:
-          repository: jammont/isofit-PR-tests
-          token: ${{ secrets.RESULTS_REPO }}
+          repository: isofit/isofit-test-results
+          token: ${{ secrets.ISOFIT_TEST_RESULTS }}
           path: results
 
       - name: Execute tests
@@ -74,27 +74,29 @@ jobs:
           RUN=$(isofit path examples)/image_cube/small/
           $RUN/default.sh --log_file $OUTPUT/default.log --resources
 
-          isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png -p 2 4 -p 8 2 -p 5 6
-          isoplots resources $OUTPUT/default.resources.jsonl -o $OUTPUT/default.resources.html -l $OUTPUT/default.log --relative --debug
+          isoplots spectra $RUN/output/ang20170323t202244_rfl -o $OUTPUT/spectra.png -p 2 4 -p 8 2 -p 5 6 -y -.05 .5
+          isoplots resources $OUTPUT/default.resources.jsonl -o $OUTPUT/default.resources.html -l $OUTPUT/default.log --relative --png --debug
 
       - name: Create PR in Tests Results Repo
         id: cpr
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.RESULTS_REPO }}
+          token: ${{ secrets.ISOFIT_TEST_RESULTS }}
+          committer: github-actions[bot] <40919026+github-actions[bot]@users.noreply.github.com>
+          author: github-actions[bot] <40919026+github-actions[bot]@users.noreply.github.com>
           path: results
-          commit-message: "Results for ${{ github.event.pull_request.head.sha }}"
+          commit-message: "${{ github.event.pull_request.head.sha }}"
           branch: "${{ github.event.pull_request.number }}"
           base: main
-          title: "Results for PR ${{ github.event.pull_request.number }}"
-          body: "Automatically generated results from PR branch `${{ github.event.pull_request.number }}`."
+          title: "${{ github.event.pull_request.number }}"
+          body: "Automatically generated results for ${{ github.event.pull_request.html_url }}\n SHA: https://github.com/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha }}"
 
       - name: Comment on original PR
         uses: actions/github-script@v7
         env:
           RESULTS_PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
           SOURCE_PR_NUMBER: ${{ github.event.pull_request.number }}
-          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          SOURCE_SHA: https://github.com/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha }}
         with:
           script: |
             const marker = "<!-- results-comment-marker -->";
@@ -103,10 +105,9 @@ jobs:
             const prNumber = Number(process.env.SOURCE_PR_NUMBER);
             const sha = process.env.SOURCE_SHA;
 
-            const [owner, repo] = context.repo;
+            const { owner, repo } = context.repo;
 
-            const body =
-              `${marker}📊 Generated results:\n\nURL: ${resultsUrl}\nSHA: \`${sha}\``;
+            const body = `${marker}📊 Generated results:\n\nURL: ${resultsUrl}\nSHA: ${sha}`;
 
             // Get existing comments
             const { data: comments } = await github.rest.issues.listComments({

@@ -145,7 +145,7 @@ def test_recursive_replace():
     assert modified_dict3 == dict3
 
 
-def test_interpolators():
+def interp_test(method_a, method_b):
     grid_input = [[1, 5, 10], [2, 4, 6, 7], [50, 60, 80], [0.1, 0.5]]
     data_input = np.random.random(
         (
@@ -157,8 +157,8 @@ def test_interpolators():
         )
     )
 
-    v_orig = VectorInterpolator(grid_input, data_input, version="rg")
-    v_new = VectorInterpolator(grid_input, data_input, version="mlg")
+    v_orig = VectorInterpolator(grid_input, data_input, version=method_a)
+    v_new = VectorInterpolator(grid_input, data_input, version=method_b)
 
     input_test = np.random.random((100, len(grid_input)))
     for _n in range(len(grid_input)):
@@ -177,3 +177,8 @@ def test_interpolators():
         res_orig.flatten(), res_new.flatten()
     )
     assert rvalue**2 > 1 - 1e-6
+
+
+def test_interpolators():
+    interp_test("rg", "mlg")
+    interp_test("rg", "mlg_numba")

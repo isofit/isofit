@@ -18,7 +18,7 @@ name: Build
 on:
   pull_request_target:
     branches: ["dev"]
-    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/workflows/*"]
+    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml"]
 
 concurrency:
   group: ${{ github.event.pull_request.head.ref }}
@@ -82,21 +82,12 @@ jobs:
     continue-on-error: true
     runs-on: ubuntu-latest
     steps:
-      - name: Set rebuild flag
-        id: rebuild
-        run: |
-          if [[ "${{ github.event.pull_request.body || '' }}" == *"[rebuild-cache]"* ]]; then
-            echo "suffix=-${{ github.run_id }}" >> $GITHUB_OUTPUT
-          else
-            echo "suffix=" >> $GITHUB_OUTPUT
-          fi
-
       - name: Cache Extras
         id: cache-extras
         uses: actions/cache@v4
         with:
           path: .isofit
-          key: cache-extras${{ steps.rebuild.outputs.suffix }}
+          key: cache-extras${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
           restore-keys: |
             cache-extras
           enableCrossOsArchive: true
@@ -167,19 +158,19 @@ jobs:
     needs: cache
     uses: ./.github/workflows/test_pip.yml
     with:
-      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
+      cache-key: cache-extras${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
 
   # Test $PYTHONPATH installation
   path:
     needs: cache
     uses: ./.github/workflows/test_path.yml
     with:
-      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
+      cache-key: cache-extras${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
 
   images:
     needs: cache
     uses: ./.github/workflows/images.yml
     with:
-      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
+      cache-key: cache-extras${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
     secrets:
-      RESULTS_REPO: "${{ secrets.RESULTS_REPO }}"
+      ISOFIT_TEST_RESULTS: "${{ secrets.ISOFIT_TEST_RESULTS }}"
