@@ -304,11 +304,6 @@ def apply_oe(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
 
-    if surface_category == "lut_surface" and use_superpixels:
-        raise ValueError(
-            "Analytical line method does not work for LUT surface at this time."
-        )
-
     if os.path.isdir(working_directory) is False:
         os.mkdir(working_directory)
 
@@ -499,9 +494,6 @@ def apply_oe(
     # re-stage surface model if needed
     paths.surface_working_paths = {}
     for key, value in paths.surface_paths.items():
-        if key == "lut_surface":
-            paths.surface_working_paths[key] = value
-            continue
         name, ext = os.path.splitext(paths.surface_template_path)
 
         if use_multisurface:

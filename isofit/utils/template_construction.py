@@ -576,10 +576,6 @@ def check_surface_model(
         wl: instrument center wavelengths
         surface_wavelength_path: path to wavelength file
     """
-
-    if surface_category == "lut_surface":
-        return {surface_category: surface_path}
-
     if os.path.isfile(surface_path):
         if surface_path.endswith(".mat"):
             # check wavelength grid of surface model if provided
