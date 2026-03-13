@@ -711,6 +711,7 @@ def build_config(
     surface_category="multicomponent_surface",
     emulator_base: str = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
+    multiple_restarts: bool = False,
     segmentation_size=400,
     pressure_elevation: bool = False,
     debug: bool = False,
@@ -744,6 +745,7 @@ def build_config(
         surface_category:                     type of surface to use
         emulator_base:                        the basename of the emulator, if used
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
+        multiple_restarts:                    if true, use multiple restarts
         segmentation_size:                    image segmentation size if empirical line is used
         pressure_elevation:                   if true, retrieve pressure elevation
         debug:                                if true, run ISOFIT in debug mode

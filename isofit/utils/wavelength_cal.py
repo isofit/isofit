@@ -632,6 +632,7 @@ def wavelength_cal(
             surface_category=surface_category,
             emulator_base=emulator_base,
             uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+            multiple_restarts=False,
             segmentation_size=n_rows,
             pressure_elevation=False,
             prebuilt_lut_path=prebuilt_lut,
