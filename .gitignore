@@ -36,6 +36,7 @@ logs/
 
 # Ignore built documentation files
 site/
+.cache/
 
 # Ignore local testing directories
 local/

@@ -14,18 +14,16 @@ $ isofit download srtmnet
 
 The above commands will ensure these models are built and available for ISOFIT.
 
-<blockquote style="border-left: 5px solid lightblue; padding: 0.5em 1em; margin: 1em 0;" markdown="1">
+???+ note
 
-:information_source: A commonly useful option `-b [path]`, `--base [path]` will set the download location for all products:
-```
-$ isofit -b extra-downloads/ download all
-```
+    A commonly useful option `-b [path]`, `--base [path]` will set the download location for all products:
+    ```
+    $ isofit -b extra-downloads/ download all
+    ```
 
-This will change the download directory from the default `~` to `./extra-downloads/`
+    This will change the download directory from the default `~` to `./extra-downloads/`
 
-See [data](../../extra_downloads/data.md) for more information.
-
-</blockquote>
+    See [data](../../extra_downloads/data.md) for more information.
 
 ## Manual (Advanced)
 
@@ -47,17 +45,17 @@ $ isofit --path sixs /path/to/sixs/ --path srtmnet /path/to/sRTMnet/ build
 4. Run one of the following examples:
 
 ```
-    # Small example pixel-by-pixel
-    $ cd $(isofit path examples)/image_cube/small/
-    $ ./default.sh
+# Small example pixel-by-pixel
+$ cd $(isofit path examples)/image_cube/small/
+$ ./default.sh
 ```
 ```
-    # Medium example with empirical line solution
-    $ cd $(isofit path examples)/image_cube/medium/
-    $ ./empirical.sh
+# Medium example with empirical line solution
+$ cd $(isofit path examples)/image_cube/medium/
+$ ./empirical.sh
 ```
 ```
-    # Medium example with analytical line solution
-    $ cd $(isofit path examples)/image_cube/medium/
-    $ ./analytical.sh
+# Medium example with analytical line solution
+$ cd $(isofit path examples)/image_cube/medium/
+$ ./analytical.sh
 ```

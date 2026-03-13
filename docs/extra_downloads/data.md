@@ -9,26 +9,22 @@ $ isofit build
 
 The first will download all additional ISOFIT dependencies and configure them for the current system. The second will build the ISOFIT examples using the configured dependencies. From there, examples will be available under `~/.isofit/examples/`. Each subdirectory will have one or more scripts that are prepared for execution.
 
-<blockquote style="border-left: 5px solid lightblue; padding: 0.5em 1em; margin: 1em 0;" markdown="1">
+???+ note
 
-:information_source: Commonly useful options `-b [path]`, `--base [path]` will set the download location for all products:
+    Commonly useful options `-b [path]`, `--base [path]` will set the download location for all products:
 
-```
-$ isofit -b extra-downloads/ download all
+    ```
+    $ isofit -b extra-downloads/ download all
 
-This will change the download directory from the default
-```
+    This will change the download directory from the default
+    ```
 
-</blockquote>
+???+ warning
 
-<blockquote style="border-left: 5px solid yellow; padding: 0.5em 1em; margin: 1em 0;" markdown="1">
-
-:warning: If on MacOS, executing the `make` command may fail if the user hasn't agreed to the Xcode and Apple SDKs license yet. In these cases, it may be required to run the following command in order to compile the programs that use it (6S, LibRadTran):
-```
-$ sudo xcodebuild -license
-```
-
-</blockquote>
+    If on MacOS, executing the `make` command may fail if the user hasn't agreed to the Xcode and Apple SDKs license yet. In these cases, it may be required to run the following command in order to compile the programs that use it (6S, LibRadTran):
+    ```
+    $ sudo xcodebuild -license
+    ```
 
 If there are any issues, please report them to the [ISOFIT repository](https://github.com/isofit/isofit/issues).
 
