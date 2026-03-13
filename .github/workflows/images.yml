@@ -3,9 +3,9 @@ name: Generate Plots
 on:
   workflow_call:
     inputs:
-      rebuild-cache:
+      cache-key:
         required: true
-        type: boolean
+        type: string
     secrets:
       ISOFIT_TEST_RESULTS:
         description: 'GH PAT for the results repo'
@@ -27,7 +27,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .isofit
-          key: cache-extras${{ inputs.rebuild-cache && format('-{0}', github.run_id) || '' }}
+          key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
           enableCrossOsArchive: true
 
