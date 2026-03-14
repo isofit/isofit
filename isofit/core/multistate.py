@@ -332,9 +332,7 @@ def fill_statevector(state_est, idx, miss, full_statevector, null_value=-9999.0)
 
 
 @numba.jit
-def jit_statevector(
-    state_data: np.array, full_statevec: list, fm_statevec: list, null_value=-9999.0
-):
+def jit_statevector(state_data, full_statevec, fm_statevec, full_state):
     """
     A multi-class surface requires some merging across statevectors
     of different length. This function maps the fm-specific state
@@ -348,7 +346,6 @@ def jit_statevector(
     returns:
         full_state: (np.array) Populated full state with null_values in missing elements
     """
-    full_state = np.zeros((len(full_statevec))) + null_value
     idx = []
     for fm_name in fm_statevec:
         for i, full_name in enumerate(full_statevec):
