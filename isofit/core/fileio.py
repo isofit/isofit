@@ -39,7 +39,7 @@ from isofit.core.common import (
     resample_spectrum,
 )
 from isofit.core.geometry import Geometry
-from isofit.core.multistate import fill_statevector, jit_statevector
+from isofit.core.multistate import fill_statevector
 from isofit.data import env
 from isofit.inversion.inverse_simple import invert_algebraic
 
@@ -636,15 +636,11 @@ class IO:
                 raise IOError("len(fm.statevec) > len(self.full_statevec)")
 
             ############ Start with all of the 'independent' calculations
-            full_state = np.zeros((len(full_statevec))) + -9999.0
             if "estimated_state_file" in self.output_datasets:
                 # state_est transformed to reflect io.full_statevec
-                to_write["estimated_state_file"] = jit_statevector(
-                    state_est, self.full_statevec, fm.statevec, full_state
+                to_write["estimated_state_file"] = fill_statevector(
+                    state_est, fm.full_idx, fm.full_miss, self.full_statevec
                 )
-                # to_write["estimated_state_file"] = fill_statevector(
-                #     state_est, fm.full_idx, fm.full_miss, self.full_statevec
-                # )
 
             if "path_radiance_file" in self.output_datasets:
                 # Note: for glint models, this will return atm + glint
@@ -669,15 +665,12 @@ class IO:
 
             if "posterior_uncertainty_file" in self.output_datasets:
                 S_hat, K, G = iv.calc_posterior(state_est, geom, meas)
-                to_write["posterior_uncertainty_file"] = jit_statevector(
-                    np.sqrt(np.diag(S_hat)), self.full_statevec, fm.statevec, full_state
+                to_write["posterior_uncertainty_file"] = fill_statevector(
+                    np.sqrt(np.diag(S_hat)),
+                    fm.full_idx,
+                    fm.full_miss,
+                    self.full_statevec,
                 )
-                # to_write["posterior_uncertainty_file"] = fill_statevector(
-                #     np.sqrt(np.diag(S_hat)),
-                #     fm.full_idx,
-                #     fm.full_miss,
-                #     self.full_statevec,
-                # )
 
             ############ Now proceed to the calcs where they may be some overlap
 

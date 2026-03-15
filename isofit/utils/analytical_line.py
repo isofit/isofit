@@ -40,7 +40,6 @@ from isofit.core.multistate import (
     construct_full_state,
     fill_statevector,
     index_spectra_by_surface,
-    jit_statevector,
     update_config_for_surface,
 )
 from isofit.inversion.inverse_simple import (
@@ -602,21 +601,14 @@ class Worker(object):
             )
             state_est = states[-1]
 
-            # full_state_est = fill_statevector(
-            #     state_est, self.fm.full_idx, self.fm.full_miss, self.full_statevector
-            # )
-            full_state = np.zeros((len(full_statevec))) + -9999.0
-            full_state_est = ji_statevector(
-                state_est, self.full_statevector, self.fm.statevec, full_state
+            full_state_est = fill_statevector(
+                state_est, self.fm.full_idx, self.fm.full_miss, self.full_statevector
             )
             output_rfl[r - start_line, c, :] = full_state_est[self.full_idx_surf_rfl]
 
-            full_unc_est = jit_statevector(
-                un, self.full_statevector, self.fm.statevec, full_state
+            full_unc_est = fill_statevector(
+                unc, self.fm.full_idx, self.fm.full_miss, self.full_statevector
             )
-            # full_unc_est = fill_statevector(
-            #     unc, self.fm.full_idx, self.fm.full_miss, self.full_statevector
-            # )
             output_rfl_unc[r - start_line, c, :] = full_unc_est[self.full_idx_surf_rfl]
 
             full_state_est[len(self.full_idx_surf_rfl) : self.n_non_rfl_bands]
