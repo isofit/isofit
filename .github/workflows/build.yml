@@ -50,32 +50,21 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.12'
-
-      - name: Install dependencies
-        shell: bash
-        run: |
-          python3 -m pip install --upgrade pip build twine
+          version: "0.9.25"
+          python-version: "3.12"
 
       - name: Build package
         shell: bash
-        run: |
-          python3 -m build --sdist --wheel
+        run: uv build
 
-      - name: Install tarball
-        shell: bash
-        run: |
-          # Force CPU version of torch to save space on runners
-          python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-          python3 -m pip install dist/*.gz
+      - name: Smoke test (wheel)
+        run: uv run --isolated --no-project --with dist/*.whl isofit
 
-      - name: Test installation
-        shell: bash
-        run: |
-          isofit
+      - name: Smoke test (source distribution)
+        run: uv run --isolated --no-project --with dist/*.tar.gz isofit
 
   # Either build the cache or check for updates, fail if updates are needed: does not block tests on failure
   cache:
@@ -111,7 +100,7 @@ jobs:
       - name: Install ISOFIT
         shell: bash
         run: |
-          uv sync --extra dev
+          uv sync
 
       - name: Check for Updates
         if: steps.cache-extras.outputs.cache-hit == 'true' && steps.rebuild.outputs.rebuild != 'true'

@@ -51,7 +51,6 @@ dev = [
   "pre-commit",
   "black",
   "isort",
-  "isoplots @ git+https://github.com/isofit/isofit-plots.git"
 ]
 test = [
   "pytest >= 3.5.1",
@@ -67,9 +66,13 @@ docs = [
   "mkdocs>=1.6.1,<2",
   "mkdocs-material[imaging]>=9.7.1",
 ]
+plots = [
+  "isoplots",
+]
 
 [tool.uv.sources]
 torch = [{index="pytorch-cpu"}]
+isoplots = [{git="https://github.com/isofit/isofit-plots.git"}]
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
