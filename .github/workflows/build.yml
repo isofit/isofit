@@ -12,13 +12,20 @@
 # As such, the extras are built in the local working directory and cached there, then
 # moved to ~/.isofit after, allowing both Linux and Windows to put the cache into the
 # correct locations
+#
+# This workflow is UNTRUSTED. It will NOT have access to the repo SECRETS, but it is
+# allowed to be modified by a PR.
 
 name: Build
 
 on:
-  pull_request_target:
+  pull_request:
     branches: ["dev"]
     paths: ["isofit/**", "recipe/*.yml", "pyproject.toml"]
+
+# If the PR body contains "[rebuild-cache]", will set the cache-key to a unique key for this PR to trigger a cache rebuild
+env:
+  CACHE_KEY: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
 
 concurrency:
   group: ${{ github.event.pull_request.head.ref }}
@@ -76,7 +83,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .isofit
-          key: cache-extras${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
+          key: ${{ env.CACHE_KEY }}
           restore-keys: |
             cache-extras
           enableCrossOsArchive: true
@@ -147,21 +154,28 @@ jobs:
   # Test pip installation
   pip:
     needs: cache
-    uses: ./.github/workflows/test_pip.yml
+    uses: ./.github/workflows/tests/test_pip.yml
     with:
-      cache-key: cache-extras${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
+      cache-key: ${{ env.CACHE_KEY }}
 
   # Test $PYTHONPATH installation
   path:
     needs: cache
-    uses: ./.github/workflows/test_path.yml
+    uses: ./.github/workflows/tests/test_path.yml
     with:
-      cache-key: cache-extras${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
+      cache-key: ${{ env.CACHE_KEY }}
 
-  images:
+  # Results workflows
+  imagecube[small]:
     needs: cache
-    uses: ./.github/workflows/images.yml
+    uses: ./.github/workflows/results/imagecube_small.yml
     with:
-      cache-key: cache-extras${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
-    secrets:
-      ISOFIT_TEST_RESULTS: "${{ secrets.ISOFIT_TEST_RESULTS }}"
+      cache-key: ${{ env.CACHE_KEY }}
+      pr-number: ${{ github.event.pull_request.number }}
+
+  lakemary:
+    needs: cache
+    uses: ./.github/workflows/results/lakemary.yml
+    with:
+      cache-key: ${{ env.CACHE_KEY }}
+      pr-number: ${{ github.event.pull_request.number }}

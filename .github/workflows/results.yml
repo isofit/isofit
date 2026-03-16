@@ -1,0 +1,111 @@
+# This workflow is TRUSTED. Changes made to it will not execute within a PR. Only once
+# merged will changes affect the execution of this workflow. TRUSTED enables access to
+# the repo SECRETS
+name: Publish Results
+
+on:
+  workflow_run:
+    workflows:
+      - ImageCube[small] Spectra
+      - Lake Mary Single Pixel
+    types:
+      - completed
+
+ permissions:
+   contents: read
+   pull-requests: write
+
+ jobs:
+   spectra:
+     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+     env:
+       NAME: ${{ github.event.workflow_run.name }}
+       NUM: ${{ github.event.workflow_run.pull_requests[0].number }}
+       URL: ${{ github.event.workflow_run.pull_requests[0].html_url }}
+       SHA: https://github.com/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }}
+     runs-on: ubuntu-latest
+     steps:
+      - name: Determine which workflow triggered
+        run: |
+          echo "Triggered by workflow: $NAME"
+
+      - name: Checkout tests repo
+        uses: actions/checkout@v6
+        with:
+          repository: isofit/isofit-test-results
+          token: ${{ secrets.ISOFIT_TEST_RESULTS }}
+          path: results
+
+      - name: Prepare results
+        run: |
+          rm -rf results/dev
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: results/dev
+          pattern: $NUM-*
+          merge-multiple: true
+
+      - name: Create PR in Tests Results Repo
+        id: cpr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.ISOFIT_TEST_RESULTS }}
+          committer: github-actions[bot] <40919026+github-actions[bot]@users.noreply.github.com>
+          author: github-actions[bot] <40919026+github-actions[bot]@users.noreply.github.com>
+          path: results
+          commit-message: $SHA
+          branch: $NUM
+          base: main
+          title: $NUM
+          body: "Automatically generated results for $URL\n SHA: $SHA"
+
+      - name: Comment on original PR
+        uses: actions/github-script@v7
+        env:
+          RESULTS_PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
+          SOURCE_PR_NUMBER: $NUM
+          SOURCE_SHA: $SHA
+        with:
+          script: |
+           const marker = "<!-- results-comment-marker -->";
+
+           const resultsUrl = process.env.RESULTS_PR_URL;
+           const prNumber = Number(process.env.SOURCE_PR_NUMBER);
+           const sha = process.env.SOURCE_SHA;
+
+           const { owner, repo } = context.repo;
+
+           const body = `${marker}📊 Generated results:\n\nURL: ${resultsUrl}\nSHA: ${sha}`;
+
+           // Get existing comments
+           const { data: comments } = await github.rest.issues.listComments({
+             owner,
+             repo,
+             issue_number: prNumber,
+           });
+
+           // Look for an existing bot comment
+           const existing = comments.find(comment =>
+             comment.body && comment.body.includes(marker)
+           );
+
+           if (existing) {
+             // Update existing comment
+             await github.rest.issues.updateComment({
+               owner,
+               repo,
+               comment_id: existing.id,
+               body,
+             });
+             console.log("Updated existing results comment.");
+           } else {
+             // Create new comment
+             await github.rest.issues.createComment({
+               owner,
+               repo,
+               issue_number: prNumber,
+               body,
+             });
+             console.log("Created results comment.");
+           }
