@@ -106,14 +106,12 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.9.25"
-
-      - name: Set up Python
-        run: uv python install 3.12
+          python-version: "3.12"
 
       - name: Install ISOFIT
         shell: bash
         run: |
-          uv sync --extra test
+          uv sync --extra dev
 
       - name: Check for Updates
         if: steps.cache-extras.outputs.cache-hit == 'true' && steps.rebuild.outputs.rebuild != 'true'
