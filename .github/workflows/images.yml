@@ -49,14 +49,11 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.9.25"
-
-      - name: Set up Python
-        run: uv python install 3.12
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
-          uv sync
-          uv add --editable $(uv run isofit path plots)
+          uv sync --extra dev
 
       - name: Checkout tests repo
         uses: actions/checkout@v6
