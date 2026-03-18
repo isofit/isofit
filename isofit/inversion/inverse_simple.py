@@ -73,16 +73,6 @@ def heuristic_atmosphere(
 
     x_new = x_RT.copy()
 
-    # Figure out which RT object we are using
-    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
-    my_RT = None
-    for rte in fm.RT.rt_engines:
-        if rte.treat_as_emissive is False:
-            my_RT = rte
-            break
-    if not my_RT:
-        raise ValueError("No suitable RT object for initialization")
-
     # Band ratio retrieval of H2O.  Depending on the radiative transfer
     # model we are using, this state parameter could go by several names.
     for h2oname in ["H2OSTR", "h2o"]:
@@ -90,7 +80,7 @@ def heuristic_atmosphere(
             continue
 
         # ignore unused names
-        if h2oname not in my_RT.lut_names:
+        if h2oname not in fm.RT.engine.lut_names:
             continue
 
         # find the index in the lookup table associated with water vapor
@@ -101,7 +91,7 @@ def heuristic_atmosphere(
         # calculating the band ratio that we would see if this were the
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in my_RT.lut_grid[h2oname]:
+        for h2o in fm.RT.engine.lut_grid[h2oname]:
             # Get Atmospheric terms at high spectral resolution
             x_RT_2 = x_RT.copy()
             x_RT_2[ind_sv] = h2o
@@ -169,15 +159,6 @@ def invert_algebraic(
         rfl_est: estimate of the surface reflectance based on the given surface model and specified atmospheric state
         coeffs: atmospheric parameters used for the inversion, returned for convenience
     """
-    # Figure out which RT object we are using
-    # TODO: this is currently very specific to vswir-tir 2-mode, eventually generalize
-    my_RT = None
-    for rte in RT.rt_engines:
-        if rte.treat_as_emissive is False:
-            my_RT = rte
-            break
-    if not my_RT:
-        raise ValueError("No suitable RT object for initialization")
 
     _, rho_init = surface.calc_rfl(x_surface, geom)
 

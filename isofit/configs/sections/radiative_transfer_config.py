@@ -113,10 +113,6 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         self.template_file = None
         """str: A template file to be used as the base-configuration for the given radiative transfer engine."""
 
-        self._treat_as_emissive_type = bool
-        self.treat_as_emissive = False
-        """bool: Run the simulation in emission mode"""
-
         self._glint_model_type = bool
         self.glint_model = False
         """
@@ -437,6 +433,9 @@ class RadiativeTransferConfig(BaseConfigSection):
         This can avoid runaway results at low cos_i values where diffuse radiance dominates.
         """
 
+        self._engine_type = RadiativeTransferEngineConfig
+        self.engine = None
+
         self.set_config_options(sub_configdic)
 
         # sort lut_grid
@@ -444,22 +443,7 @@ class RadiativeTransferConfig(BaseConfigSection):
             self.lut_grid[key] = sorted(self.lut_grid[key])
         self.lut_grid = OrderedDict(sorted(self.lut_grid.items(), key=lambda t: t[0]))
 
-        # Hold this parameter for after the config_options, as radiative_transfer_engines
-        # have a special (dynamic) load
-        self._radiative_transfer_engines_type = list()
-        self.radiative_transfer_engines = []
-
-        self._set_rt_config_options(sub_configdic["radiative_transfer_engines"])
-
-    def _set_rt_config_options(self, subconfig):
-        if type(subconfig) is list:
-            for rte in subconfig:
-                rt_model = RadiativeTransferEngineConfig(rte)
-                self.radiative_transfer_engines.append(rt_model)
-        elif type(subconfig) is dict:
-            for key in subconfig:
-                rt_model = RadiativeTransferEngineConfig(subconfig[key], name=key)
-                self.radiative_transfer_engines.append(rt_model)
+        self.engine = RadiativeTransferEngineConfig(sub_configdic["engine"])
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
@@ -473,10 +457,9 @@ class RadiativeTransferConfig(BaseConfigSection):
             if np.unique(item).size < len(item):
                 errors.append(f"Detected duplicate values in lut_grid item {key}")
 
-        for rte in self.radiative_transfer_engines:
-            er, warn = rte.check_config_validity()
-            errors.extend(er)
-            warnings.extend(warn)
+        er, warn = self.engine.check_config_validity()
+        errors.extend(er)
+        warnings.extend(warn)
 
         kinds = [
             "rg",

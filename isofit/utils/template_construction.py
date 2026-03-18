@@ -1477,15 +1477,13 @@ def make_rt_config(
         engine_name = "sRTMnet"
 
     radiative_transfer_config = {
-        "radiative_transfer_engines": {
-            "vswir": {
-                "engine_name": engine_name,
-                "multipart_transmittance": multipart_transmittance,
-                "sim_path": lut_dir,
-                "lut_path": lut_path,
-                "aerosol_template_file": aerosol_tpl_path,
-                "template_file": modtran_template_path,
-            }
+        "engine": {
+            "engine_name": engine_name,
+            "multipart_transmittance": multipart_transmittance,
+            "sim_path": lut_dir,
+            "lut_path": lut_path,
+            "aerosol_template_file": aerosol_tpl_path,
+            "template_file": modtran_template_path,
         },
         "statevector": {},
         "lut_grid": {},
@@ -1494,26 +1492,24 @@ def make_rt_config(
         "max_slope": max_slope,
     }
 
-    vswir = {}
+    rte = {}
     if emulator_base is not None:
-        vswir["emulator_file"] = abspath(emulator_base)
-        vswir["earth_sun_distance_file"] = earth_sun_distance_path
-        vswir["irradiance_file"] = irradiance_file
-        vswir["engine_base_dir"] = sixs_path
+        rte["emulator_file"] = abspath(emulator_base)
+        rte["earth_sun_distance_file"] = earth_sun_distance_path
+        rte["irradiance_file"] = irradiance_file
+        rte["engine_base_dir"] = sixs_path
         if multipart_transmittance:
-            vswir["emulator_aux_file"] = abspath(emulator_base)
+            rte["emulator_aux_file"] = abspath(emulator_base)
         else:
-            vswir["emulator_aux_file"] = abspath(
+            rte["emulator_aux_file"] = abspath(
                 os.path.splitext(emulator_base)[0] + "_aux.npz"
             )
     else:
-        vswir["engine_base_dir"] = modtran_path
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"].update(vswir)
+        rte["engine_base_dir"] = modtran_path
+    radiative_transfer_config["engine"].update(rte)
 
     if aerosol_model_file is None:
-        radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-            "aerosol_model_file"
-        ] = aerosol_model_file
+        radiative_transfer_config["engine"]["aerosol_model_file"] = aerosol_model_file
 
     # First, build the general lut grid
     lut_grid = {
@@ -1556,7 +1552,7 @@ def make_rt_config(
         lut_grid.pop(tr)
 
     radiative_transfer_config["lut_grid"].update(lut_grid)
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = {
+    radiative_transfer_config["engine"]["lut_names"] = {
         key: None for key in lut_grid.keys()
     }
 
@@ -1591,10 +1587,10 @@ def make_rt_config(
     if aerosol_state_vector is not None and presolve is False:
         radiative_transfer_config["statevector"].update(aerosol_state_vector)
 
-    # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
-        "statevector_names"
-    ] = list(radiative_transfer_config["statevector"].keys())
+    # RTE should know about our whole LUT grid and all of our statevectors, so copy them in
+    radiative_transfer_config["engine"]["statevector_names"] = list(
+        radiative_transfer_config["statevector"].keys()
+    )
 
     return radiative_transfer_config
 

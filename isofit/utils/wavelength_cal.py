@@ -39,9 +39,9 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
     n = np.ones(len(x))
     D = np.c_[n, x, w]
     np.savetxt(hi_res_wavlengths, D, fmt="%8.6f")
-    config["forward_model"]["radiative_transfer"]["radiative_transfer_engines"][
-        "vswir"
-    ]["wavelength_file"] = hi_res_wavlengths
+    config["forward_model"]["radiative_transfer"]["engine"][
+        "wavelength_file"
+    ] = hi_res_wavlengths
 
     # Flag case where spline_indices is empty and using spline
     if not spline_indices and (
