@@ -20,12 +20,24 @@
 from __future__ import annotations
 
 import logging
+from collections import namedtuple
 
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.io import loadmat
 
 from isofit.core.common import load_spectrum, load_wavelen
+
+DefaultState = namedtuple(
+    "DefaultState",
+    [
+        "bounds",
+        "scale",
+        "prior_mean",
+        "prior_sigma",
+        "init",
+    ],
+)
 
 
 class Surface:
@@ -36,13 +48,13 @@ class Surface:
 
     def __init__(self, full_config: Config):
         config = full_config.forward_model.surface
+        self.model_dict = loadmat(config.surface_file)
 
-        self.model_dict = {}
         self.statevec_names = []
+        self.bounds, self.scale, self.init = [], [], []
+        self.prior_mean, self.prior_sigma = [], []
+
         self.idx_surface = np.arange(len(self.statevec_names))
-        self.bounds = np.array([])
-        self.scale = np.array([])
-        self.init = np.array([])
         self.bvec = []
         self.bval = np.array([])
         self.idx_lamb = np.empty(shape=0)
@@ -50,9 +62,6 @@ class Surface:
 
         self.wl = None
         self.fwhm = None
-
-        if config.surface_category != "lut_surface":
-            self.model_dict = loadmat(config.surface_file)
 
         # 1st Priority: use the wavelength file
         if config.wavelength_file is not None:

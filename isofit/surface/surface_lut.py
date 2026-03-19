@@ -24,7 +24,7 @@ import xarray as xr
 from scipy.io import loadmat
 
 from isofit.core.common import VectorInterpolator, svd_inv_sqrt, eps
-from isofit.surface.surface import Surface
+from isofit.surface.surface import Surface, DefaultState
 
 
 class LUTSurface(Surface):
@@ -72,23 +72,18 @@ class LUTSurface(Surface):
         config = full_config.forward_model.surface
         self.terrain_style = full_config.forward_model.radiative_transfer.terrain_style
 
-        # Optimization parameters, if not set will come from the data, with a default scale of 1.0.
-        # This could potentially live in surface config?
-        self.bounds = None
-        self.scale = None
-        self.init = None
-        self.mean = None
-        self.sigma = None
+        self.bounds, self.scale, self.init, self.mean, self.sigma = [], [], [], [], []
 
         # Check if model is stored as dictionaries in .mat format
-        if config.surface_file.endswith(".mat"):
-            data = loadmat(config.surface_file)
+        if config.surface_lut_file.endswith(".mat"):
+            data = loadmat(config.surface_lut_file)
             self.lut_grid = [grid[0].astype(np.float32) for grid in data["grids"][0]]
             self.lut_names = [name.strip() for name in data["lut_names"]]
             self.wl = data["wl"][0]
+
         # Otherwise assume xarray
         else:
-            with xr.open_dataset(config.surface_file) as ds:
+            with xr.open_dataset(config.surface_lut_file) as ds:
                 data = {k: ds[k].values for k in ds.data_vars}
                 for k in ds.coords:
                     data[k] = ds[k].values
@@ -98,7 +93,7 @@ class LUTSurface(Surface):
                 ]
                 self.wl = ds["wl"].values
 
-        # Load rfl data
+        # Load rfl data and optional dir-dir term
         self.data_rho_dif = data["rho_dif_dir"]
         self.data_rho_dir = data.get("rho_dir_dir")
 
@@ -114,6 +109,12 @@ class LUTSurface(Surface):
             if k.startswith("endmember_")
         }
         self.em_names = list(self.endmembers.keys())
+
+        # Create each of the zfrac parts of the statevector
+        # For reference this is related to fractional cover by e.g.:
+        # z = np.array([zfrac_data , zfrac_em_1 ... , zfrac_em_n])
+        # f = np.exp(z) / np.sum(np.exp(z))
+        # f_em_n = f[n]
         if len(self.em_names) > 0:
             if "zfrac_data" not in self.statevec_names:
                 self.statevec_names.append("zfrac_data")
@@ -129,9 +130,9 @@ class LUTSurface(Surface):
             if name.startswith("zfrac_")
             and name.replace("zfrac_", "") in self.endmembers
         }
-        self.is_mixed = self.idx_z_data is not None
+        self.solve_mixed_pixel = self.idx_z_data is not None
 
-        # add cos_i to statevector if needed
+        # Add cos_i to statevector if needed
         if self.terrain_style == "solved":
             self.statevec_names.append("cos_i")
         self.cos_i_idx = next(
@@ -159,41 +160,26 @@ class LUTSurface(Surface):
                     f"Statevector:{name} not found in LUT dimensions: {self.lut_names}"
                 )
 
-        # Set the optimization parameters based on data if none are provided
-        if self.bounds is None:
-            self.bounds = []
-            for name in self.statevec_names:
-                if name.startswith("zfrac_"):
-                    # for mixed pixel fractions for softmax function
-                    self.bounds.append([-5.0, 5.0])
-                    # assuming 0-1 range for free cosi variable
-                elif name.startswith("cos_i"):
-                    self.bounds.append([0.0, 1.0])
-                else:
-                    idx = self.lut_names.index(name)
-                    self.bounds.append(
-                        [
-                            self.lut_grid[idx].min().item(),
-                            self.lut_grid[idx].max().item(),
-                        ]
+        # Populate priors and optimization parameters
+        for name in self.statevec_names:
+            idx = self.lut_names.index(name) if name in self.lut_names else None
+            state = self.get_default_state(name=name, config=config, index=idx)
+
+            self.bounds.append(state.bounds)
+            self.scale.append(state.scale)
+            self.init.append(state.init)
+            self.mean.append(state.prior_mean)
+            self.sigma.append(state.prior_sigma)
+
+            # Defend against partially filled in config, this may error later but safe to check here
+            for field in state._fields:
+                if getattr(state, field) is None:
+                    raise AttributeError(
+                        f"Variable '{name}' missing '{field}' in surface config."
                     )
 
-        if self.init is None:
-            self.init = []
-            for i, name in enumerate(self.statevec_names):
-                if name.startswith("zfrac_"):
-                    self.init.append(0.0)
-                else:
-                    self.init.append((self.bounds[i][0] + self.bounds[i][1]) / 2.0)
-
-        if self.scale is None:
-            self.scale = [1.0 for _ in range(self.n_state)]
-
-        # If no priors given, assume uninformative, flat priors
-        if self.mean is None:
-            self.mean = self.init.copy()
-        if self.sigma is None:
-            self.sigma = np.ones(self.n_state) * 1e6
+        self.mean = np.array(self.mean)
+        self.sigma = np.array(self.sigma)
 
         # Ensure priors shape is correct
         if len(self.mean) != len(self.init) or len(self.sigma) != len(self.init):
@@ -202,13 +188,14 @@ class LUTSurface(Surface):
             )
 
         # Cache some important computations
+        # NOTE for now this assumes no off diagonal elements
         Cov = np.diag(self.sigma**2)
         Cov_normalized = Cov / np.mean(np.diag(Cov))
         self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
             Cov_normalized
         )
 
-        # Build the interpolator(s)
+        # Build the interpolator(s), once again the dir-dir is optional
         self.itp_dif = None
         self.itp_dir = None
         self.itp_dif = VectorInterpolator(
@@ -219,7 +206,7 @@ class LUTSurface(Surface):
                 self.lut_grid, self.data_rho_dir.astype(np.float32)
             )
 
-        # Change this if you don't want to analytical solve for all the full statevector elements.
+        # NOTE LUTSurface currently is not compatible with analytical line
         self.analytical_iv_idx = np.arange(self.n_state)
 
         # Find any relevant geometry indices
@@ -227,6 +214,42 @@ class LUTSurface(Surface):
         self.sza_ind = self.lut_names.index("SZA") if "SZA" in self.lut_names else None
         self.vza_ind = self.lut_names.index("VZA") if "VZA" in self.lut_names else None
         self.raa_ind = self.lut_names.index("RAA") if "RAA" in self.lut_names else None
+
+    def get_default_state(self, name, config, index=None):
+        """Used to handle dynamic loading of state config which are unknown in the LUTSurface case."""
+
+        # First priority goes to any that are defined in the config
+        sv = getattr(config, "statevector", None)
+        if sv and name in sv:
+            return DefaultState(
+                bounds=sv[name].get("bounds"),
+                scale=sv[name].get("scale"),
+                prior_mean=sv[name].get("prior_mean"),
+                prior_sigma=sv[name].get("prior_sigma"),
+                init=sv[name].get("init"),
+            )
+
+        # Fallback to setting it based on the dataset, with uninformative priors
+        # zfrac and cos_i are based on predefined values in this case
+        if name.startswith("zfrac_"):
+            return DefaultState(
+                bounds=[-5.0, 5.0], scale=1.0, prior_mean=0.0, prior_sigma=1e6, init=0.0
+            )
+        elif name == "cos_i":
+            return DefaultState(
+                bounds=[1e-6, 1.0], scale=1.0, prior_mean=0.5, prior_sigma=1e6, init=0.5
+            )
+        elif index is not None:
+            lb = self.lut_grid[index].min().item()
+            ub = self.lut_grid[index].max().item()
+            middle_value = (lb + ub) / 2.0
+            return DefaultState(
+                bounds=[lb, ub],
+                scale=1.0,
+                prior_mean=middle_value,
+                prior_sigma=1e6,
+                init=middle_value,
+            )
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution."""
@@ -273,21 +296,21 @@ class LUTSurface(Surface):
         if self.itp_dir is not None:
             rho_dir_dir = self.itp_dir(point)
 
-        # return if not mixed pixel
-        if not self.is_mixed:
+        # Return here if this is not a mixed pixel
+        if not self.solve_mixed_pixel:
             return rho_dir_dir, rho_dif_dir
 
-        # softmax for fractional components
+        # Apply softmax for fractional components
         z = [x_surface[self.idx_z_data]]
         for name in self.em_names:
             z.append(x_surface[self.idx_z_ems[f"zfrac_{name}"]])
         f = np.exp(np.array(z)) / np.sum(np.exp(np.array(z)))
 
-        # apply to LUT data
+        # ... to first the LUT data
         rho_dir_dir = rho_dir_dir * f[0]
         rho_dif_dir = rho_dif_dir * f[0]
 
-        # and then n-number of endmembers
+        # ... and then n-number of endmembers
         for i, name in enumerate(self.em_names):
             rho_dir_dir += self.endmembers[name] * f[i + 1]
             rho_dif_dir += self.endmembers[name] * f[i + 1]
@@ -306,12 +329,13 @@ class LUTSurface(Surface):
         for v, idx in zip(x_surface, self.statevec_idxs):
             point[idx] = v
 
-        # either take cosi from geom or from state, and clip to rte config.
+        # Either take cosi from geom or from state, and clip to rte config.
         if self.cos_i_idx is not None:
             cos_i = x_surface[self.cos_i_idx]
         else:
             cos_i = geom.cos_i
 
+        # SZA, VZA, and RAA are optional indicies
         if self.sza_ind is not None:
             point[self.sza_ind] = np.degrees(np.arccos(cos_i))
 
@@ -428,18 +452,9 @@ class LUTSurface(Surface):
         background - s * rho_bg
 
         NOTE FOR SURFACE_LUT:
-        This assumes that the only surface statevector terms are
-        surface reflectance terms. Any additional surface state elements
-        have to be explicitely handled in this function. How they are
-        handled is dependent on the nature of the surface rfl model.
-        The n-columns of H is equal to the number of statevector elements.
-        Here, set to the number of wavelengths.
+        To avoid confusion this does not output anything.
         """
-        theta = L_tot + (L_tot * background)
-        H = np.eye(self.n_wl, self.n_wl)
-        H = theta[:, np.newaxis] * H
-
-        return H
+        pass
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""

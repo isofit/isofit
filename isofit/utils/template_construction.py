@@ -578,6 +578,12 @@ def check_surface_model(
     """
     if os.path.isfile(surface_path):
         if surface_path.endswith(".mat"):
+
+            if surface_category == "lut_surface":
+                raise ValueError(
+                    "Apply OE using lut_surface can only be run from a .json surface file."
+                )
+
             # check wavelength grid of surface model if provided
             model_dict = loadmat(surface_path)
             wl_surface = model_dict["wl"][0]
@@ -1170,7 +1176,7 @@ def define_surface_types(
 ):
     if np.all(wl < 10):
         wl = units.micron_to_nm(wl)
-        fwhm = unts.micron_to_nm(fwhm)
+        fwhm = units.micron_to_nm(fwhm)
 
     irr_file = os.path.join(
         os.path.dirname(isofit.__file__), "..", "..", "data", "kurucz_0.1nm.dat"
@@ -1835,6 +1841,10 @@ def make_surface_config(
     pressure_elevation=False,
     use_superpixels=False,
 ):
+    # Load the surface LUT file from mat file (if not specified this is always None)
+    surface_lut_file = loadmat(surface_working_paths[surface_category])[
+        "surface_lut_file"
+    ][0]
 
     # Initialize config dict
     surface_config_dict = {
@@ -1873,12 +1883,14 @@ def make_surface_config(
                 "surface_int": int(i),
                 "surface_file": surface_path,
                 "surface_category": surface_category,
+                "surface_lut_file": surface_lut_file,
             }
 
     # Single surface run
     else:
         surface_config_dict["surface_file"] = surface_working_paths[surface_category]
         surface_config_dict["surface_category"] = surface_category
+        surface_config_dict["surface_lut_file"] = surface_lut_file
 
     return surface_config_dict
 
