@@ -21,11 +21,11 @@ name: Build
 on:
   pull_request:
     branches: ["dev"]
-    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml"]
+    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/**"]
 
-# If the PR body contains "[rebuild-cache]", will set the cache-key to a unique key for this PR to trigger a cache rebuild
-env:
-  CACHE_KEY: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
+# # If the PR body contains "[rebuild-cache]", will set the cache-key to a unique key for this PR to trigger a cache rebuild
+# env:
+#   CACHE_KEY: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
 
 concurrency:
   group: ${{ github.event.pull_request.head.ref }}
@@ -41,8 +41,7 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
-      - name: Print concurrency group
-        run: echo '${{ github.event.pull_request.head.ref }}'
+
       - uses: psf/black@stable
         with:
           src: "./isofit"
@@ -77,13 +76,30 @@ jobs:
   cache:
     continue-on-error: true
     runs-on: ubuntu-latest
+    outputs:
+      cache_key: ${{ steps.cache_key.outputs.cache_key }}
     steps:
+      - name: Compute cache key
+        id: cache_key
+        run: |
+          KEY="${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || 'extras' }}"
+          echo "cache_key=$KEY" >> $GITHUB_OUTPUT
+          echo "Cache Key = $KEY"
+
+      - name: Print concurrency group
+        run: echo '${{ github.event.pull_request.head.ref }}'
+
+      - name: Set cache key
+        run: |
+          echo "cache_key=${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}" >> $GITHUB_OUTPUT
+          echo $GITHUB_OUTPUT
+
       - name: Cache Extras
         id: cache-extras
         uses: actions/cache@v4
         with:
           path: .isofit
-          key: ${{ env.CACHE_KEY }}
+          key: "${{ steps.cache_key.outputs.cache_key }}"
           restore-keys: |
             cache-extras
           enableCrossOsArchive: true
@@ -103,18 +119,19 @@ jobs:
         with:
           version: "0.9.25"
           python-version: "3.12"
+          activate-environment: true
 
       - name: Install ISOFIT
         shell: bash
         run: |
-          uv sync
+          uv sync --extra plots
 
       - name: Check for Updates
         if: steps.cache-extras.outputs.cache-hit == 'true' && steps.rebuild.outputs.rebuild != 'true'
         shell: bash
         run: |
           # Module must report "[x]" to be detected
-          SUMMARY="$(uv run isofit -S validate all)"
+          SUMMARY="$(isofit -S validate all)"
 
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
@@ -154,28 +171,28 @@ jobs:
   # Test pip installation
   pip:
     needs: cache
-    uses: ./.github/workflows/tests/test_pip.yml
+    uses: ./.github/workflows/test_pip.yml
     with:
-      cache-key: ${{ env.CACHE_KEY }}
+      cache-key: ${{ needs.cache.outputs.cache_key }}
 
   # Test $PYTHONPATH installation
   path:
     needs: cache
-    uses: ./.github/workflows/tests/test_path.yml
+    uses: ./.github/workflows/test_path.yml
     with:
-      cache-key: ${{ env.CACHE_KEY }}
+      cache-key: ${{ needs.cache.outputs.cache_key }}
 
   # Results workflows
-  imagecube[small]:
+  imagecube-small:
     needs: cache
-    uses: ./.github/workflows/results/imagecube_small.yml
+    uses: ./.github/workflows/results_imagecube_small.yml
     with:
-      cache-key: ${{ env.CACHE_KEY }}
+      cache-key: ${{ needs.cache.outputs.cache_key }}
       pr-number: ${{ github.event.pull_request.number }}
 
   lakemary:
     needs: cache
-    uses: ./.github/workflows/results/lakemary.yml
+    uses: ./.github/workflows/results_lakemary.yml
     with:
-      cache-key: ${{ env.CACHE_KEY }}
+      cache-key: ${{ needs.cache.outputs.cache_key }}
       pr-number: ${{ github.event.pull_request.number }}

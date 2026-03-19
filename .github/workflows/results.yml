@@ -11,23 +11,23 @@ on:
     types:
       - completed
 
- permissions:
-   contents: read
-   pull-requests: write
+permissions:
+  contents: read
+  pull-requests: write
 
- jobs:
-   spectra:
-     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-     env:
-       NAME: ${{ github.event.workflow_run.name }}
-       NUM: ${{ github.event.workflow_run.pull_requests[0].number }}
-       URL: ${{ github.event.workflow_run.pull_requests[0].html_url }}
-       SHA: https://github.com/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }}
-     runs-on: ubuntu-latest
-     steps:
+jobs:
+  spectra:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    env:
+      NAME: ${{ github.event.workflow_run.name }}
+      NUM: ${{ github.event.workflow_run.pull_requests[0].number }}
+      URL: ${{ github.event.workflow_run.pull_requests[0].html_url }}
+      SHA: https://github.com/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Determine which workflow triggered
         run: |
-          echo "Triggered by workflow: $NAME"
+        echo "Triggered by workflow: $NAME"
 
       - name: Checkout tests repo
         uses: actions/checkout@v6
@@ -68,44 +68,44 @@ on:
           SOURCE_SHA: $SHA
         with:
           script: |
-           const marker = "<!-- results-comment-marker -->";
+            const marker = "<!-- results-comment-marker -->";
 
-           const resultsUrl = process.env.RESULTS_PR_URL;
-           const prNumber = Number(process.env.SOURCE_PR_NUMBER);
-           const sha = process.env.SOURCE_SHA;
+            const resultsUrl = process.env.RESULTS_PR_URL;
+            const prNumber = Number(process.env.SOURCE_PR_NUMBER);
+            const sha = process.env.SOURCE_SHA;
 
-           const { owner, repo } = context.repo;
+            const { owner, repo } = context.repo;
 
-           const body = `${marker}📊 Generated results:\n\nURL: ${resultsUrl}\nSHA: ${sha}`;
+            const body = `${marker}📊 Generated results:\n\nURL: ${resultsUrl}\nSHA: ${sha}`;
 
-           // Get existing comments
-           const { data: comments } = await github.rest.issues.listComments({
-             owner,
-             repo,
-             issue_number: prNumber,
-           });
+            // Get existing comments
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: prNumber,
+            });
 
-           // Look for an existing bot comment
-           const existing = comments.find(comment =>
-             comment.body && comment.body.includes(marker)
-           );
+            // Look for an existing bot comment
+            const existing = comments.find(comment =>
+              comment.body && comment.body.includes(marker)
+            );
 
-           if (existing) {
-             // Update existing comment
-             await github.rest.issues.updateComment({
-               owner,
-               repo,
-               comment_id: existing.id,
-               body,
-             });
-             console.log("Updated existing results comment.");
-           } else {
-             // Create new comment
-             await github.rest.issues.createComment({
-               owner,
-               repo,
-               issue_number: prNumber,
-               body,
-             });
-             console.log("Created results comment.");
-           }
+            if (existing) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+              console.log("Updated existing results comment.");
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body,
+              });
+              console.log("Created results comment.");
+            }

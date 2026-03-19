@@ -69,6 +69,7 @@ jobs:
         with:
           version: "0.9.25"
           python-version: ${{ matrix.python-version }}
+          activate-environment: true
 
       - name: Install ISOFIT
         shell: bash
@@ -80,10 +81,10 @@ jobs:
         shell: bash
         if: runner.os == 'Windows'
         run: |
-          uv run isofit --base ~/.isofit build
-          uv run isofit download sixs --make --debug-make
+          isofit --base ~/.isofit build
+          isofit download sixs --make --debug-make
 
       - name: Execute tests
         shell: bash
         run: |
-          uv run pytest -v -s "${{ matrix.pytest-flags }}"
+          pytest -v -s "${{ matrix.pytest-flags }}"
