@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Determine which workflow triggered
         run: |
-        echo "Triggered by workflow: $NAME"
+          echo "Triggered by workflow: $NAME"
 
       - name: Checkout tests repo
         uses: actions/checkout@v6
