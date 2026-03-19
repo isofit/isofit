@@ -166,7 +166,7 @@ jobs:
       cache-key: $CACHE_KEY
 
   # Results workflows
-  imagecube[small]:
+  imagecube-small:
     needs: cache
     uses: ./.github/workflows/results/imagecube_small.yml
     with:
