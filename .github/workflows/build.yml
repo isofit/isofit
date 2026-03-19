@@ -23,10 +23,6 @@ on:
     branches: ["dev"]
     paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/**"]
 
-# # If the PR body contains "[rebuild-cache]", will set the cache-key to a unique key for this PR to trigger a cache rebuild
-# env:
-#   CACHE_KEY: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}
-
 concurrency:
   group: ${{ github.event.pull_request.head.ref }}
   cancel-in-progress: true
@@ -82,17 +78,12 @@ jobs:
       - name: Compute cache key
         id: cache_key
         run: |
-          KEY="${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || 'extras' }}"
+          KEY="${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('extras-{0}', github.run_id) || 'extras' }}"
           echo "cache_key=$KEY" >> $GITHUB_OUTPUT
           echo "Cache Key = $KEY"
 
       - name: Print concurrency group
         run: echo '${{ github.event.pull_request.head.ref }}'
-
-      - name: Set cache key
-        run: |
-          echo "cache_key=${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}" >> $GITHUB_OUTPUT
-          echo $GITHUB_OUTPUT
 
       - name: Cache Extras
         id: cache-extras
@@ -101,7 +92,7 @@ jobs:
           path: .isofit
           key: "${{ steps.cache_key.outputs.cache_key }}"
           restore-keys: |
-            cache-extras
+            extras
           enableCrossOsArchive: true
 
       - name: Move .isofit
