@@ -6,7 +6,7 @@ on:
       cache-key:
         required: true
         type: string
-      pr_number:
+      pr-number:
         required: true
         type: number
 
@@ -56,5 +56,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.pr_number }}-lake-mary
+          name: ${{ inputs.pr-number }}-lake-mary
           path: results
