@@ -86,4 +86,6 @@ jobs:
       - name: Execute tests
         shell: bash
         run: |
-          uv run pytest -v -s "${{ matrix.pytest-flags }}"
+          # uv raises some errors if not activated beforehand
+          source .venv/bin/activate
+          pytest -v -s "${{ matrix.pytest-flags }}"
