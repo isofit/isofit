@@ -82,7 +82,7 @@ jobs:
       - name: Compute cache key
         id: cache_key
         run: |
-          KEY="${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || '' }}"
+          KEY="${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('-{0}', github.run_id) || 'extras' }}"
           echo "cache_key=$KEY" >> $GITHUB_OUTPUT
           echo "Cache Key = $KEY"
 
