@@ -177,8 +177,8 @@ class Isofit:
         input_config = deepcopy(self.config)
 
         # Loop through index pairs and run workers
-        outer_loop_start_time = time.time()
-
+        loop_total_time = 0
+        loop_total_spectra = 0
         cache_RT = None
         surface_index = index_spectra_by_surface(input_config, index_pairs)
         for i, (surface_class_str, class_idx_pairs) in enumerate(surface_index.items()):
@@ -216,6 +216,7 @@ class Isofit:
 
             # Set forward model
             fm = ForwardModel(config, cache_RT=cache_RT)
+            fm.match_statevector(self.full_statevector)
 
             logging.debug(f"Surface: {surface_class_str}")
 
@@ -251,11 +252,15 @@ class Isofit:
                 )
             )
 
-            total_time = time.time() - start_time
+            loop_total_time += time.time() - start_time
+            loop_total_spectra += n_iter
             logging.info(f"Pixel class: {surface_class_str} inversions complete.")
-            logging.info(f"{round(total_time,2)}s total")
-            logging.info(f"{round(n_iter/total_time,4)} spectra/s")
-            logging.info(f"{round(n_iter/total_time/n_workers,4)} spectra/s/core")
+            logging.info("Running totals")
+            logging.info(f"{round(loop_total_time,2)}s total")
+            logging.info(f"{round(loop_total_spectra/loop_total_time,4)} spectra/s")
+            logging.info(
+                f"{round(loop_total_spectra/loop_total_time/n_workers,4)} spectra/s/core"
+            )
 
             # Not sure if it's best practice to null out these vars
             self.workers = None
@@ -268,12 +273,12 @@ class Isofit:
             del fm
 
         if len(index_pairs):
-            outer_loop_total_time = time.time() - outer_loop_start_time
             logging.info(f"All Inversions complete.")
-            logging.info(f"{round(outer_loop_total_time,2)}s total")
-            logging.info(f"{round(total_samples/outer_loop_total_time,4)} spectra/s")
+            logging.info("Final totals")
+            logging.info(f"{round(loop_total_time,2)}s total")
+            logging.info(f"{round(loop_total_spectra/loop_total_time,4)} spectra/s")
             logging.info(
-                f"{round(total_samples/outer_loop_total_time/n_workers,4)} spectra/s/core"
+                f"{round(loop_total_spectra/loop_total_time/n_workers,4)} spectra/s/core"
             )
 
 
