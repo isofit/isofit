@@ -21,7 +21,7 @@ name: Build
 on:
   pull_request:
     branches: ["dev"]
-    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml"]
+    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/**"]
 
 # If the PR body contains "[rebuild-cache]", will set the cache-key to a unique key for this PR to trigger a cache rebuild
 env:
