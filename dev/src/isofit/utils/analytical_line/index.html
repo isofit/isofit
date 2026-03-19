@@ -5179,7 +5179,8 @@
 <span class="normal">687</span>
 <span class="normal">688</span>
 <span class="normal">689</span>
-<span class="normal">690</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">690</span>
+<span class="normal">691</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5219,8 +5220,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geometry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.multistate</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">construct_full_state</span><span class="p">,</span>
+    <span class="n">fill_statevector</span><span class="p">,</span>
     <span class="n">index_spectra_by_surface</span><span class="p">,</span>
-    <span class="n">match_statevector</span><span class="p">,</span>
     <span class="n">update_config_for_surface</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.inversion.inverse_simple</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -5466,6 +5467,7 @@
         <span class="n">config</span> <span class="o">=</span> <span class="n">update_config_for_surface</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">input_config</span><span class="p">),</span> <span class="n">surface_class_str</span><span class="p">)</span>
 
         <span class="n">fm</span> <span class="o">=</span> <span class="n">ForwardModel</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">cache_RT</span><span class="p">)</span>
+        <span class="n">fm</span><span class="o">.</span><span class="n">match_statevector</span><span class="p">(</span><span class="n">full_statevector</span><span class="p">)</span>
 
         <span class="c1"># Initialize workers</span>
         <span class="n">wargs</span> <span class="o">=</span> <span class="p">[</span><span class="n">ray</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">fm</span><span class="p">)]</span>
@@ -5781,13 +5783,13 @@
             <span class="p">)</span>
             <span class="n">state_est</span> <span class="o">=</span> <span class="n">states</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-            <span class="n">full_state_est</span> <span class="o">=</span> <span class="n">match_statevector</span><span class="p">(</span>
-                <span class="n">state_est</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_statevector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">statevec</span>
+            <span class="n">full_state_est</span> <span class="o">=</span> <span class="n">fill_statevector</span><span class="p">(</span>
+                <span class="n">state_est</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">full_idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">full_miss</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_statevector</span>
             <span class="p">)</span>
             <span class="n">output_rfl</span><span class="p">[</span><span class="n">r</span> <span class="o">-</span> <span class="n">start_line</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">full_state_est</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">full_idx_surf_rfl</span><span class="p">]</span>
 
-            <span class="n">full_unc_est</span> <span class="o">=</span> <span class="n">match_statevector</span><span class="p">(</span>
-                <span class="n">unc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_statevector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">statevec</span>
+            <span class="n">full_unc_est</span> <span class="o">=</span> <span class="n">fill_statevector</span><span class="p">(</span>
+                <span class="n">unc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">full_idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">full_miss</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_statevector</span>
             <span class="p">)</span>
             <span class="n">output_rfl_unc</span><span class="p">[</span><span class="n">r</span> <span class="o">-</span> <span class="n">start_line</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">full_unc_est</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">full_idx_surf_rfl</span><span class="p">]</span>
 

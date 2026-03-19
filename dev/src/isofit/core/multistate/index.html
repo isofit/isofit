@@ -4452,6 +4452,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#isofit.core.multistate.fill_statevector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fill_statevector
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4813,7 +4824,19 @@
 <span class="normal">316</span>
 <span class="normal">317</span>
 <span class="normal">318</span>
-<span class="normal">319</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -4837,6 +4860,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">numba</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">spectral.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi</span>
@@ -5107,31 +5131,42 @@
     <span class="k">return</span> <span class="n">config</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">match_statevector</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.core.multistate.match_statevector"><a href="../../../../api/isofit/core/multistate/#isofit.core.multistate.match_statevector" title="Go to docs">[docs]</a></div>
-    <span class="n">state_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">full_statevec</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">fm_statevec</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">null_value</span><span class="o">=-</span><span class="mf">9999.0</span>
-<span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">match_statevector</span><span class="p">(</span><span class="n">full_statevec</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">fm_statevec</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.multistate.match_statevector"><a href="../../../../api/isofit/core/multistate/#isofit.core.multistate.match_statevector" title="Go to docs">[docs]</a></div>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A multi-class surface requires some merging across statevectors</span>
 <span class="sd">    of different length. This function maps the fm-specific state</span>
 <span class="sd">    to the io-state that captures all state elements present in the</span>
 <span class="sd">    image. The full_state will record a Non</span>
 <span class="sd">    Args:</span>
-<span class="sd">        state_data: (n,) numpy array with the fm-specific state vector</span>
 <span class="sd">        full_statevec: [m] list of state-names of the image-universal combined statevector</span>
 <span class="sd">        fm_statevec: [n] list of state-names of the fm-specific state vector</span>
-<span class="sd">        null_value: (optional) value to fill in the statevector elements that aren&#39;t present at a pixel</span>
 <span class="sd">    returns:</span>
-<span class="sd">        full_state: (np.array) Populated full state with null_values in missing elements</span>
+<span class="sd">        idx: list(int) mapping for which statevector elements are present in fm</span>
+<span class="sd">        miss: list(int) mapping for non-present statevector elements</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">full_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">full_statevec</span><span class="p">)))</span> <span class="o">+</span> <span class="n">null_value</span>
     <span class="n">idx</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">fm_name</span> <span class="ow">in</span> <span class="n">fm_statevec</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">full_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">full_statevec</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">fm_name</span> <span class="o">==</span> <span class="n">full_name</span><span class="p">:</span>
                 <span class="n">idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-    <span class="n">full_state</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_data</span>
 
-    <span class="k">return</span> <span class="n">full_state</span>
+    <span class="n">rang</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">full_statevec</span><span class="p">))])</span>
+    <span class="n">idx_rng</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">miss</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">rang</span> <span class="o">-</span> <span class="n">idx_rng</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">idx</span><span class="p">,</span> <span class="n">miss</span>
+
+<div class="mkapi-source-link" id="isofit.core.multistate.fill_statevector"><a href="../../../../api/isofit/core/multistate/#isofit.core.multistate.fill_statevector" title="Go to docs">[docs]</a></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">fill_statevector</span><span class="p">(</span><span class="n">state_est</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">miss</span><span class="p">,</span> <span class="n">full_statevector</span><span class="p">,</span> <span class="n">null_value</span><span class="o">=-</span><span class="mf">9999.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map a fm output onto a full statevector</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">full_statevector</span><span class="p">)))</span>
+    <span class="n">output</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_est</span>
+    <span class="n">output</span><span class="p">[</span><span class="n">miss</span><span class="p">]</span> <span class="o">=</span> <span class="n">null_value</span>
+
+    <span class="k">return</span> <span class="n">output</span>
 </code></pre></div></td></tr></table></div>
 
 

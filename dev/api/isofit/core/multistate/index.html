@@ -1886,6 +1886,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#isofit.core.multistate.fill_statevector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fill_statevector
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4582,6 +4593,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#isofit.core.multistate.fill_statevector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fill_statevector
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4805,12 +4827,16 @@ of different length. This function maps the fm-specific state
 to the io-state that captures all state elements present in the
 image. The full_state will record a Non
 Args:
-    state_data: (n,) numpy array with the fm-specific state vector
     full_statevec: [m] list of state-names of the image-universal combined statevector
     fm_statevec: [n] list of state-names of the fm-specific state vector
-    null_value: (optional) value to fill in the statevector elements that aren't present at a pixel
 returns:
-    full_state: (np.array) Populated full state with null_values in missing elements</p>
+    idx: list(int) mapping for which statevector elements are present in fm
+    miss: list(int) mapping for non-present statevector elements</p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.core.multistate.fill_statevector" title="isofit.core.multistate.fill_statevector">fill_statevector</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Map a fm output onto a full statevector</p>
 </li>
 </ul>
 </div>
@@ -4949,7 +4975,7 @@ Returns:
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span>
-<span class="mkapi-object-name"><a href="./#isofit.core.multistate.match_statevector" title="isofit.core.multistate.match_statevector">match_statevector</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">state_data</span><span class="mkapi-colon">: </span><span class="mkapi-ann"><span class="mkapi-tooltip" title="numpy">np</span>.<span class="mkapi-tooltip" title="numpy._core.array">array</span></span><span class="mkapi-comma">, </span><span class="mkapi-arg">full_statevec</span><span class="mkapi-colon">: </span><span class="mkapi-ann">list</span><span class="mkapi-comma">, </span><span class="mkapi-arg">fm_statevec</span><span class="mkapi-colon">: </span><span class="mkapi-ann">list</span><span class="mkapi-comma">, </span><span class="mkapi-arg">null_value</span><span class="mkapi-equal">=</span><span class="mkapi-default">-9999.0</span><span class="mkapi-paren">)</span></span>
+<span class="mkapi-object-name"><a href="./#isofit.core.multistate.match_statevector" title="isofit.core.multistate.match_statevector">match_statevector</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">full_statevec</span><span class="mkapi-colon">: </span><span class="mkapi-ann">list</span><span class="mkapi-comma">, </span><span class="mkapi-arg">fm_statevec</span><span class="mkapi-colon">: </span><span class="mkapi-ann">list</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>A multi-class surface requires some merging across statevectors
@@ -4957,12 +4983,25 @@ of different length. This function maps the fm-specific state
 to the io-state that captures all state elements present in the
 image. The full_state will record a Non
 Args:
-    state_data: (n,) numpy array with the fm-specific state vector
     full_statevec: [m] list of state-names of the image-universal combined statevector
     fm_statevec: [n] list of state-names of the fm-specific state vector
-    null_value: (optional) value to fill in the statevector elements that aren't present at a pixel
 returns:
-    full_state: (np.array) Populated full state with null_values in missing elements</p>
+    idx: list(int) mapping for which statevector elements are present in fm
+    miss: list(int) mapping for non-present statevector elements</p>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.core.multistate.fill_statevector">
+<span class="mkapi-object-link">
+
+
+<a href="../../../../src/isofit/core/multistate/#isofit.core.multistate.fill_statevector" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-object-name"><a href="./#isofit.core.multistate.fill_statevector" title="isofit.core.multistate.fill_statevector">fill_statevector</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">state_est</span><span class="mkapi-comma">, </span><span class="mkapi-arg">idx</span><span class="mkapi-comma">, </span><span class="mkapi-arg">miss</span><span class="mkapi-comma">, </span><span class="mkapi-arg">full_statevector</span><span class="mkapi-comma">, </span><span class="mkapi-arg">null_value</span><span class="mkapi-equal">=</span><span class="mkapi-default">-9999.0</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document">
+<p>Map a fm output onto a full statevector</p>
 </div>
 
 

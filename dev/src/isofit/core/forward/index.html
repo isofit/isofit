@@ -4574,6 +4574,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.match_statevector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        match_statevector
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5131,7 +5142,16 @@
 <span class="normal">507</span>
 <span class="normal">508</span>
 <span class="normal">509</span>
-<span class="normal">510</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5163,6 +5183,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">eps</span><span class="p">,</span> <span class="n">svd_inv_sqrt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geometry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.instrument</span><span class="w"> </span><span class="kn">import</span> <span class="n">Instrument</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.multistate</span><span class="w"> </span><span class="kn">import</span> <span class="n">match_statevector</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.radiative_transfer.radiative_transfer</span><span class="w"> </span><span class="kn">import</span> <span class="n">RadiativeTransfer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.surface</span><span class="w"> </span><span class="kn">import</span> <span class="n">Surface</span>
 
@@ -5247,6 +5268,9 @@
 <span class="sd">        Split surface state vector indices to cover cases where we retrieve</span>
 <span class="sd">        additional non-reflectance surface parameters</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_miss</span> <span class="o">=</span> <span class="p">[]</span>
+
         <span class="c1"># entire surface portion</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idx_surface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 
@@ -5641,6 +5665,11 @@
         <span class="n">x_RT</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_RT</span><span class="p">]</span>
         <span class="n">x_instrument</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_instrument</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">x_instrument</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">match_statevector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_statevector</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.match_statevector"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.match_statevector" title="Go to docs">[docs]</a></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_miss</span> <span class="o">=</span> <span class="n">match_statevector</span><span class="p">(</span>
+            <span class="n">full_statevector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec</span>
+        <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 
