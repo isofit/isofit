@@ -38,6 +38,7 @@ jobs:
         with:
           version: "0.9.25"
           python-version: "3.12"
+          activate-environment: true
 
       - name: Install dependencies
         run: |
@@ -47,7 +48,6 @@ jobs:
         run: |
           mkdir results
 
-          source .venv/bin/activate
           RUN=$(isofit path examples)/image_cube/small/
           $RUN/default.sh --log_file results/default.log --resources
 

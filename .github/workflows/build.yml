@@ -41,8 +41,7 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
-      - name: Print concurrency group
-        run: echo '${{ github.event.pull_request.head.ref }}'
+
       - uses: psf/black@stable
         with:
           src: "./isofit"
@@ -78,6 +77,9 @@ jobs:
     continue-on-error: true
     runs-on: ubuntu-latest
     steps:
+      - name: Print concurrency group
+        run: echo '${{ github.event.pull_request.head.ref }}'
+
       - name: Cache Extras
         id: cache-extras
         uses: actions/cache@v4
@@ -103,6 +105,7 @@ jobs:
         with:
           version: "0.9.25"
           python-version: "3.12"
+          activate-environment: true
 
       - name: Install ISOFIT
         shell: bash
@@ -114,7 +117,7 @@ jobs:
         shell: bash
         run: |
           # Module must report "[x]" to be detected
-          SUMMARY="$(uv run isofit -S validate all)"
+          SUMMARY="$(isofit -S validate all)"
 
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
