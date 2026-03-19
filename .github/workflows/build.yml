@@ -83,7 +83,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .isofit
-          key: ${{ env.CACHE_KEY }}
+          key: $CACHE_KEY
           restore-keys: |
             cache-extras
           enableCrossOsArchive: true
@@ -156,26 +156,26 @@ jobs:
     needs: cache
     uses: ./.github/workflows/tests/test_pip.yml
     with:
-      cache-key: ${{ env.CACHE_KEY }}
+      cache-key: $CACHE_KEY
 
   # Test $PYTHONPATH installation
   path:
     needs: cache
     uses: ./.github/workflows/tests/test_path.yml
     with:
-      cache-key: ${{ env.CACHE_KEY }}
+      cache-key: $CACHE_KEY
 
   # Results workflows
   imagecube[small]:
     needs: cache
     uses: ./.github/workflows/results/imagecube_small.yml
     with:
-      cache-key: ${{ env.CACHE_KEY }}
+      cache-key: $CACHE_KEY
       pr-number: ${{ github.event.pull_request.number }}
 
   lakemary:
     needs: cache
     uses: ./.github/workflows/results/lakemary.yml
     with:
-      cache-key: ${{ env.CACHE_KEY }}
+      cache-key: $CACHE_KEY
       pr-number: ${{ github.event.pull_request.number }}
