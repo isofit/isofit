@@ -602,32 +602,6 @@ class ModtranRT(RadiativeTransferEngine):
 
         return json.dumps({"MODTRAN": param}), param
 
-    def check_modtran_water_upperbound(self) -> float:
-        """Check to see what the max water vapor values is at the first point in the LUT
-
-        Returns:
-            float: max water vapor value, or None if test fails
-        """
-        point = np.array([x[-1] for x in self.lut_grids])
-
-        # Set the H2OSTR value as arbitrarily high - 50 g/cm2 in this case
-        point[self.lut_names.index("H2OSTR")] = 50
-
-        filebase = os.path.join(self.sim_path, "H2O_bound_test")
-        self.makeSim(point, filebase)
-
-        max_water = None
-        with open(
-            os.path.join(self.sim_path, filebase + ".tp6"), errors="ignore"
-        ) as tp6file:
-            for count, line in enumerate(tp6file):
-                if "The water column is being set to the maximum" in line:
-                    max_water = line.split(",")[1].strip()
-                    max_water = float(max_water.split(" ")[0])
-                    break
-
-        return max_water
-
     @staticmethod
     def modtran_water_upperbound_polynomials() -> dict:
         """Polynomials as a function of ground altitude (km) to estimate upperbound of water column vapor (g/cm2).
