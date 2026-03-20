@@ -156,8 +156,11 @@ def apply_oe(
     rdn_factors_path : str, default=None
         Specify a radiometric correction factor, if desired
     atmosphere_type : str, default="ATM_MIDLAT_SUMMER"
-        Atmospheric profile to be used for MODTRAN simulations.  Unused for other
-        radiative transfer models.
+        Atmospheric profile to be used for MODTRAN and libRadtran simulations only.
+        However, if presolve mode enabled this is used to inform max water
+        column vapor for any radiative transfer model. Valid options include:
+        ATM_MIDLAT_SUMMER, ATM_TROPICAL, ATM_MIDLAT_WINTER,
+        ATM_SUBARC_SUMMER, ATM_SUBARC_WINTER, or ATM_US_STANDARD_1976.
     channelized_uncertainty_path : str, default=None
         Path to a wavelength-specific channelized uncertainty file - used to augment Sy in the OE formalism
     instrument_noise_path : str, default=None
@@ -304,6 +307,14 @@ def apply_oe(
             raise ValueError(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
+
+    # Load in water column upper bound polynomials
+    modtran_polynomials_dict = ModtranRT.modtran_water_upperbound_polynomials()
+    if atmosphere_type not in modtran_polynomials_dict:
+        keys = ", ".join(modtran_polynomials_dict.keys())
+        raise ValueError(
+            f"Invalid atmosphere_type '{atmosphere_type}'. Must be one of: {keys}"
+        )
 
     if os.path.isdir(working_directory) is False:
         os.mkdir(working_directory)
@@ -681,9 +692,7 @@ def apply_oe(
         else:
             max_water_elevation = mean_elevation_km
 
-        max_water = ModtranRT.modtran_water_upperbound_polynomials()[atmosphere_type](
-            max_water_elevation
-        )
+        max_water = modtran_polynomials_dict[atmosphere_type](max_water_elevation)
 
         if use_superpixels:
             h2o_path = paths.h2o_subs_path
