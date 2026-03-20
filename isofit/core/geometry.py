@@ -97,8 +97,6 @@ class Geometry:
             self.surface_elevation_km = units.m_to_km(loc[2])
             self.latitude = loc[1]  # Northing
             self.longitude = loc[0]  # Westing
-            if self.longitude < 0:
-                self.longitude = 360.0 - self.longitude
 
         if loc is not None and obs is not None:
             self.observer_altitude_km = (
