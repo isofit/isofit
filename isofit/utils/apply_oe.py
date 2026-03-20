@@ -20,6 +20,7 @@ import isofit.utils.template_construction as tmpl
 from isofit.core import isofit, units
 from isofit.core.common import envi_header
 from isofit.debug.resource_tracker import FileResources
+from isofit.radiative_transfer.engines.modtran import ModtranRT
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
 from isofit.utils import (
@@ -30,6 +31,7 @@ from isofit.utils import (
     segment,
 )
 from isofit.utils.skyview import skyview
+
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -674,11 +676,10 @@ def apply_oe(
             output_file=paths.h2o_template_path,
             ihaze_type="AER_NONE",
         )
-
-        if emulator_base is None and prebuilt_lut is None:
-            max_water = tmpl.calc_modtran_max_water(paths)
-        else:
-            max_water = 6
+        min_water = 0.2
+        max_water = ModtranRT.modtran_water_upperbound_polynomials()[atmosphere_type](
+            elevation_lut_grid[0]
+        )
 
         if use_superpixels:
             h2o_path = paths.h2o_subs_path
@@ -688,7 +689,7 @@ def apply_oe(
         # run H2O grid as necessary
         if not exists(envi_header(h2o_path)) or not exists(h2o_path):
             # Write the presolve connfiguration file
-            h2o_grid = np.linspace(0.2, max_water - 0.01, 10).round(2)
+            h2o_grid = np.linspace(min_water, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")
             logging.info("Writing H2O pre-solve configuration file.")
 
