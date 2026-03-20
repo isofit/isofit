@@ -32,7 +32,6 @@ from isofit.utils import (
 )
 from isofit.utils.skyview import skyview
 
-
 EPS = 1e-6
 CHUNKSIZE = 256
 
@@ -676,9 +675,14 @@ def apply_oe(
             output_file=paths.h2o_template_path,
             ihaze_type="AER_NONE",
         )
-        min_water = 0.2
+
+        if elevation_lut_grid is not None:
+            max_water_elevation = elevation_lut_grid[0]
+        else:
+            max_water_elevation = mean_elevation_km
+
         max_water = ModtranRT.modtran_water_upperbound_polynomials()[atmosphere_type](
-            elevation_lut_grid[0]
+            max_water_elevation
         )
 
         if use_superpixels:
@@ -689,7 +693,7 @@ def apply_oe(
         # run H2O grid as necessary
         if not exists(envi_header(h2o_path)) or not exists(h2o_path):
             # Write the presolve connfiguration file
-            h2o_grid = np.linspace(min_water, max_water - 0.01, 10).round(2)
+            h2o_grid = np.linspace(0.2, max_water - 0.01, 10).round(2)
             logging.info(f"Pre-solve H2O grid: {h2o_grid}")
             logging.info("Writing H2O pre-solve configuration file.")
 
