@@ -39,7 +39,7 @@ from isofit.core.common import (
     resample_spectrum,
 )
 from isofit.core.geometry import Geometry
-from isofit.core.multistate import match_statevector
+from isofit.core.multistate import fill_statevector
 from isofit.data import env
 from isofit.inversion.inverse_simple import invert_algebraic
 
@@ -638,8 +638,8 @@ class IO:
             ############ Start with all of the 'independent' calculations
             if "estimated_state_file" in self.output_datasets:
                 # state_est transformed to reflect io.full_statevec
-                to_write["estimated_state_file"] = match_statevector(
-                    state_est, self.full_statevec, fm.statevec
+                to_write["estimated_state_file"] = fill_statevector(
+                    state_est, fm.full_idx, fm.full_miss, self.full_statevec
                 )
 
             if "path_radiance_file" in self.output_datasets:
@@ -665,8 +665,11 @@ class IO:
 
             if "posterior_uncertainty_file" in self.output_datasets:
                 S_hat, K, G = iv.calc_posterior(state_est, geom, meas)
-                to_write["posterior_uncertainty_file"] = match_statevector(
-                    np.sqrt(np.diag(S_hat)), self.full_statevec, fm.statevec
+                to_write["posterior_uncertainty_file"] = fill_statevector(
+                    np.sqrt(np.diag(S_hat)),
+                    fm.full_idx,
+                    fm.full_miss,
+                    self.full_statevec,
                 )
 
             ############ Now proceed to the calcs where they may be some overlap

@@ -12,13 +12,16 @@
 # As such, the extras are built in the local working directory and cached there, then
 # moved to ~/.isofit after, allowing both Linux and Windows to put the cache into the
 # correct locations
+#
+# This workflow is UNTRUSTED. It will NOT have access to the repo SECRETS, but it is
+# allowed to be modified by a PR.
 
 name: Build
 
 on:
-  pull_request_target:
+  pull_request:
     branches: ["dev"]
-    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/workflows/*"]
+    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/**"]
 
 concurrency:
   group: ${{ github.event.pull_request.head.ref }}
@@ -34,8 +37,7 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
-      - name: Print concurrency group
-        run: echo '${{ github.event.pull_request.head.ref }}'
+
       - uses: psf/black@stable
         with:
           src: "./isofit"
@@ -50,55 +52,47 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.12'
-
-      - name: Install dependencies
-        shell: bash
-        run: |
-          python3 -m pip install --upgrade pip build twine
+          version: "0.9.25"
+          python-version: "3.12"
 
       - name: Build package
         shell: bash
-        run: |
-          python3 -m build --sdist --wheel
+        run: uv build
 
-      - name: Install tarball
-        shell: bash
-        run: |
-          # Force CPU version of torch to save space on runners
-          python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-          python3 -m pip install dist/*.gz
+      - name: Smoke test (wheel)
+        run: uv run --isolated --no-project --with dist/*.whl isofit
 
-      - name: Test installation
-        shell: bash
-        run: |
-          isofit
+      - name: Smoke test (source distribution)
+        run: uv run --isolated --no-project --with dist/*.tar.gz isofit
 
   # Either build the cache or check for updates, fail if updates are needed: does not block tests on failure
   cache:
     continue-on-error: true
     runs-on: ubuntu-latest
+    outputs:
+      cache_key: ${{ steps.cache_key.outputs.cache_key }}
     steps:
-      - name: Set rebuild flag
-        id: rebuild
+      - name: Compute cache key
+        id: cache_key
         run: |
-          if [[ "${{ github.event.pull_request.body || '' }}" == *"[rebuild-cache]"* ]]; then
-            echo "suffix=-${{ github.run_id }}" >> $GITHUB_OUTPUT
-          else
-            echo "suffix=" >> $GITHUB_OUTPUT
-          fi
+          KEY="${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('extras-{0}', github.run_id) || 'extras' }}"
+          echo "cache_key=$KEY" >> $GITHUB_OUTPUT
+          echo "Cache Key = $KEY"
+
+      - name: Print concurrency group
+        run: echo '${{ github.event.pull_request.head.ref }}'
 
       - name: Cache Extras
         id: cache-extras
         uses: actions/cache@v4
         with:
           path: .isofit
-          key: cache-extras${{ steps.rebuild.outputs.suffix }}
+          key: "${{ steps.cache_key.outputs.cache_key }}"
           restore-keys: |
-            cache-extras
+            extras
           enableCrossOsArchive: true
 
       - name: Move .isofit
@@ -111,19 +105,17 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.12'
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
+          version: "0.9.25"
+          python-version: "3.12"
+          activate-environment: true
 
       - name: Install ISOFIT
         shell: bash
         run: |
-          # Force CPU version of torch to save space on runners
-          python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-          python3 -m pip install --editable ".[test]"
+          uv sync --extra plots
 
       - name: Check for Updates
         if: steps.cache-extras.outputs.cache-hit == 'true' && steps.rebuild.outputs.rebuild != 'true'
@@ -155,31 +147,43 @@ jobs:
         if: steps.cache-extras.outputs.cache-hit != 'true'
         shell: bash
         run: |
+          source .venv/bin/activate
+
           echo "Downloading extras"
           isofit download all
           isofit download sixs --mingw # Needed for Windows
+
           echo "Building examples"
           isofit build
-          mv ~/.isofit . # Need to move to local dir so that Windows runners can find it
+
+          # Need to move to local dir so that Windows runners can find it
+          mv ~/.isofit .
 
   # Test pip installation
   pip:
     needs: cache
     uses: ./.github/workflows/test_pip.yml
     with:
-      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
+      cache-key: ${{ needs.cache.outputs.cache_key }}
 
   # Test $PYTHONPATH installation
   path:
     needs: cache
     uses: ./.github/workflows/test_path.yml
     with:
-      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
+      cache-key: ${{ needs.cache.outputs.cache_key }}
 
-  images:
+  # Results workflows
+  imagecube-small:
     needs: cache
-    uses: ./.github/workflows/images.yml
+    uses: ./.github/workflows/results_imagecube_small.yml
     with:
-      rebuild-cache: ${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') }}
-    secrets:
-      RESULTS_REPO: "${{ secrets.RESULTS_REPO }}"
+      cache-key: ${{ needs.cache.outputs.cache_key }}
+      pr-number: ${{ github.event.pull_request.number }}
+
+  lakemary:
+    needs: cache
+    uses: ./.github/workflows/results_lakemary.yml
+    with:
+      cache-key: ${{ needs.cache.outputs.cache_key }}
+      pr-number: ${{ github.event.pull_request.number }}
