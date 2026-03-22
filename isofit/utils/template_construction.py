@@ -1528,6 +1528,7 @@ def make_rt_config(
         lut_grid.update(aerosol_lut_grid)
 
     to_remove = []
+    ncds = None
     if prebuilt_lut_path is None:
         for gn, gc in lut_grid.items():
             if gc is None or len(gc) == 1:
@@ -1557,9 +1558,20 @@ def make_rt_config(
         lut_grid.pop(tr)
 
     radiative_transfer_config["lut_grid"].update(lut_grid)
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = {
-        key: None for key in lut_grid.keys()
-    }
+
+    # lut_names must cover all coordinate dimensions in the LUT file.
+    lut_names = {key: None for key in lut_grid.keys()}
+    if prebuilt_lut_path is not None:
+        for dim in ncds.dimensions:
+            if dim != "wl" and dim not in lut_names:
+                if 'AER' in dim or 'AOT' in dim or 'AOD' in dim or 'CO2' in dim:
+                    # Extra dims not in lut_grid are collapsed via 'mean'
+                    # We may consider alternative options (e.g. lower aerosols)
+                    lut_names[dim] = "mean"
+                else:
+                    lut_names[dim] = None
+        ncds.close()
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = lut_names
 
     # Now do statevector
     statekeys = ["H2OSTR"]
