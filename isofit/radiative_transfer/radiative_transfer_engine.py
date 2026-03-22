@@ -318,8 +318,8 @@ class RadiativeTransferEngine:
                     oza = [v for k, v in self.lut_grid["observer_zenith"].items()]
                 else:
                     oza = self.lut_grid["observer_zenith"]
-                 
-                #if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
+
+                # if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
                 if any(np.array(oza) > 90.0):
                     self.indices.convert_observer_zenith = [
                         i

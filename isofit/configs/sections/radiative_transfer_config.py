@@ -468,12 +468,16 @@ class RadiativeTransferConfig(BaseConfigSection):
 
         for key, item in self.lut_grid.items():
             if len(item) < 2:
-                if 'interp' not in item:
+                if "interp" not in item:
                     errors.append(
-                        "lut_grid item {} has less than the required 2 elements".format(key)
+                        "lut_grid item {} has less than the required 2 elements".format(
+                            key
+                        )
                     )
                     if np.unique(item).size < len(item):
-                        errors.append(f"Detected duplicate values in lut_grid item {key}")
+                        errors.append(
+                            f"Detected duplicate values in lut_grid item {key}"
+                        )
 
         for rte in self.radiative_transfer_engines:
             er, warn = rte.check_config_validity()

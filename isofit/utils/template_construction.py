@@ -870,7 +870,7 @@ def get_lut_subset(vals):
     """
 
     if vals is not None and len(vals) == 1:
-        return {"interp": np.round(vals[0],4)}
+        return {"interp": np.round(vals[0], 4)}
     elif vals is not None and len(vals) > 1:
         return {"gte": vals[0], "lte": vals[-1]}
     else:
@@ -1541,7 +1541,7 @@ def make_rt_config(
 
             # Should only modify H2OSTR and surface_elevation_km
             bounds_check(lut_grid, emulator_base, modify=True)
-    else: #using prebuilt LUT
+    else:  # using prebuilt LUT
         ncds = nc.Dataset(prebuilt_lut_path, "r")
         for gn, gc in lut_grid.items():
             if gc is None:
@@ -1564,14 +1564,16 @@ def make_rt_config(
     if prebuilt_lut_path is not None:
         for dim in ncds.dimensions:
             if dim != "wl" and dim not in lut_names:
-                if 'AER' in dim or 'AOT' in dim or 'AOD' in dim or 'CO2' in dim:
+                if "AER" in dim or "AOT" in dim or "AOD" in dim or "CO2" in dim:
                     # Extra dims not in lut_grid are collapsed via 'mean'
                     # We may consider alternative options (e.g. lower aerosols)
                     lut_names[dim] = "mean"
                 else:
                     lut_names[dim] = None
         ncds.close()
-    radiative_transfer_config["radiative_transfer_engines"]["vswir"]["lut_names"] = lut_names
+    radiative_transfer_config["radiative_transfer_engines"]["vswir"][
+        "lut_names"
+    ] = lut_names
 
     # Now do statevector
     statekeys = ["H2OSTR"]
