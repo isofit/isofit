@@ -870,7 +870,7 @@ def get_lut_subset(vals):
     """
 
     if vals is not None and len(vals) == 1:
-        return {"interp": vals[0]}
+        return {"interp": np.round(vals[0],4)}
     elif vals is not None and len(vals) > 1:
         return {"gte": vals[0], "lte": vals[-1]}
     else:
@@ -1528,22 +1528,23 @@ def make_rt_config(
         lut_grid.update(aerosol_lut_grid)
 
     to_remove = []
-    for gn, gc in lut_grid.items():
-        if gc is None or len(gc) == 1:
-            to_remove.append(gn)
-        else:
-            lut_grid[gn] = np.array(gc).tolist()
+    if prebuilt_lut_path is None:
+        for gn, gc in lut_grid.items():
+            if gc is None or len(gc) == 1:
+                to_remove.append(gn)
+            else:
+                lut_grid[gn] = np.array(gc).tolist()
 
-    if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
-        from isofit.radiative_transfer.engines.kernel_flows import bounds_check
+        if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
+            from isofit.radiative_transfer.engines.kernel_flows import bounds_check
 
-        # Should only modify H2OSTR and surface_elevation_km
-        bounds_check(lut_grid, emulator_base, modify=True)
-
-    ncds = None
-    if prebuilt_lut_path is not None:
+            # Should only modify H2OSTR and surface_elevation_km
+            bounds_check(lut_grid, emulator_base, modify=True)
+    else: #using prebuilt LUT
         ncds = nc.Dataset(prebuilt_lut_path, "r")
         for gn, gc in lut_grid.items():
+            if gc is None:
+                to_remove.append(gn)
             if gn not in ncds.variables:
                 logging.warning(
                     f"Key {gn} not found in prebuilt LUT, removing it from LUT."

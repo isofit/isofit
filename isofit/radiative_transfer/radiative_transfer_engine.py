@@ -148,7 +148,7 @@ class RadiativeTransferEngine:
             Logger.debug(
                 f"Reading from store: {lut_path}, subset={engine_config.lut_names}"
             )
-            self.lut = luts.load(lut_path, subset=engine_config.lut_names)
+            self.lut = luts.load(lut_path, subset=engine_config.lut_names, mode="r")
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points = luts.extractPoints(self.lut)
             self.lut_names = list(self.lut_grid.keys())
@@ -314,7 +314,13 @@ class RadiativeTransferEngine:
             # check if values of observer zenith in LUT are given in MODTRAN convention
             self.indices.convert_observer_zenith = None
             if "observer_zenith" in self.lut_grid.keys():
-                if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
+                if type(self.lut_grid["observer_zenith"]) is dict:
+                    oza = [v for k, v in self.lut_grid["observer_zenith"].items()]
+                else:
+                    oza = self.lut_grid["observer_zenith"]
+                 
+                #if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
+                if any(np.array(oza) > 90.0):
                     self.indices.convert_observer_zenith = [
                         i
                         for i in self.indices.geom

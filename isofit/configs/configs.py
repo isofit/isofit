@@ -152,7 +152,6 @@ def create_new_config(config_file: str) -> Config:
     logging.info(f"Loading config file: {config_file}")
     try:
         with open(config_file, "r") as f:
-            # pdb.set_trace()
             config_dict = yaml.safe_load(f)
     except:
         raise IOError(

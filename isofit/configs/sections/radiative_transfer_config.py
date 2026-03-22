@@ -441,7 +441,8 @@ class RadiativeTransferConfig(BaseConfigSection):
 
         # sort lut_grid
         for key, value in self.lut_grid.items():
-            self.lut_grid[key] = sorted(self.lut_grid[key])
+            if type(value) is not dict:
+                self.lut_grid[key] = sorted(self.lut_grid[key])
         self.lut_grid = OrderedDict(sorted(self.lut_grid.items(), key=lambda t: t[0]))
 
         # Hold this parameter for after the config_options, as radiative_transfer_engines
@@ -467,11 +468,12 @@ class RadiativeTransferConfig(BaseConfigSection):
 
         for key, item in self.lut_grid.items():
             if len(item) < 2:
-                errors.append(
-                    "lut_grid item {} has less than the required 2 elements".format(key)
-                )
-            if np.unique(item).size < len(item):
-                errors.append(f"Detected duplicate values in lut_grid item {key}")
+                if 'interp' not in item:
+                    errors.append(
+                        "lut_grid item {} has less than the required 2 elements".format(key)
+                    )
+                    if np.unique(item).size < len(item):
+                        errors.append(f"Detected duplicate values in lut_grid item {key}")
 
         for rte in self.radiative_transfer_engines:
             er, warn = rte.check_config_validity()
