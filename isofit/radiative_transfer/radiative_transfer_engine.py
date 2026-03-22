@@ -149,7 +149,7 @@ class RadiativeTransferEngine:
                 f"Reading from store: {lut_path}, subset={engine_config.lut_names}"
             )
             self.lut = luts.load(lut_path, subset=engine_config.lut_names, mode="r")
-            self.lut_grid = lut_grid or luts.extractGrid(self.lut)
+            self.lut_grid = luts.extractGrid(self.lut)
             self.points = luts.extractPoints(self.lut)
             self.lut_names = list(self.lut_grid.keys())
             Logger.info(f"LUT grid loaded from file")
