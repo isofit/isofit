@@ -170,7 +170,7 @@ jobs:
           echo "${{ github.event.pull_request.html_url }}" > ./metadata/pr_url.txt
 
       - name: Upload PR Metadata
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: metadata
           path: metadata
