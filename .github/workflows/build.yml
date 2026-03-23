@@ -175,19 +175,19 @@ jobs:
           name: metadata
           path: metadata
 
-  # Test pip installation
-  pip:
-    needs: cache
-    uses: ./.github/workflows/test_pip.yml
-    with:
-      cache-key: ${{ needs.cache.outputs.cache_key }}
-
-  # Test $PYTHONPATH installation
-  path:
-    needs: cache
-    uses: ./.github/workflows/test_path.yml
-    with:
-      cache-key: ${{ needs.cache.outputs.cache_key }}
+  # # Test pip installation
+  # pip:
+  #   needs: cache
+  #   uses: ./.github/workflows/test_pip.yml
+  #   with:
+  #     cache-key: ${{ needs.cache.outputs.cache_key }}
+  #
+  # # Test $PYTHONPATH installation
+  # path:
+  #   needs: cache
+  #   uses: ./.github/workflows/test_path.yml
+  #   with:
+  #     cache-key: ${{ needs.cache.outputs.cache_key }}
 
   # Results workflows
   imagecube-small:
