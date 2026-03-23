@@ -703,7 +703,7 @@ def build_config(
     retrieve_co2: bool = False,
     presolve: bool = False,
     terrain_style: str = "flat",
-    slope_max: float = 45.0,
+    max_slope: float = 30.0,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -735,7 +735,7 @@ def build_config(
         retrieve_co2:                         flag to include CO2 in lut and retrieval
         presolve:                             set this up as a presolve configuration
         terrain_style:                        style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
-        slope_max:                            maximum terrain slope to allow isofit to use in the forward model
+        max_slope:                            maximum terrain slope, used to inform minimum cos_i
     """
 
     if use_superpixels:
