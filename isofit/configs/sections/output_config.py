@@ -30,6 +30,8 @@ class OutputConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
         self._estimated_state_file_header = (
             "statevector",
             "{State Parameter, Value}",
@@ -129,13 +131,6 @@ class OutputConfig(BaseConfigSection):
         self.mcmc_samples_file = None
 
         self.set_config_options(sub_configdic)
-
-    def _check_config_validity(self) -> List[str]:
-        errors = list()
-
-        # TODO: add flags for rile overright, and make sure files don't exist if not checked?
-
-        return errors
 
     def get_all_output_file_names(self):
         keys = []

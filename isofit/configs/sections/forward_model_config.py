@@ -31,6 +31,8 @@ class ForwardModelConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
         self._instrument_type = InstrumentConfig
         self.instrument: InstrumentConfig = None
         """
@@ -56,8 +58,3 @@ class ForwardModelConfig(BaseConfigSection):
         """
 
         self.set_config_options(sub_configdic)
-
-    def _check_config_validity(self) -> List[str]:
-        errors = list()
-
-        return errors

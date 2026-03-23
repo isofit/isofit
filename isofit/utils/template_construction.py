@@ -1657,7 +1657,9 @@ def make_surface_config(
         surface_mat = loadmat(path)
         statevec_names = surface_mat.get("statevec_names", [])
         if len(statevec_names):
-            surface_config_dict["statevector"] = {}
+            surface_config_dict["statevector"] = surface_config_dict.get(
+                "statevector", {}
+            )
             for i, name in enumerate(statevec_names):
                 surface_config_dict["statevector"][name] = {
                     "bounds": [i for i in surface_mat["bounds"][i]],

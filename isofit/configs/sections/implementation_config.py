@@ -20,9 +20,9 @@
 import os
 from typing import Dict, List, Type
 
+from isofit import __version__
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.inversion_config import InversionConfig
-from isofit import __version__
 
 
 class ImplementationConfig(BaseConfigSection):
@@ -30,6 +30,7 @@ class ImplementationConfig(BaseConfigSection):
         """
         Input file(s) configuration.
         """
+        super().__init__()
 
         self._mode_type = str
         self.mode = "inversion"
@@ -95,6 +96,7 @@ class ImplementationConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         valid_implementation_modes = ["inversion", "mcmc_inversion", "simulation"]
         if self.mode not in valid_implementation_modes:
@@ -121,4 +123,4 @@ class ImplementationConfig(BaseConfigSection):
                 " specified"
             )
 
-        return errors
+        return errors, warnings

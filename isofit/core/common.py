@@ -518,6 +518,30 @@ def recursive_replace(obj, key, val) -> None:
             recursive_replace(item, key, val)
 
 
+def recursive_get(obj, key) -> list:
+    """Find all occurences of a key within a nested struct.
+
+    Args:
+        obj: object to seach within
+        key: key to find
+
+    Returns:
+        list: values at those key locations
+    """
+    results = []
+    if isinstance(obj, dict):
+        if key in obj:
+            results.append(obj[key])
+        for value in obj.values():
+            results.extend(recursive_get(value, key))
+
+    elif isinstance(obj, list):
+        for item in obj:
+            results.extend(recursive_get(item, key))
+
+    return results
+
+
 def get_absorption(wl: np.array, absfile: str) -> (np.array, np.array):
     """Calculate water and ice absorption coefficients using indices of
     refraction, and interpolate them to new wavelengths (user specifies nm).

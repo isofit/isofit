@@ -21,12 +21,15 @@ import os
 from typing import Dict, List, Type
 
 import numpy as np
+from scipy.io import loadmat
 
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.statevector_config import (
     StateVectorConfig,
     StateVectorElementConfig,
 )
+from isofit.core.common import recursive_get
+from isofit.surface.surface import DefaultState
 from isofit.surface.surface_glint_model import (
     DefaultSkyGlintPrior,
     DefaultSunGlintPrior,
@@ -40,7 +43,7 @@ class SurfaceStateVectorConfig(StateVectorConfig):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        super().__init__(sub_configdic)
+        super().__init__()
 
         self._SURF_TEMP_K_type = StateVectorElementConfig
         self.SURF_TEMP_K: StateVectorElementConfig = StateVectorElementConfig(
@@ -68,6 +71,8 @@ class SurfaceConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
         self._multi_surface_flag_type = bool
         self.multi_surface_flag = False
 
@@ -109,6 +114,7 @@ class SurfaceConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         if (self.surface_file is None) and not len(self.Surfaces):
             errors.append(
@@ -167,4 +173,36 @@ class SurfaceConfig(BaseConfigSection):
                     f"int mapping specified for keys: {missing_ints}"
                 )
 
-        return errors
+        # Check statevector
+        mat_files = list(
+            filter(None, recursive_get(self.get_config_as_dict(), "surface_file"))
+        )
+        statevec = {
+            key: value
+            for di in recursive_get(self.get_config_as_dict(), "statevector")
+            for key, value in di.items()
+        }
+
+        mismatch = {}
+        for f in mat_files:
+            model_dict = loadmat(f)
+            for i, name in enumerate(model_dict.get("statevec_names", [])):
+                for key in DefaultState._fields:
+                    if not (
+                        np.all(statevec[name][key] == model_dict[key].squeeze()[i])
+                    ):
+                        mismatch[key] = name
+
+        if len(mismatch):
+            message = (
+                "Configured non-reflectance surface statevector "
+                + "elements do not match .mat file.\nRun will use configured "
+                + "values in the .json config."
+                + "\nMismatching values:"
+            )
+            for key, value in mismatch.items():
+                message += f"\n{value}: {key}"
+
+            warnings.append(message)
+
+        return errors, warnings

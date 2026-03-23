@@ -28,6 +28,7 @@ class InputConfig(BaseConfigSection):
         """
         Input file(s) configuration.
         """
+        super().__init__()
 
         self._measured_radiance_file_type = str
         self.measured_radiance_file = None
@@ -99,6 +100,7 @@ class InputConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         # Check that all input files exist
         for key in self._get_nontype_attributes():
@@ -117,4 +119,4 @@ class InputConfig(BaseConfigSection):
             if callable(key):
                 errors.extend(value.check_config_validity())
 
-        return errors
+        return errors, warnings

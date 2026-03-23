@@ -284,6 +284,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         from isofit.radiative_transfer.engines import Engines
 
@@ -373,7 +374,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         if isinstance(self.lut_complevel, int) and self.lut_complevel < 1:
             errors.append("The LUT complevel must be and int greater than 0")
 
-        return errors
+        return errors, warnings
 
 
 class RadiativeTransferUnknownsConfig(BaseConfigSection):
@@ -387,11 +388,6 @@ class RadiativeTransferUnknownsConfig(BaseConfigSection):
         self.H2O_ABSCO = None
 
         self.set_config_options(sub_configdic)
-
-    def _check_config_validity(self) -> List[str]:
-        errors = list()
-
-        return errors
 
 
 class RadiativeTransferConfig(BaseConfigSection):
@@ -467,6 +463,7 @@ class RadiativeTransferConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         for key, item in self.lut_grid.items():
             if len(item) < 2:
@@ -477,7 +474,9 @@ class RadiativeTransferConfig(BaseConfigSection):
                 errors.append(f"Detected duplicate values in lut_grid item {key}")
 
         for rte in self.radiative_transfer_engines:
-            errors.extend(rte.check_config_validity())
+            er, warn = rte.check_config_validity()
+            errors.extend(er)
+            warnings.extend(warn)
 
         kinds = [
             "rg",
@@ -508,4 +507,4 @@ class RadiativeTransferConfig(BaseConfigSection):
                 f"surface->terrain_style is set as {self.terrain_style}, but must be one of: {terrain_options}"
             )
 
-        return errors
+        return errors, warnings

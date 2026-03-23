@@ -29,6 +29,8 @@ class InversionConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
         self._windows_type = list()
         self.windows = None
         """List[List[float]]: inversion retrieval windows to operate over."""
@@ -71,6 +73,7 @@ class InversionConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         # TODO: add some checking to windows
         if self.windows is None and self.mode != "simulation":
@@ -87,7 +90,7 @@ class InversionConfig(BaseConfigSection):
                         " order".format(subset)
                     )
 
-        return errors
+        return errors, warnings
 
 
 class McmcConfig(BaseConfigSection):
@@ -96,6 +99,8 @@ class McmcConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
         self._iterations_type = int
         self.iterations = 10000
         """int: Number of MCMC iterations to run."""
@@ -117,13 +122,6 @@ class McmcConfig(BaseConfigSection):
 
         self.set_config_options(sub_configdic)
 
-    def _check_config_validity(self) -> List[str]:
-        errors = list()
-
-        # TODO: add flags for rile overright, and make sure files don't exist if not checked?
-
-        return errors
-
 
 class LeastSquaresConfig(BaseConfigSection):
     """
@@ -131,6 +129,8 @@ class LeastSquaresConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
         self._method_type = str
         self.method = "trf"
         """str: Optimzation method to use. Default 'trf'."""
@@ -164,6 +164,7 @@ class LeastSquaresConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         # TODO: add flags for rile overright, and make sure files don't exist if not checked?
         if self.tr_solver is not None:
@@ -172,4 +173,4 @@ class LeastSquaresConfig(BaseConfigSection):
                     "Least squares tr_solver must be in [None, 'exact', 'lsmr']"
                 )
 
-        return errors
+        return errors, warnings
