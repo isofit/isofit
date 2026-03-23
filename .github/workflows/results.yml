@@ -35,6 +35,8 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: results/dev
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Read Metadata
         id: pr
