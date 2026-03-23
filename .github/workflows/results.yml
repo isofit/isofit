@@ -61,16 +61,16 @@ jobs:
           author: github-actions[bot] <40919026+github-actions[bot]@users.noreply.github.com>
           path: results
           commit-message: ${{ env.SHA }}
-          branch: ${{ steps.pr_data.outputs.number }}
+          branch: ${{ steps.pr.outputs.number }}
           base: main
-          title: ${{ steps.pr_data.outputs.number }}
-          body: "Automatically generated results for ${{ steps.pr_data.outputs.url }}\n SHA: ${{ env.SHA }}"
+          title: ${{ steps.pr.outputs.number }}
+          body: "Automatically generated results for ${{ steps.pr.outputs.url }}\n SHA: ${{ env.SHA }}"
 
       - name: Comment on original PR
         uses: actions/github-script@v7
         env:
           RESULTS_PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
-          PR_NUM: ${{ steps.pr_data.outputs.number }}
+          PR_NUM: ${{ steps.pr.outputs.number }}
         with:
           script: |
             const marker = "<!-- results-comment-marker -->";
