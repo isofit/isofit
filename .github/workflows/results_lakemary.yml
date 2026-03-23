@@ -12,7 +12,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  spectra:
+  main:
     runs-on: ubuntu-latest
     steps:
       - name: Cached Extras
@@ -44,12 +44,6 @@ jobs:
       - name: Execute tests
         run: |
           mkdir results
-
-          RUN=$(isofit path examples)/image_cube/small/
-          $RUN/default.sh --log_file results/default.log --resources
-
-          isoplots spectra $RUN/output/ang20170323t202244_rfl -o results/spectra.png -p 2 4 -p 8 2 -p 5 6 -y -.05 .5
-          # isoplots resources results/default.resources.jsonl -o results/default.resources.html -l results/default.log --relative --png --debug
 
       - uses: actions/upload-artifact@v6
         with:

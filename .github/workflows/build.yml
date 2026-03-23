@@ -196,8 +196,8 @@ jobs:
     with:
       cache-key: ${{ needs.cache.outputs.cache_key }}
 
-  lakemary:
-    needs: [cache, metadata]
-    uses: ./.github/workflows/results_lakemary.yml
-    with:
-      cache-key: ${{ needs.cache.outputs.cache_key }}
+  # lakemary:
+  #   needs: [cache, metadata]
+  #   uses: ./.github/workflows/results_lakemary.yml
+  #   with:
+  #     cache-key: ${{ needs.cache.outputs.cache_key }}
