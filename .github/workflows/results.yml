@@ -24,9 +24,12 @@ jobs:
       SHA: https://github.com/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }}
     runs-on: ubuntu-latest
     steps:
-      - name: Determine which workflow triggered
+      - name: Report Environment
         run: |
-          echo "Triggered by workflow: $NAME"
+          echo "NAME = $NAME"
+          echo "NUM  = $NUM"
+          echo "URL  = $URL"
+          echo "SHA  = $SHA"
 
       - name: Checkout tests repo
         uses: actions/checkout@v6
@@ -42,7 +45,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: results/dev
-          pattern: $NUM-*
+          pattern: ${{ env.NUM }}-*
           merge-multiple: true
 
       - name: Create PR in Tests Results Repo
@@ -53,25 +56,23 @@ jobs:
           committer: github-actions[bot] <40919026+github-actions[bot]@users.noreply.github.com>
           author: github-actions[bot] <40919026+github-actions[bot]@users.noreply.github.com>
           path: results
-          commit-message: $SHA
-          branch: $NUM
+          commit-message: ${{ env.SHA }}
+          branch: ${{ env.NUM }}
           base: main
-          title: $NUM
-          body: "Automatically generated results for $URL\n SHA: $SHA"
+          title: ${{ env.NUM }}
+          body: "Automatically generated results for ${{ env.URL }}\n SHA: ${{ env.SHA }}"
 
       - name: Comment on original PR
         uses: actions/github-script@v7
         env:
           RESULTS_PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
-          SOURCE_PR_NUMBER: $NUM
-          SOURCE_SHA: $SHA
         with:
           script: |
             const marker = "<!-- results-comment-marker -->";
 
             const resultsUrl = process.env.RESULTS_PR_URL;
-            const prNumber = Number(process.env.SOURCE_PR_NUMBER);
-            const sha = process.env.SOURCE_SHA;
+            const prNumber = Number(process.env.NUM);
+            const sha = process.env.SHA;
 
             const { owner, repo } = context.repo;
 
