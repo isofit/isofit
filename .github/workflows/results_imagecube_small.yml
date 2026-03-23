@@ -6,9 +6,6 @@ on:
       cache-key:
         required: true
         type: string
-      pr-number:
-        required: true
-        type: number
 
 permissions:
   contents: read
@@ -56,5 +53,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.pr-number }}-imagecube-small
+          name: imagecube_small
           path: results

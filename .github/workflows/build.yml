@@ -159,6 +159,22 @@ jobs:
           # Need to move to local dir so that Windows runners can find it
           mv ~/.isofit .
 
+  # Downstream [on: workflow_run] don't have access to PR num and url, so upload artifact to pass it along
+  metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Save PR Metadata
+        run: |
+          mkdir -p ./metadata
+          echo "${{ github.event.number }}" > ./metadata/pr_number.txt
+          echo "${{ github.event.pull_request.html_url }}" > ./metadata/pr_url.txt
+
+      - name: Upload PR Metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: metadata
+          path: metadata
+
   # Test pip installation
   pip:
     needs: cache
@@ -175,15 +191,13 @@ jobs:
 
   # Results workflows
   imagecube-small:
-    needs: cache
+    needs: [cache, metadata]
     uses: ./.github/workflows/results_imagecube_small.yml
     with:
       cache-key: ${{ needs.cache.outputs.cache_key }}
-      pr-number: ${{ github.event.pull_request.number }}
 
   lakemary:
-    needs: cache
+    needs: [cache, metadata]
     uses: ./.github/workflows/results_lakemary.yml
     with:
       cache-key: ${{ needs.cache.outputs.cache_key }}
-      pr-number: ${{ github.event.pull_request.number }}

@@ -14,23 +14,18 @@ permissions:
   contents: read
   pull-requests: write
 
+name: CI
+on:
+  pull_request:
+    types: [opened, synchronize]
+
 jobs:
   results:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     env:
-      NAME: ${{ github.event.workflow_run.name }}
-      NUM: ${{ github.event.workflow_run.pull_requests[0].number }}
-      URL: ${{ github.event.workflow_run.pull_requests[0].html_url }}
       SHA: https://github.com/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }}
     runs-on: ubuntu-latest
     steps:
-      - name: Report Environment
-        run: |
-          echo "NAME = $NAME"
-          echo "NUM  = $NUM"
-          echo "URL  = $URL"
-          echo "SHA  = $SHA"
-
       - name: Checkout tests repo
         uses: actions/checkout@v6
         with:
@@ -45,8 +40,21 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: results/dev
-          pattern: ${{ env.NUM }}-*
-          merge-multiple: true
+          pattern: *
+
+      - name: Read Metadata
+        id: pr
+        run: |
+          cd results/dev/metadata
+          echo "number=$(cat pr_number.txt)" >> $GITHUB_OUTPUT
+          echo "url=$(cat pr_url.txt)" >> $GITHUB_OUTPUT
+          rm -rf ../metadata
+
+      - name: Report Environment
+        run: |
+          echo "NUM = ${{ steps.pr.outputs.number }}"
+          echo "URL = ${{ steps.pr.outputs.url }}"
+          echo "SHA = $SHA"
 
       - name: Create PR in Tests Results Repo
         id: cpr
@@ -57,21 +65,22 @@ jobs:
           author: github-actions[bot] <40919026+github-actions[bot]@users.noreply.github.com>
           path: results
           commit-message: ${{ env.SHA }}
-          branch: ${{ env.NUM }}
+          branch: ${{ steps.pr_data.outputs.number }}
           base: main
-          title: ${{ env.NUM }}
-          body: "Automatically generated results for ${{ env.URL }}\n SHA: ${{ env.SHA }}"
+          title: ${{ steps.pr_data.outputs.number }}
+          body: "Automatically generated results for ${{ steps.pr_data.outputs.url }}\n SHA: ${{ env.SHA }}"
 
       - name: Comment on original PR
         uses: actions/github-script@v7
         env:
           RESULTS_PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
+          PR_NUM: ${{ steps.pr_data.outputs.number }}
         with:
           script: |
             const marker = "<!-- results-comment-marker -->";
 
             const resultsUrl = process.env.RESULTS_PR_URL;
-            const prNumber = Number(process.env.NUM);
+            const prNumber = Number(process.env.PR_NUM);
             const sha = process.env.SHA;
 
             const { owner, repo } = context.repo;
