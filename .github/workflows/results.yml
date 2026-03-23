@@ -6,8 +6,7 @@ name: Publish Results
 on:
   workflow_run:
     workflows:
-      - ImageCube[small] Spectra
-      - Lake Mary Single Pixel
+      - Build
     types:
       - completed
 
