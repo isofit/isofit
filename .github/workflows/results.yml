@@ -16,7 +16,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  spectra:
+  results:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     env:
       NAME: ${{ github.event.workflow_run.name }}
