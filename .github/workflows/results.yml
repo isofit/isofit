@@ -40,7 +40,6 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: results/dev
-          pattern: *
 
       - name: Read Metadata
         id: pr
