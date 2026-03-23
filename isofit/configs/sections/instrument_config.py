@@ -33,7 +33,7 @@ class InstrumentStateVectorConfig(StateVectorConfig):
     """
 
     def __init__(self, sub_configdic: dict = None):
-        super().__init__(sub_configdic)
+        super().__init__()
 
         self._EOF_1_type = StateVectorElementConfig
         self.EOF_1: StateVectorElementConfig = None
@@ -64,6 +64,8 @@ class InstrumentUnknowns(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
         self._channelized_radiometric_uncertainty_file_type = str
         self.channelized_radiometric_uncertainty_file = None
 
@@ -83,6 +85,7 @@ class InstrumentUnknowns(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         file_params = [
             self.channelized_radiometric_uncertainty_file,
@@ -93,7 +96,7 @@ class InstrumentUnknowns(BaseConfigSection):
                 if os.path.isfile(param) is False:
                     errors.append("Instrument unknown file: {} not found".format(param))
 
-        return errors
+        return errors, warnings
 
 
 class InstrumentConfig(BaseConfigSection):
@@ -159,6 +162,7 @@ class InstrumentConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         noise_options = [
             self.SNR,
@@ -186,4 +190,4 @@ class InstrumentConfig(BaseConfigSection):
                 if os.path.isfile(param) is False:
                     errors.append("Instrument config file: {} not found".format(param))
 
-        return errors
+        return errors, warnings

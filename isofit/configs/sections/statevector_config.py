@@ -36,6 +36,8 @@ class StateVectorElementConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
         self._bounds_type = list()
         self.bounds = [np.nan, np.nan]
 
@@ -53,19 +55,10 @@ class StateVectorElementConfig(BaseConfigSection):
 
         self.set_config_options(sub_configdic)
 
-    def _check_config_validity(self) -> List[str]:
-        errors = list()
-        return errors
-
 
 class StateVectorConfig(BaseConfigSection):
     def __init__(self, sub_configdic: dict = None):
         super().__init__()
-
-    def _check_config_validity(self):
-        errors = list()
-
-        return errors
 
     def _set_statevector_config_options(self, configdic):
         # TODO: update using methods below
