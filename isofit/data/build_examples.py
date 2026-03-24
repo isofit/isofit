@@ -277,6 +277,10 @@ Examples = {
         requires=["sixs", "srtmnet"],
         validate={"size": "medium"},
     ),
+    "LakeMary": ApplyOEExample(
+        name="LakeMary",
+        requires=["sixs", "srtmnet"],
+    ),
 }
 
 
