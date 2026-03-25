@@ -723,6 +723,7 @@ def build_config(
     presolve: bool = False,
     terrain_style: str = "flat",
     cos_i_min: float = 0.3,
+    use_background_rfl: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -755,6 +756,7 @@ def build_config(
         presolve:                             set this up as a presolve configuration
         terrain_style:                        style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
         cos_i_min:                            minimum cosine of incidence angle to allow isofit to use in the forward model
+        use_background_rfl:                   flag to determine which surface derivatives to use in OE
     """
 
     if use_superpixels:
@@ -858,6 +860,7 @@ def build_config(
                 surface_category=surface_category,
                 pressure_elevation=pressure_elevation,
                 use_superpixels=use_superpixels,
+                use_background_rfl=use_background_rfl,
             ),
         },
         "implementation": make_implementation_config(
@@ -1863,6 +1866,7 @@ def make_surface_config(
     surface_category="multicomponent_surface",
     pressure_elevation=False,
     use_superpixels=False,
+    use_background_rfl=False,
 ):
 
     # Initialize config dict
@@ -1902,12 +1906,14 @@ def make_surface_config(
                 "surface_int": int(i),
                 "surface_file": surface_path,
                 "surface_category": surface_category,
+                "use_background_rfl": use_background_rfl,
             }
 
     # Single surface run
     else:
         surface_config_dict["surface_file"] = surface_working_paths[surface_category]
         surface_config_dict["surface_category"] = surface_category
+        surface_config_dict["use_background_rfl"] = use_background_rfl
 
     return surface_config_dict
 

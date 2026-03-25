@@ -667,6 +667,7 @@ def apply_oe(
         "multipart_transmittance": multipart_transmittance,
         "segmentation_size": segmentation_size,
         "terrain_style": terrain_style,
+        "use_background_rfl": use_background_rfl,
     }
     if presolve:
         # write modtran presolve template

@@ -300,6 +300,10 @@ def invert_analytical(
         geom=geom,
     )
 
+    # Amend the down diffuse terms with eq_11_term
+    L_dif_dir /= eq_11_term
+    L_dif_dif /= eq_11_term
+
     # Get superpixel EOF shift if used
     eof_offset = fm.eof_offset(sub_surface, sub_RT, sub_instrument)
 
@@ -316,8 +320,8 @@ def invert_analytical(
         geom,
         L_dir_dir=L_dir_dir,
         L_dir_dif=L_dir_dif,
-        L_dif_dir=L_dif_dir / eq_11_term,
-        L_dif_dif=L_dif_dif / eq_11_term,
+        L_dif_dir=L_dif_dir,
+        L_dif_dif=L_dif_dif,
     )
     # Sample just the wavelengths and states of interest
     L = H[winidx, :][:, iv_idx]
