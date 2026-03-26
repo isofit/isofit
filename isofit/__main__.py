@@ -86,6 +86,7 @@ class CLI(click.Group):
     """
 
     laziest = False
+    debug = False
 
     def __init__(self, *args, lazy_subcommands=None, **kwargs):
         super().__init__(*args, **kwargs)

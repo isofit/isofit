@@ -45,6 +45,12 @@ jobs:
         run: |
           mkdir results
 
+          RUN=$(isofit path examples)/LakeMary/
+          $RUN/default.sh --log_file results/default.log --resources
+
+          isoplots lakemary -o results/default.png
+          isoplots resources results/default.resources.jsonl -o results/default.resources.html -l results/default.log --relative --png --debug
+
       - uses: actions/upload-artifact@v6
         with:
           name: lake_mary
