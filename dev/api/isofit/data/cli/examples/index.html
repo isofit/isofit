@@ -2067,21 +2067,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#isofit.data.cli.examples.download_image_cube" class="md-nav__link">
+  <a href="#isofit.data.cli.examples.download_extra" class="md-nav__link">
     <span class="md-ellipsis">
       
-        download_image_cube
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.data.cli.examples.download_neon" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        download_neon
+        download_extra
       
     </span>
   </a>
@@ -4572,21 +4561,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#isofit.data.cli.examples.download_image_cube" class="md-nav__link">
+  <a href="#isofit.data.cli.examples.download_extra" class="md-nav__link">
     <span class="md-ellipsis">
       
-        download_image_cube
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.data.cli.examples.download_neon" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        download_neon
+        download_extra
       
     </span>
   </a>
@@ -4850,14 +4828,9 @@
 <div class="mkapi-section-content">
 <ul class="mkapi-item-list">
 <li>
-<p><span class="mkapi-item-name"><a href="./#isofit.data.cli.examples.download_image_cube" title="isofit.data.cli.examples.download_image_cube">download_image_cube</a></span>
+<p><span class="mkapi-item-name"><a href="./#isofit.data.cli.examples.download_extra" title="isofit.data.cli.examples.download_extra">download_extra</a></span>
  <span class="mkapi-dash">&mdash;</span>
-Downloads the image_cube dataset from "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip".</p>
-</li>
-<li>
-<p><span class="mkapi-item-name"><a href="./#isofit.data.cli.examples.download_neon" title="isofit.data.cli.examples.download_neon">download_neon</a></span>
- <span class="mkapi-dash">&mdash;</span>
-Downloads the NEON dataset from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip.</p>
+Downloads additional data for the examples. Assumes the data is a zip.</p>
 </li>
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.data.cli.examples.download_tutorials" title="isofit.data.cli.examples.download_tutorials">download_tutorials</a></span>
@@ -4905,19 +4878,19 @@ Validates the installation of the ISOFIT examples as well as checks for updates<
 </ul>
 </div>
 </div>
-<p class="mkapi-object mkapi-page-source" id="isofit.data.cli.examples.download_image_cube">
+<p class="mkapi-object mkapi-page-source" id="isofit.data.cli.examples.download_extra">
 <span class="mkapi-object-link">
 
 
-<a href="../../../../../src/isofit/data/cli/examples/#isofit.data.cli.examples.download_image_cube" title="Go to source">source</a>
+<a href="../../../../../src/isofit/data/cli/examples/#isofit.data.cli.examples.download_extra" title="Go to source">source</a>
 <span class="mkapi-document-toggle" title="Toggle all docs">
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span>
-<span class="mkapi-object-name"><a href="./#isofit.data.cli.examples.download_image_cube" title="isofit.data.cli.examples.download_image_cube">download_image_cube</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">path</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">size</span><span class="mkapi-equal">=</span><span class="mkapi-default">'both'</span><span class="mkapi-comma">, </span><span class="mkapi-arg">overwrite</span><span class="mkapi-equal">=</span><span class="mkapi-default">False</span><span class="mkapi-paren">)</span></span>
+<span class="mkapi-object-name"><a href="./#isofit.data.cli.examples.download_extra" title="isofit.data.cli.examples.download_extra">download_extra</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">name</span><span class="mkapi-comma">, </span><span class="mkapi-arg">path</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">overwrite</span><span class="mkapi-equal">=</span><span class="mkapi-default">False</span><span class="mkapi-comma">, </span><span class="mkapi-star">**</span><span class="mkapi-arg">kwargs</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
-<p>Downloads the image_cube dataset from "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip".</p>
+<p>Downloads additional data for the examples. Assumes the data is a zip.</p>
 <p class="mkapi-section">
 <span class="mkapi-object-link">
 <span class="mkapi-section-toggle" title="Toggle parameters">
@@ -4929,7 +4902,7 @@ Validates the installation of the ISOFIT examples as well as checks for updates<
 <div class="mkapi-section-content">
 <ul class="mkapi-item-list">
 <li>
-<p><span class="mkapi-item-name">examples</span> : 
+<p><span class="mkapi-item-name">path</span> : 
 <span class="mkapi-item-type"><span class="mkapi-tooltip" title="pathlib.Path">Path</span></span> <span class="mkapi-dash">&mdash;</span>
 Path to the examples directory</p>
 </li>
@@ -4942,6 +4915,12 @@ Specify which of the two image_cube datasets to download.</p>
 <p><span class="mkapi-item-name">overwrite</span> : 
 <span class="mkapi-item-type">bool</span> <span class="mkapi-dash">&mdash;</span>
 Flag to overwrite current installed files</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">**kwargs</span> : 
+<span class="mkapi-item-type">dict</span> <span class="mkapi-dash">&mdash;</span>
+Additional key-word arguments used by one or more extras. For instance,
+image_cube uses <code>size</code> to format the url and output subpaths</p>
 </li>
 </ul>
 </div>
@@ -4957,42 +4936,6 @@ Flag to overwrite current installed files</p>
 <ul class="mkapi-item-list">
 <li>
 <p><span class="mkapi-item-type">AttributeError</span></p>
-</li>
-</ul>
-</div>
-</div>
-<p class="mkapi-object mkapi-page-source" id="isofit.data.cli.examples.download_neon">
-<span class="mkapi-object-link">
-
-
-<a href="../../../../../src/isofit/data/cli/examples/#isofit.data.cli.examples.download_neon" title="Go to source">source</a>
-<span class="mkapi-document-toggle" title="Toggle all docs">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-object-name"><a href="./#isofit.data.cli.examples.download_neon" title="isofit.data.cli.examples.download_neon">download_neon</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">path</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">overwrite</span><span class="mkapi-equal">=</span><span class="mkapi-default">False</span><span class="mkapi-paren">)</span></span>
-</p>
-<div class="mkapi-document">
-<p>Downloads the NEON dataset from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip.</p>
-<p class="mkapi-section">
-<span class="mkapi-object-link">
-<span class="mkapi-section-toggle" title="Toggle parameters">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-section-name">Parameters</span>
-</p>
-<div class="mkapi-section-content">
-<ul class="mkapi-item-list">
-<li>
-<p><span class="mkapi-item-name">examples</span> : 
-<span class="mkapi-item-type"><span class="mkapi-tooltip" title="pathlib.Path">Path</span></span> <span class="mkapi-dash">&mdash;</span>
-Path to the examples directory</p>
-</li>
-<li>
-<p><span class="mkapi-item-name">overwrite</span> : 
-<span class="mkapi-item-type">bool</span> <span class="mkapi-dash">&mdash;</span>
-Flag to overwrite current installed files</p>
 </li>
 </ul>
 </div>
@@ -5358,7 +5301,7 @@ Additional key-word arguments to pass to download()</p>
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span>
-<span class="mkapi-object-name"><a href="./#isofit.data.cli.examples.download_cli" title="isofit.data.cli.examples.download_cli">download_cli</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">tutorials</span><span class="mkapi-comma">, </span><span class="mkapi-arg">neon</span><span class="mkapi-comma">, </span><span class="mkapi-arg">image_cube</span><span class="mkapi-comma">, </span><span class="mkapi-star">**</span><span class="mkapi-arg">kwargs</span><span class="mkapi-paren">)</span></span>
+<span class="mkapi-object-name"><a href="./#isofit.data.cli.examples.download_cli" title="isofit.data.cli.examples.download_cli">download_cli</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">tutorials</span><span class="mkapi-comma">, </span><span class="mkapi-arg">neon</span><span class="mkapi-comma">, </span><span class="mkapi-arg">image_cube</span><span class="mkapi-comma">, </span><span class="mkapi-arg">lakemary</span><span class="mkapi-comma">, </span><span class="mkapi-star">**</span><span class="mkapi-arg">kwargs</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.</p>

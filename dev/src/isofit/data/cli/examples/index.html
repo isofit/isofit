@@ -4387,21 +4387,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#isofit.data.cli.examples.download_image_cube" class="md-nav__link">
+  <a href="#isofit.data.cli.examples.download_extra" class="md-nav__link">
     <span class="md-ellipsis">
       
-        download_image_cube
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.data.cli.examples.download_neon" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        download_neon
+        download_extra
       
     </span>
   </a>
@@ -4940,7 +4929,29 @@
 <span class="normal">388</span>
 <span class="normal">389</span>
 <span class="normal">390</span>
-<span class="normal">391</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -4953,68 +4964,65 @@
 
 <span class="n">ESSENTIAL</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="n">CMD</span> <span class="o">=</span> <span class="s2">&quot;examples&quot;</span>
-<span class="n">NEON_URL</span> <span class="o">=</span> <span class="s2">&quot;https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip&quot;</span>
-<span class="n">CUBE_URL</span> <span class="o">=</span> <span class="s2">&quot;https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/</span><span class="si">{size}</span><span class="s2">_chunk.zip&quot;</span>
+
+<span class="c1"># url: path to download</span>
+<span class="n">Extras</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;neon&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subpath&quot;</span><span class="p">:</span> <span class="s2">&quot;NEON/data&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;image_cube&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/</span><span class="si">{size}</span><span class="s2">_chunk.zip&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subpath&quot;</span><span class="p">:</span> <span class="s2">&quot;image_cube/</span><span class="si">{size}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;lakemary&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/LakeMary.zip&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subpath&quot;</span><span class="p">:</span> <span class="s2">&quot;LakeMary/data&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">download_image_cube</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.examples.download_image_cube"><a href="../../../../../api/isofit/data/cli/examples/#isofit.data.cli.examples.download_image_cube" title="Go to docs">[docs]</a></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">download_extra</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.examples.download_extra"><a href="../../../../../api/isofit/data/cli/examples/#isofit.data.cli.examples.download_extra" title="Go to docs">[docs]</a></div>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Downloads the image_cube dataset from &quot;https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip&quot;.</span>
+<span class="sd">    Downloads additional data for the examples. Assumes the data is a zip.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    examples : Path</span>
+<span class="sd">    path : Path</span>
 <span class="sd">        Path to the examples directory</span>
 <span class="sd">    size : str</span>
 <span class="sd">        Specify which of the two image_cube datasets to download.</span>
 <span class="sd">    overwrite : bool</span>
 <span class="sd">        Flag to overwrite current installed files</span>
+<span class="sd">    **kwargs : dict</span>
+<span class="sd">        Additional key-word arguments used by one or more extras. For instance,</span>
+<span class="sd">        image_cube uses ``size`` to format the url and output subpaths</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">size</span> <span class="o">==</span> <span class="s2">&quot;both&quot;</span><span class="p">:</span>
-        <span class="n">download_image_cube</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">)</span>
-        <span class="n">download_image_cube</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">)</span>
-        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Extras</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extra </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2"> is not one of: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">Extras</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">size</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Image cube chunk size must be either &#39;small&#39; or &#39;medium&#39;, got: </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
+    <span class="n">extra</span> <span class="o">=</span> <span class="n">Extras</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading ISOFIT image cube data: </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># ImageCube is a special case that downloads two kinds</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;image_cube&quot;</span><span class="p">:</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;size&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="o">==</span> <span class="s2">&quot;both&quot;</span><span class="p">:</span>
+            <span class="n">download_extra</span><span class="p">(</span><span class="s2">&quot;image_cube&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">&quot;small&quot;</span><span class="p">)</span>
+            <span class="n">download_extra</span><span class="p">(</span><span class="s2">&quot;image_cube&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">&quot;medium&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
 
-    <span class="n">output</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span> <span class="ow">or</span> <span class="n">env</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;image_cube&quot;</span> <span class="o">/</span> <span class="n">size</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Image cube chunk size must be either &#39;small&#39; or &#39;medium&#39;, got: </span><span class="si">{</span><span class="n">size</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span> <span class="ow">or</span> <span class="n">env</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span> <span class="o">/</span> <span class="n">extra</span><span class="p">[</span><span class="s2">&quot;subpath&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">prepare_output</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">output</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="n">url</span> <span class="o">=</span> <span class="n">CUBE_URL</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pulling </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">zipfile</span> <span class="o">=</span> <span class="n">download_file</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">_chunk.zip&quot;</span><span class="p">)</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unzipping </span><span class="si">{</span><span class="n">zipfile</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">avail</span> <span class="o">=</span> <span class="n">unzip</span><span class="p">(</span><span class="n">zipfile</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">rename</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Done, now available at: </span><span class="si">{</span><span class="n">avail</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">download_neon</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.examples.download_neon"><a href="../../../../../api/isofit/data/cli/examples/#isofit.data.cli.examples.download_neon" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Downloads the NEON dataset from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/tutorials/subset_data.zip.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    examples : Path</span>
-<span class="sd">        Path to the examples directory</span>
-<span class="sd">    overwrite : bool</span>
-<span class="sd">        Flag to overwrite current installed files</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downloading NEON data for the example&quot;</span><span class="p">)</span>
-    <span class="n">output</span> <span class="o">=</span> <span class="n">prepare_output</span><span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;NEON/data&quot;</span><span class="p">,</span> <span class="s2">&quot;./neon_data&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">output</span><span class="p">:</span>
-        <span class="k">return</span>
-
-    <span class="n">zipfile</span> <span class="o">=</span> <span class="n">download_file</span><span class="p">(</span><span class="n">NEON_URL</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;NEON-subset-data.zip&quot;</span><span class="p">)</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">extra</span><span class="p">[</span><span class="s2">&quot;url&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">zipfile</span> <span class="o">=</span> <span class="n">download_file</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">output</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.zip&quot;</span><span class="p">)</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unzipping </span><span class="si">{</span><span class="n">zipfile</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">avail</span> <span class="o">=</span> <span class="n">unzip</span><span class="p">(</span><span class="n">zipfile</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">rename</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
@@ -5072,8 +5080,9 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading ISOFIT examples&quot;</span><span class="p">)</span>
     <span class="n">download_tutorials</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
-    <span class="n">download_neon</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span> <span class="ow">or</span> <span class="n">env</span><span class="o">.</span><span class="n">examples</span><span class="p">),</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
-    <span class="n">download_image_cube</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
+    <span class="n">download_extra</span><span class="p">(</span><span class="s2">&quot;neon&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
+    <span class="n">download_extra</span><span class="p">(</span><span class="s2">&quot;image_cube&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">)</span>
+    <span class="n">download_extra</span><span class="p">(</span><span class="s2">&quot;lakemary&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[!] Be sure to build the examples for your system via `isofit build`&quot;</span><span class="p">)</span>
 
@@ -5277,7 +5286,7 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
     <span class="s2">&quot;--tutorials&quot;</span><span class="p">,</span>
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Downloads only the NEON dataset to the examples directory&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Downloads only the tutorials (no datasets) to the examples directory&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
     <span class="s2">&quot;--neon&quot;</span><span class="p">,</span>
@@ -5286,10 +5295,17 @@
 <span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
     <span class="s2">&quot;--image_cube&quot;</span><span class="p">,</span>
-    <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">]),</span>
+    <span class="n">flag_value</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Downloads only the image_cube dataset to the examples directory&quot;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">download_cli</span><span class="p">(</span><span class="n">tutorials</span><span class="p">,</span> <span class="n">neon</span><span class="p">,</span> <span class="n">image_cube</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.examples.download_cli"><a href="../../../../../api/isofit/data/cli/examples/#isofit.data.cli.examples.download_cli" title="Go to docs">[docs]</a></div>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--lakemary&quot;</span><span class="p">,</span>
+    <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Downloads only the LakeMary dataset to the examples directory&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">download_cli</span><span class="p">(</span><span class="n">tutorials</span><span class="p">,</span> <span class="n">neon</span><span class="p">,</span> <span class="n">image_cube</span><span class="p">,</span> <span class="n">lakemary</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.examples.download_cli"><a href="../../../../../api/isofit/data/cli/examples/#isofit.data.cli.examples.download_cli" title="Go to docs">[docs]</a></div>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
 <span class="sd">    Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials.</span>
 
@@ -5300,26 +5316,43 @@
 <span class="sd">        - `isofit download examples --path /path/examples`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.</span>
 <span class="sd">    It is recommended to use the first style so the download path is remembered in the future.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dl_all</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">env</span><span class="o">.</span><span class="n">examples</span>
+    <span class="n">overwrite</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">tutorials</span><span class="p">:</span>
         <span class="n">download_tutorials</span><span class="p">(</span>
             <span class="n">tag</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tag&quot;</span><span class="p">,</span> <span class="s2">&quot;latest&quot;</span><span class="p">),</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">neon</span><span class="p">:</span>
-        <span class="n">download_neon</span><span class="p">(</span>
-            <span class="n">examples</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">env</span><span class="o">.</span><span class="n">examples</span><span class="p">),</span>
-            <span class="n">overwrite</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-        <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">image_cube</span><span class="p">:</span>
-        <span class="n">download_image_cube</span><span class="p">(</span>
+        <span class="n">dl_all</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">neon</span><span class="p">:</span>
+        <span class="n">download_extra</span><span class="p">(</span><span class="s2">&quot;neon&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
+        <span class="n">dl_all</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">image_cube</span><span class="p">:</span>
+        <span class="n">download_extra</span><span class="p">(</span>
+            <span class="s2">&quot;image_cube&quot;</span><span class="p">,</span>
             <span class="n">examples</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
-            <span class="n">size</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;size&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">),</span>
-            <span class="n">overwrite</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">image_cube</span><span class="p">,</span>
         <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">):</span>
-        <span class="n">download</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">dl_all</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">lakemary</span><span class="p">:</span>
+        <span class="n">download_extra</span><span class="p">(</span>
+            <span class="s2">&quot;lakemary&quot;</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">dl_all</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Only execute if the --[extra] flags weren&#39;t used</span>
+    <span class="k">if</span> <span class="n">dl_all</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="n">download</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@shared</span><span class="o">.</span><span class="n">validate</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">CMD</span><span class="p">)</span>

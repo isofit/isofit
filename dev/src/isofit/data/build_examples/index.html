@@ -5035,7 +5035,15 @@
 <span class="normal">410</span>
 <span class="normal">411</span>
 <span class="normal">412</span>
-<span class="normal">413</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Builds the examples from their template files for a given ISOFIT ini</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -5279,7 +5287,11 @@
 <span class="sd">        Creates apply_oe scripts using &#39;args&#39; template files</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tmpl</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;templates&quot;</span>
-        <span class="n">surf</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">tmpl</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;surface.json&quot;</span><span class="p">))</span>
+        <span class="n">surf</span> <span class="o">=</span> <span class="n">tmpl</span> <span class="o">/</span> <span class="s2">&quot;surface.json&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">surf</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No surface.json configuration file found, skipping this example&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
 
         <span class="n">updateTemplate</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;configs&quot;</span><span class="p">)</span>
 
@@ -5313,6 +5325,10 @@
         <span class="n">name</span><span class="o">=</span><span class="s2">&quot;image_cube/medium&quot;</span><span class="p">,</span>
         <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sixs&quot;</span><span class="p">,</span> <span class="s2">&quot;srtmnet&quot;</span><span class="p">],</span>
         <span class="n">validate</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="s2">&quot;medium&quot;</span><span class="p">},</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;LakeMary&quot;</span><span class="p">:</span> <span class="n">ApplyOEExample</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;LakeMary&quot;</span><span class="p">,</span>
+        <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sixs&quot;</span><span class="p">,</span> <span class="s2">&quot;srtmnet&quot;</span><span class="p">],</span>
     <span class="p">),</span>
 <span class="p">}</span>
 
