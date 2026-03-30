@@ -64,31 +64,17 @@ jobs:
       - name: Print concurrency group
         run: echo '${{ github.event.pull_request.head.ref }}'
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
+          version: "0.9.25"
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
+          activate-environment: true
 
-      - name: Install ISOFIT and most software dependencies
+      - name: Install ISOFIT
         shell: bash
         run: |
-
-          # Python packaging dependencies. The presence of 'wheel' triggers
-          # a lot of new Python packaging machinery that will eventually
-          # become the default.
-          python3 -m pip install pip setuptools wheel --upgrade
-          python3 --version
-          python3 -m pip show pip setuptools wheel
-
-          # Install 'isofit'
-          # Force CPU version of torch to save space on runners
-          python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-          python3 -m pip install --editable ".[test]"
-
-          # Ensure ISOFIT has been installed
-          python3 -c "import isofit; print(isofit.__file__)"
+          uv sync --extra test
 
       # Examples are built for ubuntu runners, Windows needs to rebuild every time
       - name: Format for Windows
@@ -101,4 +87,4 @@ jobs:
       - name: Execute tests
         shell: bash
         run: |
-          python3 -m pytest -v -s "${{ matrix.pytest-flags }}"
+          pytest -v -s "${{ matrix.pytest-flags }}"
