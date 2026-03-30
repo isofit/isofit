@@ -38,8 +38,8 @@ from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.core.multistate import (
     construct_full_state,
+    fill_statevector,
     index_spectra_by_surface,
-    match_statevector,
     update_config_for_surface,
 )
 from isofit.inversion.inverse_simple import (
@@ -286,6 +286,7 @@ def analytical_line(
         config = update_config_for_surface(deepcopy(input_config), surface_class_str)
 
         fm = ForwardModel(config, cache_RT)
+        fm.match_statevector(full_statevector)
 
         # Initialize workers
         wargs = [ray.put(obj) for obj in (config, fm)]
@@ -612,13 +613,13 @@ class Worker(object):
             )
             state_est = states[-1]
 
-            full_state_est = match_statevector(
-                state_est, self.full_statevector, self.fm.statevec
+            full_state_est = fill_statevector(
+                state_est, self.fm.full_idx, self.fm.full_miss, self.full_statevector
             )
             output_rfl[r - start_line, c, :] = full_state_est[self.full_idx_surf_rfl]
 
-            full_unc_est = match_statevector(
-                unc, self.full_statevector, self.fm.statevec
+            full_unc_est = fill_statevector(
+                unc, self.fm.full_idx, self.fm.full_miss, self.full_statevector
             )
             output_rfl_unc[r - start_line, c, :] = full_unc_est[self.full_idx_surf_rfl]
 

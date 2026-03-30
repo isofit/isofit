@@ -242,7 +242,11 @@ class ApplyOEExample(Example):
         Creates apply_oe scripts using 'args' template files
         """
         tmpl = path / "templates"
-        surf = next(tmpl.glob("surface.json"))
+        surf = tmpl / "surface.json"
+
+        if not surf.exists():
+            print("No surface.json configuration file found, skipping this example")
+            return
 
         updateTemplate(surf, path / "configs")
 
@@ -276,6 +280,10 @@ Examples = {
         name="image_cube/medium",
         requires=["sixs", "srtmnet"],
         validate={"size": "medium"},
+    ),
+    "LakeMary": ApplyOEExample(
+        name="LakeMary",
+        requires=["sixs", "srtmnet"],
     ),
 }
 
