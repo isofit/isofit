@@ -235,8 +235,14 @@ class ForwardModel:
 
         return offset
 
-    def calc_rdn(self, x_surface, x_RT, geom):
-        """Calculate the forward model components at RT wavelengths"""
+    def calc_meas(self, x, geom, rfl=[]):
+        """Calculate the model observation at instrument wavelengths."""
+        # Unpack state vector - Copy to not change x fm-wide
+        x_surface, x_RT, x_instrument = self.unpack(np.copy(x))
+
+        # if rfl passed, have to explicitely use those values
+        if len(rfl):
+            x_surface[self.idx_surf_rfl] = rfl
 
         # Call surface reflectance w.r.t. surface, upsample
         rho_dir_dir, rho_dif_dir = self.calc_rfl(x_surface, geom)
@@ -244,16 +250,15 @@ class ForwardModel:
         rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
 
         # Adjacency effects
-        # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
-        #  or from the surface model, i.e., the same way as we do with the target pixel reflectance
-
-        rho_dir_dif_hi = self.upsample(
-            self.surface.wl,
-            (geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dir_dir),
+        rho_dir_dif_hi = (
+            self.upsample(self.surface.wl, geom.bg_rfl)
+            if isinstance(geom.bg_rfl, np.ndarray)
+            else rho_dir_dir_hi
         )
-        rho_dif_dif_hi = self.upsample(
-            self.surface.wl,
-            (geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dif_dir),
+        rho_dif_dif_hi = (
+            self.upsample(self.surface.wl, geom.bg_rfl)
+            if isinstance(geom.bg_rfl, np.ndarray)
+            else rho_dif_dir_hi
         )
 
         # Get RT quantities
@@ -284,32 +289,6 @@ class ForwardModel:
             r=r,
             geom=geom,
         )
-
-        return (
-            rdn,
-            rho_dir_dir_hi,
-            rho_dif_dir_hi,
-            rho_dir_dif_hi,
-            rho_dif_dif_hi,
-            r,
-            L_tot,
-            L_dir_dir,
-            L_dif_dir,
-            L_dir_dif,
-            L_dif_dif,
-            Ls_hi,
-        )
-
-    def calc_meas(self, x, geom, rfl=[]):
-        """Calculate the model observation at instrument wavelengths."""
-
-        x_surface, x_RT, x_instrument = self.unpack(np.copy(x))
-
-        # if rfl passed, have to explicitely use those values
-        if len(rfl):
-            x_surface[self.idx_surf_rfl] = rfl
-
-        rdn, *_ = self.calc_rdn(x_surface, x_RT, geom)
 
         return self.instrument.sample(x_instrument, self.RT.wl, rdn) + self.eof_offset(
             x_surface, x_RT, x_instrument
@@ -355,20 +334,52 @@ class ForwardModel:
         """
         # Unpack state vector
         x_surface, x_RT, x_instrument = self.unpack(x)
+
+        # Call surface reflectance w.r.t. surface, upsample
+        rho_dir_dir, rho_dif_dir = self.calc_rfl(x_surface, geom)
+        rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
+        rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
+
+        # Adjacency effects
+        rho_dir_dif_hi = (
+            self.upsample(self.surface.wl, geom.bg_rfl)
+            if isinstance(geom.bg_rfl, np.ndarray)
+            else rho_dir_dir_hi
+        )
+        rho_dif_dif_hi = (
+            self.upsample(self.surface.wl, geom.bg_rfl)
+            if isinstance(geom.bg_rfl, np.ndarray)
+            else rho_dif_dir_hi
+        )
+
+        # Get RT quantities
         (
-            rdn,
-            rho_dir_dir_hi,
-            rho_dif_dir_hi,
-            rho_dir_dif_hi,
-            rho_dif_dif_hi,
             r,
             L_tot,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,
             L_dif_dif,
-            Ls_hi,
-        ) = self.calc_rdn(x_surface, x_RT, geom)
+        ) = self.RT.calc_RT_quantities(x_RT, geom, rho_dif_dif_hi)
+
+        # Call surface emission, upsample
+        Ls_hi = self.upsample(self.surface.wl, self.calc_Ls(x_surface, geom))
+
+        rdn = self.RT.calc_rdn(
+            x_RT,
+            rho_dir_dir=rho_dir_dir_hi,
+            rho_dif_dir=rho_dif_dir_hi,
+            rho_dir_dif=rho_dir_dif_hi,
+            rho_dif_dif=rho_dif_dif_hi,
+            Ls=Ls_hi,
+            L_tot=L_tot,
+            L_dir_dir=L_dir_dir,
+            L_dif_dir=L_dif_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dif=L_dif_dif,
+            r=r,
+            geom=geom,
+        )
 
         # Call surface emission, upsample
         Ls_hi = self.upsample(self.surface.wl, self.calc_Ls(x_surface, geom))
@@ -435,20 +446,52 @@ class ForwardModel:
 
         # Unpack state vector
         x_surface, x_RT, x_instrument = self.unpack(x)
+
+        # Call surface reflectance w.r.t. surface, upsample
+        rho_dir_dir, rho_dif_dir = self.calc_rfl(x_surface, geom)
+        rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
+        rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
+
+        # Adjacency effects
+        rho_dir_dif_hi = (
+            self.upsample(self.surface.wl, geom.bg_rfl)
+            if isinstance(geom.bg_rfl, np.ndarray)
+            else rho_dir_dir_hi
+        )
+        rho_dif_dif_hi = (
+            self.upsample(self.surface.wl, geom.bg_rfl)
+            if isinstance(geom.bg_rfl, np.ndarray)
+            else rho_dif_dir_hi
+        )
+
+        # Get RT quantities
         (
-            rdn,
-            rho_dir_dir_hi,
-            rho_dif_dir_hi,
-            rho_dir_dif_hi,
-            rho_dif_dif_hi,
             r,
             L_tot,
             L_dir_dir,
             L_dif_dir,
             L_dir_dif,
             L_dif_dif,
-            Ls_hi,
-        ) = self.calc_rdn(x_surface, x_RT, geom)
+        ) = self.RT.calc_RT_quantities(x_RT, geom, rho_dif_dif_hi)
+
+        # Call surface emission, upsample
+        Ls_hi = self.upsample(self.surface.wl, self.calc_Ls(x_surface, geom))
+
+        rdn = self.RT.calc_rdn(
+            x_RT,
+            rho_dir_dir=rho_dir_dir_hi,
+            rho_dif_dir=rho_dif_dir_hi,
+            rho_dir_dif=rho_dir_dif_hi,
+            rho_dif_dif=rho_dif_dif_hi,
+            Ls=Ls_hi,
+            L_tot=L_tot,
+            L_dir_dir=L_dir_dir,
+            L_dif_dir=L_dif_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dif=L_dif_dif,
+            r=r,
+            geom=geom,
+        )
 
         drdn_dRTb = self.RT.drdn_dRTb(
             x_RT,

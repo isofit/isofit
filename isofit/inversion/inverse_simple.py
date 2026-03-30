@@ -180,6 +180,9 @@ def invert_algebraic(
         raise ValueError("No suitable RT object for initialization")
 
     _, rho_init = surface.calc_rfl(x_surface, geom)
+
+    rho_dif_dif = geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_init
+
     # Get all radiance terms
     (
         rhi,
@@ -188,7 +191,7 @@ def invert_algebraic(
         L_dif_dir,
         L_dir_dif,
         L_dif_dif,
-    ) = RT.calc_RT_quantities(x_RT, geom, rho_init)
+    ) = RT.calc_RT_quantities(x_RT, geom, rho_dif_dif=rho_dif_dif)
     L_atm = RT.get_L_atm(x_RT, geom)
     sphalb = rhi["sphalb"]
     Ls = surface.calc_Ls(x_surface, geom)
