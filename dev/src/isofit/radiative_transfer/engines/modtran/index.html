@@ -4487,17 +4487,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.radiative_transfer.engines.modtran.ModtranRT.check_modtran_water_upperbound" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        check_modtran_water_upperbound
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#isofit.radiative_transfer.engines.modtran.ModtranRT.modtran_water_upperbound_polynomials" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5325,33 +5314,7 @@
 <span class="normal">734</span>
 <span class="normal">735</span>
 <span class="normal">736</span>
-<span class="normal">737</span>
-<span class="normal">738</span>
-<span class="normal">739</span>
-<span class="normal">740</span>
-<span class="normal">741</span>
-<span class="normal">742</span>
-<span class="normal">743</span>
-<span class="normal">744</span>
-<span class="normal">745</span>
-<span class="normal">746</span>
-<span class="normal">747</span>
-<span class="normal">748</span>
-<span class="normal">749</span>
-<span class="normal">750</span>
-<span class="normal">751</span>
-<span class="normal">752</span>
-<span class="normal">753</span>
-<span class="normal">754</span>
-<span class="normal">755</span>
-<span class="normal">756</span>
-<span class="normal">757</span>
-<span class="normal">758</span>
-<span class="normal">759</span>
-<span class="normal">760</span>
-<span class="normal">761</span>
-<span class="normal">762</span>
-<span class="normal">763</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">737</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5954,32 +5917,6 @@
             <span class="n">param</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param2</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;MODTRAN&quot;</span><span class="p">:</span> <span class="n">param</span><span class="p">}),</span> <span class="n">param</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">check_modtran_water_upperbound</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.radiative_transfer.engines.modtran.ModtranRT.check_modtran_water_upperbound"><a href="../../../../../api/isofit/radiative_transfer/engines/modtran/#isofit.radiative_transfer.engines.modtran.ModtranRT.check_modtran_water_upperbound" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check to see what the max water vapor values is at the first point in the LUT</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            float: max water vapor value, or None if test fails</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">point</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_grids</span><span class="p">])</span>
-
-        <span class="c1"># Set the H2OSTR value as arbitrarily high - 50 g/cm2 in this case</span>
-        <span class="n">point</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">50</span>
-
-        <span class="n">filebase</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="s2">&quot;H2O_bound_test&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">makeSim</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">filebase</span><span class="p">)</span>
-
-        <span class="n">max_water</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="n">filebase</span> <span class="o">+</span> <span class="s2">&quot;.tp6&quot;</span><span class="p">),</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span>
-        <span class="p">)</span> <span class="k">as</span> <span class="n">tp6file</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">count</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tp6file</span><span class="p">):</span>
-                <span class="k">if</span> <span class="s2">&quot;The water column is being set to the maximum&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
-                    <span class="n">max_water</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-                    <span class="n">max_water</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_water</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-                    <span class="k">break</span>
-
-        <span class="k">return</span> <span class="n">max_water</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">modtran_water_upperbound_polynomials</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.radiative_transfer.engines.modtran.ModtranRT.modtran_water_upperbound_polynomials"><a href="../../../../../api/isofit/radiative_transfer/engines/modtran/#isofit.radiative_transfer.engines.modtran.ModtranRT.modtran_water_upperbound_polynomials" title="Go to docs">[docs]</a></div>

@@ -4744,8 +4744,11 @@ Specify a radiometric correction factor, if desired</p>
 <li>
 <p><span class="mkapi-item-name">atmosphere_type</span> : 
 <span class="mkapi-item-type">str, default="ATM_MIDLAT_SUMMER"</span> <span class="mkapi-dash">&mdash;</span>
-Atmospheric profile to be used for MODTRAN simulations.  Unused for other
-radiative transfer models.</p>
+Atmospheric profile to be used for MODTRAN and libRadtran simulations only.
+However, if presolve mode enabled this is used to inform max water
+column vapor for any radiative transfer model. Valid options include:
+ATM_MIDLAT_SUMMER, ATM_TROPICAL, ATM_MIDLAT_WINTER,
+ATM_SUBARC_SUMMER, ATM_SUBARC_WINTER, or ATM_US_STANDARD_1976.</p>
 </li>
 <li>
 <p><span class="mkapi-item-name">channelized_uncertainty_path</span> : 

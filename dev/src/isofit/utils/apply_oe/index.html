@@ -5420,7 +5420,21 @@
 <span class="normal">967</span>
 <span class="normal">968</span>
 <span class="normal">969</span>
-<span class="normal">970</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">970</span>
+<span class="normal">971</span>
+<span class="normal">972</span>
+<span class="normal">973</span>
+<span class="normal">974</span>
+<span class="normal">975</span>
+<span class="normal">976</span>
+<span class="normal">977</span>
+<span class="normal">978</span>
+<span class="normal">979</span>
+<span class="normal">980</span>
+<span class="normal">981</span>
+<span class="normal">982</span>
+<span class="normal">983</span>
+<span class="normal">984</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: David R Thompson and Philip G. Brodrick</span>
 <span class="c1">#</span>
@@ -5442,6 +5456,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">isofit</span><span class="p">,</span> <span class="n">units</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.debug.resource_tracker</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileResources</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.radiative_transfer.engines.modtran</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModtranRT</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">analytical_line</span> <span class="k">as</span> <span class="n">ALAlg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">empirical_line</span> <span class="k">as</span> <span class="n">ELAlg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -5577,8 +5592,11 @@
 <span class="sd">    rdn_factors_path : str, default=None</span>
 <span class="sd">        Specify a radiometric correction factor, if desired</span>
 <span class="sd">    atmosphere_type : str, default=&quot;ATM_MIDLAT_SUMMER&quot;</span>
-<span class="sd">        Atmospheric profile to be used for MODTRAN simulations.  Unused for other</span>
-<span class="sd">        radiative transfer models.</span>
+<span class="sd">        Atmospheric profile to be used for MODTRAN and libRadtran simulations only.</span>
+<span class="sd">        However, if presolve mode enabled this is used to inform max water</span>
+<span class="sd">        column vapor for any radiative transfer model. Valid options include:</span>
+<span class="sd">        ATM_MIDLAT_SUMMER, ATM_TROPICAL, ATM_MIDLAT_WINTER,</span>
+<span class="sd">        ATM_SUBARC_SUMMER, ATM_SUBARC_WINTER, or ATM_US_STANDARD_1976.</span>
 <span class="sd">    channelized_uncertainty_path : str, default=None</span>
 <span class="sd">        Path to a wavelength-specific channelized uncertainty file - used to augment Sy in the OE formalism</span>
 <span class="sd">    instrument_noise_path : str, default=None</span>
@@ -5725,6 +5743,14 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;If num_neighbors has multiple elements, only --analytical_line is valid&quot;</span>
             <span class="p">)</span>
+
+    <span class="c1"># Load in water column upper bound polynomials</span>
+    <span class="n">modtran_polynomials_dict</span> <span class="o">=</span> <span class="n">ModtranRT</span><span class="o">.</span><span class="n">modtran_water_upperbound_polynomials</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">atmosphere_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">modtran_polynomials_dict</span><span class="p">:</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">modtran_polynomials_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid atmosphere_type &#39;</span><span class="si">{</span><span class="n">atmosphere_type</span><span class="si">}</span><span class="s2">&#39;. Must be one of: </span><span class="si">{</span><span class="n">keys</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">working_directory</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
         <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">working_directory</span><span class="p">)</span>
@@ -6097,10 +6123,12 @@
             <span class="n">ihaze_type</span><span class="o">=</span><span class="s2">&quot;AER_NONE&quot;</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">prebuilt_lut</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">max_water</span> <span class="o">=</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">calc_modtran_max_water</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">elevation_lut_grid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_water_elevation</span> <span class="o">=</span> <span class="n">elevation_lut_grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">max_water</span> <span class="o">=</span> <span class="mi">6</span>
+            <span class="n">max_water_elevation</span> <span class="o">=</span> <span class="n">mean_elevation_km</span>
+
+        <span class="n">max_water</span> <span class="o">=</span> <span class="n">modtran_polynomials_dict</span><span class="p">[</span><span class="n">atmosphere_type</span><span class="p">](</span><span class="n">max_water_elevation</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">use_superpixels</span><span class="p">:</span>
             <span class="n">h2o_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">h2o_subs_path</span>
