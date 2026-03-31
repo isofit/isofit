@@ -7,12 +7,9 @@ from __future__ import annotations
 import json
 import logging
 import os
-import subprocess
 from datetime import datetime
-from os.path import abspath, dirname, exists, join, split
+from os.path import abspath, exists, join, split
 from shutil import copyfile
-from sys import platform
-from typing import List
 
 import netCDF4 as nc
 import numpy as np
@@ -20,12 +17,11 @@ from scipy.io import loadmat
 from spectral.io import envi
 
 from isofit import __version__
-from isofit.core import isofit, units
+from isofit.core import units
 from isofit.core.common import (
     envi_header,
     expand_path,
     json_load_ascii,
-    resample_spectrum,
 )
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
@@ -417,7 +413,10 @@ class LUTConfig:
 
         # Set defaults, will override based on settings
         # Units of g / m2
-        self.h2o_range = [0.2, 5]
+        modtran_max_water = ModtranRT.modtran_water_upperbound_polynomials()[
+            atmosphere_type
+        ](0)
+        self.h2o_range = [0.2, modtran_max_water]
 
         # Units of degrees
         self.to_sensor_zenith_spacing = 10
@@ -1104,179 +1103,6 @@ def load_climatology(
     return aerosol_state_vector, aerosol_lut_grid, aerosol_model_path
 
 
-def calc_modtran_max_water(paths: Pathnames) -> float:
-    """MODTRAN may put a ceiling on "legal" H2O concentrations.  This function calculates that ceiling.  The intended
-     use is to make sure the LUT does not contain useless gridpoints above it.
-
-    Args:
-        paths: object containing references to all relevant file locations
-
-    Returns:
-        max_water - maximum MODTRAN H2OSTR value for provided obs conditions
-    """
-
-    max_water = None
-    # TODO: this is effectively redundant from the radiative_transfer->modtran. Either devise a way
-    # to port in from there, or put in utils to reduce redundancy.
-    xdir = {"linux": "linux", "darwin": "macos", "windows": "windows"}
-    name = "H2O_bound_test"
-    filebase = os.path.join(paths.lut_h2o_directory, name)
-
-    with open(paths.h2o_template_path, "r") as f:
-        bound_test_config = json.load(f)
-
-    bound_test_config["MODTRAN"][0]["MODTRANINPUT"]["NAME"] = name
-    bound_test_config["MODTRAN"][0]["MODTRANINPUT"]["ATMOSPHERE"]["H2OSTR"] = 50
-
-    with open(filebase + ".json", "w") as fout:
-        fout.write(
-            json.dumps(bound_test_config, cls=SerialEncoder, indent=4, sort_keys=True)
-        )
-
-    cmd = os.path.join(
-        paths.modtran_path, "bin", xdir[platform], "mod6c_cons " + filebase + ".json"
-    )
-
-    try:
-        subprocess.call(cmd, shell=True, timeout=10, cwd=paths.lut_h2o_directory)
-    except:
-        pass
-
-    with open(filebase + ".tp6", errors="ignore") as tp6file:
-        for count, line in enumerate(tp6file):
-            if "The water column is being set to the maximum" in line:
-                max_water = line.split(",")[1].strip()
-                max_water = float(max_water.split(" ")[0])
-                break
-
-    if max_water is None:
-        logging.error(
-            "Could not find MODTRAN H2O upper bound in file {}".format(
-                filebase + ".tp6"
-            )
-        )
-        raise KeyError("Could not find MODTRAN H2O upper bound")
-
-    return max_water
-
-
-def define_surface_types(
-    tsip: dict,
-    rdnfile: str,
-    obsfile: str,
-    out_class_path: str,
-    wl: np.array,
-    fwhm: np.array,
-):
-    if np.all(wl < 10):
-        wl = units.micron_to_nm(wl)
-        fwhm = unts.micron_to_nm(fwhm)
-
-    irr_file = os.path.join(
-        os.path.dirname(isofit.__file__), "..", "..", "data", "kurucz_0.1nm.dat"
-    )
-    irr_wl, irr = np.loadtxt(irr_file, comments="#").T
-    irr = irr / 10  # convert to uW cm-2 sr-1 nm-1
-    irr_resamp = resample_spectrum(irr, irr_wl, wl, fwhm)
-    irr_resamp = np.array(irr_resamp, dtype=np.float32)
-    irr = irr_resamp
-
-    rdn_ds = envi.open(envi_header(rdnfile)).open_memmap(interleave="bip")
-    obs_src = envi.open(envi_header(obsfile))
-    obs_ds = obs_src.open_memmap(interleave="bip")
-
-    # determine glint bands having negligible water reflectance
-    try:
-        b1000 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][0]))
-        b1380 = np.argmin(abs(wl - tsip["water"]["toa_threshold_wavelengths"][1]))
-    except KeyError:
-        logging.info(
-            "No threshold wavelengths for water classification found in config file. "
-            "Setting to 1000 and 1380 nm."
-        )
-        b1000 = np.argmin(abs(wl - 1000))
-        b1380 = np.argmin(abs(wl - 1380))
-
-    # determine cloud bands having high TOA reflectance
-    try:
-        b450 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][0]))
-        b1250 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][1]))
-        b1650 = np.argmin(abs(wl - tsip["cloud"]["toa_threshold_wavelengths"][2]))
-    except KeyError:
-        logging.info(
-            "No threshold wavelengths for cloud classification found in config file. "
-            "Setting to 450, 1250, and 1650 nm."
-        )
-        b450 = np.argmin(abs(wl - 450))
-        b1250 = np.argmin(abs(wl - 1250))
-        b1650 = np.argmin(abs(wl - 1650))
-
-    classes = np.zeros(rdn_ds.shape[:2])
-
-    for line in range(classes.shape[0]):
-        for sample in range(classes.shape[1]):
-            zen = np.cos(np.deg2rad(obs_ds[line, sample, 4]))
-
-            rho = (((rdn_ds[line, sample, :] * np.pi) / irr.T).T / np.cos(zen)).T
-
-            rho[rho[0] < -9990, :] = -9999.0
-
-            if rho[0] < -9999:
-                classes[line, sample] = -1
-                continue
-
-            # Cloud threshold from Sandford et al.
-            total = (
-                np.array(
-                    rho[b450] > tsip["cloud"]["toa_threshold_values"][0], dtype=int
-                )
-                + np.array(
-                    rho[b1250] > tsip["cloud"]["toa_threshold_values"][1], dtype=int
-                )
-                + np.array(
-                    rho[b1650] > tsip["cloud"]["toa_threshold_values"][2], dtype=int
-                )
-            )
-
-            if rho[b1000] < tsip["water"]["toa_threshold_values"][0]:
-                classes[line, sample] = 2
-
-            if total > 2 or rho[b1380] > tsip["water"]["toa_threshold_values"][1]:
-                classes[line, sample] = 1
-
-    header = obs_src.metadata.copy()
-    header["bands"] = 1
-
-    if "band names" in header.keys():
-        header["band names"] = "Class"
-
-    output_ds = envi.create_image(
-        envi_header(out_class_path), header, ext="", force=True
-    )
-    output_mm = output_ds.open_memmap(interleave="bip", writable=True)
-    output_mm[:, :, 0] = classes
-
-    return classes
-
-
-def copy_file_subset(matching_indices: np.array, pathnames: List):
-    """Copy over subsets of given files to new locations
-
-    Args:
-        matching_indices (np.array): indices to select from (y dimension) from source dataset
-        pathnames (List): list of tuples (input_filename, output_filename) to read/write to/from
-    """
-    for inp, outp in pathnames:
-        input_ds = envi.open(envi_header(inp), inp)
-        header = input_ds.metadata.copy()
-        header["lines"] = np.sum(matching_indices)
-        header["samples"] = 1
-        output_ds = envi.create_image(envi_header(outp), header, ext="", force=True)
-        output_mm = output_ds.open_memmap(interleave="bip", writable=True)
-        input_mm = input_ds.open_memmap(interleave="bip", writable=True)
-        output_mm[:, 0, :] = input_mm[matching_indices[:, :, 0], ...].copy()
-
-
 def get_metadata_from_obs(
     obs_file: str,
     lut_params: LUTConfig,
@@ -1471,60 +1297,6 @@ def get_metadata_from_loc(
     )
 
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid
-
-
-def reassemble_cube(matching_indices: np.array, paths: Pathnames):
-    """Copy over subsets of given files to new locations
-
-    Args:
-        matching_indices (np.array): indices to select from (y dimension) from source dataset
-        paths (Pathnames): output file array set
-    """
-
-    logging.info(f"Reassemble {paths.rfl_subs_path}")
-    input_ds = envi.open(envi_header(paths.surface_subs_files["base"]["rfl"]))
-    header = input_ds.metadata.copy()
-    header["lines"] = len(matching_indices)
-    output_ds = envi.create_image(
-        envi_header(paths.rfl_subs_path), header, ext="", force=True
-    )
-    output_mm = output_ds.open_memmap(interleave="bip", writable=True)
-
-    for _st, surface_type in enumerate(list(paths.surface_config_paths.keys())):
-        if np.sum(matching_indices == _st) > 0:
-            input_ds = envi.open(
-                envi_header(paths.surface_subs_files[surface_type]["rfl"])
-            )
-            output_mm[matching_indices == _st, ...] = input_ds.open_memmap(
-                interleave="bip"
-            ).copy()[:, 0, :]
-
-    # TODO: only records reflectance uncertainties, could grab additional states (consistent between classes)
-    logging.info(f"Reassemble {paths.uncert_subs_path}")
-    input_ds = envi.open(envi_header(paths.surface_subs_files["base"]["uncert"]))
-    rdn_ds = envi.open(envi_header(paths.surface_subs_files["base"]["rdn"]))
-    header = input_ds.metadata.copy()
-    header["lines"] = len(matching_indices)
-    header["bands"] = rdn_ds.metadata["bands"]
-
-    if "band names" in header.keys():
-        header["band names"] = [
-            input_ds.metadata["band names"][x] for x in range(int(header["bands"]))
-        ]
-
-    output_ds = envi.create_image(
-        envi_header(paths.uncert_subs_path), header, ext="", force=True
-    )
-    output_mm = output_ds.open_memmap(interleave="bip", writable=True)
-
-    for _st, surface_type in enumerate(list(paths.surface_config_paths.keys())):
-        if np.sum(matching_indices == _st) > 0:
-            input_ds = envi.open(
-                envi_header(paths.surface_subs_files[surface_type]["uncert"])
-            )
-            output_mm[matching_indices == _st, ...] = input_ds.open_memmap(
-                interleave="bip"
-            )[:, :, : int(header["bands"])].copy()[:, 0, :]
 
 
 def sensor_name_to_dt(sensor: str, fid: str):
