@@ -234,7 +234,7 @@ def validate_image_cube(path=None, size="both", debug=print, error=print, **_):
 
     sizes = {"small": "7000-7010", "medium": "7k-8k"}
     for kind in ("loc", "obs", "rdn"):
-        file = path / f"ang20170323t202244_{kind}_{sizes[size]}"
+        file = path / "data" / f"ang20170323t202244_{kind}_{sizes[size]}"
         if not file.exists():
             error(
                 f"[x] ISOFIT {size} image cube data do not appear to be installed correctly"
