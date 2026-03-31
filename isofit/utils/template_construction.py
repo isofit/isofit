@@ -1450,6 +1450,8 @@ def make_rt_config(
     terrain_style: str = "flat",
     max_slope: float = 20.0,
 ):
+
+    ########### Make sure aerosol information provided meets requirements
     avc = np.sum(
         [
             x is not None
@@ -1462,6 +1464,48 @@ def make_rt_config(
             "To use aerosol in LUT, need lut_grid, model_path, and state_vector"
         )
 
+    ########### Set up statevector for all RT components - this is verbose code to be explicit
+    rt_statevector = {
+        "H2OSTR": {
+            "bounds": [h2o_lut_grid[0], h2o_lut_grid[-1]],
+            "scale": 1,
+            "init": (h2o_lut_grid[0] + h2o_lut_grid[-1]) / 2.0,
+            "prior_sigma": 100.0,
+            "prior_mean": (h2o_lut_grid[0] + h2o_lut_grid[-1]) / 2.0,
+        }
+    }
+    if pressure_elevation and presolve is False:
+        rt_statevector["surface_elevation_km"] = {
+            "bounds": [
+                lut_grid["surface_elevation_km"][0],
+                lut_grid["surface_elevation_km"][-1],
+            ],
+            "scale": 100,
+            "init": (
+                lut_grid["surface_elevation_km"][0]
+                + lut_grid["surface_elevation_km"][-1]
+            )
+            / 2.0,
+            "prior_sigma": 1000.0,
+            "prior_mean": (
+                lut_grid["surface_elevation_km"][0]
+                + lut_grid["surface_elevation_km"][-1]
+            )
+            / 2.0,
+        }
+    if retrieve_co2 and presolve is False:
+        rt_statevector["CO2"] = {
+            "bounds": [lut_grid["CO2"][0], lut_grid["CO2"][-1]],
+            "scale": 10,
+            "init": (lut_grid["CO2"][0] + lut_grid["CO2"][-1]) / 2.0,
+            "prior_sigma": 100.0,
+            "prior_mean": (lut_grid["CO2"][0] + lut_grid["CO2"][-1]) / 2.0,
+        }
+    # Add aerosols
+    if aerosol_state_vector is not None and presolve is False:
+        rt_statevector.update(aerosol_state_vector)
+
+    ################# Set up a few additional necessary pieces for full config
     lut_dir = lut_directory
     lut_path = (
         join(lut_dir, "lut.nc")
@@ -1476,6 +1520,7 @@ def make_rt_config(
     else:
         engine_name = "sRTMnet"
 
+    ############ Set up radiative transfer config
     radiative_transfer_config = {
         "radiative_transfer_engines": {
             "vswir": {
@@ -1565,9 +1610,8 @@ def make_rt_config(
         for dim in ncds.dimensions:
             if dim != "wl" and dim not in lut_names:
                 if "AER" in dim or "AOT" in dim or "AOD" in dim or "CO2" in dim:
-                    # Extra dims not in lut_grid are collapsed via 'mean'
-                    # We may consider alternative options (e.g. lower aerosols)
-                    lut_names[dim] = "mean"
+                    # Match the 'init' from the statevector - as a good starting point
+                    lut_names[dim] = {"interp": rt_statevector[dim]["init"]}
                 else:
                     lut_names[dim] = None
         ncds.close()
@@ -1575,36 +1619,8 @@ def make_rt_config(
         "lut_names"
     ] = lut_names
 
-    # Now do statevector
-    statekeys = ["H2OSTR"]
-    statesigmas = [100.0]
-    statescale = [1]
-    if pressure_elevation and presolve is False:
-        statekeys.append("surface_elevation_km")
-        statesigmas.append(1000.0)
-        statescale.append(100)
-    if retrieve_co2 and presolve is False:
-        statekeys.append("CO2")
-        statesigmas.append(100.0)
-        statescale.append(10)
-
-    for key, sigma, scale in zip(statekeys, statesigmas, statescale):
-        if key in lut_grid:
-            grid = (
-                lut_grid[key]
-                if isinstance(lut_grid[key], list)
-                else list(lut_grid[key].values())
-            )
-            radiative_transfer_config["statevector"][key] = {
-                "bounds": [grid[0], grid[-1]],
-                "scale": scale,
-                "init": (grid[0] + grid[-1]) / 2.0,
-                "prior_sigma": sigma,
-                "prior_mean": (grid[0] + grid[-1]) / 2.0,
-            }
-
-    if aerosol_state_vector is not None and presolve is False:
-        radiative_transfer_config["statevector"].update(aerosol_state_vector)
+    # assign statevector into config
+    radiative_transfer_config["statevector"] = rt_statevector
 
     # MODTRAN should know about our whole LUT grid and all of our statevectors, so copy them in
     radiative_transfer_config["radiative_transfer_engines"]["vswir"][
