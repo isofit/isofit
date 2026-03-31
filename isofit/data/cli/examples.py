@@ -20,7 +20,7 @@ Extras = {
     },
     "image_cube": {
         "url": "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip",
-        "subpath": "image_cube/{size}",
+        "subpath": "image_cube/{size}/data",
     },
     "lakemary": {
         "url": "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/LakeMary.zip",
@@ -369,7 +369,9 @@ def download_cli(tutorials, neon, image_cube, lakemary, **kwargs):
 
     if tutorials:
         download_tutorials(
-            tag=kwargs.get("tag", "latest"), overwrite=kwargs.get("overwrite", False)
+            path=path,
+            tag=kwargs.get("tag", "latest"),
+            overwrite=kwargs.get("overwrite", False),
         )
         dl_all = False
 
@@ -380,7 +382,7 @@ def download_cli(tutorials, neon, image_cube, lakemary, **kwargs):
     if image_cube:
         download_extra(
             "image_cube",
-            examples=path,
+            path=path,
             overwrite=overwrite,
             size=image_cube,
         )
