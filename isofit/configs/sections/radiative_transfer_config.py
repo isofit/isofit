@@ -474,10 +474,8 @@ class RadiativeTransferConfig(BaseConfigSection):
                             key
                         )
                     )
-                    if np.unique(item).size < len(item):
-                        errors.append(
-                            f"Detected duplicate values in lut_grid item {key}"
-                        )
+            elif np.unique(item).size < len(item):
+                errors.append(f"Detected duplicate values in lut_grid item {key}")
 
         for rte in self.radiative_transfer_engines:
             er, warn = rte.check_config_validity()
