@@ -315,7 +315,8 @@ def apply_oe(
     if use_background_rfl and not presolve:
         raise ValueError(
             "Background reflectance can only be used if presolve is turned on."
-          
+        )
+
     # Load in water column upper bound polynomials
     modtran_polynomials_dict = ModtranRT.modtran_water_upperbound_polynomials()
     if atmosphere_type not in modtran_polynomials_dict:
