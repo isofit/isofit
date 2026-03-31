@@ -137,6 +137,9 @@ Major changes include:
 
 These are accepted through consensus of a quorum of maintainers.  **If you would like to include any new algorithms or examples, we highly recommend that they are supported by peer reviewed scientific research.**
 
+???+ note "Workflows Exception"
+    PRs by maintainers that edit trusted workflows (those that cannot be tested by a PR) are allowed to be self merged by the PR author if the target branch is `dev`. Untrusted workflows should pass their tests before merge.
+
 ## Release Steps (for Maintainers)
 
 Releases should trigger a new PyPi upload, and subsequently a fresh upload to conda-forge.  Therefore,
