@@ -847,10 +847,6 @@ def apply_oe(
             **config_params,
         )
 
-        if config_only:
-            logging.info("`config_only` enabled, exiting early")
-            return
-
         if presolve and use_background_rfl:
             # Only create background reflectance if it doesn't already exist in /data
             # NOTE this may be useful for our single pixel pytests
@@ -874,6 +870,10 @@ def apply_oe(
                     log_file=log_file,
                     n_cores=n_cores,
                 )
+
+        if config_only:
+            logging.info("`config_only` enabled, exiting early")
+            return
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
