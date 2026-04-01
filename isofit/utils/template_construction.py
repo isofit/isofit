@@ -1476,30 +1476,19 @@ def make_rt_config(
     }
     if pressure_elevation and presolve is False:
         rt_statevector["surface_elevation_km"] = {
-            "bounds": [
-                lut_grid["surface_elevation_km"][0],
-                lut_grid["surface_elevation_km"][-1],
-            ],
+            "bounds": [elevation_lut_grid[0], elevation_lut_grid[-1]],
             "scale": 100,
-            "init": (
-                lut_grid["surface_elevation_km"][0]
-                + lut_grid["surface_elevation_km"][-1]
-            )
-            / 2.0,
+            "init": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
             "prior_sigma": 1000.0,
-            "prior_mean": (
-                lut_grid["surface_elevation_km"][0]
-                + lut_grid["surface_elevation_km"][-1]
-            )
-            / 2.0,
+            "prior_mean": (elevation_lut_grid[0] + elevation_lut_grid[-1]) / 2.0,
         }
     if retrieve_co2 and presolve is False:
         rt_statevector["CO2"] = {
-            "bounds": [lut_grid["CO2"][0], lut_grid["CO2"][-1]],
+            "bounds": [co2_lut_grid[0], co2_lut_grid[-1]],
             "scale": 10,
-            "init": (lut_grid["CO2"][0] + lut_grid["CO2"][-1]) / 2.0,
+            "init": (co2_lut_grid[0] + co2_lut_grid[-1]) / 2.0,
             "prior_sigma": 100.0,
-            "prior_mean": (lut_grid["CO2"][0] + lut_grid["CO2"][-1]) / 2.0,
+            "prior_mean": (co2_lut_grid[0] + co2_lut_grid[-1]) / 2.0,
         }
     # Add aerosols
     if aerosol_state_vector is not None and presolve is False:
