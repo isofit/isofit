@@ -851,29 +851,29 @@ def apply_oe(
             logging.info("`config_only` enabled, exiting early")
             return
 
-        # Only create background reflectance if it doesn't already exist in /data
-        # NOTE this may be useful for our single pixel pytests
-        compute_bgrfl = not exists(paths.bgrfl_working_path) or (
-            use_superpixels and not exists(paths.bgrfl_subs_path)
-        )
-        if presolve and use_background_rfl and compute_bgrfl:
-            logging.info("Preparing background reflectance...")
-            background_reflectance(
-                input_radiance=input_radiance,
-                input_loc=input_loc,
-                input_obs=input_obs,
-                paths=paths,
-                mean_altitude_km=mean_altitude_km,
-                mean_elevation_km=mean_elevation_km,
-                smoothing_sigma=atm_sigma,
-                use_slic_rfls=True,
-                use_superpixels=use_superpixels,
-                nodata_value=-9999,
-                chunksize=CHUNKSIZE,
-                logging_level=logging_level,
-                log_file=log_file,
-                n_cores=n_cores,
-            )
+        if presolve and use_background_rfl:
+            # Only create background reflectance if it doesn't already exist in /data
+            # NOTE this may be useful for our single pixel pytests
+            if not exists(paths.bgrfl_working_path) or (
+                use_superpixels and not exists(paths.bgrfl_subs_path)
+            ):
+                logging.info("Preparing background reflectance...")
+                background_reflectance(
+                    input_radiance=input_radiance,
+                    input_loc=input_loc,
+                    input_obs=input_obs,
+                    paths=paths,
+                    mean_altitude_km=mean_altitude_km,
+                    mean_elevation_km=mean_elevation_km,
+                    smoothing_sigma=atm_sigma,
+                    use_slic_rfls=True,
+                    use_superpixels=use_superpixels,
+                    nodata_value=-9999,
+                    chunksize=CHUNKSIZE,
+                    logging_level=logging_level,
+                    log_file=log_file,
+                    n_cores=n_cores,
+                )
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
