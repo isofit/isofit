@@ -285,6 +285,10 @@ Examples = {
         name="LakeMary",
         requires=["sixs", "srtmnet"],
     ),
+    "SeaBASS-PRISM": ApplyOEExample(
+        name="SeaBASS_prism_001",
+        requires=["sixs", "srtmnet"],
+    ),
 }
 
 
