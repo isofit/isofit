@@ -372,11 +372,9 @@ class IO:
         self.n_rows = 1
         self.n_cols = 1
         self.bbl = "{" + ",".join([str(1) for n in range(len(self.meas_wl))]) + "}"
-        self.engine_name = (
-            config.forward_model.radiative_transfer.radiative_transfer_engines[
-                0
-            ].engine_name
-        )
+        self.rt_config = config.forward_model.radiative_transfer
+        self.engine_name = self.rt_config.radiative_transfer_engines[0].engine_name
+        self.coszen = forward.RT.rt_engines[0].coszen or None
 
         # Use the pre-defined full statevec
         if len(full_statevec):
@@ -480,11 +478,6 @@ class IO:
         data = dict([(i, None) for i in self.config.input.get_all_element_names()])
         logging.debug(f"Row {row} Column {col}")
 
-        # Stage RT configs for geom creation
-        self.max_slope = self.config.forward_model.radiative_transfer.max_slope
-        self.terrain_style = self.config.forward_model.radiative_transfer.terrain_style
-        self.lut_grid = self.config.forward_model.radiative_transfer.lut_grid
-
         # Read data from any of the input files that are defined.
         for source in self.input_datasets:
             data[source] = self.input_datasets[source].read_spectrum(row, col)
@@ -530,9 +523,8 @@ class IO:
             esd=self.esd,
             bg_rfl=data["background_reflectance_file"],
             svf=data["skyview_factor_file"],
-            terrain_style=self.terrain_style,
-            max_slope=self.max_slope,
-            lut_grid=self.lut_grid,
+            coszen=self.coszen,
+            rt_config=self.rt_config,
         )
 
         self.current_input_data.geom = geom
