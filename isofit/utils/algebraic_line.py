@@ -250,10 +250,9 @@ class Worker(object):
         self.fm = fm
         self.iv = Inversion(self.config, self.fm)
 
-        # Stage RT configs for geom creation
-        self.max_slope = self.config.forward_model.radiative_transfer.max_slope
-        self.terrain_style = self.config.forward_model.radiative_transfer.terrain_style
-        self.lut_grid = self.config.forward_model.radiative_transfer.lut_grid
+        # Define RT config for geom creation
+        self.rt_config = self.config.forward_model.radiative_transfer
+        self.coszen = self.fm.RT.rt_engines[0].coszen or None
 
         self.rfl_bounds = np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1]
         logging.debug(
@@ -327,9 +326,8 @@ class Worker(object):
                     obs=obs[r, c, :],
                     loc=loc[r, c, :],
                     esd=esd,
-                    terrain_style=self.terrain_style,
-                    max_slope=self.max_slope,
-                    lut_grid=self.lut_grid,
+                    coszen=self.coszen,
+                    rt_config=self.rt_config,
                 )
 
                 # "Atmospheric" state ALWAYS comes from all bands in the

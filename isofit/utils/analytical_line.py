@@ -453,10 +453,9 @@ class Worker(object):
         # How many iterations to use for invert_analytical
         self.num_iter = num_iter
 
-        # Stage RT configs for geom creation
-        self.max_slope = self.config.forward_model.radiative_transfer.max_slope
-        self.terrain_style = self.config.forward_model.radiative_transfer.terrain_style
-        self.lut_grid = self.config.forward_model.radiative_transfer.lut_grid
+        # Define RT config for geom creation
+        self.rt_config = self.config.forward_model.radiative_transfer
+        self.coszen = self.fm.RT.rt_engines[0].coszen or None
 
         if config.input.radiometry_correction_file is not None:
             self.radiance_correction, wl = load_spectrum(
@@ -526,9 +525,8 @@ class Worker(object):
                 loc=self.loc[r, c, :],
                 esd=self.esd,
                 svf=self.svf[r, c] if len(self.svf) else 1,
-                terrain_style=self.terrain_style,
-                max_slope=self.max_slope,
-                lut_grid=self.lut_grid,
+                coszen=self.coszen,
+                rt_config=self.rt_config,
             )
 
             # "Atmospheric" state ALWAYS comes from all bands in the
