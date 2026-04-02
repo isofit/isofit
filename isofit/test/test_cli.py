@@ -102,7 +102,8 @@ def test_apply_oe(files, args, surface):
         "--n_cores",
         CORES,
         "--analytical_line",
-        "--segmentation_size 400",
+        "--segmentation_size",
+        "400",
         "--logging_level",
         "DEBUG",
     ] + args
