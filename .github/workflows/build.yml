@@ -201,3 +201,9 @@ jobs:
     uses: ./.github/workflows/results_lakemary.yml
     with:
       cache-key: ${{ needs.cache.outputs.cache_key }}
+
+  seabass:
+    needs: [cache, metadata]
+    uses: ./.github/workflows/results_seabass.yml
+    with:
+      cache-key: ${{ needs.cache.outputs.cache_key }}
