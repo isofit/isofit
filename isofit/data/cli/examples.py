@@ -20,7 +20,7 @@ Extras = {
     },
     "image_cube": {
         "url": "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/{size}_chunk.zip",
-        "subpath": "image_cube/{size}",
+        "subpath": "image_cube/{size}/data",
     },
     "lakemary": {
         "url": "https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/LakeMary.zip",
@@ -234,7 +234,7 @@ def validate_image_cube(path=None, size="both", debug=print, error=print, **_):
 
     sizes = {"small": "7000-7010", "medium": "7k-8k"}
     for kind in ("loc", "obs", "rdn"):
-        file = path / f"ang20170323t202244_{kind}_{sizes[size]}"
+        file = path / "data" / f"ang20170323t202244_{kind}_{sizes[size]}"
         if not file.exists():
             error(
                 f"[x] ISOFIT {size} image cube data do not appear to be installed correctly"
@@ -369,7 +369,9 @@ def download_cli(tutorials, neon, image_cube, lakemary, **kwargs):
 
     if tutorials:
         download_tutorials(
-            tag=kwargs.get("tag", "latest"), overwrite=kwargs.get("overwrite", False)
+            path=path,
+            tag=kwargs.get("tag", "latest"),
+            overwrite=kwargs.get("overwrite", False),
         )
         dl_all = False
 
@@ -380,7 +382,7 @@ def download_cli(tutorials, neon, image_cube, lakemary, **kwargs):
     if image_cube:
         download_extra(
             "image_cube",
-            examples=path,
+            path=path,
             overwrite=overwrite,
             size=image_cube,
         )
