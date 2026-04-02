@@ -91,7 +91,7 @@ def test_apply_oe(files, args, surface):
     Executes the isofit apply_oe cli command for various test cases
     """
     ray.shutdown()
-    sleep(120)
+    sleep(10)
 
     emulator = env.path("srtmnet", key="srtmnet.file")
     args = [
@@ -102,6 +102,7 @@ def test_apply_oe(files, args, surface):
         "--n_cores",
         CORES,
         "--analytical_line",
+        "--segmentation_size 400",
         "--logging_level",
         "DEBUG",
     ] + args
