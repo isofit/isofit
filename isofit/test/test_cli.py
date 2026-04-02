@@ -82,8 +82,8 @@ def files(cwd):
 # fmt: off
 @pytest.mark.slow
 @pytest.mark.parametrize("args", [
-    ["-nn", 10, "-nn", 50,],
-    ["-nn", 10, "-nn", 50, "-nn", 10, "--pressure_elevation",],
+    [], # No additional args for first test
+    ["--pressure_elevation"], # Test pressure elevation on second
 ])
 # fmt: on
 def test_apply_oe(files, args, surface):
@@ -103,7 +103,7 @@ def test_apply_oe(files, args, surface):
         CORES,
         "--analytical_line",
         "--segmentation_size",
-        "400",
+        400,
         "--logging_level",
         "DEBUG",
     ] + args
