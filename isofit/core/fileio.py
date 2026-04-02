@@ -480,9 +480,10 @@ class IO:
         data = dict([(i, None) for i in self.config.input.get_all_element_names()])
         logging.debug(f"Row {row} Column {col}")
 
-        # Set up terrain configs
+        # Stage RT configs for geom creation
         self.max_slope = self.config.forward_model.radiative_transfer.max_slope
         self.terrain_style = self.config.forward_model.radiative_transfer.terrain_style
+        self.lut_grid = self.config.forward_model.radiative_transfer.lut_grid
 
         # Read data from any of the input files that are defined.
         for source in self.input_datasets:
@@ -531,6 +532,7 @@ class IO:
             svf=data["skyview_factor_file"],
             terrain_style=self.terrain_style,
             max_slope=self.max_slope,
+            lut_grid=self.lut_grid,
         )
 
         self.current_input_data.geom = geom

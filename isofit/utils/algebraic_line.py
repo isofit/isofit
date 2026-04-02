@@ -250,6 +250,11 @@ class Worker(object):
         self.fm = fm
         self.iv = Inversion(self.config, self.fm)
 
+        # Stage RT configs for geom creation
+        self.max_slope = self.config.forward_model.radiative_transfer.max_slope
+        self.terrain_style = self.config.forward_model.radiative_transfer.terrain_style
+        self.lut_grid = self.config.forward_model.radiative_transfer.lut_grid
+
         self.rfl_bounds = np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1]
         logging.debug(
             f"Reflectance output will be bounded to the surface bounds: {self.rfl_bounds}"
@@ -317,8 +322,15 @@ class Worker(object):
                 if np.all(meas < 0):
                     continue
 
-                geom = Geometry(obs=obs[r, c, :], loc=loc[r, c, :], esd=esd)
-                self.fm.update_geom(geom)
+                # NOTE skyview factor and background reflectance are currently unused in algebraic line
+                geom = Geometry(
+                    obs=obs[r, c, :],
+                    loc=loc[r, c, :],
+                    esd=esd,
+                    terrain_style=self.terrain_style,
+                    max_slope=self.max_slope,
+                    lut_grid=self.lut_grid,
+                )
 
                 # "Atmospheric" state ALWAYS comes from all bands in the
                 # atm_interpolated file

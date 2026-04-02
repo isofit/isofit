@@ -235,18 +235,6 @@ class ForwardModel:
 
         return offset
 
-    def update_geom(self, geom):
-        """
-        Updates geometry to determine most accurate coszen to use given the LUT config.
-        """
-        if np.isnan(geom.coszen) or "solar_zenith" not in self.RT.lut_grid:
-            rt_coszen = self.RT.rt_engines[0].coszen
-            if isinstance(rt_coszen, np.ndarray):
-                coszen = np.array(rt_coszen).flat[0]
-            else:
-                coszen = rt_coszen
-            geom.verify(coszen, geom.max_slope, geom.terrain_style)
-
     def calc_meas(self, x, geom, rfl=[]):
         """Calculate the model observation at instrument wavelengths."""
         # Unpack state vector - Copy to not change x fm-wide
