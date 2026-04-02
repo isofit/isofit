@@ -4951,7 +4951,9 @@
 <span class="normal">410</span>
 <span class="normal">411</span>
 <span class="normal">412</span>
-<span class="normal">413</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Downloads the ISOFIT examples from the repository https://github.com/isofit/isofit-tutorials</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -4973,7 +4975,7 @@
     <span class="p">},</span>
     <span class="s2">&quot;image_cube&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/</span><span class="si">{size}</span><span class="s2">_chunk.zip&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;subpath&quot;</span><span class="p">:</span> <span class="s2">&quot;image_cube/</span><span class="si">{size}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subpath&quot;</span><span class="p">:</span> <span class="s2">&quot;image_cube/</span><span class="si">{size}</span><span class="s2">/data&quot;</span><span class="p">,</span>
     <span class="p">},</span>
     <span class="s2">&quot;lakemary&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/LakeMary.zip&quot;</span><span class="p">,</span>
@@ -5187,7 +5189,7 @@
 
     <span class="n">sizes</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;small&quot;</span><span class="p">:</span> <span class="s2">&quot;7000-7010&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">:</span> <span class="s2">&quot;7k-8k&quot;</span><span class="p">}</span>
     <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="s2">&quot;rdn&quot;</span><span class="p">):</span>
-        <span class="n">file</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;ang20170323t202244_</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">sizes</span><span class="p">[</span><span class="n">size</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">file</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;ang20170323t202244_</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">sizes</span><span class="p">[</span><span class="n">size</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="n">error</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;[x] ISOFIT </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2"> image cube data do not appear to be installed correctly&quot;</span>
@@ -5322,7 +5324,9 @@
 
     <span class="k">if</span> <span class="n">tutorials</span><span class="p">:</span>
         <span class="n">download_tutorials</span><span class="p">(</span>
-            <span class="n">tag</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tag&quot;</span><span class="p">,</span> <span class="s2">&quot;latest&quot;</span><span class="p">),</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">tag</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tag&quot;</span><span class="p">,</span> <span class="s2">&quot;latest&quot;</span><span class="p">),</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="n">dl_all</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -5333,7 +5337,7 @@
     <span class="k">if</span> <span class="n">image_cube</span><span class="p">:</span>
         <span class="n">download_extra</span><span class="p">(</span>
             <span class="s2">&quot;image_cube&quot;</span><span class="p">,</span>
-            <span class="n">examples</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
             <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
             <span class="n">size</span><span class="o">=</span><span class="n">image_cube</span><span class="p">,</span>
         <span class="p">)</span>
