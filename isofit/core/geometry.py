@@ -24,6 +24,7 @@ from datetime import datetime
 import numpy as np
 
 from isofit.core import units
+from isofit.configs import configs
 
 
 class Geometry:
@@ -39,7 +40,7 @@ class Geometry:
         bg_rfl: np.array = None,
         svf: float = 1,
         coszen: float = None,
-        rt_config: dict = {},
+        full_config: configs.Config = {},
     ):
         """Initialize geometry object.
         Args:
@@ -50,7 +51,7 @@ class Geometry:
             bg_rfl: Background reflectance spectrum.
             svf: Sky view factor.
             coszen: Cosine of the solar zenith angle for top of atmosphere.
-            rt_config: radiative transfer portion of the isofit config.
+            config: isofit config.
         """
         # Set some benign defaults...
         self.observer_zenith = (
@@ -77,6 +78,9 @@ class Geometry:
         self.bg_rfl = bg_rfl
         self.cos_i = None
         self.skyview_factor = svf
+
+        self.max_slope = 20.0
+        self.terrain_style = "flat"
 
         # The 'obs' object is observation metadata that follows a historical
         # AVIRIS-NG format.  It arrives to our initializer in the form of
@@ -112,30 +116,45 @@ class Geometry:
             self.esd_factor = self.get_esd_factor(dt)
 
         # Determine how to treat coszen
-        # Use OBS data directly if it's in the LUT grid
-        if rt_config.lut_grid is not None and "solar_zenith" in rt_config.lut_grid:
-            self.coszen = np.cos(np.radians(self.solar_zenith))
+        # Allow for backwards compatibility where config is not given
+        if not full_config:
+            if coszen is not None:
+                self.coszen = coszen
+            else:
+                self.coszen = np.cos(np.radians(self.solar_zenith))
 
-        # Otherwise, fall back to the provided coszen
-        elif coszen is not None:
-            self.coszen = coszen
-
+        # Isofit config provided either for OE or AOE solve
         else:
-            raise ValueError(
-                "coszen is not defined and solar_zenith not found in lut_grid."
-            )
+            # Update terrain parameters from config
+            rt_config = full_config.forward_model.radiative_transfer
+            self.max_slope = rt_config.max_slope
+            self.terrain_style = rt_config.terrain_style
+
+            # If solar_zenith is in the lut grid we should use this
+            if rt_config.lut_grid is not None and "solar_zenith" in rt_config.lut_grid:
+                self.coszen = np.cos(np.radians(self.solar_zenith))
+
+            # Otherwise, fall back to the provided coszen used to build the RT engine
+            elif coszen is not None:
+                self.coszen = coszen
+
+            # If neither are provided we should raise an error not to make any bad assumptions of coszen
+            else:
+                raise ValueError(
+                    "coszen is not defined and solar_zenith not found in lut_grid."
+                )
 
         # Set min cosi (which is at max slope facing away from sun)
         self.min_cosi = max(
             0,
             np.sin(np.arccos(self.coszen))
-            * np.sin(np.radians(rt_config.max_slope))
+            * np.sin(np.radians(self.max_slope))
             * np.cos(np.radians(180))
-            + self.coszen * np.cos(np.radians(rt_config.max_slope)),
+            + self.coszen * np.cos(np.radians(self.max_slope)),
         )
 
         # Pretend that the surface is flat, regardless of input geometry
-        if rt_config.terrain_style == "flat":
+        if self.terrain_style == "flat":
             self.cos_i = self.coszen
 
         # Check bounds
