@@ -113,7 +113,7 @@ class Geometry:
 
         # Determine how to treat coszen
         # Use OBS data directly if it's in the LUT grid
-        if "solar_zenith" in rt_config.lut_grid:
+        if rt_config.lut_grid is not None and "solar_zenith" in rt_config.lut_grid:
             self.coszen = np.cos(np.radians(self.solar_zenith))
 
         # Otherwise, fall back to the provided coszen
