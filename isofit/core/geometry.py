@@ -118,10 +118,10 @@ class Geometry:
         # Determine how to treat coszen
         # Allow for backwards compatibility where config is not given
         if not full_config:
-            if coszen is not None:
-                self.coszen = coszen
-            else:
+            if self.solar_zenith is not None:
                 self.coszen = np.cos(np.radians(self.solar_zenith))
+            else:
+                self.coszen = coszen
 
         # Isofit config provided either for OE or AOE solve
         else:
@@ -145,24 +145,29 @@ class Geometry:
                 )
 
         # Set min cosi (which is at max slope facing away from sun)
-        self.min_cosi = max(
-            0,
-            np.sin(np.arccos(self.coszen))
-            * np.sin(np.radians(self.max_slope))
-            * np.cos(np.radians(180))
-            + self.coszen * np.cos(np.radians(self.max_slope)),
-        )
+        if self.coszen is not None:
+            self.min_cosi = max(
+                0,
+                np.sin(np.arccos(self.coszen))
+                * np.sin(np.radians(self.max_slope))
+                * np.cos(np.radians(180))
+                + self.coszen * np.cos(np.radians(self.max_slope)),
+            )
 
-        # Pretend that the surface is flat, regardless of input geometry
-        if self.terrain_style == "flat":
-            self.cos_i = self.coszen
+            # Pretend that the surface is flat, regardless of input geometry
+            if self.terrain_style == "flat":
+                self.cos_i = self.coszen
 
-        # Check bounds
-        self.coszen = max(self.min_cosi, min(self.coszen, 1.0))
-        self.cos_i = max(self.min_cosi, min(self.cos_i, 1.0))
-        self.skyview_factor = (
-            1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
-        )
+            # Check bounds
+            self.coszen = max(self.min_cosi, min(self.coszen, 1.0))
+            self.cos_i = max(self.min_cosi, min(self.cos_i, 1.0))
+            self.skyview_factor = (
+                1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
+            )
+        else:
+            logging.warning(
+                "Unable to determine coszen. Proceeding without will cause errors during the inversion."
+            )
 
     def get_esd_factor(self, date_time: datetime):
         """Get distance ratio from sun based on time of year, relative to day 1
