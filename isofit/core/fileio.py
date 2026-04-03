@@ -372,8 +372,11 @@ class IO:
         self.n_rows = 1
         self.n_cols = 1
         self.bbl = "{" + ",".join([str(1) for n in range(len(self.meas_wl))]) + "}"
-        self.rt_config = config.forward_model.radiative_transfer
-        self.engine_name = self.rt_config.radiative_transfer_engines[0].engine_name
+        self.engine_name = (
+            config.forward_model.radiative_transfer.radiative_transfer_engines[
+                0
+            ].engine_name
+        )
         self.coszen = forward.RT.rt_engines[0].coszen or None
 
         # Use the pre-defined full statevec
@@ -524,7 +527,7 @@ class IO:
             bg_rfl=data["background_reflectance_file"],
             svf=data["skyview_factor_file"],
             coszen=self.coszen,
-            rt_config=self.rt_config,
+            full_config=self.config,
         )
 
         self.current_input_data.geom = geom

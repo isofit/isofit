@@ -250,8 +250,7 @@ class Worker(object):
         self.fm = fm
         self.iv = Inversion(self.config, self.fm)
 
-        # Define RT config for geom creation
-        self.rt_config = self.config.forward_model.radiative_transfer
+        # Define coszen for geom creation
         self.coszen = self.fm.RT.rt_engines[0].coszen or None
 
         self.rfl_bounds = np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1]
@@ -327,7 +326,7 @@ class Worker(object):
                     loc=loc[r, c, :],
                     esd=esd,
                     coszen=self.coszen,
-                    rt_config=self.rt_config,
+                    full_config=self.config,
                 )
 
                 # "Atmospheric" state ALWAYS comes from all bands in the
