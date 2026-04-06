@@ -703,7 +703,7 @@ def build_config(
     retrieve_co2: bool = False,
     presolve: bool = False,
     terrain_style: str = "flat",
-    max_slope: float = 30.0,
+    max_slope: float = 20.0,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -1676,7 +1676,7 @@ def make_rt_config(
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
     terrain_style: str = "flat",
-    max_slope: float = 30.0,
+    max_slope: float = 20.0,
 ):
     avc = np.sum(
         [
