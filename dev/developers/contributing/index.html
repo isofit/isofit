@@ -4860,6 +4860,10 @@ $ git push --force-with-lease 314-update-docs-libradtran
 <li>Project policy updates</li>
 </ul>
 <p>These are accepted through consensus of a quorum of maintainers.  <strong>If you would like to include any new algorithms or examples, we highly recommend that they are supported by peer reviewed scientific research.</strong></p>
+<details class="note" open="open">
+<summary>Workflows Exception</summary>
+<p>PRs by maintainers that edit trusted workflows (those that cannot be tested by a PR) are allowed to be self merged by the PR author if the target branch is <code>dev</code>. Untrusted workflows should pass their tests before merge.</p>
+</details>
 <h3 id="release-steps-for-maintainers">Release Steps (for Maintainers)<a class="headerlink" href="#release-steps-for-maintainers" title="Permanent link">#</a></h3>
 <p>Releases should trigger a new PyPi upload, and subsequently a fresh upload to conda-forge.  Therefore,
 the revised steps for versioning are:</p>
