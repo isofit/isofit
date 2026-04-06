@@ -5043,7 +5043,11 @@
 <span class="normal">418</span>
 <span class="normal">419</span>
 <span class="normal">420</span>
-<span class="normal">421</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Builds the examples from their template files for a given ISOFIT ini</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -5328,6 +5332,10 @@
     <span class="p">),</span>
     <span class="s2">&quot;LakeMary&quot;</span><span class="p">:</span> <span class="n">ApplyOEExample</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s2">&quot;LakeMary&quot;</span><span class="p">,</span>
+        <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sixs&quot;</span><span class="p">,</span> <span class="s2">&quot;srtmnet&quot;</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;SeaBASS-PRISM&quot;</span><span class="p">:</span> <span class="n">ApplyOEExample</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;SeaBASS_prism_001&quot;</span><span class="p">,</span>
         <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sixs&quot;</span><span class="p">,</span> <span class="s2">&quot;srtmnet&quot;</span><span class="p">],</span>
     <span class="p">),</span>
 <span class="p">}</span>
