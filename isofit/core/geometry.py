@@ -54,12 +54,8 @@ class Geometry:
             config: isofit config.
         """
         # Set some benign defaults...
-        self.observer_zenith = (
-            0  # REVIEW: pytest/test_geometry asserts 0, change to None?
-        )
-        self.observer_azimuth = (
-            0  # REVIEW: pytest/test_geometry asserts 0, change to None?
-        )
+        self.observer_zenith = None
+        self.observer_azimuth = None
         self.solar_zenith = None
         self.solar_azimuth = None
         self.observer_altitude_km = None
@@ -79,7 +75,7 @@ class Geometry:
         self.cos_i = None
         self.skyview_factor = svf
 
-        self.max_slope = 20.0
+        self.max_slope = 0.0
         self.terrain_style = "flat"
 
         # The 'obs' object is observation metadata that follows a historical
@@ -116,36 +112,64 @@ class Geometry:
             self.esd_factor = self.get_esd_factor(dt)
 
         # Determine how to treat coszen
+        self.use_universal_coszen = True
+
         # Allow for backwards compatibility where config is not given
         if not full_config:
+            # If no config given, prioritize using the OBS data
             if self.solar_zenith is not None:
                 self.coszen = np.cos(np.radians(self.solar_zenith))
+                self.use_universal_coszen = False
+            # If OBS data is not present, then fall back to using the coszen input
             else:
                 self.coszen = coszen
 
-        # Isofit config provided either for OE or AOE solve
+        # In the more common case that Isofit config is provided...
         else:
             # Update terrain parameters from config
             rt_config = full_config.forward_model.radiative_transfer
             self.max_slope = rt_config.max_slope
             self.terrain_style = rt_config.terrain_style
 
-            # If solar_zenith is in the lut grid we should use this
+            # 1. If user has a lut grid that contains solar_zenith this takes priority
             if rt_config.lut_grid is not None and "solar_zenith" in rt_config.lut_grid:
                 self.coszen = np.cos(np.radians(self.solar_zenith))
+                self.use_universal_coszen = False
 
-            # Otherwise, fall back to the provided coszen used to build the RT engine
+            # 2. If it's not in the lut grid, and user doesn't give a coszen, we should
+            # raise a helpful warning, but still allow them to use the OBS data
+            elif coszen is None and self.solar_zenith is not None:
+                self.coszen = np.cos(np.radians(self.solar_zenith))
+                self.use_universal_coszen = False
+                logging.warning(
+                    "coszen was not defined and solar zenith was not found in the lut grid. "
+                    "This will proceed with the OBS data, however, this may cause small errors in the forward model."
+                )
+
+            # 3. In this case, the user does not have solar zenith in the lut grid
+            # and cozen is correctly defined (based on the RT Engine)
             elif coszen is not None:
                 self.coszen = coszen
 
-            # If neither are provided we should raise an error not to make any bad assumptions of coszen
             else:
                 raise ValueError(
-                    "coszen is not defined and solar_zenith not found in lut_grid."
+                    "coszen is not defined and valid solar zenith not found in OBS data."
                 )
 
-        # Set min cosi (which is at max slope facing away from sun)
+        if self.use_universal_coszen:
+            logging.info(f"The coszen will be universal:   coszen={coszen}")
+        else:
+            logging.info(
+                f"The coszen is pixel dependent and will based on the OBS data"
+            )
+
         if self.coszen is not None:
+
+            # Pretend that the surface is flat, regardless of input geometry
+            if self.terrain_style == "flat":
+                self.cos_i = self.coszen
+
+            # Set min cosi (which is at max slope facing away from sun)
             self.min_cosi = max(
                 0,
                 np.sin(np.arccos(self.coszen))
@@ -153,10 +177,6 @@ class Geometry:
                 * np.cos(np.radians(180))
                 + self.coszen * np.cos(np.radians(self.max_slope)),
             )
-
-            # Pretend that the surface is flat, regardless of input geometry
-            if self.terrain_style == "flat":
-                self.cos_i = self.coszen
 
             # Check bounds
             self.coszen = max(self.min_cosi, min(self.coszen, 1.0))
