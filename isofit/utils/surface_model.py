@@ -112,6 +112,7 @@ def surface_model(
 
     normalize = config["normalize"]
     reference_windows = config["reference_windows"]
+    normalization_windows = config.get("normalization_windows", [])
 
     # Get selection metric if it exists
     selection_metric = config.get("selection_metric", "Euclidean")
@@ -138,10 +139,17 @@ def surface_model(
     normind = np.array([np.argmin(abs(wl - w)) for w in refwl])
     refwl = np.array(refwl, dtype=float)
 
+    window_regions = []
+    for window in normalization_windows:
+        active_wl = np.logical_and(wl >= window[0], wl < window[1])
+        window_regions.append(active_wl)
+
     # create basic model template
     model = {
         "normalize": normalize,
         "selection_metric": selection_metric,
+        "reference_windows": reference_windows,
+        "normalization_windows": normalization_windows,
         "wl": wl,
         "means": [],
         "covs": [],
@@ -385,25 +393,35 @@ def surface_model(
             C = inv(P)
 
             # Normalize the component spectrum if desired
+            z = np.ones(len(wl ))
+            z_C = np.ones(len(wl ))
             if normalize == "Euclidean":
-                z = np.sqrt(np.sum(pow(m[normind], 2)))
-            elif normalize == "RMS":
-                z = np.sqrt(np.mean(pow(m[normind], 2)))
-            elif normalize == "None":
-                z = 1.0
+                z[:] = np.sqrt(np.sum(pow(m[normind], 2)))
+                z_C = z
             elif normalize == "Euclidean-window":
-                z = np.ones(len(wl))
-                for window in windows:
-                    window_idx = get_winidx(wl, window["interval"])
-                    if len(window_idx) == 0:
-                        continue
-                    z[window_idx] = np.sqrt(np.sum(pow(m[window_idx], 2)))
+                for _win in range(len(normalization_windows)):
+                    z[window_regions[_win]] = np.sqrt(np.sum(pow(m[window_regions[_win]], 2)))
+                # keep traditional normalization so we can keep Euclidean regularization 
+                z_C = np.sqrt(np.sum(pow(m[normind], 2)))
+            elif normalize == "RMS":
+                z[:] = np.sqrt(np.mean(pow(m[normind], 2)))
+                z_C = z
+            elif normalize == "None":
+                z[:] = 1.0
+                z_C = z
+            #elif normalize == "Euclidean-window":
+            #    z = np.ones(len(wl))
+            #    for window in windows:
+            #        window_idx = get_winidx(wl, window["interval"])
+            #        if len(window_idx) == 0:
+            #            continue
+            #        z[window_idx] = np.sqrt(np.sum(pow(m[window_idx], 2)))
 
             else:
                 raise ValueError("Unrecognized normalization: %s\n" % normalize)
             z[z < 1] = 1
             m = m / z
-            C = C / (np.sum(z)**2)
+            C = C / (np.sum(z_C)**2)
 
             try:
                 Cinv = svd_inv(C)
