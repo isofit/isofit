@@ -58,6 +58,7 @@ test = [
 docker = [
   "ipykernel",
   "ipywidgets",
+  "jupyterlab",
   "matplotlib",
 ]
 docs = [
