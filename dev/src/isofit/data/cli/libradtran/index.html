@@ -4387,6 +4387,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.data.cli.libradtran.fix_paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fix_paths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.data.cli.libradtran.build" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4683,7 +4694,25 @@
 <span class="normal">186</span>
 <span class="normal">187</span>
 <span class="normal">188</span>
-<span class="normal">189</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Downloads LibRadTran from https://www.libradtran.org/download/libRadtran-2.0.6.tar.gz</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -4699,6 +4728,36 @@
 <span class="n">Version</span> <span class="o">=</span> <span class="s2">&quot;libRadtran-2.0.6&quot;</span>
 <span class="n">CMD</span> <span class="o">=</span> <span class="s2">&quot;libradtran&quot;</span>
 <span class="n">URL</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://www.libradtran.org/download/</span><span class="si">{</span><span class="n">Version</span><span class="si">}</span><span class="s2">.tar.gz&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">fix_paths</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.libradtran.fix_paths"><a href="../../../../../api/isofit/data/cli/libradtran/#isofit.data.cli.libradtran.fix_paths" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fixes hardcoded paths in libradtran for different install environments</span>
+
+<span class="sd">    LibRadTran assumes packages were installed with MacPorts</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    directory : str</span>
+<span class="sd">        Directory with an unbuilt LibRadTran</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fix</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># brew install [Mac]</span>
+    <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/opt/homebrew/Cellar&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">fix</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;/opt/local&quot;</span><span class="p">,</span> <span class="s2">&quot;/opt/homebrew/Cellar&quot;</span><span class="p">))</span>
+
+    <span class="c1"># apt-get install [Docker]</span>
+    <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/usr/bin/nc-config&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">fix</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;/opt/local&quot;</span><span class="p">,</span> <span class="s2">&quot;/usr&quot;</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">fix</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">directory</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">bad</span><span class="p">,</span> <span class="n">good</span> <span class="ow">in</span> <span class="n">fix</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">bad</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                        <span class="n">file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">content</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">bad</span><span class="p">,</span> <span class="n">good</span><span class="p">),</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.libradtran.build"><a href="../../../../../api/isofit/data/cli/libradtran/#isofit.data.cli.libradtran.build" title="Go to docs">[docs]</a></div>
@@ -4717,25 +4776,13 @@
 <span class="sd">    following command in order to compile the program:</span>
 <span class="sd">    $ sudo xcodebuild -license</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">flags</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="c1"># LibRadTran assumes GSL was installed with MacPorts</span>
-    <span class="c1"># Check if it was installed via brew instead and fix paths if so</span>
-
-    <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/opt/homebrew/Cellar/gsl&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">flags</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s1">&#39;CPPFLAGS=&quot;-I/opt/homebrew/include&quot;&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;LDFLAGS=&quot;-L/opt/homebrew/lib&quot;&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;FCFLAGS=&quot;-I/opt/homebrew/include&quot;&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;FFLAGS=&quot;-I/opt/homebrew/include&quot;&#39;</span><span class="p">,</span>
-            <span class="s2">&quot;--with-netcdf4=/opt/homebrew&quot;</span><span class="p">,</span>
-        <span class="p">]</span>
+    <span class="n">fix_paths</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
 
     <span class="c1"># Configure first</span>
-    <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;./configure </span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">flags</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Executing: </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;./configure&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Executing config&quot;</span><span class="p">)</span>
     <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-        <span class="n">command</span><span class="p">,</span>
+        <span class="s2">&quot;./configure&quot;</span><span class="p">,</span>
         <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="c1"># stdout=subprocess.PIPE,</span>
         <span class="c1"># stderr=subprocess.PIPE,</span>
