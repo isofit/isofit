@@ -17,7 +17,7 @@ WORKDIR /root
 COPY . ISOFIT/
 RUN cd ISOFIT &&\
     uv sync --extra docker --extra test &&\
-    uv run isofit -b .. download libradtran &&\
+    uv run isofit -b .. download all &&\
     uv run isofit build &&\
     echo "source /root/ISOFIT/.venv/bin/activate" >> ~/.bashrc &&\
     echo "alias launch=\"jupyter-lab --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''\"" >> ~/.bashrc
