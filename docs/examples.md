@@ -6,17 +6,12 @@ ISOFIT includes a collection of examples that demonstrate how to use the softwar
 
 Before running any examples, ensure you have:
 
-1. **ISOFIT installed** - See [Installation](installation.md) for setup instructions
+1. **ISOFIT installed** - See [Installation](getting_started/installation.md) for setup instructions
 2. **Required data files** - Download with: `isofit download all`
-3. **Examples available** - Download and build with:
-   ```bash
-   isofit download examples
-   isofit build
-   ```
+3. **Examples available** - Build after downloading with: `isofit build`
 
 ???+ info
-
-    Examples will be available under `~/.isofit/examples/` after building. You can override this location using `isofit -p examples /your/custom/path` before downloading.
+    Examples will be available under `~/.isofit/examples/` after building. You can override this location using `isofit -p examples /your/custom/path` before downloading. Alternatively, use `isofit -b /path/to/store/downloads all` to download `all` extras to the specified `-b` path. See [Additional Data](extra_downloads/data.md) for more.
 
 ## Available Examples
 
@@ -30,6 +25,8 @@ Before running any examples, ensure you have:
 | **Prism Multisurface** | `20231110_Prism_Multisurface/` | Multi-component surface model demonstration |
 | **AV3 Calibration** | `20250308_AV3Cal_wltest/` | Wavelength testing and calibration |
 | **NEON** | `NEON/` | National Ecological Observatory Network data |
+| **Lake Mary** | `LakeMary/` | Single-pixel test case |
+| **SeaBASS PRISM** | `SeaBASS_prism_001/` | Single-pixel PRISM-water test case |
 
 ## Quick Start
 
@@ -48,13 +45,13 @@ Navigate to an example directory and execute its script:
 
 ```bash
 cd $(isofit path examples)/image_cube/small
-bash analytical.sh
+bash default.sh
 ```
 
 Or, specify the full path:
 
 ```bash
-bash $(isofit path examples)/image_cube/small/analytical.sh
+bash $(isofit path examples)/image_cube/small/default.sh
 ```
 
 ## Execution Methods
@@ -65,7 +62,7 @@ Navigate to an example directory and execute the bash script:
 
 ```bash
 cd ~/.isofit/examples/image_cube/small
-bash analytical.sh
+bash default.sh
 ```
 
 ??? tip "Using uv"
@@ -80,17 +77,16 @@ Navigate to an example directory and execute the PowerShell script:
 
 ```powershell
 cd C:\Users\YourName\.isofit\examples\image_cube\small
-powershell -File analytical.ps1
+powershell -File default.ps1
 ```
 
 Or directly execute from PowerShell:
 
 ```powershell
-powershell -File C:\Users\YourName\.isofit\examples\image_cube\small\analytical.ps1
+powershell -File C:\Users\YourName\.isofit\examples\image_cube\small\default.ps1
 ```
 
 ??? tip "Using uv"
-
     If you are using uv to manage your virtual environment, you can activate the environment via: `.venv\Scripts\Activate.ps1`
 
     This will make the `isofit` command always available which is needed for the scripts.
@@ -100,13 +96,13 @@ powershell -File C:\Users\YourName\.isofit\examples\image_cube\small\analytical.
 Most examples also provide Python execution scripts:
 
 ```bash
-cd ~/.isofit/examples/image_cube/small
+cd ~/.isofit/examples/20151026_SantaMonica
 python run.py
 ```
 
 ### Method 3: Docker (All Platforms, Recommended)
 
-Docker provides a pre-configured environment with all dependencies. See [Docker](../docker.md) for detailed setup instructions.
+Docker provides a pre-configured environment with all dependencies. See [Docker](docker.md) for detailed setup instructions.
 
 Quick example:
 
@@ -122,7 +118,7 @@ Launch Jupyter with:
 docker run --rm --shm-size=16gb -p 8888:8888 jammont/isofit
 ```
 
-Then navigate to `http://localhost:8888` in your browser. See [Docker](../docker.md) for more details.
+Then navigate to `http://localhost:8888` in your browser. See [Docker](docker.md) for more details.
 
 ## Windows-Specific Guidance
 
@@ -146,16 +142,14 @@ If you have Git installed, you already have Git Bash available:
 
 2. **Manually**:
 
-   Find `git-bash.exe` in your Git installation (typically `C:\Users\YourName\.isofit\windows\PortableGit\`)
+   Find `git-bash.exe` in your Git installation (typically `C:\Users\YourName\.isofit\windows\PortableGit\` if you downloaded it via `isofit download windows` or `isofit download all`)
 
 This terminal can be used to follow the Linux/MacOS instructions above.
 
 ???+ warning "Path Separators"
-
     In Git Bash, use forward slashes (`/`) instead of backslashes (`\`). For example: `/c/Users/YourName/isofit/examples` instead of `C:\Users\YourName\isofit\examples`
 
 ??? note "Using uv"
-
     If your venv is Windows-formatted (eg. ".venv/Scripts" instead of ".venv/bin"), then to activate the environment within Git Bash is done differently: `source .venv/Scripts/activate`
 
 #### Option B: Use Python Scripts
@@ -163,13 +157,13 @@ This terminal can be used to follow the Linux/MacOS instructions above.
 Execute Python versions of the examples instead of bash scripts:
 
 ```bash
-python C:\Users\YourName\.isofit\examples\image_cube\small\run.py
+python C:\Users\YourName\.isofit\examples\20151026_SantaMonica\run.py
 ```
 
 Or from the example directory:
 
 ```bash
-cd C:\Users\YourName\.isofit\examples\image_cube\small
+cd C:\Users\YourName\.isofit\examples\20151026_SantaMonica
 python run.py
 ```
 
@@ -178,12 +172,11 @@ python run.py
 For users wanting a native-like Linux experience:
 
 1. Install WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
-2. Install conda/mamba in WSL2
+2. Setup a Python environment
 3. Install ISOFIT and run examples as you would on Linux
 
 ???+ info
-
-    WSL2 provides superior performance and access to Linux-native tools. It's recommended for serious ISOFIT development on Windows.
+    WSL2 provides superior performance and access to Linux-native tools. It's recommended for serious ISOFIT development on Windows, though no support is offered by the ISOFIT team.
 
 #### Option D: Use PowerShell Directly
 
@@ -194,13 +187,13 @@ Windows PowerShell users can now execute `.ps1` scripts directly:
 cd C:\Users\YourName\.isofit\examples\image_cube\small
 
 # Execute the PowerShell script
-powershell -File analytical.ps1
+powershell -File default.ps1
 ```
 
 Or run from any location:
 
 ```powershell
-powershell -File C:\Users\YourName\.isofit\examples\image_cube\small\analytical.ps1
+powershell -File C:\Users\YourName\.isofit\examples\image_cube\small\default.ps1
 ```
 
 This is the most native Windows approach and doesn't require Git Bash or WSL2.
@@ -210,7 +203,7 @@ This is the most native Windows approach and doesn't require Git Bash or WSL2.
 Docker Desktop for Windows provides the most reliable, isolated environment:
 
 ```bash
-docker run --rm -it --shm-size=16gb jammont/isofit bash examples/image_cube/small/analytical.sh
+docker run --rm -it --shm-size=16gb jammont/isofit bash examples/image_cube/small/default.sh
 ```
 
 This is the most robust solution for Windows users, as it avoids shell compatibility issues entirely.
@@ -248,10 +241,10 @@ Here's a complete example for Windows users using PowerShell (the simplest appro
 cd C:\Users\YourName\.isofit\examples
 
 # Enter a specific example
-cd image_cube\small
+cd 20151026_SantaMonica
 
 # Run the PowerShell script
-powershell -File analytical.ps1
+powershell -File run.ps1
 
 # Or run the Python version (alternative)
 python run.py
@@ -266,10 +259,10 @@ python run.py
 cd $(isofit path examples)
 
 # Enter a specific example
-cd image_cube/small
+cd 20151026_SantaMonica
 
 # Run the example
-bash analytical.sh
+bash default.sh
 
 # Or run the Python version
 python run.py
@@ -304,25 +297,13 @@ python run.py
 ```powershell
 $env:MKL_NUM_THREADS=1
 $env:OMP_NUM_THREADS=1
-powershell -File analytical.ps1
+powershell -File run.ps1
 # or
 python run.py
 ```
 
 ???+ info
-
     These environment variables are automatically set in the generated `.ps1`, `.sh`, and `.py` script files, so manual configuration is only needed if running commands directly in the shell.
-
-## Example Output Structure
-
-Most examples generate output in the example directory. Common output files include:
-
-- `*.tif` or `.nc` - Output atmospheric correction products
-- `*.txt` / `.csv` - Retrieval statistics and metadata
-- `*.hdr` - ENVI header files accompanying imagery
-- `logs/` - Execution logs and diagnostics
-
-Check the example's `README` file for specific output expectations.
 
 ## Running Multiple Examples
 
@@ -332,11 +313,8 @@ To test that your installation is working correctly, run several examples:
 # Santa Monica example
 bash $(isofit path examples)/20151026_SantaMonica/run.sh
 
-# Image cube analytical (faster)
-bash $(isofit path examples)/image_cube/small/analytical.sh
-
-# Image cube empirical
-bash $(isofit path examples)/image_cube/small/empirical.sh
+# Image cube analytical
+bash $(isofit path examples)/image_cube/small/default.sh
 ```
 
 ## Next Steps
@@ -344,6 +322,6 @@ bash $(isofit path examples)/image_cube/small/empirical.sh
 After successfully running examples:
 
 1. **Modify parameters** - Edit configuration JSON files to experiment with different settings
-2. **Read documentation** - Check [Best Practices](best_practices.md) for optimization guidance
+2. **Read documentation** - Check [Best Practices](getting_started/best_practices.md) for optimization guidance
 3. **Use your data** - Apply the ISOFIT workflow to your own hyperspectral data
 4. **Contribute** - Share your own examples with the ISOFIT community
