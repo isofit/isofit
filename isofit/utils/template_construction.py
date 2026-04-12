@@ -179,7 +179,7 @@ class Pathnames:
             )
 
         if channelized_uncertainty_path:
-            self.input_channelized_uncertainty_path = channelized_uncertainty_path
+            self.input_channelized_uncertainty_path = channelized_uncertainty_patchannelized_uncertainty_pathh
         else:
             self.input_channelized_uncertainty_path = os.getenv(
                 "ISOFIT_CHANNELIZED_UNCERTAINTY"

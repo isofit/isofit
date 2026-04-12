@@ -47,7 +47,6 @@ class MultiComponentSurface(Surface):
         # TODO: enforce surface_file existence in the case of multicomponent_surface
         self.component_means = self.model_dict["means"]
         self.component_covs = self.model_dict["covs"]
-        self.reference_window_idx = self.model_dict["reference_windows"]
 
         self.n_comp = len(self.component_means)
         self.wl = self.model_dict["wl"][0]
@@ -86,14 +85,14 @@ class MultiComponentSurface(Surface):
             #    return z
 
             #self.norm = lambda lamb, geom: norm_func_window(lamb, geom.surf_cmp_init)
-            def norm_func_window(lamb, windows):
+            def norm_func_window(lamb, windows_eval, windows_apply):
                 z = np.ones(len(lamb))
-                for win in windows:
+                for win_e, win_a in zip(windows_eval, windows_apply):
                     # Second term here is because the euclidean norm has already been calculated
-                    z[win[0] : win[-1]] = norm(lamb[win[0] : win[-1]]) # * norm(lamb[self.idx_ref])
+                    z[win_a] = norm(lamb[win_e]) #* norm(lamb[self.idx_ref])
 
                 return z
-            self.norm = lambda lamb, geom: norm_func_window(lamb, self.reference_window_idx)
+            self.norm = lambda lamb, geom: norm_func_window(lamb, self.norm_window_eval_idx, self.norm_window_apply_idx)
             self.norm_C = lambda lamb, geom: norm(lamb[self.idx_ref])
                 
         else:
@@ -114,6 +113,14 @@ class MultiComponentSurface(Surface):
         self.reference_window_idx = [
             [np.argmin(abs(self.wl - w)) for w in window]
             for window in self.model_dict["reference_windows"]
+        ]
+        self.norm_window_eval_idx = [
+            np.where(np.logical_and(self.wl >= window[0], self.wl < window[1]))
+            for window in self.model_dict["normalization_windows_eval"]
+        ]
+        self.norm_window_apply_idx = [
+            np.where(np.logical_and(self.wl >= window[0], self.wl < window[1]))
+            for window in self.model_dict["normalization_windows_apply"]
         ]
 
         # Variables retrieved: each channel maps to a reflectance model parameter
@@ -204,7 +211,10 @@ class MultiComponentSurface(Surface):
         #                self.selection_metric,
         #            )
         #else:
-        lamb_ref = lamb_ref / self.norm(lamb_ref, geom)
+        lnorm = self.norm(lamb, geom)
+        if type(lnorm) is not float:
+            lnorm = lnorm[self.idx_ref]
+        lamb_ref = lamb_ref / lnorm
         if self.selection_metric == "SGA":
             mds = self.spectral_gradient_angle(lamb_ref, np.array(self.mus))
         elif self.selection_metric == "Euclidean" or "Euclidean-window":

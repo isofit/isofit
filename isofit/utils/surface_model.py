@@ -112,7 +112,8 @@ def surface_model(
 
     normalize = config["normalize"]
     reference_windows = config["reference_windows"]
-    normalization_windows = config.get("normalization_windows", [])
+    normalization_windows_eval = config.get("normalization_windows_eval", [])
+    normalization_windows_apply = config.get("normalization_windows_apply", [])
 
     # Get selection metric if it exists
     selection_metric = config.get("selection_metric", "Euclidean")
@@ -139,17 +140,21 @@ def surface_model(
     normind = np.array([np.argmin(abs(wl - w)) for w in refwl])
     refwl = np.array(refwl, dtype=float)
 
-    window_regions = []
-    for window in normalization_windows:
-        active_wl = np.logical_and(wl >= window[0], wl < window[1])
-        window_regions.append(active_wl)
+    window_regions_eval = []
+    window_regions_apply = []
+    for window_e, window_a in zip(normalization_windows_eval, normalization_windows_apply):
+        active_wl = np.logical_and(wl >= window_e[0], wl < window_e[1])
+        window_regions_eval.append(active_wl)
+        active_wl = np.logical_and(wl >= window_a[0], wl < window_a[1])
+        window_regions_apply.append(active_wl)
 
     # create basic model template
     model = {
         "normalize": normalize,
         "selection_metric": selection_metric,
         "reference_windows": reference_windows,
-        "normalization_windows": normalization_windows,
+        "normalization_windows_eval": normalization_windows_eval,
+        "normalization_windows_apply": normalization_windows_apply,
         "wl": wl,
         "means": [],
         "covs": [],
@@ -399,8 +404,8 @@ def surface_model(
                 z[:] = np.sqrt(np.sum(pow(m[normind], 2)))
                 z_C = z
             elif normalize == "Euclidean-window":
-                for _win in range(len(normalization_windows)):
-                    z[window_regions[_win]] = np.sqrt(np.sum(pow(m[window_regions[_win]], 2)))
+                for _win in range(len(normalization_windows_eval)):
+                    z[window_regions_apply[_win]] = np.sqrt(np.sum(pow(m[window_regions_eval[_win]], 2)))
                 # keep traditional normalization so we can keep Euclidean regularization 
                 z_C = np.sqrt(np.sum(pow(m[normind], 2)))
             elif normalize == "RMS":
