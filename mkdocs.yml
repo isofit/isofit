@@ -64,6 +64,7 @@ nav:
   - Extra Downloads:
     - Dependencies: extra_downloads/data.md
     - Building Examples: extra_downloads/building_examples.md
+  - Examples: examples.md
   - Tutorials: https://isofit.github.io/isofit-tutorials
   - Docker: docker.md
   - Information:
