@@ -1,4 +1,4 @@
-name: Lake Mary Single Pixel
+name: SeaBASS-PRISM
 
 on:
   workflow_call:
@@ -45,7 +45,7 @@ jobs:
         run: |
           mkdir results
 
-          RUN=$(isofit path examples)/LakeMary/
+          RUN=$(isofit path examples)/SeaBASS_prism_001/
           $RUN/default.sh --log_file results/default.log --resources
 
           isoplots spfit -p $RUN -o results/default.png
@@ -53,5 +53,5 @@ jobs:
 
       - uses: actions/upload-artifact@v6
         with:
-          name: lake_mary
+          name: SeaBASS_prism_001
           path: results

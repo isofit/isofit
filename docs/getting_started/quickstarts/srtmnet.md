@@ -12,6 +12,10 @@ $ isofit download sixs
 $ isofit download srtmnet
 ```
 
+??? warning "Windows Installations"
+
+    6S will require additional utilities. These can be installed via `isofit download windows` before downloading sixs.
+
 The above commands will ensure these models are built and available for ISOFIT.
 
 ???+ note
