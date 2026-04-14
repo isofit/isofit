@@ -142,12 +142,12 @@ def unzip(file, path=None, rename=None, overwrite=False, cleanup=True):
         z.extractall(path)
 
     src = Path(path) / name
-    if rename:
-        if dst.exists():
+    if dst.exists():
+        if src != dst:
             shutil.copytree(src, dst, dirs_exist_ok=True)
             shutil.rmtree(src)
-        else:
-            shutil.move(src, dst)
+    else:
+        shutil.move(src, dst)
 
     if cleanup:
         os.remove(file)
@@ -201,11 +201,17 @@ def prepare_output(output, default, isdir=False, overwrite=False):
 
     print(f"Output as: {output}")
 
-    if not overwrite and output.exists():
-        print(
-            f"Path already exists, please remove it or set the overwrite flag if you would like to redownload"
-        )
-        return
+    if output.exists():
+        if overwrite:
+            print(
+                "Overwrite Enabled: Removing current output directory to prepare for a new download"
+            )
+            shutil.rmtree(output)
+        else:
+            print(
+                f"Path already exists, please remove it or set the overwrite flag if you would like to redownload"
+            )
+            return
 
     try:
         if isdir:

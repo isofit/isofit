@@ -1,6 +1,6 @@
 # Building Examples
 
-ISOFIT examples rely on the `isofit build` command to generate configuration files and scripts dependent on a user's active INI file. Each example contains a set of template files generate the required files for the example. By default, a user will not need to modify these templates. If an advanced user desires to change the configuration of an example, it is strongly recommended to run the build command first and edit the generated outputs. However, every example should work out-of-the-box with the default downloads and build.
+ISOFIT examples rely on the `isofit build` command to generate configuration files and scripts dependent on a user's active INI file. Each example contains a set of template files to generate the required configuration files for the example specific to a user's system. By default, a user will not need to modify these templates. If an advanced user desires to change the configuration of an example, it is strongly recommended to run the build command first and edit the generated outputs. However, every example should work out-of-the-box with the default downloads and build.
 
 ## Developers
 

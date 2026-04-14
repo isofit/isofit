@@ -30,6 +30,7 @@ from scipy.linalg import block_diag
 from isofit.core.common import eps, svd_inv_sqrt
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
+from isofit.core.multistate import match_statevector
 from isofit.radiative_transfer.radiative_transfer import RadiativeTransfer
 from isofit.surface import Surface
 
@@ -117,6 +118,9 @@ class ForwardModel:
         Split surface state vector indices to cover cases where we retrieve
         additional non-reflectance surface parameters
         """
+        self.full_idx = np.arange(len(self.statevec))
+        self.full_miss = []
+
         # entire surface portion
         self.idx_surface = np.arange(len(self.surface.statevec_names), dtype=int)
 
@@ -513,3 +517,8 @@ class ForwardModel:
         x_RT = x[self.idx_RT]
         x_instrument = x[self.idx_instrument]
         return x_surface, x_RT, x_instrument
+
+    def match_statevector(self, full_statevector):
+        self.full_idx, self.full_miss = match_statevector(
+            full_statevector, self.statevec
+        )

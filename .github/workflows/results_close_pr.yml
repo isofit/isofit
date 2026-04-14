@@ -1,0 +1,16 @@
+name: Close Results PR
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close Results PR
+        env:
+          GH_TOKEN: ${{ secrets.ISOFIT_TEST_RESULTS }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          REPO: isofit/isofit-test-results
+        run: gh pr close "$PR_NUM" --repo "$REPO"
