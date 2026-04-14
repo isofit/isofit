@@ -80,6 +80,10 @@ class LUTSurface(Surface):
             self.lut_grid = [grid[0].astype(np.float32) for grid in data["grids"][0]]
             self.lut_names = [name.strip() for name in data["lut_names"]]
             self.wl = data["wl"][0]
+            data = {
+                k: v.squeeze() if isinstance(v, np.ndarray) else v
+                for k, v in data.items()
+            }
 
         # Otherwise assume xarray
         else:
