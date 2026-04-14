@@ -138,7 +138,7 @@ def surface_model(
         "attributes": [],
         "refwl": refwl,
         "surface_categories": [],
-        "surface_lut_file": config.get("surface_lut_file", None),
+        "surface_lut_file": [config.get("surface_lut_file", "")],
     }
 
     # each "source" (i.e. spectral library) is treated separately

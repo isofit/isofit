@@ -1613,15 +1613,18 @@ def make_surface_config(
     pressure_elevation=False,
     use_superpixels=False,
 ):
-    # Load the surface LUT file from mat file (if not specified this is always None)
-    surface_lut_file = loadmat(surface_working_paths[surface_category])[
-        "surface_lut_file"
-    ][0]
 
     # Initialize config dict
     surface_config_dict = {
         "multi_surface_flag": False,
     }
+
+    # Check if we are running LUTSurface
+    surface_lut_file = None
+    if surface_category == "lut_surface":
+        surface_lut_file = loadmat(surface_working_paths[surface_category])[
+            "surface_lut_file"
+        ][0]
 
     # Check to see if a classification file is being propogated
     # If so, use multisurface
