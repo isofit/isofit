@@ -21,6 +21,7 @@ dependencies:
   - pytorch-cpu
   - spectral>=0.19
   - xarray
+  - zarr>=2,<3
 
   - pip:
     - ray[default]
