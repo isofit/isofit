@@ -288,6 +288,20 @@ class CreateNetCDF(Create):
 
         atexit.register(cleanup, file)
 
+    def __setitem__(self, key: str, value: Any) -> None:
+        """
+        Sets a variable in the NetCDF store
+
+        Parameters
+        ----------
+        key : str
+            Key to set
+        value : any
+            Value to set
+        """
+        with Dataset(self.file, "a") as ds:
+            ds[key][:] = value
+
     def initialize(self) -> None:
         """
         Initializes the LUT netCDF by prepopulating it with filler values.
@@ -446,6 +460,19 @@ class CreateZarr(Create):
             The value of the item retrieved from the Zarr store
         """
         return self.zarr[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """
+        Sets a variable in the Zarr store
+
+        Parameters
+        ----------
+        key : str
+            Key to set
+        value : any
+            Value to set
+        """
+        self.z[key] = value
 
     def initialize(self, ret=False) -> None | xr.Dataset:
         """
