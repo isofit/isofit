@@ -91,7 +91,6 @@ def main(args: SimpleNamespace) -> None:
 
     rayargs = {
         "ignore_reinit_error": True,
-        "local_mode": args.n_cores == 1,
         "_temp_dir": args.ray_tmp_dir,
         "num_cpus": n_cores,
     }

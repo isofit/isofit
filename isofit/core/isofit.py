@@ -92,7 +92,6 @@ class Isofit:
             "_temp_dir": self.config.implementation.ray_temp_dir,
             "ignore_reinit_error": self.config.implementation.ray_ignore_reinit_error,
             "include_dashboard": self.config.implementation.ray_include_dashboard,
-            "local_mode": self.config.implementation.n_cores == 1,
         }
 
         # We can only set the num_cpus if running on a single-node
