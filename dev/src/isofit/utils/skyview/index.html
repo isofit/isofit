@@ -5742,9 +5742,7 @@
 <span class="normal">1036</span>
 <span class="normal">1037</span>
 <span class="normal">1038</span>
-<span class="normal">1039</span>
-<span class="normal">1040</span>
-<span class="normal">1041</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1039</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5766,14 +5764,14 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">join</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">isdir</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">isdir</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">join</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">netCDF4</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nc</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">netCDF4</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nc</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">spectral.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span><span class="p">,</span> <span class="n">eps</span>
@@ -5798,17 +5796,17 @@
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
 <span class="sd">    Applies sky view factor calculation for a given projected DEM or DSM. Much of this code was borrowed from ARS Topo-Calc.</span>
-<span class="sd">    The key thing here was to create a python-only, rasterio-free port of this that could be used within ISOFIT. We also included </span>
+<span class="sd">    The key thing here was to create a python-only, rasterio-free port of this that could be used within ISOFIT. We also included</span>
 <span class="sd">    improvements that are current in Jeff Dozier&#39;s horizon method in Matlab (https://github.com/DozierJeff/Topographic-Horizons).</span>
 <span class="sd">    Following suggestions from Dozier (2021), multiprocessing is leveraged here w.r.t. to n_angles rotating the image. As default,</span>
 <span class="sd">    sky view is computed with n angles = 64 which in most cases is of sufficient accuracy to resolve but more angles may be used.</span>
 
 <span class="sd">    Optionally to this horizon based method, one can pass method=&quot;slope&quot; to compute a faster estimate that may be sufficent for regions with lower relief.</span>
-<span class="sd">    The slope based estimate is simply, svf = cos^2(slope/2). </span>
+<span class="sd">    The slope based estimate is simply, svf = cos^2(slope/2).</span>
 
-<span class="sd">    Yet another option is to pass an ISOFIT &quot;OBS&quot; or &quot;LOC&quot; file as input and using the obs_or_loc arg. </span>
-<span class="sd">    OBS files have slope data and can be used for method=&#39;slope&#39; only. LOC files have elevation data and can be used for method=&#39;slope&#39;. </span>
-<span class="sd">    One can also use the full horizon method on the LOC file although this is not recommended because the edges miss information </span>
+<span class="sd">    Yet another option is to pass an ISOFIT &quot;OBS&quot; or &quot;LOC&quot; file as input and using the obs_or_loc arg.</span>
+<span class="sd">    OBS files have slope data and can be used for method=&#39;slope&#39; only. LOC files have elevation data and can be used for method=&#39;slope&#39;.</span>
+<span class="sd">    One can also use the full horizon method on the LOC file although this is not recommended because the edges miss information</span>
 <span class="sd">    (a warning will be triggered in this case).</span>
 
 <span class="sd">    \b</span>
@@ -5825,18 +5823,18 @@
 <span class="sd">        If &#39;loc&#39; is selected it well select the elevation data from index 2. None will assume a single band elevation data is passed.</span>
 <span class="sd">    method : str, optional</span>
 <span class="sd">        Options are either &quot;horizon&quot; or &quot;slope&quot;. Passing &quot;horizon&quot; runs the full computation and is recommended for very steep terrain.</span>
-<span class="sd">        Passing &quot;slope&quot;&quot; runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes. </span>
+<span class="sd">        Passing &quot;slope&quot;&quot; runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes.</span>
 <span class="sd">    n_angles : int, optional</span>
 <span class="sd">        Number of angles used in horizon calculations (default is 64).</span>
-<span class="sd">        As a reference, n=72 computes every 5deg, n=64 every 5.6deg, n=32 every 11.25deg, etc.  </span>
+<span class="sd">        As a reference, n=72 computes every 5deg, n=64 every 5.6deg, n=32 every 11.25deg, etc.</span>
 <span class="sd">    keep_horizon_files : bool, optional</span>
-<span class="sd">        Horizon angles are created in output_dir as netcdfs. False deletes files, and True keeps them. These angles are based from zenith.        </span>
+<span class="sd">        Horizon angles are created in output_dir as netcdfs. False deletes files, and True keeps them. These angles are based from zenith.</span>
 <span class="sd">    logging_level : str, optional</span>
 <span class="sd">        Logging verbosity level (default is &quot;INFO&quot;); similar to apply_oe.</span>
 <span class="sd">    log_file : str or None, optional</span>
 <span class="sd">        File path to write logs; similar to apply_oe.</span>
 <span class="sd">    n_cores : int, optional</span>
-<span class="sd">        Number of CPU cores to use for parallel processing (default is 1). Only used for method=&quot;horizon&quot;. </span>
+<span class="sd">        Number of CPU cores to use for parallel processing (default is 1). Only used for method=&quot;horizon&quot;.</span>
 <span class="sd">        Note: n_cores should ideally not be larger than n_angles.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># set up logging for skyview.</span>
@@ -5931,7 +5929,6 @@
         <span class="c1"># Start up a ray instance for parallel work</span>
         <span class="n">rayargs</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;ignore_reinit_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-            <span class="s2">&quot;local_mode&quot;</span><span class="p">:</span> <span class="n">n_cores</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span>
             <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="n">ray_address</span><span class="p">,</span>
             <span class="s2">&quot;include_dashboard&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
             <span class="s2">&quot;_temp_dir&quot;</span><span class="p">:</span> <span class="n">ray_temp_dir</span><span class="p">,</span>
@@ -6181,7 +6178,6 @@
     <span class="c1"># Start up a ray instance for parallel work</span>
     <span class="n">rayargs</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;ignore_reinit_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;local_mode&quot;</span><span class="p">:</span> <span class="n">n_cores</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span>
         <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="n">ray_address</span><span class="p">,</span>
         <span class="s2">&quot;include_dashboard&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
         <span class="s2">&quot;_temp_dir&quot;</span><span class="p">:</span> <span class="n">ray_temp_dir</span><span class="p">,</span>

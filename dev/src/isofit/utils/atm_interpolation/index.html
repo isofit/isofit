@@ -4858,9 +4858,7 @@
 <span class="normal">361</span>
 <span class="normal">362</span>
 <span class="normal">363</span>
-<span class="normal">364</span>
-<span class="normal">365</span>
-<span class="normal">366</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">364</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5158,9 +5156,7 @@
 
     <span class="c1"># Initialize ray cluster</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span>
-        <span class="o">**</span><span class="p">{</span><span class="s2">&quot;ignore_reinit_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;local_mode&quot;</span><span class="p">:</span> <span class="n">n_cores</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">}</span>
-    <span class="p">)</span>
+    <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s2">&quot;ignore_reinit_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">})</span>
 
     <span class="n">n_cores</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">n_cores</span><span class="p">,</span> <span class="n">n_input_lines</span><span class="p">)</span>
 
