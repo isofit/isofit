@@ -413,7 +413,7 @@ class CreateNetCDF(Create):
 
 
 class CreateZarr(Create):
-    def __init__(self, file, *args, store="DirectoryStore", **kwargs):
+    def __init__(self, file, *args, **kwargs):
         """
         Prepare a Zarr v2 LUT store
 
@@ -435,13 +435,11 @@ class CreateZarr(Create):
             Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
-        store : str, default="DirectoryStore"
-            Zarr backend storage to use. See: https://zarr.readthedocs.io/en/v2.15.0/api/storage.html
         """
         self.flush_immediately = False
 
-        self.store = getattr(zarr.storage, store)(file)
-        self.z = zarr.group(store=self.store, overwrite=True)
+        self.store = zarr.storage.LocalStore(file)
+        self.z = zarr.open_group(store=self.store, mode="w", zarr_format=3)
 
         super().__init__(file, *args, **kwargs)
 
@@ -472,7 +470,7 @@ class CreateZarr(Create):
         value : any
             Value to set
         """
-        self.z[key] = value
+        self.z[key][...] = value
 
     def initialize(self, ret=False) -> None | xr.Dataset:
         """
@@ -490,54 +488,61 @@ class CreateZarr(Create):
         """
         self.z.attrs.update(self.attrs)
 
-        array = self.z.array("wl", self.wl, fill_value=None)
-        array.attrs["_ARRAY_DIMENSIONS"] = ["wl"]
+        # Coordinates
+        array = self.z.create_array(
+            name="wl", data=self.wl, fill_value=None, dimension_names=["wl"]
+        )
 
         for key, vals in self.grid.items():
-            array = self.z.array(key, vals, dtype="float64", fill_value=None)
-            array.attrs["_ARRAY_DIMENSIONS"] = [key]
+            array = self.z.create_array(
+                name=key, data=vals, fill_value=None, dimension_names=[key]
+            )
 
         # Constants
-        dims = ()
+        dims = []
         for key, vals in self.consts.items():
-            array = self.z.array(key, vals, dtype="float64")
-            array.attrs["_ARRAY_DIMENSIONS"] = dims
+            array = self.z.create_array(
+                name=key, data=np.array(vals), fill_value=None, dimension_names=dims
+            )
 
         # One dimensional arrays
-        dims = ("wl",)
+        dims = ["wl"]
         shape = (len(self.wl),)
         for key, vals in self.onedim.items():
-            attrs = {"_ARRAY_DIMENSIONS": dims}
-            if not isinstance(vals, Iterable):
-                array = self.z.create(
-                    name=key, shape=shape, dtype="float64", fill_value=vals
+            if isinstance(vals, Iterable):
+                array = self.z.create_array(
+                    name=key, data=vals, fill_value=None, dimension_names=dims
                 )
             else:
-                array = self.z.array(key, vals, dtype="float64", fill_value=None)
-
-            array.attrs.update(attrs)
+                array = self.z.create_array(
+                    name=key,
+                    shape=shape,
+                    dtype="float64",
+                    fill_value=None,
+                    dimension_names=dims,
+                )
 
         # Multi dimensional arrays
-        dims += tuple(self.grid)
+        dims += list(self.grid)
         shape = list(self.sizes.values())
         for key, vals in self.alldim.items():
-            attrs = {"_ARRAY_DIMENSIONS": dims}
-            if not isinstance(vals, Iterable):
-                array = self.z.create(
+            if isinstance(vals, Iterable):
+                array = self.z.create_array(
+                    key=key,
+                    data=vals,
+                    fill_value=None,
+                    chunks=self.chunks,
+                    dimension_names=dims,
+                )
+            else:
+                array = self.z.create_array(
                     name=key,
                     shape=shape,
                     dtype="float64",
                     fill_value=vals,
                     chunks=self.chunks,
+                    dimension_names=dims,
                 )
-            else:
-                array = self.z.array(
-                    key, vals, dtype="float64", fill_value=None, chunks=self.chunks
-                )
-
-            array.attrs.update(attrs)
-
-        zarr.consolidate_metadata(self.store)
 
     def _flush(self) -> None:
         """
@@ -553,13 +558,17 @@ class CreateZarr(Create):
             for key, vals in data.items():
                 if key == "wl":
                     continue
+
                 if key in self.consts:
                     self.z[key][...] = vals
+
                 elif key in self.onedim:
                     self.z[key][:] = vals
+
                 elif key in self.alldim:
                     index = (slice(None),) + tuple(self.pointIndices(point))
                     self.z[key][index] = vals
+
                 else:
                     unknowns.update([key])
 
@@ -604,8 +613,14 @@ class CreateZarr(Create):
         self.attrs[key] = value
         self.z.attrs.update({key: value})
 
-        # Optimizes metadata for xarray
-        zarr.consolidate_metadata(self.store)
+    def finalize(self, *args, **kwargs):
+        """
+        Finalizes the Zarr store by consolidating the metadata at the end to make
+        reading it more efficient via xarray
+        """
+        super().finalize(*args, **kwargs)
+
+        zarr.consolidate_metadata(self.store, zarr_format=3)
 
 
 def findSlice(dim, val):
