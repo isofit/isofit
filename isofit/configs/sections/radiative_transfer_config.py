@@ -401,7 +401,7 @@ class RadiativeTransferConfig(BaseConfigSection):
         """
         float: Max slope value used in LUT component calculations to inform minimum cos_i.  
         Only relevant if terrain_style is 'dem' and a 6 component model is used. 
-        This can avoid runaway results at low values where diffuse radiance dominates.
+        This can avoid runaway results at low cos_i values where diffuse radiance dominates.
         """
 
         self.set_config_options(sub_configdic)

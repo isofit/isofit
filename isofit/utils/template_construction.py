@@ -734,7 +734,7 @@ def build_config(
         retrieve_co2:                         flag to include CO2 in lut and retrieval
         presolve:                             set this up as a presolve configuration
         terrain_style:                        style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
-        max_slope:                            maximum terrain slope, used to inform minimum cos_i
+        max_slope:                            maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat
     """
 
     if use_superpixels:
