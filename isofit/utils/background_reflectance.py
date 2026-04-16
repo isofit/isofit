@@ -25,7 +25,9 @@ from scipy.ndimage import uniform_filter
 from isofit.core.common import envi_header
 from isofit.utils.algebraic_line import algebraic_line
 from isofit.core.forward import ForwardModel
+from isofit.core.units import m_to_km, km_to_m
 from isofit.configs import configs
+from isofit.core.multistate import update_config_for_surface
 from isofit.core.fileio import initialize_output
 from isofit.utils import extractions, reducers
 
@@ -105,13 +107,22 @@ def background_reflectance(
     MIN_RANGE = 0.2  # assumed min range [km]
 
     conf = configs.create_new_config(paths.h2o_config_path)
+
+    # If using multisurface, we grab the first surface from the list
+    # TODO this is the only instance of this, but perhaps a config method
+    # could help catch this for other future cases.
+    if not conf.forward_model.surface.surface_category:
+        conf = update_config_for_surface(
+            conf, list(conf.forward_model.surface.Surfaces.keys())[0]
+        )
+
     fm = ForwardModel(conf)
     wl = fm.surface.wl
 
     # Estimate pixel size and adjacency range in km (pixel size is approx. based on loc file)
     loc = envi.open(envi_header(input_loc), input_loc).open_memmap()
     rows, cols, _ = loc.shape
-    pixel_size = approx_pixel_size(loc=loc, nodata_value=nodata_value) / 1000.0  # km
+    pixel_size = m_to_km(approx_pixel_size(loc=loc, nodata_value=nodata_value))
     adj_range = get_adjacency_range(
         sensor_alt_asl=mean_altitude_km,
         ground_alt_asl=mean_elevation_km,
@@ -119,7 +130,7 @@ def background_reflectance(
         min_range=MIN_RANGE,
     )
     logging.info(
-        f"For background reflectance assuming pixel size of {pixel_size*1000:.2f} m "
+        f"For background reflectance assuming pixel size of {km_to_m(pixel_size):.2f} m "
         f"and adjacency range of {adj_range:.2f} km."
     )
 
