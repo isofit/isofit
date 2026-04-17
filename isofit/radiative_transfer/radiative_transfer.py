@@ -348,9 +348,20 @@ class RadiativeTransfer:
                     if self.rt_engines[0].rt_mode == "transm"
                     else r[key]
                 )
+
         # Topographic shadow mask (0=shadow, 1=sunlit pixel).
         # for now, this is always set to 1.0.
         b = 1.0
+
+        # Assumption of the topography of the background
+        cos_i_bg = geom.coszen
+        skyview_factor_bg = 1.0
+
+        # Used to modulate the terrain view factor for target pixel and background
+        # NOTE for now, this is assumed a flat slope, such that terrain view is,
+        # v_t = (1 + cos_slope) / 2 - skyview   =    (1 + 1)/2  - skyview
+        cos_slope = 1.0
+        cos_slope_bg = 1.0
 
         # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.
         # Downward diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
@@ -368,6 +379,19 @@ class RadiativeTransfer:
         # applies to the downward diffuse terms
         L_dif_dir *= hays_model
         L_dif_dif *= hays_model
+
+        # Re-reflection from nearby surface contributing to at surface signal
+        # Assumptions: no atmospheric attenuation, and reflectance is isotropic over the field of view
+        if geom.bg_rfl is not None:
+
+            v_t = (1 + cos_slope) / 2 - skyview_factor
+            v_t_avg = (1 + cos_slope_bg) / 2 - skyview_factor_bg
+            t = 1 + ((geom.bg_rfl * v_t) / (1 - geom.bg_rfl * v_t_avg))
+
+            L_dir_dir *= t
+            L_dif_dir *= t
+            L_dir_dif *= t
+            L_dif_dif *= t
 
         return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
