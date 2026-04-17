@@ -20,14 +20,14 @@
 import logging
 import os
 import shutil
-from os.path import join, isfile, isdir
 import time
 import warnings
+from os.path import isdir, isfile, join
 
 import click
+import netCDF4 as nc
 import numpy as np
 import ray
-import netCDF4 as nc
 from spectral.io import envi
 
 from isofit.core.common import envi_header, eps
@@ -52,17 +52,17 @@ def skyview(
 ):
     """\
     Applies sky view factor calculation for a given projected DEM or DSM. Much of this code was borrowed from ARS Topo-Calc.
-    The key thing here was to create a python-only, rasterio-free port of this that could be used within ISOFIT. We also included 
+    The key thing here was to create a python-only, rasterio-free port of this that could be used within ISOFIT. We also included
     improvements that are current in Jeff Dozier's horizon method in Matlab (https://github.com/DozierJeff/Topographic-Horizons).
     Following suggestions from Dozier (2021), multiprocessing is leveraged here w.r.t. to n_angles rotating the image. As default,
     sky view is computed with n angles = 64 which in most cases is of sufficient accuracy to resolve but more angles may be used.
-    
+
     Optionally to this horizon based method, one can pass method="slope" to compute a faster estimate that may be sufficent for regions with lower relief.
-    The slope based estimate is simply, svf = cos^2(slope/2). 
-    
-    Yet another option is to pass an ISOFIT "OBS" or "LOC" file as input and using the obs_or_loc arg. 
-    OBS files have slope data and can be used for method='slope' only. LOC files have elevation data and can be used for method='slope'. 
-    One can also use the full horizon method on the LOC file although this is not recommended because the edges miss information 
+    The slope based estimate is simply, svf = cos^2(slope/2).
+
+    Yet another option is to pass an ISOFIT "OBS" or "LOC" file as input and using the obs_or_loc arg.
+    OBS files have slope data and can be used for method='slope' only. LOC files have elevation data and can be used for method='slope'.
+    One can also use the full horizon method on the LOC file although this is not recommended because the edges miss information
     (a warning will be triggered in this case).
 
     \b
@@ -79,18 +79,18 @@ def skyview(
         If 'loc' is selected it well select the elevation data from index 2. None will assume a single band elevation data is passed.
     method : str, optional
         Options are either "horizon" or "slope". Passing "horizon" runs the full computation and is recommended for very steep terrain.
-        Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes. 
+        Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes.
     n_angles : int, optional
         Number of angles used in horizon calculations (default is 64).
-        As a reference, n=72 computes every 5deg, n=64 every 5.6deg, n=32 every 11.25deg, etc.  
+        As a reference, n=72 computes every 5deg, n=64 every 5.6deg, n=32 every 11.25deg, etc.
     keep_horizon_files : bool, optional
-        Horizon angles are created in output_dir as netcdfs. False deletes files, and True keeps them. These angles are based from zenith.        
+        Horizon angles are created in output_dir as netcdfs. False deletes files, and True keeps them. These angles are based from zenith.
     logging_level : str, optional
         Logging verbosity level (default is "INFO"); similar to apply_oe.
     log_file : str or None, optional
         File path to write logs; similar to apply_oe.
     n_cores : int, optional
-        Number of CPU cores to use for parallel processing (default is 1). Only used for method="horizon". 
+        Number of CPU cores to use for parallel processing (default is 1). Only used for method="horizon".
         Note: n_cores should ideally not be larger than n_angles.
     """
     # set up logging for skyview.
@@ -185,7 +185,6 @@ def skyview(
         # Start up a ray instance for parallel work
         rayargs = {
             "ignore_reinit_error": True,
-            "local_mode": n_cores == 1,
             "address": ray_address,
             "include_dashboard": False,
             "_temp_dir": ray_temp_dir,
@@ -435,7 +434,6 @@ def create_shadow_mask(
     # Start up a ray instance for parallel work
     rayargs = {
         "ignore_reinit_error": True,
-        "local_mode": n_cores == 1,
         "address": ray_address,
         "include_dashboard": False,
         "_temp_dir": ray_temp_dir,
