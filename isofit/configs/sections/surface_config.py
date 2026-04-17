@@ -69,10 +69,10 @@ class SurfaceConfig(BaseConfigSection):
         self.surface_T_prior_sigma_degK = 1.0
 
         self._sun_glint_prior_sigma_type = float
-        self.sun_glint_prior_sigma = 0.1
+        self.sun_glint_prior_sigma = 10.0
 
         self._sky_glint_prior_sigma_type = float
-        self.sky_glint_prior_sigma = 0.001
+        self.sky_glint_prior_sigma = 10000.0
 
         self.set_config_options(sub_configdic)
 
