@@ -143,6 +143,9 @@ class RadiativeTransfer:
 
         self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
 
+        # 1c or 3c?
+        self.multipart_transmittance = self.rt_engines[0].multipart_transmittance
+
     def xa(self):
         """Pull the priors from each of the individual RTs."""
         return self.prior_mean
@@ -180,6 +183,8 @@ class RadiativeTransfer:
         x_RT,
         rho_dir_dir,
         rho_dif_dir,
+        rho_dir_dif,
+        rho_dif_dif,
         Ls,
         L_tot,
         L_dir_dir,
@@ -193,32 +198,19 @@ class RadiativeTransfer:
         Physics-based forward model to calculate at-sensor radiance.
         Includes topography, background reflectance, and glint.
         """
-        # Adjacency effects
-        # ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object
-        #  or from the surface model, i.e., the same way as we do with the target pixel reflectance
-
-        rho_dir_dif = (
-            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dir_dir
-        )
-        rho_dif_dif = (
-            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dif_dir
-        )
-
         # Atmospheric path radiance
         L_atm = self.get_L_atm(x_RT, geom)
 
         # Atmospheric spherical albedo
         s_alb = r["sphalb"]
         atm_surface_scattering = s_alb * rho_dif_dif
-        eq_11_term = 1 - atm_surface_scattering
 
         # Special case: 1-component model
-        if not isinstance(L_dir_dir, np.ndarray) or len(L_dir_dir) == 1:
+        if not self.multipart_transmittance:
             # we assume rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif
             rho_dif_dif = rho_dir_dir
             # eliminate spherical albedo and one reflectance term from numerator if using 1-component model
             atm_surface_scattering = 1
-            eq_11_term = 1
 
         # Thermal transmittance
         L_up = Ls * self.get_upward_transm(r=r, geom=geom)
@@ -257,9 +249,9 @@ class RadiativeTransfer:
         ret = (
             L_atm
             + L_dir_dir * rho_dir_dir
-            + L_dif_dir * rho_dif_dir / eq_11_term
+            + L_dif_dir * rho_dif_dir
             + L_dir_dif * rho_dir_dif
-            + L_dif_dif * rho_dif_dif / eq_11_term
+            + L_dif_dif * rho_dif_dif
             + (L_tot * atm_surface_scattering * rho_dif_dif) / (1 - s_alb * rho_dif_dif)
             + L_up
         )
@@ -296,9 +288,12 @@ class RadiativeTransfer:
                 L_atms.append(L_atm)
         return np.hstack(L_atms)
 
-    def get_L_coupled(self, r: dict, geom: Geometry):
+    def get_L_coupled(self, r: dict, geom: Geometry, rho_dif_dif: np.ndarray = 0):
         """Get the interpolated radiance terms on the sun-to-surface-to-sensor path.
         These follow the physics as presented in Guanter (2006), Vermote et al. (1997), and Tanre et al. (1983).
+
+        Note:   This function is only applicable to the 6c run case
+                where r contains populated separated transmittances
 
         Args:
             r:      interpolated radiative transfer quantities from the LUT
@@ -328,26 +323,12 @@ class RadiativeTransfer:
         # radiances along all optical paths
         L_coupled = []
 
-        if any(
-            [
-                not isinstance(r[key], np.ndarray) or len(r[key]) == 1
-                for key in self.rt_engines[0].coupling_terms
-            ]
-        ):
-            # In case of the 1-component model, we cannot populate the coupling terms
-            L_coupled = [
-                0,
-                0,
-                0,
-                0,
-            ]
-        else:
-            for key in self.rt_engines[0].coupling_terms:
-                L_coupled.append(
-                    units.transm_to_rdn(r[key], coszen=coszen, solar_irr=self.solar_irr)
-                    if self.rt_engines[0].rt_mode == "transm"
-                    else r[key]
-                )
+        for key in self.rt_engines[0].coupling_terms:
+            L_coupled.append(
+                units.transm_to_rdn(r[key], coszen=coszen, solar_irr=self.solar_irr)
+                if self.rt_engines[0].rt_mode == "transm"
+                else r[key]
+            )
         # Topographic shadow mask (0=shadow, 1=sunlit pixel).
         # for now, this is always set to 1.0.
         b = 1.0
@@ -369,32 +350,57 @@ class RadiativeTransfer:
         L_dif_dir *= hays_model
         L_dif_dif *= hays_model
 
-        return L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
+        # Apply equation 11
+        # If no rho_dif_dif passed eq_11_term -> 1
+        eq_11_term = 1 - (r["sphalb"] * rho_dif_dif)
 
-    def calc_RT_quantities(self, x_RT: np.ndarray, geom: Geometry):
+        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
+        L_dif_dir /= eq_11_term
+        L_dif_dif /= eq_11_term
+
+        return L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
+
+    def calc_RT_quantities(
+        self, x_RT: np.ndarray, geom: Geometry, rho_dif_dif: np.ndarray = 0
+    ):
         """Retrieves the RT quantities including the LUT sample (r),
         and the radiances (L). This function handles the hand-off between
-        the 1c and 4c model.
+        the 1c and 6c model.
 
         In the 1c case, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = 0,
         and L_tot, L_down_dir, and L_down_dif are populated within the
         if statement.
 
-        In the 4c case, we always use returns from get_L_coupled
-
+        In the 6c case, we always use returns from get_L_coupled
         All quantities are on the sun-to-surface-to-sensor path.
 
+        Args:
+            x_RT: RT portion of the state vector.
+            geom: Geometry object for the current observation.
+            rho_dif_dif: Apparent surface reflectance for
+                hemispherical-hemispherical photon paths.
+                Included here to incorporate surface-atm coupling
+                following Eq. 11 of Guanter et al, 2009.
+
+        Returns:
+            r: LUT sample dictionary of shared RT quantities.
+            L_tot: total downwelling radiance (uW/nm/sr/cm2).
+            L_dir_dir: direct-to-direct radiance component; zero in 1c mode.
+            L_dif_dir: diffuse-to-direct radiance component; zero in 1c mode.
+            L_dir_dif: direct-to-diffuse radiance component; zero in 1c mode.
+            L_dif_dif: diffuse-to-diffuse radiance component; zero in 1c mode.
         """
 
         # Propogate LUT
         r = self.get_shared_rtm_quantities(x_RT, geom)
 
-        # Default: get directional radiances
-        L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(r, geom)
-        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
-
         # Handle 1c L_tot. NOTE: transm_down_dif = total transm for 1c case.
-        if not isinstance(L_tot, np.ndarray) or len(L_tot) == 1:
+        if self.multipart_transmittance:
+            # Get directional radiances
+            L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(
+                r, geom, rho_dif_dif=rho_dif_dif
+            )
+        if not self.multipart_transmittance:
             coszen = geom.verify(self.coszen)["coszen"]
             L_tots = []
             for RT in self.rt_engines:
@@ -413,6 +419,10 @@ class RadiativeTransfer:
                         )
                     L_tots.append(L_tot)
             L_tot = np.hstack(L_tots)
+            L_dir_dir = 0
+            L_dif_dir = 0
+            L_dir_dif = 0
+            L_dif_dif = 0
 
         return (
             r,
@@ -449,7 +459,9 @@ class RadiativeTransfer:
                 )
             return transup
 
-    def drdn_dRT(self, x_RT, geom, rho_dir_dir, rho_dif_dir, Ls, rdn):
+    def drdn_dRT(
+        self, x_RT, geom, rho_dir_dir, rho_dif_dir, rho_dir_dif, rho_dif_dif, Ls, rdn
+    ):
         """Derivative of estimated radiance w.r.t. RT statevector elements.
         We use a numerical approach to approximate dRT with a constant surface
         reflectance. This is a reasonable approx. for the multicomponent surface.
@@ -468,13 +480,15 @@ class RadiativeTransfer:
                 L_dif_dir,
                 L_dir_dif,
                 L_dif_dif,
-            ) = self.calc_RT_quantities(x_RT_perturb, geom)
+            ) = self.calc_RT_quantities(x_RT_perturb, geom, rho_dif_dif)
 
             # Surface state is held constant?
             rdne = self.calc_rdn(
                 x_RT_perturb,
                 rho_dir_dir,
                 rho_dif_dir,
+                rho_dir_dif,
+                rho_dif_dif,
                 Ls,
                 L_tot,
                 L_dir_dir,
@@ -490,7 +504,9 @@ class RadiativeTransfer:
 
         return K_RT
 
-    def drdn_dRTb(self, x_RT, geom, rho_dir_dir, rho_dif_dir, Ls, rdn):
+    def drdn_dRTb(
+        self, x_RT, geom, rho_dir_dir, rho_dif_dir, rho_dir_dif, rho_dif_dif, Ls, rdn
+    ):
         """Derivative of estimated rdn w.r.t. H2O_ABSCO
 
         Currently, the K_b matrix only covers forward model derivatives
@@ -525,12 +541,14 @@ class RadiativeTransfer:
                         L_dif_dir,
                         L_dir_dif,
                         L_dif_dif,
-                    ) = self.calc_RT_quantities(x_RT_perturb, geom)
+                    ) = self.calc_RT_quantities(x_RT_perturb, geom, rho_dif_dif)
 
                     rdne = self.calc_rdn(
                         x_RT_perturb,
                         rho_dir_dir,
                         rho_dif_dir,
+                        rho_dir_dif,
+                        rho_dif_dif,
                         Ls,
                         L_tot,
                         L_dir_dir,
