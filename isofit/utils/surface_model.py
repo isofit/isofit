@@ -45,6 +45,18 @@ def next_diag_val(C: np.ndarray, starting_index, direction):
     return None
 
 
+def get_winidx(wl, window_range):
+    """find with wavelength indices in a given range
+
+    Args:
+        wl (_type_): wavelengths
+        window_range (_type_): selection range
+    """
+    cond = np.logical_and(wl >= window_range[0], wl < window_range[1])
+    window_idx = np.where(cond)[0]
+    return window_idx
+
+
 def surface_model(
     config_path: str,
     wavelength_path: str = None,
@@ -100,6 +112,8 @@ def surface_model(
 
     normalize = config["normalize"]
     reference_windows = config["reference_windows"]
+    normalization_windows_eval = config.get("normalization_windows_eval", [])
+    normalization_windows_apply = config.get("normalization_windows_apply", [])
 
     # Get selection metric if it exists
     selection_metric = config.get("selection_metric", "Euclidean")
@@ -126,10 +140,21 @@ def surface_model(
     normind = np.array([np.argmin(abs(wl - w)) for w in refwl])
     refwl = np.array(refwl, dtype=float)
 
+    window_regions_eval = []
+    window_regions_apply = []
+    for window_e, window_a in zip(normalization_windows_eval, normalization_windows_apply):
+        active_wl = np.logical_and(wl >= window_e[0], wl < window_e[1])
+        window_regions_eval.append(active_wl)
+        active_wl = np.logical_and(wl >= window_a[0], wl < window_a[1])
+        window_regions_apply.append(active_wl)
+
     # create basic model template
     model = {
         "normalize": normalize,
         "selection_metric": selection_metric,
+        "reference_windows": reference_windows,
+        "normalization_windows_eval": normalization_windows_eval,
+        "normalization_windows_apply": normalization_windows_apply,
         "wl": wl,
         "means": [],
         "covs": [],
@@ -138,6 +163,7 @@ def surface_model(
         "attributes": [],
         "refwl": refwl,
         "surface_categories": [],
+        "component_window_idx": [],
     }
 
     # each "source" (i.e. spectral library) is treated separately
@@ -280,14 +306,12 @@ def surface_model(
                 C_attr = np.cov(spectra_attr[Z == ci, :], rowvar=False)
 
             # for i in range(nchan):
+            model["component_window_idx"].append([])
             for window in windows:
-                window_idx = np.where(
-                    np.logical_and(
-                        wl >= window["interval"][0], wl < window["interval"][1]
-                    )
-                )[0]
+                window_idx = get_winidx(wl, window["interval"])
                 if len(window_idx) == 0:
                     continue
+                model["component_window_idx"][-1].append(window_idx)
                 window_range = slice(window_idx[0], window_idx[-1] + 1)
 
                 # To minimize bias, leave the channels independent
@@ -301,11 +325,7 @@ def surface_model(
                     C[window_range, window_range] = c_diag
 
             for window in windows:
-                window_idx = np.where(
-                    np.logical_and(
-                        wl >= window["interval"][0], wl < window["interval"][1]
-                    )
-                )[0]
+                window_idx = get_winidx(wl, window["interval"])
                 if len(window_idx) == 0:
                     continue
                 window_range = slice(window_idx[0], window_idx[-1] + 1)
@@ -355,11 +375,7 @@ def surface_model(
             # Now do any cross-block feathering by augmenting the precision matrix
             P = inv(C)
             for window in windows:
-                window_idx = np.where(
-                    np.logical_and(
-                        wl >= window["interval"][0], wl < window["interval"][1]
-                    )
-                )[0]
+                window_idx = get_winidx(wl, window["interval"])
                 if len(window_idx) == 0:
                     continue
 
@@ -382,16 +398,35 @@ def surface_model(
             C = inv(P)
 
             # Normalize the component spectrum if desired
+            z = np.ones(len(wl ))
+            z_C = np.ones(len(wl ))
             if normalize == "Euclidean":
-                z = np.sqrt(np.sum(pow(m[normind], 2)))
+                z[:] = np.sqrt(np.sum(pow(m[normind], 2)))
+                z_C = z
+            elif normalize == "Euclidean-window":
+                for _win in range(len(normalization_windows_eval)):
+                    z[window_regions_apply[_win]] = np.sqrt(np.sum(pow(m[window_regions_eval[_win]], 2)))
+                # keep traditional normalization so we can keep Euclidean regularization 
+                z_C = np.sqrt(np.sum(pow(m[normind], 2)))
             elif normalize == "RMS":
-                z = np.sqrt(np.mean(pow(m[normind], 2)))
+                z[:] = np.sqrt(np.mean(pow(m[normind], 2)))
+                z_C = z
             elif normalize == "None":
-                z = 1.0
+                z[:] = 1.0
+                z_C = z
+            #elif normalize == "Euclidean-window":
+            #    z = np.ones(len(wl))
+            #    for window in windows:
+            #        window_idx = get_winidx(wl, window["interval"])
+            #        if len(window_idx) == 0:
+            #            continue
+            #        z[window_idx] = np.sqrt(np.sum(pow(m[window_idx], 2)))
+
             else:
                 raise ValueError("Unrecognized normalization: %s\n" % normalize)
+            z[z < 1] = 1
             m = m / z
-            C = C / (z**2)
+            C = C / (np.sum(z_C)**2)
 
             try:
                 Cinv = svd_inv(C)

@@ -52,14 +52,49 @@ class MultiComponentSurface(Surface):
         self.wl = self.model_dict["wl"][0]
         self.n_wl = len(self.wl)
 
-        # Set up normalization method
+        # Set up normalization method.  All norm functions accept the full
+        # wavelength reflectance array `lamb` and return either a scalar or a
+        # vector of the same length.  Scalar norms use idx_ref internally to
+        # preserve backwards-compatible behaviour.
         self.normalize = self.model_dict["normalize"]
         if self.normalize == "Euclidean":
-            self.norm = lambda r: norm(r)
+            self.norm = lambda lamb, geom: norm(lamb[self.idx_ref])
+            self.norm_C = self.norm
         elif self.normalize == "RMS":
-            self.norm = lambda r: np.sqrt(np.mean(pow(r, 2)))
+            self.norm = lambda lamb, geom: np.sqrt(np.mean(pow(lamb[self.idx_ref], 2)))
+            self.norm_C = self.norm
         elif self.normalize == "None":
-            self.norm = lambda r: 1.0
+            self.norm = lambda lamb, geom: 1.0
+            self.norm_C = self.norm
+        elif self.normalize == "Euclidean-window":
+            # Unpack the nested object arrays from .mat loading into a clean
+            # list-of-lists-of-1d-arrays: component_win_idx[comp][win] = 1d idx
+            #raw = self.model_dict["component_window_idx"]
+            #self.component_win_idx = []
+            #for ci in range(raw.shape[-1]):
+            #    comp_wins = raw[0, ci]
+            #    wins = []
+            #    for wi in range(comp_wins.shape[-1]):
+            #        wins.append(comp_wins[0, wi].ravel())
+            #    self.component_win_idx.append(wins)
+
+            #def norm_func_window(lamb, comp_ind):
+            #    z = np.ones(len(lamb))
+            #    for win in self.component_win_idx[comp_ind]:
+            #        z[win[0] : win[-1] + 1] = norm(lamb[win[0] : win[-1] + 1])
+            #    return z
+
+            #self.norm = lambda lamb, geom: norm_func_window(lamb, geom.surf_cmp_init)
+            def norm_func_window(lamb, windows_eval, windows_apply):
+                z = np.ones(len(lamb))
+                for win_e, win_a in zip(windows_eval, windows_apply):
+                    # Second term here is because the euclidean norm has already been calculated
+                    z[win_a] = norm(lamb[win_e]) #* norm(lamb[self.idx_ref])
+
+                return z
+            self.norm = lambda lamb, geom: norm_func_window(lamb, self.norm_window_eval_idx, self.norm_window_apply_idx)
+            self.norm_C = lambda lamb, geom: norm(lamb[self.idx_ref])
+                
         else:
             raise ValueError("Unrecognized Normalization: %s\n" % self.normalize)
 
@@ -74,6 +109,19 @@ class MultiComponentSurface(Surface):
         self.refwl = np.squeeze(self.model_dict["refwl"])
         self.idx_ref = [np.argmin(abs(self.wl - w)) for w in np.squeeze(self.refwl)]
         self.idx_ref = np.array(self.idx_ref)
+
+        self.reference_window_idx = [
+            [np.argmin(abs(self.wl - w)) for w in window]
+            for window in self.model_dict["reference_windows"]
+        ]
+        self.norm_window_eval_idx = [
+            np.where(np.logical_and(self.wl >= window[0], self.wl < window[1]))
+            for window in self.model_dict["normalization_windows_eval"]
+        ]
+        self.norm_window_apply_idx = [
+            np.where(np.logical_and(self.wl >= window[0], self.wl < window[1]))
+            for window in self.model_dict["normalization_windows_apply"]
+        ]
 
         # Variables retrieved: each channel maps to a reflectance model parameter
         rmin, rmax = -0.05, 2.0
@@ -136,19 +184,48 @@ class MultiComponentSurface(Surface):
         # Get the (possibly normalized) reflectance
         lamb = self.calc_lamb(x_surface, geom)
         lamb_ref = lamb[self.idx_ref]
-        lamb_ref = lamb_ref / self.norm(lamb_ref)
 
-        # Only support euclidean distance comparrison for now
+        #if self.normalize == "Euclidean-window":
+        #    # Per-component window normalization: each component has its own
+        #    # normalization windows, so we must evaluate each separately
+        #    # (geom.surf_cmp_init is not yet available during selection).
+        #    # Window indices are in full-wl space, so normalise lamb first,
+        #    # then extract idx_ref for comparison with self.mus.
+        #    mds = np.zeros(self.n_comp)
+        #    for i in range(self.n_comp):
+        #        z = np.ones(self.n_wl)
+        #        for win in self.component_win_idx[i]:
+        #            z[win[0] : win[-1] + 1] = norm(lamb[win[0] : win[-1] + 1])
+        #        lamb_ref_norm = lamb_ref / z[self.idx_ref]
+        #        if self.selection_metric == "SGA":
+        #            mds[i] = self.spectral_gradient_angle(
+        #                lamb_ref_norm, self.mus[i][np.newaxis, :]
+        #            )[0]
+        #        elif self.selection_metric == "Euclidean":
+        #            mds[i] = self.euclidean_distance(
+        #                lamb_ref_norm, self.mus[i][np.newaxis, :]
+        #            )[0]
+        #        else:
+        #            raise ValueError(
+        #                "Surface component selection metric not valid:",
+        #                self.selection_metric,
+        #            )
+        #else:
+        lnorm = self.norm(lamb, geom)
+        if type(lnorm) is not float:
+            lnorm = lnorm[self.idx_ref]
+        lamb_ref = lamb_ref / lnorm
         if self.selection_metric == "SGA":
             mds = self.spectral_gradient_angle(lamb_ref, np.array(self.mus))
-        elif self.selection_metric == "Euclidean":
+        elif self.selection_metric == "Euclidean" or "Euclidean-window":
             mds = self.euclidean_distance(
                 lamb_ref,
                 np.array(self.mus),
             )
         else:
             raise ValueError(
-                "Surface component selection metric not valid:", self.selection_metric
+                "Surface component selection metric not valid:",
+                self.selection_metric,
             )
 
         closest = np.argmin(mds)
@@ -173,7 +250,7 @@ class MultiComponentSurface(Surface):
         mu = np.zeros(self.n_state)
         ci = self.component(x_surface, geom)
         lamb_mu = self.component_means[ci]
-        lamb_mu = lamb_mu * self.norm(lamb_ref)
+        lamb_mu = lamb_mu * self.norm(lamb, geom)
         mu[self.idx_lamb] = lamb_mu
 
         return mu
@@ -187,7 +264,12 @@ class MultiComponentSurface(Surface):
         lamb_ref = lamb[self.idx_ref]
         ci = self.component(x_surface, geom)
         Cov = self.component_covs[ci]
-        Sa_unnormalized = Cov * (self.norm(lamb_ref) ** 2)
+        Sa_unnormalized = Cov * self.norm_C(lamb, geom) ** 2
+        ##z = self.norm(lamb, geom)
+        #if np.ndim(z) == 0:
+        #    Sa_unnormalized = Cov * (z ** 2)
+        #else:
+        #    Sa_unnormalized = Cov * np.outer(z, z)
 
         # select the Sa inverse from the list of components
         Sa_inv_normalized = self.Sa_inv_normalized[ci]

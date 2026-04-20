@@ -230,7 +230,7 @@ class Instrument:
             if self.unknowns.channelized_radiometric_uncertainty_file is not None:
                 f = self.unknowns.channelized_radiometric_uncertainty_file
                 u = np.loadtxt(f, comments="#")
-                if len(u.shape) > 0 and u.shape[1] > 1:
+                if len(u.shape) > 1 and u.shape[1] > 1:
                     u = u[:, 1]
                 bval[: self.n_chan] = bval[: self.n_chan] + pow(u, 2)
 
