@@ -4442,6 +4442,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.configs.sections.instrument_config.InstrumentStateVectorConfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        InstrumentStateVectorConfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.configs.sections.instrument_config.InstrumentUnknowns" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4660,7 +4671,45 @@
 <span class="normal">152</span>
 <span class="normal">153</span>
 <span class="normal">154</span>
-<span class="normal">155</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -4683,7 +4732,41 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Type</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs.base_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseConfigSection</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs.sections.statevector_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateVectorConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs.sections.statevector_config</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">StateVectorConfig</span><span class="p">,</span>
+    <span class="n">StateVectorElementConfig</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">InstrumentStateVectorConfig</span><span class="p">(</span><span class="n">StateVectorConfig</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.instrument_config.InstrumentStateVectorConfig"><a href="../../../../../api/isofit/configs/sections/instrument_config/#isofit.configs.sections.instrument_config.InstrumentStateVectorConfig" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Instrument State vector configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EOF_1_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EOF_1</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EOF_2_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EOF_2</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_EOF_3_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EOF_3</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_GROW_FWHM_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GROW_FWHM</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_WL_SHIFT_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">WL_SHIFT</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_WL_SPACE_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">WL_SPACE</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_all_elements</span><span class="p">())</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_nontype_attributes</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_statevector_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">InstrumentUnknowns</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.instrument_config.InstrumentUnknowns"><a href="../../../../../api/isofit/configs/sections/instrument_config/#isofit.configs.sections.instrument_config.InstrumentUnknowns" title="Go to docs">[docs]</a></div>
@@ -4692,6 +4775,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_channelized_radiometric_uncertainty_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty_file</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -4711,6 +4796,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_config_validity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="n">errors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">warnings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
         <span class="n">file_params</span> <span class="o">=</span> <span class="p">[</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty_file</span><span class="p">,</span>
@@ -4721,7 +4807,7 @@
                 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">param</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
                     <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Instrument unknown file: </span><span class="si">{}</span><span class="s2"> not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">errors</span>
+        <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">InstrumentConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.instrument_config.InstrumentConfig"><a href="../../../../../api/isofit/configs/sections/instrument_config/#isofit.configs.sections.instrument_config.InstrumentConfig" title="Go to docs">[docs]</a></div>
@@ -4746,8 +4832,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">fast_resample</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: Approximates a complete resampling by a convolution with a uniform FWHM.&quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_statevector_type</span> <span class="o">=</span> <span class="n">StateVectorConfig</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">statevector</span><span class="p">:</span> <span class="n">StateVectorConfig</span> <span class="o">=</span> <span class="n">StateVectorConfig</span><span class="p">({})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_statevector_type</span> <span class="o">=</span> <span class="n">InstrumentStateVectorConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statevector</span><span class="p">:</span> <span class="n">StateVectorConfig</span> <span class="o">=</span> <span class="n">InstrumentStateVectorConfig</span><span class="p">({})</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_SNR_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">SNR</span> <span class="o">=</span> <span class="kc">None</span>
@@ -4787,6 +4873,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_config_validity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="n">errors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">warnings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
         <span class="n">noise_options</span> <span class="o">=</span> <span class="p">[</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">SNR</span><span class="p">,</span>
@@ -4814,7 +4901,7 @@
                 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">param</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
                     <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Instrument config file: </span><span class="si">{}</span><span class="s2"> not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">errors</span>
+        <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>
 </code></pre></div></td></tr></table></div>
 
 

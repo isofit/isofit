@@ -4708,7 +4708,10 @@
 <span class="normal">161</span>
 <span class="normal">162</span>
 <span class="normal">163</span>
-<span class="normal">164</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -4803,8 +4806,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checking config sections for configuration issues&quot;</span><span class="p">)</span>
 
-        <span class="n">errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_config_validity</span><span class="p">()</span>
+        <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_config_validity</span><span class="p">()</span>
         <span class="n">errors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_inter_section_validity</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">warnings</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">errors</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>

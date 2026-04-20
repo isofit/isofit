@@ -4756,7 +4756,27 @@
 <span class="normal">165</span>
 <span class="normal">166</span>
 <span class="normal">167</span>
-<span class="normal">168</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -4781,7 +4801,16 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">block_diag</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">emissive_radiance</span><span class="p">,</span> <span class="n">svd_inv_sqrt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.surface.surface</span><span class="w"> </span><span class="kn">import</span> <span class="n">DefaultState</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.surface.surface_multicomp</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiComponentSurface</span>
+
+<span class="n">DefaultSurfTempKPrior</span> <span class="o">=</span> <span class="n">DefaultState</span><span class="p">(</span>
+    <span class="n">bounds</span><span class="o">=</span><span class="p">[</span><span class="mf">250.0</span><span class="p">,</span> <span class="mf">400.0</span><span class="p">],</span>
+    <span class="n">scale</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span>
+    <span class="n">prior_mean</span><span class="o">=</span><span class="mf">300.0</span><span class="p">,</span>
+    <span class="n">prior_sigma</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">init</span><span class="o">=</span><span class="mf">300.0</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ThermalSurface</span><span class="p">(</span><span class="n">MultiComponentSurface</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_thermal.ThermalSurface"><a href="../../../../api/isofit/surface/surface_thermal/#isofit.surface.surface_thermal.ThermalSurface" title="Go to docs">[docs]</a></div>
@@ -4795,20 +4824,31 @@
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">full_config</span><span class="p">)</span>
 
-        <span class="c1"># TODO: Enforce this attribute in the config, not here (this is hidden)</span>
         <span class="c1"># Handle additional state vector elements</span>
-        <span class="k">if</span> <span class="s2">&quot;SURF_TEMP_K&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;SURF_TEMP_K&quot;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="mf">300.0</span><span class="p">])</span>  <span class="c1"># This is overwritten below</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="mf">100.0</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="o">.</span><span class="n">extend</span><span class="p">([[</span><span class="mf">250.0</span><span class="p">,</span> <span class="mf">400.0</span><span class="p">]])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;SURF_TEMP_K&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Old syntax:</span>
+        <span class="c1"># self.surface_T_prior_mean_degK = config.statevector.SURF_TEMP_K.get(</span>
+        <span class="c1">#     &quot;prior_mean&quot;</span>
+        <span class="c1"># )</span>
+        <span class="c1"># New syntax from config object:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bounds&quot;</span><span class="p">)])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface_T_prior_mean_degK</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;prior_mean&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface_T_prior_sigma_degK</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;prior_sigma&quot;</span>
+        <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">idx_surface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emissive</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_state</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">emissivity_for_surface_T_init</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">emissivity_for_surface_T_init</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">surface_T_prior_sigma_degK</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">surface_T_prior_sigma_degK</span>
 
         <span class="c1"># Compute and and cache normalized Sa inversions for thermal case</span>
         <span class="n">Cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_T_prior_sigma_degK</span><span class="o">**</span><span class="mi">2</span><span class="p">]])</span>
@@ -4822,7 +4862,7 @@
 <span class="sd">        normalize the result for the calling function.&quot;&quot;&quot;</span>
 
         <span class="n">mu</span> <span class="o">=</span> <span class="n">MultiComponentSurface</span><span class="o">.</span><span class="n">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-        <span class="n">mu</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span><span class="p">]</span>
+        <span class="n">mu</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_T_prior_mean_degK</span>
 
         <span class="k">return</span> <span class="n">mu</span>
 

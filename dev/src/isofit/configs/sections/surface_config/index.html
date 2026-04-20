@@ -4442,6 +4442,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.configs.sections.surface_config.SurfaceStateVectorConfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SurfaceStateVectorConfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.configs.sections.surface_config.SurfaceConfig" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4633,7 +4644,76 @@
 <span class="normal">136</span>
 <span class="normal">137</span>
 <span class="normal">138</span>
-<span class="normal">139</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -4656,8 +4736,48 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Type</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">loadmat</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs.base_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseConfigSection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs.sections.statevector_config</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">StateVectorConfig</span><span class="p">,</span>
+    <span class="n">StateVectorElementConfig</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">recursive_get</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.surface.surface</span><span class="w"> </span><span class="kn">import</span> <span class="n">DefaultState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.surface.surface_glint_model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DefaultSkyGlintPrior</span><span class="p">,</span>
+    <span class="n">DefaultSunGlintPrior</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.surface.surface_thermal</span><span class="w"> </span><span class="kn">import</span> <span class="n">DefaultSurfTempKPrior</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SurfaceStateVectorConfig</span><span class="p">(</span><span class="n">StateVectorConfig</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.surface_config.SurfaceStateVectorConfig"><a href="../../../../../api/isofit/configs/sections/surface_config/#isofit.configs.sections.surface_config.SurfaceStateVectorConfig" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Surface State vector configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SURF_TEMP_K_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span><span class="p">(</span>
+            <span class="n">DefaultSurfTempKPrior</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SKY_GLINT_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SKY_GLINT</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span><span class="p">(</span>
+            <span class="n">DefaultSkyGlintPrior</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SUN_GLINT_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SUN_GLINT</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span><span class="p">(</span>
+            <span class="n">DefaultSunGlintPrior</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_all_elements</span><span class="p">())</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_nontype_attributes</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_statevector_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">SurfaceConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.surface_config.SurfaceConfig"><a href="../../../../../api/isofit/configs/sections/surface_config/#isofit.configs.sections.surface_config.SurfaceConfig" title="Go to docs">[docs]</a></div>
@@ -4666,6 +4786,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_multi_surface_flag_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">multi_surface_flag</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -4695,24 +4817,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_selection_metric_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">selection_metric</span> <span class="o">=</span> <span class="s2">&quot;Euclidean&quot;</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_statevector_type</span> <span class="o">=</span> <span class="n">SurfaceStateVectorConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statevector</span><span class="p">:</span> <span class="n">StateVectorConfig</span> <span class="o">=</span> <span class="n">SurfaceStateVectorConfig</span><span class="p">({})</span>
+
         <span class="c1"># Surface Thermal</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Initial Value recommended by Glynn Hulley.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_emissivity_for_surface_T_init_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emissivity_for_surface_T_init</span> <span class="o">=</span> <span class="mf">0.98</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_surface_T_prior_sigma_degK_type</span> <span class="o">=</span> <span class="nb">float</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">surface_T_prior_sigma_degK</span> <span class="o">=</span> <span class="mf">1.0</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sun_glint_prior_sigma_type</span> <span class="o">=</span> <span class="nb">float</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sun_glint_prior_sigma</span> <span class="o">=</span> <span class="mf">0.1</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sky_glint_prior_sigma_type</span> <span class="o">=</span> <span class="nb">float</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_prior_sigma</span> <span class="o">=</span> <span class="mf">0.001</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">set_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_config_validity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="n">errors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">warnings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Surfaces</span><span class="p">):</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -4771,7 +4888,39 @@
                     <span class="sa">f</span><span class="s2">&quot;int mapping specified for keys: </span><span class="si">{</span><span class="n">missing_ints</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">errors</span>
+        <span class="c1"># Check statevector</span>
+        <span class="n">mat_files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">recursive_get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_config_as_dict</span><span class="p">(),</span> <span class="s2">&quot;surface_file&quot;</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="n">statevec</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="n">value</span>
+            <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="n">recursive_get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_config_as_dict</span><span class="p">(),</span> <span class="s2">&quot;statevector&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">di</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="n">mismatch</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">mat_files</span><span class="p">:</span>
+            <span class="n">model_dict</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;statevec_names&quot;</span><span class="p">,</span> <span class="p">[])):</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">DefaultState</span><span class="o">.</span><span class="n">_fields</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">statevec</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">model_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="p">):</span>
+                        <span class="n">mismatch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mismatch</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;Configured non-reflectance surface statevector &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;elements do not match .mat file.</span><span class="se">\n</span><span class="s2">Run will use configured &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;values in the .json config.&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Mismatching values:&quot;</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">mismatch</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">message</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+
+            <span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>
 </code></pre></div></td></tr></table></div>
 
 

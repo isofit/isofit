@@ -5631,7 +5631,8 @@
 <span class="normal">929</span>
 <span class="normal">930</span>
 <span class="normal">931</span>
-<span class="normal">932</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">932</span>
+<span class="normal">933</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5899,6 +5900,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">open_map_with_retries</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memmap</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">open_map_with_retries</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.fileio.SpectrumFile.open_map_with_retries"><a href="../../../../api/isofit/core/fileio/#isofit.core.fileio.SpectrumFile.open_map_with_retries" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Try to open a memory map, handling Beowulf I/O issues.&quot;&quot;&quot;</span>

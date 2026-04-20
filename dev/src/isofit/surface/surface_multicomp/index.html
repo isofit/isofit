@@ -5084,7 +5084,8 @@
 <span class="normal">383</span>
 <span class="normal">384</span>
 <span class="normal">385</span>
-<span class="normal">386</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">386</span>
+<span class="normal">387</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5164,6 +5165,7 @@
         <span class="c1"># Variables retrieved: each channel maps to a reflectance model parameter</span>
         <span class="n">rmin</span><span class="p">,</span> <span class="n">rmax</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">2.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;RFL_</span><span class="si">%04i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">]</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">idx_surface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">))</span>
 
         <span class="c1"># Change this if you don&#39;t want to analytical solve for all the full statevector elements.</span>

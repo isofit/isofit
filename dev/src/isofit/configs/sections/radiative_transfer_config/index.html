@@ -4442,6 +4442,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.configs.sections.radiative_transfer_config.RTStateVectorConfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RTStateVectorConfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.configs.sections.radiative_transfer_config.RadiativeTransferEngineConfig" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4990,7 +5001,43 @@
 <span class="normal">471</span>
 <span class="normal">472</span>
 <span class="normal">473</span>
-<span class="normal">474</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5017,8 +5064,45 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs.base_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseConfigSection</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs.sections.statevector_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateVectorConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs.sections.statevector_config</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">StateVectorConfig</span><span class="p">,</span>
+    <span class="n">StateVectorElementConfig</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">env</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">RTStateVectorConfig</span><span class="p">(</span><span class="n">StateVectorConfig</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.radiative_transfer_config.RTStateVectorConfig"><a href="../../../../../api/isofit/configs/sections/radiative_transfer_config/#isofit.configs.sections.radiative_transfer_config.RTStateVectorConfig" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    RT State vector configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_H2OSTR_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">H2OSTR</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_AOT550_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">AOT550</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_AERFRAC_1_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">AERFRAC_1</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_AERFRAC_2_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">AERFRAC_2</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_AERFRAC_3_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">AERFRAC_3</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_AIRT_DELTA_K_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">AIRT_DELTA_K</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_surface_elevation_km_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface_elevation_km</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_all_elements</span><span class="p">())</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_nontype_attributes</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_statevector_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">RadiativeTransferEngineConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.radiative_transfer_config.RadiativeTransferEngineConfig"><a href="../../../../../api/isofit/configs/sections/radiative_transfer_config/#isofit.configs.sections.radiative_transfer_config.RadiativeTransferEngineConfig" title="Go to docs">[docs]</a></div>
@@ -5239,6 +5323,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_config_validity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="n">errors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">warnings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
         <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.radiative_transfer.engines</span><span class="w"> </span><span class="kn">import</span> <span class="n">Engines</span>
 
@@ -5328,7 +5413,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_complevel</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_complevel</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;The LUT complevel must be and int greater than 0&quot;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">errors</span>
+        <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">RadiativeTransferUnknownsConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.radiative_transfer_config.RadiativeTransferUnknownsConfig"><a href="../../../../../api/isofit/configs/sections/radiative_transfer_config/#isofit.configs.sections.radiative_transfer_config.RadiativeTransferUnknownsConfig" title="Go to docs">[docs]</a></div>
@@ -5343,11 +5428,6 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_check_config_validity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="n">errors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">errors</span>
-
 
 <span class="k">class</span><span class="w"> </span><span class="nc">RadiativeTransferConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.radiative_transfer_config.RadiativeTransferConfig"><a href="../../../../../api/isofit/configs/sections/radiative_transfer_config/#isofit.configs.sections.radiative_transfer_config.RadiativeTransferConfig" title="Go to docs">[docs]</a></div>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -5355,8 +5435,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_statevector_type</span> <span class="o">=</span> <span class="n">StateVectorConfig</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">statevector</span><span class="p">:</span> <span class="n">StateVectorConfig</span> <span class="o">=</span> <span class="n">StateVectorConfig</span><span class="p">({})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_statevector_type</span> <span class="o">=</span> <span class="n">RTStateVectorConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statevector</span><span class="p">:</span> <span class="n">StateVectorConfig</span> <span class="o">=</span> <span class="n">RTStateVectorConfig</span><span class="p">({})</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_lut_grid_type</span> <span class="o">=</span> <span class="n">OrderedDict</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span> <span class="o">=</span> <span class="kc">None</span>
@@ -5422,6 +5502,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_config_validity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="n">errors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">warnings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
@@ -5432,7 +5513,9 @@
                 <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Detected duplicate values in lut_grid item </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">rte</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">radiative_transfer_engines</span><span class="p">:</span>
-            <span class="n">errors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">rte</span><span class="o">.</span><span class="n">check_config_validity</span><span class="p">())</span>
+            <span class="n">er</span><span class="p">,</span> <span class="n">warn</span> <span class="o">=</span> <span class="n">rte</span><span class="o">.</span><span class="n">check_config_validity</span><span class="p">()</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">er</span><span class="p">)</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">warn</span><span class="p">)</span>
 
         <span class="n">kinds</span> <span class="o">=</span> <span class="p">[</span>
             <span class="s2">&quot;rg&quot;</span><span class="p">,</span>
@@ -5463,7 +5546,7 @@
                 <span class="sa">f</span><span class="s2">&quot;surface-&gt;terrain_style is set as </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span><span class="si">}</span><span class="s2">, but must be one of: </span><span class="si">{</span><span class="n">terrain_options</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">errors</span>
+        <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>
 </code></pre></div></td></tr></table></div>
 
 

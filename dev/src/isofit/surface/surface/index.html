@@ -4773,7 +4773,19 @@
 <span class="normal">138</span>
 <span class="normal">139</span>
 <span class="normal">140</span>
-<span class="normal">141</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -4795,12 +4807,24 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">namedtuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">loadmat</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_spectrum</span><span class="p">,</span> <span class="n">load_wavelen</span>
+
+<span class="n">DefaultState</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s2">&quot;DefaultState&quot;</span><span class="p">,</span>
+    <span class="p">[</span>
+        <span class="s2">&quot;bounds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scale&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;prior_mean&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;prior_sigma&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;init&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Surface</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface" title="Go to docs">[docs]</a></div>
@@ -4814,10 +4838,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">surface_file</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_mean</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_sigma</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">idx_surface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">init</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bvec</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idx_lamb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>

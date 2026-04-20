@@ -4530,6 +4530,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.core.common.recursive_get" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        recursive_get
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.core.common.get_absorption" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5756,7 +5767,31 @@
 <span class="normal">1017</span>
 <span class="normal">1018</span>
 <span class="normal">1019</span>
-<span class="normal">1020</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1020</span>
+<span class="normal">1021</span>
+<span class="normal">1022</span>
+<span class="normal">1023</span>
+<span class="normal">1024</span>
+<span class="normal">1025</span>
+<span class="normal">1026</span>
+<span class="normal">1027</span>
+<span class="normal">1028</span>
+<span class="normal">1029</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span>
+<span class="normal">1032</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span>
+<span class="normal">1043</span>
+<span class="normal">1044</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6274,6 +6309,30 @@
     <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
             <span class="n">recursive_replace</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">recursive_get</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.common.recursive_get"><a href="../../../../api/isofit/core/common/#isofit.core.common.recursive_get" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find all occurences of a key within a nested struct.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        obj: object to seach within</span>
+<span class="sd">        key: key to find</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: values at those key locations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">recursive_get</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">recursive_get</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">results</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_absorption</span><span class="p">(</span><span class="n">wl</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">absfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.common.get_absorption"><a href="../../../../api/isofit/core/common/#isofit.core.common.get_absorption" title="Go to docs">[docs]</a></div>

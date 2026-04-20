@@ -4978,7 +4978,38 @@
 <span class="normal">365</span>
 <span class="normal">366</span>
 <span class="normal">367</span>
-<span class="normal">368</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5003,7 +5034,24 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">block_diag</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">eps</span><span class="p">,</span> <span class="n">svd_inv_sqrt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.surface.surface</span><span class="w"> </span><span class="kn">import</span> <span class="n">DefaultState</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.surface.surface_multicomp</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiComponentSurface</span>
+
+<span class="n">DefaultSkyGlintPrior</span> <span class="o">=</span> <span class="n">DefaultState</span><span class="p">(</span>
+    <span class="n">bounds</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">],</span>
+    <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">prior_mean</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+    <span class="n">prior_sigma</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span>
+    <span class="n">init</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">DefaultSunGlintPrior</span> <span class="o">=</span> <span class="n">DefaultState</span><span class="p">(</span>
+    <span class="n">bounds</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">],</span>
+    <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">prior_mean</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>
+    <span class="n">prior_sigma</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span>
+    <span class="n">init</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">GlintModelSurface</span><span class="p">(</span><span class="n">MultiComponentSurface</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_glint_model.GlintModelSurface"><a href="../../../../api/isofit/surface/surface_glint_model/#isofit.surface.surface_glint_model.GlintModelSurface" title="Go to docs">[docs]</a></div>
@@ -5020,33 +5068,45 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">glint_ind</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">glint_ind</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sun_glint_ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">glint_ind</span> <span class="o">+</span> <span class="mi">1</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
-
-        <span class="c1"># Numbers from Marcel Koenig; used for prior mean</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">])</span>
-
-        <span class="c1"># Gege (2021), WASI user manual</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="o">.</span><span class="n">extend</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">]])</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">n_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_state</span> <span class="o">+</span> <span class="mi">2</span>
-
-        <span class="c1"># Useful indexes to track</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">glint_ind</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">glint_ind</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sun_glint_ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">glint_ind</span> <span class="o">+</span> <span class="mi">1</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">idx_surface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">))</span>
 
-        <span class="c1"># Change this if you don&#39;t want to analytical solve for all the full statevector elements.</span>
+        <span class="c1"># TODO Remove or update ability to smooth on any statevector idx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">analytical_iv_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">sun_glint_sigma</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">config</span><span class="o">.</span><span class="n">sun_glint_prior_sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sun_glint_ind</span><span class="p">])</span>
-        <span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_sigma</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">config</span><span class="o">.</span><span class="n">sky_glint_prior_sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_ind</span><span class="p">])</span>
-        <span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="c1"># Old syntax (setting optimizaion and prior directly from config:</span>
+        <span class="c1"># self.sun_glint_sigma = (</span>
+        <span class="c1">#     config.sun_glint_prior_sigma</span>
+        <span class="c1">#     * np.array(self.scale[self.sun_glint_ind])</span>
+        <span class="c1"># ) ** 2</span>
+
+        <span class="c1"># New syntax pulling from populated config object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SKY_GLINT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">),</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SUN_GLINT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SKY_GLINT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">),</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SUN_GLINT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SKY_GLINT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bounds&quot;</span><span class="p">),</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SUN_GLINT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bounds&quot;</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_mean</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SKY_GLINT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prior_mean&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_sigma</span> <span class="o">=</span> <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SKY_GLINT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prior_sigma&quot;</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sun_glint_mean</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SUN_GLINT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prior_mean&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sun_glint_sigma</span> <span class="o">=</span> <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SUN_GLINT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prior_sigma&quot;</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span>
 
         <span class="c1"># Compute and and cache normalized Sa inversions for glint case</span>
         <span class="n">Cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_sigma</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sun_glint_sigma</span><span class="p">]])</span>
@@ -5058,7 +5118,9 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Mean of prior distribution, calculated at state x.&quot;&quot;&quot;</span>
 
         <span class="n">mu</span> <span class="o">=</span> <span class="n">MultiComponentSurface</span><span class="o">.</span><span class="n">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-        <span class="n">mu</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">glint_ind</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">glint_ind</span> <span class="p">:]</span>
+        <span class="n">mu</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_ind</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_mean</span>
+        <span class="n">mu</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sun_glint_ind</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sun_glint_mean</span>
+
         <span class="k">return</span> <span class="n">mu</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">Sa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_glint_model.GlintModelSurface.Sa"><a href="../../../../api/isofit/surface/surface_glint_model/#isofit.surface.surface_glint_model.GlintModelSurface.Sa" title="Go to docs">[docs]</a></div>

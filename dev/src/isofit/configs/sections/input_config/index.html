@@ -4614,7 +4614,9 @@
 <span class="normal">117</span>
 <span class="normal">118</span>
 <span class="normal">119</span>
-<span class="normal">120</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -4644,6 +4646,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Input file(s) configuration.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_measured_radiance_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">measured_radiance_file</span> <span class="o">=</span> <span class="kc">None</span>
@@ -4715,6 +4718,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_config_validity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="n">errors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">warnings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
         <span class="c1"># Check that all input files exist</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_nontype_attributes</span><span class="p">():</span>
@@ -4733,7 +4737,7 @@
             <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
                 <span class="n">errors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">check_config_validity</span><span class="p">())</span>
 
-        <span class="k">return</span> <span class="n">errors</span>
+        <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>
 </code></pre></div></td></tr></table></div>
 
 
