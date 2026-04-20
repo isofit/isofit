@@ -23,6 +23,11 @@ from typing import Dict, List, Type
 import numpy as np
 
 from isofit.configs.base_config import BaseConfigSection
+from isofit.surface.surface_glint_model import (
+    DefaultSkyGlintPrior,
+    DefaultSunGlintPrior,
+)
+from isofit.surface.surface_thermal import DefaultSurfTempKPrior
 
 
 class StateVectorElementConfig(BaseConfigSection):
@@ -31,6 +36,8 @@ class StateVectorElementConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
         self._bounds_type = list()
         self.bounds = [np.nan, np.nan]
 
@@ -48,64 +55,10 @@ class StateVectorElementConfig(BaseConfigSection):
 
         self.set_config_options(sub_configdic)
 
-    def _check_config_validity(self) -> List[str]:
-        errors = list()
-        return errors
-
 
 class StateVectorConfig(BaseConfigSection):
-    """
-    State vector configuration.
-    """
-
     def __init__(self, sub_configdic: dict = None):
-        self._H2OSTR_type = StateVectorElementConfig
-        self.H2OSTR: StateVectorElementConfig = None
-
-        self._AOT550_type = StateVectorElementConfig
-        self.AOT550: StateVectorElementConfig = None
-
-        self._AERFRAC_1_type = StateVectorElementConfig
-        self.AERFRAC_1: StateVectorElementConfig = None
-
-        self._AERFRAC_2_type = StateVectorElementConfig
-        self.AERFRAC_2: StateVectorElementConfig = None
-
-        self._AERFRAC_3_type = StateVectorElementConfig
-        self.AERFRAC_3: StateVectorElementConfig = None
-
-        self._EOF_1_type = StateVectorElementConfig
-        self.EOF_1: StateVectorElementConfig = None
-
-        self._EOF_2_type = StateVectorElementConfig
-        self.EOF_2: StateVectorElementConfig = None
-
-        self._EOF_3_type = StateVectorElementConfig
-        self.EOF_3: StateVectorElementConfig = None
-
-        self._GROW_FWHM_type = StateVectorElementConfig
-        self.GROW_FWHM: StateVectorElementConfig = None
-
-        self._WL_SHIFT_type = StateVectorElementConfig
-        self.WL_SHIFT: StateVectorElementConfig = None
-
-        self._WL_SPACE_type = StateVectorElementConfig
-        self.WL_SPACE: StateVectorElementConfig = None
-
-        self._AIRT_DELTA_K_type = StateVectorElementConfig
-        self.AIRT_DELTA_K: StateVectorElementConfig = None
-
-        self._surface_elevation_km_type = StateVectorElementConfig
-        self.surface_elevation_km: StateVectorElementConfig = None
-
-        assert len(self.get_all_elements()) == len(self._get_nontype_attributes())
-
-        self._set_statevector_config_options(sub_configdic)
-
-    def _check_config_validity(self):
-        errors = list()
-
-        return errors
+        super().__init__()
 
     def _set_statevector_config_options(self, configdic):
         # TODO: update using methods below
