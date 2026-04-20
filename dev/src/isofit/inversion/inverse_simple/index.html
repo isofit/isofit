@@ -5142,7 +5142,22 @@
 <span class="normal">590</span>
 <span class="normal">591</span>
 <span class="normal">592</span>
-<span class="normal">593</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5323,6 +5338,10 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">my_RT</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No suitable RT object for initialization&quot;</span><span class="p">)</span>
 
+    <span class="n">_</span><span class="p">,</span> <span class="n">rho_init</span> <span class="o">=</span> <span class="n">surface</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+
+    <span class="n">rho_dif_dif</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">rho_init</span>
+
     <span class="c1"># Get all radiance terms</span>
     <span class="p">(</span>
         <span class="n">rhi</span><span class="p">,</span>
@@ -5331,7 +5350,7 @@
         <span class="n">L_dif_dir</span><span class="p">,</span>
         <span class="n">L_dir_dif</span><span class="p">,</span>
         <span class="n">L_dif_dif</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">=</span> <span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif</span><span class="p">)</span>
     <span class="n">L_atm</span> <span class="o">=</span> <span class="n">RT</span><span class="o">.</span><span class="n">get_L_atm</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
     <span class="n">sphalb</span> <span class="o">=</span> <span class="n">rhi</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span>
     <span class="n">Ls</span> <span class="o">=</span> <span class="n">surface</span><span class="o">.</span><span class="n">calc_Ls</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
@@ -5415,15 +5434,6 @@
     <span class="n">x</span> <span class="o">=</span> <span class="n">x0</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-    <span class="c1"># Get all the RT quantities</span>
-    <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">L_tot</span><span class="p">,</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dif</span><span class="p">)</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span>
-        <span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span>
-    <span class="p">)</span>
-
-    <span class="c1"># Path radiance and spherical albedo</span>
-    <span class="n">L_atm</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">get_L_atm</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-    <span class="n">s</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span>
-
     <span class="c1"># Get all the surface quantities for the super pixel</span>
     <span class="n">sub_surface</span><span class="p">,</span> <span class="n">sub_RT</span><span class="p">,</span> <span class="n">sub_instrument</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">sub_state</span><span class="p">)</span>
 
@@ -5431,6 +5441,26 @@
     <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">sub_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
     <span class="n">rho_dir_dir</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">)</span>
     <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">)</span>
+
+    <span class="n">rho_dir_dif</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">rho_dir_dir</span>
+    <span class="p">)</span>
+    <span class="n">rho_dif_dif</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">rho_dif_dir</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Get all the RT quantities</span>
+    <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">L_tot</span><span class="p">,</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dif</span><span class="p">)</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span>
+        <span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Path radiance and spherical albedo</span>
+    <span class="n">L_atm</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">get_L_atm</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span>
 
     <span class="c1"># Background conditions equal to the superpixel reflectance</span>
     <span class="n">bg</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">rho_dif_dir</span>

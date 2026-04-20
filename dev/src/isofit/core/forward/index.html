@@ -5206,7 +5206,54 @@
 <span class="normal">516</span>
 <span class="normal">517</span>
 <span class="normal">518</span>
-<span class="normal">519</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5452,6 +5499,23 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rfl</span><span class="p">):</span>
             <span class="n">x_surface</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_surf_rfl</span><span class="p">]</span> <span class="o">=</span> <span class="n">rfl</span>
 
+        <span class="c1"># Call surface reflectance w.r.t. surface, upsample</span>
+        <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+        <span class="n">rho_dir_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">)</span>
+        <span class="n">rho_dif_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">)</span>
+
+        <span class="c1"># Adjacency effects</span>
+        <span class="n">rho_dir_dif_hi</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">rho_dir_dir_hi</span>
+        <span class="p">)</span>
+        <span class="n">rho_dif_dif_hi</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">rho_dif_dir_hi</span>
+        <span class="p">)</span>
+
         <span class="c1"># Get RT quantities</span>
         <span class="p">(</span>
             <span class="n">r</span><span class="p">,</span>
@@ -5460,12 +5524,7 @@
             <span class="n">L_dif_dir</span><span class="p">,</span>
             <span class="n">L_dir_dif</span><span class="p">,</span>
             <span class="n">L_dif_dif</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-
-        <span class="c1"># Call surface reflectance w.r.t. surface, upsample</span>
-        <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-        <span class="n">rho_dir_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">)</span>
-        <span class="n">rho_dif_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">)</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif_hi</span><span class="p">)</span>
 
         <span class="c1"># Call surface emission, upsample</span>
         <span class="n">Ls_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_Ls</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">))</span>
@@ -5474,6 +5533,8 @@
             <span class="n">x_RT</span><span class="p">,</span>
             <span class="n">rho_dir_dir</span><span class="o">=</span><span class="n">rho_dir_dir_hi</span><span class="p">,</span>
             <span class="n">rho_dif_dir</span><span class="o">=</span><span class="n">rho_dif_dir_hi</span><span class="p">,</span>
+            <span class="n">rho_dir_dif</span><span class="o">=</span><span class="n">rho_dir_dif_hi</span><span class="p">,</span>
+            <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif_hi</span><span class="p">,</span>
             <span class="n">Ls</span><span class="o">=</span><span class="n">Ls_hi</span><span class="p">,</span>
             <span class="n">L_tot</span><span class="o">=</span><span class="n">L_tot</span><span class="p">,</span>
             <span class="n">L_dir_dir</span><span class="o">=</span><span class="n">L_dir_dir</span><span class="p">,</span>
@@ -5526,9 +5587,25 @@
 <span class="sd">        the concatenation of jacobians with respect to parameters of the</span>
 <span class="sd">        surface and radiative transfer model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># Unpack state vector</span>
         <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="c1"># Call surface reflectance w.r.t. surface, upsample</span>
+        <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+        <span class="n">rho_dir_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">)</span>
+        <span class="n">rho_dif_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">)</span>
+
+        <span class="c1"># Adjacency effects</span>
+        <span class="n">rho_dir_dif_hi</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">rho_dir_dir_hi</span>
+        <span class="p">)</span>
+        <span class="n">rho_dif_dif_hi</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">rho_dif_dir_hi</span>
+        <span class="p">)</span>
 
         <span class="c1"># Get RT quantities</span>
         <span class="p">(</span>
@@ -5538,12 +5615,26 @@
             <span class="n">L_dif_dir</span><span class="p">,</span>
             <span class="n">L_dir_dif</span><span class="p">,</span>
             <span class="n">L_dif_dif</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif_hi</span><span class="p">)</span>
 
-        <span class="c1"># Call surface reflectance w.r.t. surface, upsample</span>
-        <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-        <span class="n">rho_dir_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">)</span>
-        <span class="n">rho_dif_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">)</span>
+        <span class="c1"># Call surface emission, upsample</span>
+        <span class="n">Ls_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_Ls</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">))</span>
+
+        <span class="n">rdn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
+            <span class="n">x_RT</span><span class="p">,</span>
+            <span class="n">rho_dir_dir</span><span class="o">=</span><span class="n">rho_dir_dir_hi</span><span class="p">,</span>
+            <span class="n">rho_dif_dir</span><span class="o">=</span><span class="n">rho_dif_dir_hi</span><span class="p">,</span>
+            <span class="n">rho_dir_dif</span><span class="o">=</span><span class="n">rho_dir_dif_hi</span><span class="p">,</span>
+            <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif_hi</span><span class="p">,</span>
+            <span class="n">Ls</span><span class="o">=</span><span class="n">Ls_hi</span><span class="p">,</span>
+            <span class="n">L_tot</span><span class="o">=</span><span class="n">L_tot</span><span class="p">,</span>
+            <span class="n">L_dir_dir</span><span class="o">=</span><span class="n">L_dir_dir</span><span class="p">,</span>
+            <span class="n">L_dif_dir</span><span class="o">=</span><span class="n">L_dif_dir</span><span class="p">,</span>
+            <span class="n">L_dir_dif</span><span class="o">=</span><span class="n">L_dir_dif</span><span class="p">,</span>
+            <span class="n">L_dif_dif</span><span class="o">=</span><span class="n">L_dif_dif</span><span class="p">,</span>
+            <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span>
+            <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="c1"># Call surface emission, upsample</span>
         <span class="n">Ls_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_Ls</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">))</span>
@@ -5559,27 +5650,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">dLs_dsurface</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
         <span class="p">)</span><span class="o">.</span><span class="n">T</span>
 
-        <span class="c1"># Need to pass calc rdn into instrument derivative</span>
-        <span class="n">rdn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
-            <span class="n">x_RT</span><span class="p">,</span>
-            <span class="n">rho_dir_dir</span><span class="o">=</span><span class="n">rho_dir_dir_hi</span><span class="p">,</span>
-            <span class="n">rho_dif_dir</span><span class="o">=</span><span class="n">rho_dif_dir_hi</span><span class="p">,</span>
-            <span class="n">Ls</span><span class="o">=</span><span class="n">Ls_hi</span><span class="p">,</span>
-            <span class="n">L_tot</span><span class="o">=</span><span class="n">L_tot</span><span class="p">,</span>
-            <span class="n">L_dir_dir</span><span class="o">=</span><span class="n">L_dir_dir</span><span class="p">,</span>
-            <span class="n">L_dif_dir</span><span class="o">=</span><span class="n">L_dif_dir</span><span class="p">,</span>
-            <span class="n">L_dir_dif</span><span class="o">=</span><span class="n">L_dir_dif</span><span class="p">,</span>
-            <span class="n">L_dif_dif</span><span class="o">=</span><span class="n">L_dif_dif</span><span class="p">,</span>
-            <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span>
-            <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span>
-        <span class="p">)</span>
-
         <span class="c1"># To get the derivative w.r.t. RT</span>
         <span class="n">drdn_dRT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">drdn_dRT</span><span class="p">(</span>
             <span class="n">x_RT</span><span class="p">,</span>
             <span class="n">geom</span><span class="p">,</span>
             <span class="n">rho_dir_dir</span><span class="o">=</span><span class="n">rho_dir_dir_hi</span><span class="p">,</span>
             <span class="n">rho_dif_dir</span><span class="o">=</span><span class="n">rho_dif_dir_hi</span><span class="p">,</span>
+            <span class="n">rho_dir_dif</span><span class="o">=</span><span class="n">rho_dir_dif_hi</span><span class="p">,</span>
+            <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif_hi</span><span class="p">,</span>
             <span class="n">Ls</span><span class="o">=</span><span class="n">Ls_hi</span><span class="p">,</span>
             <span class="n">rdn</span><span class="o">=</span><span class="n">rdn</span><span class="p">,</span>
         <span class="p">)</span>
@@ -5624,6 +5702,23 @@
         <span class="c1"># Unpack state vector</span>
         <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
+        <span class="c1"># Call surface reflectance w.r.t. surface, upsample</span>
+        <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+        <span class="n">rho_dir_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">)</span>
+        <span class="n">rho_dif_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">)</span>
+
+        <span class="c1"># Adjacency effects</span>
+        <span class="n">rho_dir_dif_hi</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">rho_dir_dir_hi</span>
+        <span class="p">)</span>
+        <span class="n">rho_dif_dif_hi</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">rho_dif_dir_hi</span>
+        <span class="p">)</span>
+
         <span class="c1"># Get RT quantities</span>
         <span class="p">(</span>
             <span class="n">r</span><span class="p">,</span>
@@ -5632,12 +5727,7 @@
             <span class="n">L_dif_dir</span><span class="p">,</span>
             <span class="n">L_dir_dif</span><span class="p">,</span>
             <span class="n">L_dif_dif</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-
-        <span class="c1"># Call surface reflectance w.r.t. surface, upsample</span>
-        <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-        <span class="n">rho_dir_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">)</span>
-        <span class="n">rho_dif_dir_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">)</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif_hi</span><span class="p">)</span>
 
         <span class="c1"># Call surface emission, upsample</span>
         <span class="n">Ls_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_Ls</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">))</span>
@@ -5646,6 +5736,8 @@
             <span class="n">x_RT</span><span class="p">,</span>
             <span class="n">rho_dir_dir</span><span class="o">=</span><span class="n">rho_dir_dir_hi</span><span class="p">,</span>
             <span class="n">rho_dif_dir</span><span class="o">=</span><span class="n">rho_dif_dir_hi</span><span class="p">,</span>
+            <span class="n">rho_dir_dif</span><span class="o">=</span><span class="n">rho_dir_dif_hi</span><span class="p">,</span>
+            <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif_hi</span><span class="p">,</span>
             <span class="n">Ls</span><span class="o">=</span><span class="n">Ls_hi</span><span class="p">,</span>
             <span class="n">L_tot</span><span class="o">=</span><span class="n">L_tot</span><span class="p">,</span>
             <span class="n">L_dir_dir</span><span class="o">=</span><span class="n">L_dir_dir</span><span class="p">,</span>
@@ -5661,6 +5753,8 @@
             <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span>
             <span class="n">rho_dir_dir</span><span class="o">=</span><span class="n">rho_dir_dir_hi</span><span class="p">,</span>
             <span class="n">rho_dif_dir</span><span class="o">=</span><span class="n">rho_dif_dir_hi</span><span class="p">,</span>
+            <span class="n">rho_dir_dif</span><span class="o">=</span><span class="n">rho_dir_dif_hi</span><span class="p">,</span>
+            <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif_hi</span><span class="p">,</span>
             <span class="n">Ls</span><span class="o">=</span><span class="n">Ls_hi</span><span class="p">,</span>
             <span class="n">rdn</span><span class="o">=</span><span class="n">rdn</span><span class="p">,</span>
         <span class="p">)</span>

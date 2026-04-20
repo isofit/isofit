@@ -5259,7 +5259,25 @@
 <span class="normal">580</span>
 <span class="normal">581</span>
 <span class="normal">582</span>
-<span class="normal">583</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5404,6 +5422,9 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">solar_irr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">RT</span><span class="o">.</span><span class="n">solar_irr</span> <span class="k">for</span> <span class="n">RT</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">])</span>
 
+        <span class="c1"># 1c or 3c?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">multipart_transmittance</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.xa"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.xa" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pull the priors from each of the individual RTs.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_mean</span>
@@ -5441,6 +5462,8 @@
         <span class="n">x_RT</span><span class="p">,</span>
         <span class="n">rho_dir_dir</span><span class="p">,</span>
         <span class="n">rho_dif_dir</span><span class="p">,</span>
+        <span class="n">rho_dir_dif</span><span class="p">,</span>
+        <span class="n">rho_dif_dif</span><span class="p">,</span>
         <span class="n">Ls</span><span class="p">,</span>
         <span class="n">L_tot</span><span class="p">,</span>
         <span class="n">L_dir_dir</span><span class="p">,</span>
@@ -5454,32 +5477,19 @@
 <span class="sd">        Physics-based forward model to calculate at-sensor radiance.</span>
 <span class="sd">        Includes topography, background reflectance, and glint.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Adjacency effects</span>
-        <span class="c1"># ToDo: we need to think about if we want to obtain the background reflectance from the Geometry object</span>
-        <span class="c1">#  or from the surface model, i.e., the same way as we do with the target pixel reflectance</span>
-
-        <span class="n">rho_dir_dif</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">rho_dir_dir</span>
-        <span class="p">)</span>
-        <span class="n">rho_dif_dif</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">rho_dif_dir</span>
-        <span class="p">)</span>
-
         <span class="c1"># Atmospheric path radiance</span>
         <span class="n">L_atm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_L_atm</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
         <span class="c1"># Atmospheric spherical albedo</span>
         <span class="n">s_alb</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span>
         <span class="n">atm_surface_scattering</span> <span class="o">=</span> <span class="n">s_alb</span> <span class="o">*</span> <span class="n">rho_dif_dif</span>
-        <span class="n">eq_11_term</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">atm_surface_scattering</span>
 
         <span class="c1"># Special case: 1-component model</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">L_dir_dir</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">multipart_transmittance</span><span class="p">:</span>
             <span class="c1"># we assume rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif</span>
             <span class="n">rho_dif_dif</span> <span class="o">=</span> <span class="n">rho_dir_dir</span>
             <span class="c1"># eliminate spherical albedo and one reflectance term from numerator if using 1-component model</span>
             <span class="n">atm_surface_scattering</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">eq_11_term</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="c1"># Thermal transmittance</span>
         <span class="n">L_up</span> <span class="o">=</span> <span class="n">Ls</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_upward_transm</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span> <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">)</span>
@@ -5518,9 +5528,9 @@
         <span class="n">ret</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">L_atm</span>
             <span class="o">+</span> <span class="n">L_dir_dir</span> <span class="o">*</span> <span class="n">rho_dir_dir</span>
-            <span class="o">+</span> <span class="n">L_dif_dir</span> <span class="o">*</span> <span class="n">rho_dif_dir</span> <span class="o">/</span> <span class="n">eq_11_term</span>
+            <span class="o">+</span> <span class="n">L_dif_dir</span> <span class="o">*</span> <span class="n">rho_dif_dir</span>
             <span class="o">+</span> <span class="n">L_dir_dif</span> <span class="o">*</span> <span class="n">rho_dir_dif</span>
-            <span class="o">+</span> <span class="n">L_dif_dif</span> <span class="o">*</span> <span class="n">rho_dif_dif</span> <span class="o">/</span> <span class="n">eq_11_term</span>
+            <span class="o">+</span> <span class="n">L_dif_dif</span> <span class="o">*</span> <span class="n">rho_dif_dif</span>
             <span class="o">+</span> <span class="p">(</span><span class="n">L_tot</span> <span class="o">*</span> <span class="n">atm_surface_scattering</span> <span class="o">*</span> <span class="n">rho_dif_dif</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">s_alb</span> <span class="o">*</span> <span class="n">rho_dif_dif</span><span class="p">)</span>
             <span class="o">+</span> <span class="n">L_up</span>
         <span class="p">)</span>
@@ -5556,10 +5566,13 @@
                     <span class="n">L_atm</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">transm_to_rdn</span><span class="p">(</span><span class="n">rho_atm</span><span class="p">,</span> <span class="n">coszen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">solar_irr</span><span class="p">)</span>
                 <span class="n">L_atms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">L_atm</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">L_atms</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_L_coupled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_L_coupled"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_L_coupled" title="Go to docs">[docs]</a></div>
+<div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_L_coupled"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_L_coupled" title="Go to docs">[docs]</a></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_L_coupled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the interpolated radiance terms on the sun-to-surface-to-sensor path.</span>
 <span class="sd">        These follow the physics as presented in Guanter (2006), Vermote et al. (1997), and Tanre et al. (1983).</span>
+
+<span class="sd">        Note:   This function is only applicable to the 6c run case</span>
+<span class="sd">                where r contains populated separated transmittances</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            r:      interpolated radiative transfer quantities from the LUT</span>
@@ -5589,26 +5602,12 @@
         <span class="c1"># radiances along all optical paths</span>
         <span class="n">L_coupled</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span>
-                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_terms</span>
-            <span class="p">]</span>
-        <span class="p">):</span>
-            <span class="c1"># In case of the 1-component model, we cannot populate the coupling terms</span>
-            <span class="n">L_coupled</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="mi">0</span><span class="p">,</span>
-                <span class="mi">0</span><span class="p">,</span>
-                <span class="mi">0</span><span class="p">,</span>
-                <span class="mi">0</span><span class="p">,</span>
-            <span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_terms</span><span class="p">:</span>
-                <span class="n">L_coupled</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="n">units</span><span class="o">.</span><span class="n">transm_to_rdn</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">coszen</span><span class="o">=</span><span class="n">coszen</span><span class="p">,</span> <span class="n">solar_irr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">solar_irr</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">==</span> <span class="s2">&quot;transm&quot;</span>
-                    <span class="k">else</span> <span class="n">r</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                <span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_terms</span><span class="p">:</span>
+            <span class="n">L_coupled</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">units</span><span class="o">.</span><span class="n">transm_to_rdn</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">coszen</span><span class="o">=</span><span class="n">coszen</span><span class="p">,</span> <span class="n">solar_irr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">solar_irr</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">==</span> <span class="s2">&quot;transm&quot;</span>
+                <span class="k">else</span> <span class="n">r</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="p">)</span>
         <span class="c1"># Topographic shadow mask (0=shadow, 1=sunlit pixel).</span>
         <span class="c1"># for now, this is always set to 1.0.</span>
         <span class="n">b</span> <span class="o">=</span> <span class="mf">1.0</span>
@@ -5630,32 +5629,57 @@
         <span class="n">L_dif_dir</span> <span class="o">*=</span> <span class="n">hays_model</span>
         <span class="n">L_dif_dif</span> <span class="o">*=</span> <span class="n">hays_model</span>
 
-        <span class="k">return</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dif</span>
+        <span class="c1"># Apply equation 11</span>
+        <span class="c1"># If no rho_dif_dif passed eq_11_term -&gt; 1</span>
+        <span class="n">eq_11_term</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">rho_dif_dif</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">calc_RT_quantities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_RT_quantities"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_RT_quantities" title="Go to docs">[docs]</a></div>
+        <span class="n">L_tot</span> <span class="o">=</span> <span class="n">L_dir_dir</span> <span class="o">+</span> <span class="n">L_dif_dir</span> <span class="o">+</span> <span class="n">L_dir_dif</span> <span class="o">+</span> <span class="n">L_dif_dif</span>
+        <span class="n">L_dif_dir</span> <span class="o">/=</span> <span class="n">eq_11_term</span>
+        <span class="n">L_dif_dif</span> <span class="o">/=</span> <span class="n">eq_11_term</span>
+
+        <span class="k">return</span> <span class="n">L_tot</span><span class="p">,</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dif</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_RT_quantities</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_RT_quantities"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_RT_quantities" title="Go to docs">[docs]</a></div>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the RT quantities including the LUT sample (r),</span>
 <span class="sd">        and the radiances (L). This function handles the hand-off between</span>
-<span class="sd">        the 1c and 4c model.</span>
+<span class="sd">        the 1c and 6c model.</span>
 
 <span class="sd">        In the 1c case, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = 0,</span>
 <span class="sd">        and L_tot, L_down_dir, and L_down_dif are populated within the</span>
 <span class="sd">        if statement.</span>
 
-<span class="sd">        In the 4c case, we always use returns from get_L_coupled</span>
-
+<span class="sd">        In the 6c case, we always use returns from get_L_coupled</span>
 <span class="sd">        All quantities are on the sun-to-surface-to-sensor path.</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            x_RT: RT portion of the state vector.</span>
+<span class="sd">            geom: Geometry object for the current observation.</span>
+<span class="sd">            rho_dif_dif: Apparent surface reflectance for</span>
+<span class="sd">                hemispherical-hemispherical photon paths.</span>
+<span class="sd">                Included here to incorporate surface-atm coupling</span>
+<span class="sd">                following Eq. 11 of Guanter et al, 2009.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            r: LUT sample dictionary of shared RT quantities.</span>
+<span class="sd">            L_tot: total downwelling radiance (uW/nm/sr/cm2).</span>
+<span class="sd">            L_dir_dir: direct-to-direct radiance component; zero in 1c mode.</span>
+<span class="sd">            L_dif_dir: diffuse-to-direct radiance component; zero in 1c mode.</span>
+<span class="sd">            L_dir_dif: direct-to-diffuse radiance component; zero in 1c mode.</span>
+<span class="sd">            L_dif_dif: diffuse-to-diffuse radiance component; zero in 1c mode.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Propogate LUT</span>
         <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_shared_rtm_quantities</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
-        <span class="c1"># Default: get directional radiances</span>
-        <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dif</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_L_coupled</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-        <span class="n">L_tot</span> <span class="o">=</span> <span class="n">L_dir_dir</span> <span class="o">+</span> <span class="n">L_dif_dir</span> <span class="o">+</span> <span class="n">L_dir_dif</span> <span class="o">+</span> <span class="n">L_dif_dif</span>
-
         <span class="c1"># Handle 1c L_tot. NOTE: transm_down_dif = total transm for 1c case.</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">L_tot</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">L_tot</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multipart_transmittance</span><span class="p">:</span>
+            <span class="c1"># Get directional radiances</span>
+            <span class="n">L_tot</span><span class="p">,</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dif</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_L_coupled</span><span class="p">(</span>
+                <span class="n">r</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">multipart_transmittance</span><span class="p">:</span>
             <span class="n">coszen</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coszen</span><span class="p">)[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span>
             <span class="n">L_tots</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">RT</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">:</span>
@@ -5674,6 +5698,10 @@
                         <span class="p">)</span>
                     <span class="n">L_tots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">L_tot</span><span class="p">)</span>
             <span class="n">L_tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">L_tots</span><span class="p">)</span>
+            <span class="n">L_dir_dir</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">L_dif_dir</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">L_dir_dif</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">L_dif_dif</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">r</span><span class="p">,</span>
@@ -5710,7 +5738,9 @@
                 <span class="p">)</span>
             <span class="k">return</span> <span class="n">transup</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">drdn_dRT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">,</span> <span class="n">Ls</span><span class="p">,</span> <span class="n">rdn</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRT"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRT" title="Go to docs">[docs]</a></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">drdn_dRT</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRT"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRT" title="Go to docs">[docs]</a></div>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">,</span> <span class="n">rho_dir_dif</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="p">,</span> <span class="n">Ls</span><span class="p">,</span> <span class="n">rdn</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Derivative of estimated radiance w.r.t. RT statevector elements.</span>
 <span class="sd">        We use a numerical approach to approximate dRT with a constant surface</span>
 <span class="sd">        reflectance. This is a reasonable approx. for the multicomponent surface.</span>
@@ -5729,13 +5759,15 @@
                 <span class="n">L_dif_dir</span><span class="p">,</span>
                 <span class="n">L_dir_dif</span><span class="p">,</span>
                 <span class="n">L_dif_dif</span><span class="p">,</span>
-            <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT_perturb</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT_perturb</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="p">)</span>
 
             <span class="c1"># Surface state is held constant?</span>
             <span class="n">rdne</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
                 <span class="n">x_RT_perturb</span><span class="p">,</span>
                 <span class="n">rho_dir_dir</span><span class="p">,</span>
                 <span class="n">rho_dif_dir</span><span class="p">,</span>
+                <span class="n">rho_dir_dif</span><span class="p">,</span>
+                <span class="n">rho_dif_dif</span><span class="p">,</span>
                 <span class="n">Ls</span><span class="p">,</span>
                 <span class="n">L_tot</span><span class="p">,</span>
                 <span class="n">L_dir_dir</span><span class="p">,</span>
@@ -5751,7 +5783,9 @@
 
         <span class="k">return</span> <span class="n">K_RT</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">drdn_dRTb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">,</span> <span class="n">Ls</span><span class="p">,</span> <span class="n">rdn</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRTb"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRTb" title="Go to docs">[docs]</a></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">drdn_dRTb</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRTb"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRTb" title="Go to docs">[docs]</a></div>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">,</span> <span class="n">rho_dir_dif</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="p">,</span> <span class="n">Ls</span><span class="p">,</span> <span class="n">rdn</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Derivative of estimated rdn w.r.t. H2O_ABSCO</span>
 
 <span class="sd">        Currently, the K_b matrix only covers forward model derivatives</span>
@@ -5786,12 +5820,14 @@
                         <span class="n">L_dif_dir</span><span class="p">,</span>
                         <span class="n">L_dir_dif</span><span class="p">,</span>
                         <span class="n">L_dif_dif</span><span class="p">,</span>
-                    <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT_perturb</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+                    <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_RT_quantities</span><span class="p">(</span><span class="n">x_RT_perturb</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="p">)</span>
 
                     <span class="n">rdne</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
                         <span class="n">x_RT_perturb</span><span class="p">,</span>
                         <span class="n">rho_dir_dir</span><span class="p">,</span>
                         <span class="n">rho_dif_dir</span><span class="p">,</span>
+                        <span class="n">rho_dir_dif</span><span class="p">,</span>
+                        <span class="n">rho_dif_dif</span><span class="p">,</span>
                         <span class="n">Ls</span><span class="p">,</span>
                         <span class="n">L_tot</span><span class="p">,</span>
                         <span class="n">L_dir_dir</span><span class="p">,</span>

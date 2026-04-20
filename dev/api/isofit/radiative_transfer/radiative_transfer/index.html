@@ -5173,7 +5173,7 @@ These follow the physics as presented in Guanter (2006), Vermote et al. (1997), 
  <span class="mkapi-dash">&mdash;</span>
 Retrieves the RT quantities including the LUT sample (r),
 and the radiances (L). This function handles the hand-off between
-the 1c and 4c model.</p>
+the 1c and 6c model.</p>
 </li>
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_upward_transm" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_upward_transm">get_upward_transm</a></span>
@@ -5304,7 +5304,7 @@ Return some child RTE coszen</p>
 </span>
 </span><span class="mkapi-object-kind">method</span>
 <span class="mkapi-object-parent">
-<a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer">RadiativeTransfer</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_rdn" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_rdn">calc_rdn</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x_RT</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">Ls</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_tot</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">r</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-paren">)</span></span>
+<a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer">RadiativeTransfer</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_rdn" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_rdn">calc_rdn</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x_RT</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">Ls</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_tot</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">r</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>Physics-based forward model to calculate at-sensor radiance.
@@ -5377,11 +5377,13 @@ interpolated modeled atmospheric path radiance</p>
 </span>
 </span><span class="mkapi-object-kind">method</span>
 <span class="mkapi-object-parent">
-<a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer">RadiativeTransfer</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_L_coupled" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_L_coupled">get_L_coupled</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">r</span><span class="mkapi-colon">: </span><span class="mkapi-ann">dict</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-colon">: </span><span class="mkapi-ann">Geometry</span><span class="mkapi-paren">)</span></span>
+<a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer">RadiativeTransfer</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_L_coupled" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_L_coupled">get_L_coupled</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">r</span><span class="mkapi-colon">: </span><span class="mkapi-ann">dict</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-colon">: </span><span class="mkapi-ann">Geometry</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dif</span><span class="mkapi-colon">: </span><span class="mkapi-ann"><span class="mkapi-tooltip" title="numpy">np</span>.<span class="mkapi-tooltip" title="numpy._core.ndarray">ndarray</span></span><span class="mkapi-equal"> = </span><span class="mkapi-default">0</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>Get the interpolated radiance terms on the sun-to-surface-to-sensor path.
 These follow the physics as presented in Guanter (2006), Vermote et al. (1997), and Tanre et al. (1983).</p>
+<p>Note:   This function is only applicable to the 6c run case
+        where r contains populated separated transmittances</p>
 <p class="mkapi-section">
 <span class="mkapi-object-link">
 <span class="mkapi-section-toggle" title="Toggle parameters">
@@ -5441,17 +5443,68 @@ L_dif_dif =&gt; downward diffuse * upward diffuse</p>
 </span>
 </span><span class="mkapi-object-kind">method</span>
 <span class="mkapi-object-parent">
-<a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer">RadiativeTransfer</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_RT_quantities" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_RT_quantities">calc_RT_quantities</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x_RT</span><span class="mkapi-colon">: </span><span class="mkapi-ann"><span class="mkapi-tooltip" title="numpy">np</span>.<span class="mkapi-tooltip" title="numpy._core.ndarray">ndarray</span></span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-colon">: </span><span class="mkapi-ann">Geometry</span><span class="mkapi-paren">)</span></span>
+<a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer">RadiativeTransfer</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_RT_quantities" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_RT_quantities">calc_RT_quantities</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x_RT</span><span class="mkapi-colon">: </span><span class="mkapi-ann"><span class="mkapi-tooltip" title="numpy">np</span>.<span class="mkapi-tooltip" title="numpy._core.ndarray">ndarray</span></span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-colon">: </span><span class="mkapi-ann">Geometry</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dif</span><span class="mkapi-colon">: </span><span class="mkapi-ann"><span class="mkapi-tooltip" title="numpy">np</span>.<span class="mkapi-tooltip" title="numpy._core.ndarray">ndarray</span></span><span class="mkapi-equal"> = </span><span class="mkapi-default">0</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>Retrieves the RT quantities including the LUT sample (r),
 and the radiances (L). This function handles the hand-off between
-the 1c and 4c model.</p>
+the 1c and 6c model.</p>
 <p>In the 1c case, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = 0,
 and L_tot, L_down_dir, and L_down_dif are populated within the
 if statement.</p>
-<p>In the 4c case, we always use returns from get_L_coupled</p>
-<p>All quantities are on the sun-to-surface-to-sensor path.</p>
+<p>In the 6c case, we always use returns from get_L_coupled
+All quantities are on the sun-to-surface-to-sensor path.</p>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle parameters">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Parameters</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-name">x_RT</span> : 
+<span class="mkapi-item-type"><span class="mkapi-tooltip" title="numpy">np</span>.<span class="mkapi-tooltip" title="numpy._core.ndarray">ndarray</span></span> <span class="mkapi-dash">&mdash;</span>
+RT portion of the state vector.</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">geom</span> : 
+<span class="mkapi-item-type">Geometry</span> <span class="mkapi-dash">&mdash;</span>
+Geometry object for the current observation.</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">rho_dif_dif</span> : 
+<span class="mkapi-item-type"><span class="mkapi-tooltip" title="numpy">np</span>.<span class="mkapi-tooltip" title="numpy._core.ndarray">ndarray</span></span> <span class="mkapi-dash">&mdash;</span>
+Apparent surface reflectance for
+hemispherical-hemispherical photon paths.
+Included here to incorporate surface-atm coupling
+following Eq. 11 of Guanter et al, 2009.</p>
+</li>
+</ul>
+</div>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle returns">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Returns</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type"><span class="mkapi-tooltip" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_RT_quantities.r">r</span></span> <span class="mkapi-dash">&mdash;</span>
+LUT sample dictionary of shared RT quantities.
+L_tot: total downwelling radiance (uW/nm/sr/cm2).
+L_dir_dir: direct-to-direct radiance component; zero in 1c mode.
+L_dif_dir: diffuse-to-direct radiance component; zero in 1c mode.
+L_dir_dif: direct-to-diffuse radiance component; zero in 1c mode.
+L_dif_dif: diffuse-to-diffuse radiance component; zero in 1c mode.</p>
+</li>
+</ul>
+</div>
 </div>
 <p class="mkapi-object mkapi-page-source" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_upward_transm">
 <span class="mkapi-object-link">
@@ -5499,7 +5552,7 @@ While rt can be either rdn or transm modes, this must be in units of transmittan
 </span>
 </span><span class="mkapi-object-kind">method</span>
 <span class="mkapi-object-parent">
-<a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer">RadiativeTransfer</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRT" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRT">drdn_dRT</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x_RT</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">Ls</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rdn</span><span class="mkapi-paren">)</span></span>
+<a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer">RadiativeTransfer</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRT" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRT">drdn_dRT</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x_RT</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">Ls</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rdn</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>Derivative of estimated radiance w.r.t. RT statevector elements.
@@ -5520,7 +5573,7 @@ the dependence of the surface reflectance on the atmosphere.</p>
 </span>
 </span><span class="mkapi-object-kind">method</span>
 <span class="mkapi-object-parent">
-<a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer">RadiativeTransfer</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRTb" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRTb">drdn_dRTb</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x_RT</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">Ls</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rdn</span><span class="mkapi-paren">)</span></span>
+<a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer">RadiativeTransfer</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRTb" title="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.drdn_dRTb">drdn_dRTb</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x_RT</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">Ls</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rdn</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>Derivative of estimated rdn w.r.t. H2O_ABSCO</p>

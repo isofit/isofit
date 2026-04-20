@@ -2,826 +2,826 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://isofit.github.io/isofit/dev/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/docker/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/examples/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/developers/contributing/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/developers/documentation/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/developers/testing/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/extra_downloads/building_examples/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/extra_downloads/data/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/getting_started/best_practices/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/getting_started/installation/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/getting_started/quickstarts/modtran/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/getting_started/quickstarts/srtmnet/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/information/bibliography/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/information/code_of_conduct/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/sections/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/sections/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/sections/forward_model_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/sections/forward_model_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/sections/implementation_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/sections/implementation_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/sections/input_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/sections/input_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/sections/instrument_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/sections/instrument_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/sections/inversion_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/sections/inversion_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/sections/output_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/sections/output_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/sections/radiative_transfer_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/sections/radiative_transfer_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/sections/statevector_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/sections/statevector_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/sections/surface_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/sections/surface_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/base_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/base_config/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/configs/configs/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/configs/configs/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/core/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/core/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/core/common/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/core/common/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/core/fileio/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/core/fileio/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/core/forward/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/core/forward/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/core/geometry/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/core/geometry/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/core/instrument/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/core/instrument/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/core/isofit/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/core/isofit/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/core/multistate/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/core/multistate/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/core/units/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/core/units/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/cli/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/cli/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/cli/data/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/cli/data/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/cli/examples/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/cli/examples/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/cli/isoplots/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/cli/isoplots/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/cli/libradtran/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/cli/libradtran/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/cli/sixs/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/cli/sixs/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/cli/srtmnet/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/cli/srtmnet/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/cli/surface/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/cli/surface/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/cli/windows/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/cli/windows/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/build_examples/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/build_examples/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/dev/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/dev/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/download/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/download/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/ini/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/ini/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/shared/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/shared/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/data/validate/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/data/validate/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/debug/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/debug/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/debug/ray_bypass/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/debug/ray_bypass/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/debug/resource_tracker/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/debug/resource_tracker/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/inversion/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/inversion/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/inversion/inverse/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/inversion/inverse/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/inversion/inverse_mcmc/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/inversion/inverse_mcmc/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/inversion/inverse_simple/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/inversion/inverse_simple/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/radiative_transfer/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/radiative_transfer/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/radiative_transfer/engines/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/radiative_transfer/engines/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/radiative_transfer/engines/kernel_flows/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/radiative_transfer/engines/kernel_flows/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/radiative_transfer/engines/libradtran/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/radiative_transfer/engines/libradtran/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/radiative_transfer/engines/modtran/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/radiative_transfer/engines/modtran/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/radiative_transfer/engines/sRTMnet/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/radiative_transfer/engines/sRTMnet/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/radiative_transfer/engines/six_s/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/radiative_transfer/engines/six_s/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/radiative_transfer/luts/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/radiative_transfer/luts/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/radiative_transfer/radiative_transfer/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/radiative_transfer/radiative_transfer/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/radiative_transfer/radiative_transfer_engine/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/radiative_transfer/radiative_transfer_engine/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/surface/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/surface/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/surface/surface/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/surface/surface/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/surface/surface_glint_model/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/surface/surface_glint_model/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/surface/surface_lut/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/surface/surface_lut/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/surface/surface_multicomp/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/surface/surface_multicomp/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/surface/surface_thermal/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/surface/surface_thermal/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/conftest/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/conftest/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_cli/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_cli/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_cli_machinery/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_cli_machinery/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_common/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_common/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_env/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_env/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_examples/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_examples/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_fileio/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_fileio/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_forward/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_forward/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_geometry/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_geometry/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_instrument/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_instrument/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_inverse/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_inverse/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_lut/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_lut/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/test/test_ray_bypass/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/test/test_ray_bypass/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/algebraic_line/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/algebraic_line/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/analytical_line/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/analytical_line/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/apply_oe/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/apply_oe/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/atm_interpolation/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/atm_interpolation/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/convert_6s_to_srtmnet/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/convert_6s_to_srtmnet/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/empirical_line/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/empirical_line/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/ewt_from_reflectance/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/ewt_from_reflectance/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/extractions/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/extractions/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/generate_noise/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/generate_noise/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/instrument_model/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/instrument_model/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/interpolate_spectra/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/interpolate_spectra/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/multicomponent_classification/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/multicomponent_classification/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/reconstruct/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/reconstruct/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/reducers/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/reducers/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/segment/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/segment/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/skyview/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/skyview/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/surface_model/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/surface_model/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/template_construction/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/template_construction/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/api/isofit/utils/wavelength_cal/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
     <url>
          <loc>https://isofit.github.io/isofit/dev/src/isofit/utils/wavelength_cal/</loc>
-         <lastmod>2026-04-16</lastmod>
+         <lastmod>2026-04-20</lastmod>
     </url>
 </urlset>
