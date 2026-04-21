@@ -275,52 +275,35 @@ def invert_analytical(
     x = x0.copy()
     x_surface, x_RT, x_instrument = fm.unpack(x)
 
-<<<<<<< bg_rfl
-    # Get all the RT quantities
-    (r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = fm.RT.calc_RT_quantities(
-        x_RT, geom
-    )
-
-    # Path radiance and spherical albedo
-    L_atm = fm.RT.get_L_atm(x_RT, geom)
-    s_alb = r["sphalb"]
-
-=======
->>>>>>> dev
     # Get all the surface quantities for the super pixel
     sub_surface, sub_RT, sub_instrument = fm.unpack(sub_state)
 
-    # Get target pixel reflectance
-    rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
-
     # Surface reflectance at the wl resolution of fm.RT
+    rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
+    rho_dir_dir = fm.upsample(fm.surface.wl, rho_dir_dir)
     rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
 
-<<<<<<< bg_rfl
+
+    rho_dir_dif = (
+        self.upsample(fm.surface.wl, geom.bg_rfl)
+        if isinstance(geom.bg_rfl, np.ndarray)
+        else rho_dir_dir
+    )
+    rho_dif_dif = (
+        self.upsample(fm.surface.wl, geom.bg_rfl)
+        if isinstance(geom.bg_rfl, np.ndarray)
+        else rho_dif_dir
+    )
+
     # Estimation of background radiance
-    L_bg, eq_11_term = fm.RT.calc_rdn_bg(
-        rho_dir_dir=rho_dir_dir,
-        rho_dif_dir=rho_dir_dir,
+    L_bg = fm.RT.calc_rdn_bg(
+        rho_dir_dif=rho_dir_dif,
+        rho_dif_dif=rho_dif_dif,
         L_dir_dif=L_dir_dif,
         L_dif_dif=L_dif_dif,
         L_tot=L_tot,
         s_alb=s_alb,
         geom=geom,
-    )
-
-    # Amend the down diffuse terms with eq_11_term
-    L_dif_dir /= eq_11_term
-    L_dif_dif /= eq_11_term
-=======
-    rho_dir_dif = (
-        self.upsample(self.surface.wl, geom.bg_rfl)
-        if isinstance(geom.bg_rfl, np.ndarray)
-        else rho_dir_dir
-    )
-    rho_dif_dif = (
-        self.upsample(self.surface.wl, geom.bg_rfl)
-        if isinstance(geom.bg_rfl, np.ndarray)
-        else rho_dif_dir
     )
 
     # Get all the RT quantities
@@ -330,11 +313,7 @@ def invert_analytical(
 
     # Path radiance and spherical albedo
     L_atm = fm.RT.get_L_atm(x_RT, geom)
-    s = r["sphalb"]
-
-    # Background conditions equal to the superpixel reflectance
-    bg = s * rho_dif_dir
->>>>>>> dev
+    s_alb = r["sphalb"]
 
     # Get superpixel EOF shift if used
     eof_offset = fm.eof_offset(sub_surface, sub_RT, sub_instrument)

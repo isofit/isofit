@@ -85,6 +85,9 @@ class LUTSurface(Surface):
         # build the interpolator
         self.itp = VectorInterpolator(self.lut_grid, self.data)
 
+        # NOTE to be brought in on rebase with pr-858
+        self.use_background_rfl = config.use_background_rfl
+
         # Change this if you don't want to analytical solve for all the full statevector elements.
         self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
@@ -187,11 +190,16 @@ class LUTSurface(Surface):
 
         return dlamb
 
-    def drdn_drfl(self, L_tot, s_alb, rho_dif_dir):
+    def drdn_drfl(
+        self, L_tot, s_alb, rho_dif_dir, L_dir_dir, L_dir_dif, L_dif_dir, L_dif_dif
+    ):
         """Partial derivative of radiance with respect to
         surface reflectance"""
 
-        return L_tot / ((1.0 - s_alb * rho_dif_dir) ** 2)
+        if self.use_background_rfl:
+            return L_dir_dir + (L_dif_dir / (1.0 - s_alb * rho_dif_dir))
+        else:
+            return L_tot / ((1.0 - s_alb * rho_dif_dir) ** 2)
 
     def calc_Ls(self, x_surface, geom):
         """Emission of surface, as a radiance."""

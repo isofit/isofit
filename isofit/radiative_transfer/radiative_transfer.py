@@ -259,19 +259,11 @@ class RadiativeTransfer:
         return ret
 
     def calc_rdn_bg(
-        self, rho_dir_dir, rho_dif_dir, L_dir_dif, L_dif_dif, L_tot, s_alb, geom
+        self, rho_dir_dif, rho_dif_dif, L_dir_dif, L_dif_dif, L_tot, s_alb
     ):
         """TOA radiance that is a function of the background reflectance (used in AOE)."""
 
-        rho_dir_dif = (
-            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dir_dir
-        )
-        rho_dif_dif = (
-            geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_dif_dir
-        )
-
         atm_surface_scattering = s_alb * rho_dif_dif
-
         eq_11_term = 1 - atm_surface_scattering
 
         if not isinstance(L_dir_dif, np.ndarray) or len(L_dir_dif) == 1:
@@ -284,7 +276,7 @@ class RadiativeTransfer:
             + (L_tot * atm_surface_scattering * rho_dif_dif) / (1 - s_alb * rho_dif_dif)
         )
 
-        return L_bg, eq_11_term
+        return L_bg
 
     def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
         """Get the interpolated modeled atmospheric path radiance.
