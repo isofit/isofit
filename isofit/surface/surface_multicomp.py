@@ -79,6 +79,7 @@ class MultiComponentSurface(Surface):
         # Variables retrieved: each channel maps to a reflectance model parameter
         rmin, rmax = -0.05, 2.0
         self.statevec_names = ["RFL_%04i" % int(w) for w in self.wl]
+
         self.idx_surface = np.arange(len(self.statevec_names))
 
         # Change this if you don't want to analytical solve for all the full statevector elements.
