@@ -21,8 +21,48 @@ import os
 from typing import Dict, List, Type
 
 import numpy as np
+from scipy.io import loadmat
 
 from isofit.configs.base_config import BaseConfigSection
+from isofit.configs.sections.statevector_config import (
+    StateVectorConfig,
+    StateVectorElementConfig,
+)
+from isofit.core.common import recursive_get
+from isofit.surface.surface import DefaultState
+from isofit.surface.surface_glint_model import (
+    DefaultSkyGlintPrior,
+    DefaultSunGlintPrior,
+)
+from isofit.surface.surface_thermal import DefaultSurfTempKPrior
+
+
+class SurfaceStateVectorConfig(StateVectorConfig):
+    """
+    Surface State vector configuration.
+    """
+
+    def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
+        self._SURF_TEMP_K_type = StateVectorElementConfig
+        self.SURF_TEMP_K: StateVectorElementConfig = StateVectorElementConfig(
+            DefaultSurfTempKPrior._asdict()
+        )
+
+        self._SKY_GLINT_type = StateVectorElementConfig
+        self.SKY_GLINT: StateVectorElementConfig = StateVectorElementConfig(
+            DefaultSkyGlintPrior._asdict()
+        )
+
+        self._SUN_GLINT_type = StateVectorElementConfig
+        self.SUN_GLINT: StateVectorElementConfig = StateVectorElementConfig(
+            DefaultSunGlintPrior._asdict()
+        )
+
+        assert len(self.get_all_elements()) == len(self._get_nontype_attributes())
+
+        self._set_statevector_config_options(sub_configdic)
 
 
 class SurfaceConfig(BaseConfigSection):
@@ -31,6 +71,8 @@ class SurfaceConfig(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
         self._multi_surface_flag_type = bool
         self.multi_surface_flag = False
 
@@ -63,24 +105,19 @@ class SurfaceConfig(BaseConfigSection):
         self._selection_metric_type = str
         self.selection_metric = "Euclidean"
 
+        self._statevector_type = SurfaceStateVectorConfig
+        self.statevector: StateVectorConfig = SurfaceStateVectorConfig({})
+
         # Surface Thermal
         """ Initial Value recommended by Glynn Hulley."""
         self._emissivity_for_surface_T_init_type = float
         self.emissivity_for_surface_T_init = 0.98
 
-        self._surface_T_prior_sigma_degK_type = float
-        self.surface_T_prior_sigma_degK = 1.0
-
-        self._sun_glint_prior_sigma_type = float
-        self.sun_glint_prior_sigma = 0.1
-
-        self._sky_glint_prior_sigma_type = float
-        self.sky_glint_prior_sigma = 0.001
-
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         if (self.surface_file is None) and not len(self.Surfaces):
             errors.append(
@@ -139,4 +176,36 @@ class SurfaceConfig(BaseConfigSection):
                     f"int mapping specified for keys: {missing_ints}"
                 )
 
-        return errors
+        # Check statevector
+        mat_files = list(
+            filter(None, recursive_get(self.get_config_as_dict(), "surface_file"))
+        )
+        statevec = {
+            key: value
+            for di in recursive_get(self.get_config_as_dict(), "statevector")
+            for key, value in di.items()
+        }
+
+        mismatch = {}
+        for f in mat_files:
+            model_dict = loadmat(f)
+            for i, name in enumerate(model_dict.get("statevec_names", [])):
+                for key in DefaultState._fields:
+                    if not (
+                        np.all(statevec[name][key] == model_dict[key].squeeze()[i])
+                    ):
+                        mismatch[key] = name
+
+        if len(mismatch):
+            message = (
+                "Configured non-reflectance surface statevector "
+                + "elements do not match .mat file.\nRun will use configured "
+                + "values in the .json config."
+                + "\nMismatching values:"
+            )
+            for key, value in mismatch.items():
+                message += f"\n{value}: {key}"
+
+            warnings.append(message)
+
+        return errors, warnings

@@ -45,6 +45,44 @@ def next_diag_val(C: np.ndarray, starting_index, direction):
     return None
 
 
+def unpack_statevector(statevector, surface_category=None):
+    data = {
+        "statevec_names": [],
+        "bounds": [],
+        "init": [],
+        "prior_mean": [],
+        "prior_sigma": [],
+        "scale": [],
+    }
+    if not statevector:
+        return {}
+
+    if isinstance(statevector, list):
+        for state in statevector:
+            data["statevec_names"].append(state["name"])
+            data["bounds"].append(state["bounds"])
+            data["init"].append(state["init"])
+            data["prior_mean"].append(state["prior_mean"])
+            data["prior_sigma"].append(state["prior_sigma"])
+            data["scale"].append(state["scale"])
+
+        return data
+
+    if isinstance(statevector, dict):
+        if surface_category:
+            return unpack_statevector(
+                statevector.get(surface_category), surface_category
+            )
+
+        else:
+            for key, value in statevector.items():
+                category_state = unpack_statevector(value, surface_category=key)
+                for key, values in category_state.items():
+                    data[key].extend(values)
+
+            return data
+
+
 def surface_model(
     config_path: str,
     wavelength_path: str = None,
@@ -418,9 +456,40 @@ def surface_model(
         # Divide up model dict based on surface_type
         surface_categories = np.unique(model["surface_categories"])
         for surface_category in surface_categories:
-            i = np.argwhere(np.array(model["surface_categories"]) == surface_category)
-
             type_model = model.copy()
+
+            type_model.update(
+                unpack_statevector(
+                    config.get("statevector"), surface_category=surface_category
+                )
+            )
+
+            statevector_categories = type_model.get("statevector_surface_category", [])
+            if len(statevector_categories):
+                i = [
+                    i
+                    for i, val in enumerate(statevector_categories)
+                    if val == surface_category
+                ]
+                if not len(i):
+                    type_model.pop("statevec_names", None)
+                    type_model.pop("bounds", None)
+                    type_model.pop("init", None)
+                    type_model.pop("prior_mean", None)
+                    type_model.pop("prior_sigma", None)
+                    type_model.pop("scale", None)
+                    type_model.pop("statevector_surface_category", None)
+                else:
+                    i = i[0]
+                    type_model["statevec_names"] = type_model["statevec_names"][i]
+                    type_model["bounds"] = type_model["bounds"][i]
+                    type_model["init"] = type_model["init"][i]
+                    type_model["prior_mean"] = type_model["prior_mean"][i]
+                    type_model["prior_sigma"] = type_model["prior_sigma"][i]
+                    type_model["scale"] = type_model["scale"][i]
+                    type_model.pop("statevector_surface_category", None)
+
+            i = np.argwhere(np.array(model["surface_categories"]) == surface_category)
             type_model["means"] = np.squeeze(model["means"][i])
             type_model["covs"] = np.squeeze(model["covs"][i])
 
@@ -441,6 +510,7 @@ def surface_model(
             scipy.io.savemat(type_outfile, type_model)
 
     else:
+        model.update(unpack_statevector(config.get("statevector")))
         scipy.io.savemat(outfile, model)
 
 
