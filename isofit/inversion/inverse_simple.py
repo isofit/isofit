@@ -284,12 +284,12 @@ def invert_analytical(
     rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
 
     rho_dir_dif = (
-        self.upsample(self.surface.wl, geom.bg_rfl)
+        fm.upsample(fm.surface.wl, geom.bg_rfl)
         if isinstance(geom.bg_rfl, np.ndarray)
         else rho_dir_dir
     )
     rho_dif_dif = (
-        self.upsample(self.surface.wl, geom.bg_rfl)
+        fm.upsample(fm.surface.wl, geom.bg_rfl)
         if isinstance(geom.bg_rfl, np.ndarray)
         else rho_dif_dir
     )
