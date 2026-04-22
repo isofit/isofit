@@ -1652,6 +1652,23 @@ def make_surface_config(
         surface_config_dict["surface_file"] = surface_working_paths[surface_category]
         surface_config_dict["surface_category"] = surface_category
 
+    # Accumulate statevector
+    for category, path in surface_working_paths.items():
+        surface_mat = loadmat(path)
+        statevec_names = surface_mat.get("statevec_names", [])
+        if len(statevec_names):
+            surface_config_dict["statevector"] = surface_config_dict.get(
+                "statevector", {}
+            )
+            for i, name in enumerate(statevec_names):
+                surface_config_dict["statevector"][name] = {
+                    "bounds": [i for i in surface_mat["bounds"][i]],
+                    "init": surface_mat["init"][0][i],
+                    "prior_mean": surface_mat["prior_mean"][0][i],
+                    "prior_sigma": surface_mat["prior_sigma"][0][i],
+                    "scale": surface_mat["scale"][0][i],
+                }
+
     return surface_config_dict
 
 

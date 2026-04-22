@@ -93,8 +93,11 @@ class Config(BaseConfigSection):
         """
         logging.info("Checking config sections for configuration issues")
 
-        errors = self.check_config_validity()
+        errors, warnings = self.check_config_validity()
         errors.extend(self.check_inter_section_validity())
+
+        for w in warnings:
+            logging.warning(w)
 
         for e in errors:
             logging.error(e)
