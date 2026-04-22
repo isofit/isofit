@@ -258,9 +258,7 @@ class RadiativeTransfer:
 
         return ret
 
-    def calc_rdn_bg(
-        self, rho_dir_dif, rho_dif_dif, L_dir_dif, L_dif_dif, L_tot, s_alb
-    ):
+    def calc_rdn_bg(self, rho_dir_dif, rho_dif_dif, L_dir_dif, L_dif_dif, L_tot, s_alb):
         """TOA radiance that is a function of the background reflectance (used in AOE)."""
 
         atm_surface_scattering = s_alb * rho_dif_dif
