@@ -5443,12 +5443,12 @@
     <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">)</span>
 
     <span class="n">rho_dir_dif</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
+        <span class="n">fm</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
         <span class="k">else</span> <span class="n">rho_dir_dir</span>
     <span class="p">)</span>
     <span class="n">rho_dif_dif</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
+        <span class="n">fm</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
         <span class="k">else</span> <span class="n">rho_dif_dir</span>
     <span class="p">)</span>
