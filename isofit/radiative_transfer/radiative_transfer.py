@@ -296,14 +296,15 @@ class RadiativeTransfer:
         # radiances along all optical paths
         L_coupled = []
 
-
         for key in self.rt_engines[0].coupling_terms:
             L_coupled.append(
-                units.transm_to_rdn(r[key], coszen=geom.coszen, solar_irr=self.solar_irr)
+                units.transm_to_rdn(
+                    r[key], coszen=geom.coszen, solar_irr=self.solar_irr
+                )
                 if self.rt_engines[0].rt_mode == "transm"
                 else r[key]
             )
-        
+
         # Topographic shadow mask (0=shadow, 1=sunlit pixel).
         # for now, this is always set to 1.0.
         b = 1.0
