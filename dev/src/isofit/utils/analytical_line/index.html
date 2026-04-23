@@ -5235,7 +5235,12 @@
 <span class="normal">688</span>
 <span class="normal">689</span>
 <span class="normal">690</span>
-<span class="normal">691</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">691</span>
+<span class="normal">692</span>
+<span class="normal">693</span>
+<span class="normal">694</span>
+<span class="normal">695</span>
+<span class="normal">696</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5690,6 +5695,9 @@
         <span class="c1"># How many iterations to use for invert_analytical</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_iter</span> <span class="o">=</span> <span class="n">num_iter</span>
 
+        <span class="c1"># Define coszen for geom creation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coszen</span> <span class="ow">or</span> <span class="kc">None</span>
+
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">radiometry_correction_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">radiance_correction</span><span class="p">,</span> <span class="n">wl</span> <span class="o">=</span> <span class="n">load_spectrum</span><span class="p">(</span>
                 <span class="n">config</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">radiometry_correction_file</span>
@@ -5758,6 +5766,8 @@
                 <span class="n">loc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:],</span>
                 <span class="n">esd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">esd</span><span class="p">,</span>
                 <span class="n">svf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">svf</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">svf</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">coszen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coszen</span><span class="p">,</span>
+                <span class="n">full_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
             <span class="p">)</span>
 
             <span class="c1"># &quot;Atmospheric&quot; state ALWAYS comes from all bands in the</span>

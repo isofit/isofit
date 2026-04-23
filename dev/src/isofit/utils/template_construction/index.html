@@ -7244,7 +7244,7 @@
     <span class="n">retrieve_co2</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">presolve</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">terrain_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;flat&quot;</span><span class="p">,</span>
-    <span class="n">cos_i_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">max_slope</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Write an isofit config file for the main solve, using the specified pathnames and all given info</span>
 
@@ -7276,7 +7276,7 @@
 <span class="sd">        retrieve_co2:                         flag to include CO2 in lut and retrieval</span>
 <span class="sd">        presolve:                             set this up as a presolve configuration</span>
 <span class="sd">        terrain_style:                        style of terrain to use in the forward model - options are &#39;flat&#39;, &#39;dem&#39;, &#39;solved&#39;</span>
-<span class="sd">        cos_i_min:                            minimum cosine of incidence angle to allow isofit to use in the forward model</span>
+<span class="sd">        max_slope:                            maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">use_superpixels</span><span class="p">:</span>
@@ -7361,7 +7361,7 @@
                 <span class="n">to_sensor_zenith_lut_grid</span><span class="p">,</span>
                 <span class="n">to_sun_zenith_lut_grid</span><span class="p">,</span>
                 <span class="n">terrain_style</span><span class="p">,</span>
-                <span class="n">cos_i_min</span><span class="p">,</span>
+                <span class="n">max_slope</span><span class="p">,</span>
             <span class="p">),</span>
             <span class="s2">&quot;surface&quot;</span><span class="p">:</span> <span class="n">make_surface_config</span><span class="p">(</span>
                 <span class="n">paths</span><span class="o">.</span><span class="n">surface_class_working_path</span><span class="p">,</span>
@@ -7990,7 +7990,7 @@
     <span class="n">to_sensor_zenith_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">to_sun_zenith_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">terrain_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;flat&quot;</span><span class="p">,</span>
-    <span class="n">cos_i_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">max_slope</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="n">avc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
         <span class="p">[</span>
@@ -8033,7 +8033,7 @@
         <span class="s2">&quot;lut_grid&quot;</span><span class="p">:</span> <span class="p">{},</span>
         <span class="s2">&quot;unknowns&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;H2O_ABSCO&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span>
         <span class="s2">&quot;terrain_style&quot;</span><span class="p">:</span> <span class="n">terrain_style</span><span class="p">,</span>
-        <span class="s2">&quot;cos_i_min&quot;</span><span class="p">:</span> <span class="n">cos_i_min</span><span class="p">,</span>
+        <span class="s2">&quot;max_slope&quot;</span><span class="p">:</span> <span class="n">max_slope</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">vswir</span> <span class="o">=</span> <span class="p">{}</span>

@@ -4464,17 +4464,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#isofit.core.geometry.Geometry.verify" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        verify
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -4663,7 +4652,68 @@
 <span class="normal">138</span>
 <span class="normal">139</span>
 <span class="normal">140</span>
-<span class="normal">141</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -4689,6 +4739,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs</span><span class="w"> </span><span class="kn">import</span> <span class="n">configs</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Geometry</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.geometry.Geometry"><a href="../../../../api/isofit/core/geometry/#isofit.core.geometry.Geometry" title="Go to docs">[docs]</a></div>
@@ -4703,6 +4754,8 @@
         <span class="n">esd</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">bg_rfl</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">svf</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">coszen</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">full_config</span><span class="p">:</span> <span class="n">configs</span><span class="o">.</span><span class="n">Config</span> <span class="o">=</span> <span class="p">{},</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize geometry object.</span>
 <span class="sd">        Args:</span>
@@ -4712,14 +4765,12 @@
 <span class="sd">            esd: Earth sun distance array.</span>
 <span class="sd">            bg_rfl: Background reflectance spectrum.</span>
 <span class="sd">            svf: Sky view factor.</span>
+<span class="sd">            coszen: Cosine of the solar zenith angle for top of atmosphere.</span>
+<span class="sd">            config: isofit config.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Set some benign defaults...</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">observer_zenith</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="mi">0</span>  <span class="c1"># REVIEW: pytest/test_geometry asserts 0, change to None?</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">observer_azimuth</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="mi">0</span>  <span class="c1"># REVIEW: pytest/test_geometry asserts 0, change to None?</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observer_zenith</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observer_azimuth</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">solar_zenith</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">solar_azimuth</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">observer_altitude_km</span> <span class="o">=</span> <span class="kc">None</span>
@@ -4738,6 +4789,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="o">=</span> <span class="n">bg_rfl</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">skyview_factor</span> <span class="o">=</span> <span class="n">svf</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_slope</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="o">=</span> <span class="s2">&quot;flat&quot;</span>
 
         <span class="c1"># The &#39;obs&#39; object is observation metadata that follows a historical</span>
         <span class="c1"># AVIRIS-NG format.  It arrives to our initializer in the form of</span>
@@ -4772,6 +4826,84 @@
         <span class="k">if</span> <span class="n">dt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">esd_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_esd_factor</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
+        <span class="c1"># Determine how to treat coszen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_universal_coszen</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Allow for backwards compatibility where config is not given</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">full_config</span><span class="p">:</span>
+            <span class="c1"># If no config given, prioritize using the OBS data</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">solar_zenith</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">solar_zenith</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">use_universal_coszen</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="c1"># If OBS data is not present, then fall back to using the coszen input</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="n">coszen</span>
+
+        <span class="c1"># In the more common case that Isofit config is provided...</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Update terrain parameters from config</span>
+            <span class="n">rt_config</span> <span class="o">=</span> <span class="n">full_config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">radiative_transfer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_slope</span> <span class="o">=</span> <span class="n">rt_config</span><span class="o">.</span><span class="n">max_slope</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="o">=</span> <span class="n">rt_config</span><span class="o">.</span><span class="n">terrain_style</span>
+
+            <span class="c1"># 1. If user has a lut grid that contains solar_zenith this takes priority</span>
+            <span class="k">if</span> <span class="n">rt_config</span><span class="o">.</span><span class="n">lut_grid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">&quot;solar_zenith&quot;</span> <span class="ow">in</span> <span class="n">rt_config</span><span class="o">.</span><span class="n">lut_grid</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">solar_zenith</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">use_universal_coszen</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="c1"># 2. If it&#39;s not in the lut grid, and user doesn&#39;t give a coszen, we should</span>
+            <span class="c1"># raise a helpful warning, but still allow them to use the OBS data</span>
+            <span class="k">elif</span> <span class="n">coszen</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">solar_zenith</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">solar_zenith</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">use_universal_coszen</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;coszen was not defined and solar zenith was not found in the lut grid. &quot;</span>
+                    <span class="s2">&quot;This will proceed with the OBS data, however, this may cause small errors in the forward model.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># 3. In this case, the user does not have solar zenith in the lut grid</span>
+            <span class="c1"># and cozen is correctly defined (based on the RT Engine)</span>
+            <span class="k">elif</span> <span class="n">coszen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="n">coszen</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;coszen is not defined and valid solar zenith not found in OBS data.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_universal_coszen</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The coszen will be universal:   coszen=</span><span class="si">{</span><span class="n">coszen</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The coszen is pixel dependent and will based on the OBS data&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="c1"># Pretend that the surface is flat, regardless of input geometry</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="o">==</span> <span class="s2">&quot;flat&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span>
+
+            <span class="c1"># Set min cosi (which is at max slope facing away from sun)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">min_cosi</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+                <span class="mi">0</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coszen</span><span class="p">))</span>
+                <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_slope</span><span class="p">))</span>
+                <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">180</span><span class="p">))</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_slope</span><span class="p">)),</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Check bounds</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_cosi</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coszen</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_cosi</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cos_i</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skyview_factor</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="mf">1.0</span> <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">skyview_factor</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">skyview_factor</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Unable to determine coszen. Proceeding without will cause errors during the inversion.&quot;</span>
+            <span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">get_esd_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date_time</span><span class="p">:</span> <span class="n">datetime</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.geometry.Geometry.get_esd_factor"><a href="../../../../api/isofit/core/geometry/#isofit.core.geometry.Geometry.get_esd_factor" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get distance ratio from sun based on time of year, relative to day 1</span>
 <span class="sd">        Args:</span>
@@ -4783,27 +4915,6 @@
 
         <span class="n">day_of_year</span> <span class="o">=</span> <span class="n">date_time</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span>
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">earth_sun_distance</span><span class="p">[</span><span class="n">day_of_year</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coszen</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.geometry.Geometry.verify"><a href="../../../../api/isofit/core/geometry/#isofit.core.geometry.Geometry.verify" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify important geometry data such as coszen, cos_i, slope, aspect, and sky view prior to inversion.&quot;&quot;&quot;</span>
-        <span class="n">valid_data</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="c1"># Populate coszen if NaN</span>
-        <span class="n">coszen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">solar_zenith</span><span class="p">))</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">coszen</span><span class="p">)</span> <span class="k">else</span> <span class="n">coszen</span>
-
-        <span class="c1"># Local solar zenith angle as a function of surface slope and aspect</span>
-        <span class="n">cos_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cos_i</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cos_i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">coszen</span>
-
-        <span class="c1"># Ensure coszen, cos_i respect 0-1 bounds.</span>
-        <span class="n">valid_data</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">coszen</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-        <span class="n">valid_data</span><span class="p">[</span><span class="s2">&quot;cos_i&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">cos_i</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-
-        <span class="c1"># Assume skyview of 1.0 if outside 0-1 (e.g., NaN data).</span>
-        <span class="n">valid_data</span><span class="p">[</span><span class="s2">&quot;skyview_factor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="mf">1.0</span> <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">skyview_factor</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">skyview_factor</span>
-        <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">valid_data</span>
 </code></pre></div></td></tr></table></div>
 
 

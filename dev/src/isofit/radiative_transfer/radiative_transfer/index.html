@@ -4509,17 +4509,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.coszen" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        coszen
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_rdn" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5256,28 +5245,7 @@
 <span class="normal">577</span>
 <span class="normal">578</span>
 <span class="normal">579</span>
-<span class="normal">580</span>
-<span class="normal">581</span>
-<span class="normal">582</span>
-<span class="normal">583</span>
-<span class="normal">584</span>
-<span class="normal">585</span>
-<span class="normal">586</span>
-<span class="normal">587</span>
-<span class="normal">588</span>
-<span class="normal">589</span>
-<span class="normal">590</span>
-<span class="normal">591</span>
-<span class="normal">592</span>
-<span class="normal">593</span>
-<span class="normal">594</span>
-<span class="normal">595</span>
-<span class="normal">596</span>
-<span class="normal">597</span>
-<span class="normal">598</span>
-<span class="normal">599</span>
-<span class="normal">600</span>
-<span class="normal">601</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">580</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5355,8 +5323,6 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">lut_grid</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">get_element_names</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">terrain_style</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_cos_i</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">min_cos_i</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">radiative_transfer_engines</span><span class="p">)):</span>
@@ -5446,16 +5412,6 @@
             <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pack_arrays</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">coszen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.coszen"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.coszen" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Backwards compatibility until Geometry takes over this param</span>
-<span class="sd">        Return some child RTE coszen</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">&quot;coszen&quot;</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">lut</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">child</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">coszen</span><span class="o">.</span><span class="n">data</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calc_rdn</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_rdn"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.calc_rdn" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="p">,</span>
@@ -5549,9 +5505,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">L_atms</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="n">verified_geom</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coszen</span><span class="p">)</span>
-        <span class="n">coszen</span><span class="p">,</span> <span class="n">cos_i</span> <span class="o">=</span> <span class="n">verified_geom</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">],</span> <span class="n">verified_geom</span><span class="p">[</span><span class="s2">&quot;cos_i&quot;</span><span class="p">]</span>
-
         <span class="k">for</span> <span class="n">RT</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">RT</span><span class="o">.</span><span class="n">treat_as_emissive</span><span class="p">:</span>
                 <span class="n">r</span> <span class="o">=</span> <span class="n">RT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
@@ -5563,7 +5516,7 @@
                     <span class="n">L_atm</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;rhoatm&quot;</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">rho_atm</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;rhoatm&quot;</span><span class="p">]</span>
-                    <span class="n">L_atm</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">transm_to_rdn</span><span class="p">(</span><span class="n">rho_atm</span><span class="p">,</span> <span class="n">coszen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">solar_irr</span><span class="p">)</span>
+                    <span class="n">L_atm</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">transm_to_rdn</span><span class="p">(</span><span class="n">rho_atm</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">solar_irr</span><span class="p">)</span>
                 <span class="n">L_atms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">L_atm</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">L_atms</span><span class="p">)</span>
 <div class="mkapi-source-link" id="isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_L_coupled"><a href="../../../../api/isofit/radiative_transfer/radiative_transfer/#isofit.radiative_transfer.radiative_transfer.RadiativeTransfer.get_L_coupled" title="Go to docs">[docs]</a></div>
@@ -5586,48 +5539,43 @@
 <span class="sd">            L_dir_dif =&gt; downward direct * upward diffuse</span>
 <span class="sd">            L_dif_dif =&gt; downward diffuse * upward diffuse</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Check coszen against cos_i</span>
-        <span class="n">verified_geom</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coszen</span><span class="p">)</span>
-        <span class="n">coszen</span><span class="p">,</span> <span class="n">cos_i</span><span class="p">,</span> <span class="n">skyview_factor</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">verified_geom</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">],</span>
-            <span class="n">verified_geom</span><span class="p">[</span><span class="s2">&quot;cos_i&quot;</span><span class="p">],</span>
-            <span class="n">verified_geom</span><span class="p">[</span><span class="s2">&quot;skyview_factor&quot;</span><span class="p">],</span>
-        <span class="p">)</span>
-        <span class="c1"># Pretend that the surface is flat, regardless of input geometry</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="o">==</span> <span class="s2">&quot;flat&quot;</span><span class="p">:</span>
-            <span class="n">cos_i</span> <span class="o">=</span> <span class="n">coszen</span>
-
-        <span class="n">cos_i</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_cos_i</span><span class="p">,</span> <span class="n">cos_i</span><span class="p">)</span>
 
         <span class="c1"># radiances along all optical paths</span>
         <span class="n">L_coupled</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coupling_terms</span><span class="p">:</span>
             <span class="n">L_coupled</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">units</span><span class="o">.</span><span class="n">transm_to_rdn</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">coszen</span><span class="o">=</span><span class="n">coszen</span><span class="p">,</span> <span class="n">solar_irr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">solar_irr</span><span class="p">)</span>
+                <span class="n">units</span><span class="o">.</span><span class="n">transm_to_rdn</span><span class="p">(</span>
+                    <span class="n">r</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">coszen</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">coszen</span><span class="p">,</span> <span class="n">solar_irr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">solar_irr</span>
+                <span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">==</span> <span class="s2">&quot;transm&quot;</span>
                 <span class="k">else</span> <span class="n">r</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
             <span class="p">)</span>
+
         <span class="c1"># Topographic shadow mask (0=shadow, 1=sunlit pixel).</span>
         <span class="c1"># for now, this is always set to 1.0.</span>
         <span class="n">b</span> <span class="o">=</span> <span class="mf">1.0</span>
 
+        <span class="c1"># Assumption of the topography of the background</span>
+        <span class="n">cos_i_bg</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span>
+        <span class="n">skyview_factor_bg</span> <span class="o">=</span> <span class="mf">1.0</span>
+
         <span class="c1"># Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.</span>
         <span class="c1"># Downward diffuse components are scaled by viewable sky fraction (i.e., &quot;ungula&quot; of viewable sky in solid geometry terms).</span>
-        <span class="n">L_dir_dir</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">coszen</span> <span class="o">*</span> <span class="n">cos_i</span> <span class="o">*</span> <span class="n">b</span>
+        <span class="n">L_dir_dir</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span> <span class="o">*</span> <span class="n">geom</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">*</span> <span class="n">b</span>
         <span class="n">L_dif_dir</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">L_dir_dif</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">coszen</span> <span class="o">*</span> <span class="n">cos_i</span> <span class="o">*</span> <span class="n">b</span>
+        <span class="n">L_dir_dif</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span> <span class="o">*</span> <span class="n">cos_i_bg</span>
         <span class="n">L_dif_dif</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
 
         <span class="c1"># Note - we should really be doing the multiplication upstream before convolution - this is an approximation</span>
         <span class="c1"># Correct downward diffuse term for topographic assuming Hay&#39;s model (Hay 1979; Richter 1998; Guanter et al., 2009)</span>
         <span class="n">t_down_dir</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;transm_down_dir&quot;</span><span class="p">]</span>
-        <span class="n">hays_model</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">t_down_dir</span> <span class="o">*</span> <span class="p">(</span><span class="n">cos_i</span> <span class="o">/</span> <span class="n">coszen</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span>
-            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">b</span> <span class="o">*</span> <span class="n">t_down_dir</span><span class="p">)</span> <span class="o">*</span> <span class="n">skyview_factor</span>
+        <span class="n">L_dif_dir</span> <span class="o">*=</span> <span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">t_down_dir</span> <span class="o">*</span> <span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">/</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span>
+            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">b</span> <span class="o">*</span> <span class="n">t_down_dir</span><span class="p">)</span> <span class="o">*</span> <span class="n">geom</span><span class="o">.</span><span class="n">skyview_factor</span>
         <span class="p">)</span>
-        <span class="c1"># applies to the downward diffuse terms</span>
-        <span class="n">L_dif_dir</span> <span class="o">*=</span> <span class="n">hays_model</span>
-        <span class="n">L_dif_dif</span> <span class="o">*=</span> <span class="n">hays_model</span>
+        <span class="n">L_dif_dif</span> <span class="o">*=</span> <span class="p">(</span><span class="n">t_down_dir</span> <span class="o">*</span> <span class="p">(</span><span class="n">cos_i_bg</span> <span class="o">/</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span>
+            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">t_down_dir</span><span class="p">)</span> <span class="o">*</span> <span class="n">skyview_factor_bg</span>
+        <span class="p">)</span>
 
         <span class="c1"># Apply equation 11</span>
         <span class="c1"># If no rho_dif_dif passed eq_11_term -&gt; 1</span>
@@ -5680,7 +5628,6 @@
                 <span class="n">r</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">multipart_transmittance</span><span class="p">:</span>
-            <span class="n">coszen</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coszen</span><span class="p">)[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span>
             <span class="n">L_tots</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">RT</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">:</span>
                 <span class="n">r</span> <span class="o">=</span> <span class="n">RT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x_RT</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
@@ -5693,7 +5640,7 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">L_tot</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">transm_to_rdn</span><span class="p">(</span>
                             <span class="n">r</span><span class="p">[</span><span class="s2">&quot;transm_down_dif&quot;</span><span class="p">],</span>
-                            <span class="n">coszen</span><span class="p">,</span>
+                            <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span><span class="p">,</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">solar_irr</span><span class="p">,</span>
                         <span class="p">)</span>
                     <span class="n">L_tots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">L_tot</span><span class="p">)</span>

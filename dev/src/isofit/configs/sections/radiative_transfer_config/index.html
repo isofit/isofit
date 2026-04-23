@@ -5468,12 +5468,12 @@
 <span class="sd">        Style of terrain to use in the forward model - options are &#39;flat&#39;, &#39;dem&#39;, &#39;solved&#39;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_min_cos_i_type</span> <span class="o">=</span> <span class="nb">float</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_cos_i</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_slope_type</span> <span class="o">=</span> <span class="nb">float</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_slope</span> <span class="o">=</span> <span class="mf">90.0</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        float: Minimum cos(i) value used in LUT component calculations.  Only relevant</span>
-<span class="sd">        if terrain_style is &#39;dem&#39; and a 6 component model is used. This can avoid</span>
-<span class="sd">        runaway results at low values where diffuse radiance dominates.</span>
+<span class="sd">        float: Max slope value used in LUT component calculations to inform minimum cos_i.  </span>
+<span class="sd">        Only relevant if terrain_style is &#39;dem&#39; and a 6 component model is used. </span>
+<span class="sd">        This can avoid runaway results at low cos_i values where diffuse radiance dominates.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>

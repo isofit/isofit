@@ -5632,7 +5632,8 @@
 <span class="normal">930</span>
 <span class="normal">931</span>
 <span class="normal">932</span>
-<span class="normal">933</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">933</span>
+<span class="normal">934</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6012,6 +6013,7 @@
                 <span class="mi">0</span>
             <span class="p">]</span><span class="o">.</span><span class="n">engine_name</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coszen</span> <span class="ow">or</span> <span class="kc">None</span>
 
         <span class="c1"># Use the pre-defined full statevec</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_statevec</span><span class="p">):</span>
@@ -6160,6 +6162,8 @@
             <span class="n">esd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">esd</span><span class="p">,</span>
             <span class="n">bg_rfl</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;background_reflectance_file&quot;</span><span class="p">],</span>
             <span class="n">svf</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;skyview_factor_file&quot;</span><span class="p">],</span>
+            <span class="n">coszen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coszen</span><span class="p">,</span>
+            <span class="n">full_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">current_input_data</span><span class="o">.</span><span class="n">geom</span> <span class="o">=</span> <span class="n">geom</span>
@@ -6383,14 +6387,12 @@
 
             <span class="k">if</span> <span class="s2">&quot;atmospheric_coefficients_file&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_datasets</span><span class="p">:</span>
                 <span class="n">rhoatm</span><span class="p">,</span> <span class="n">sphalb</span><span class="p">,</span> <span class="n">L_tot</span><span class="p">,</span> <span class="n">transup</span><span class="p">,</span> <span class="n">L_Up</span> <span class="o">=</span> <span class="n">coeffs</span>
-                <span class="n">verified_geom</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">coszen</span><span class="p">)</span>
-                <span class="n">coszen</span><span class="p">,</span> <span class="n">cos_i</span> <span class="o">=</span> <span class="n">verified_geom</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">],</span> <span class="n">verified_geom</span><span class="p">[</span><span class="s2">&quot;cos_i&quot;</span><span class="p">]</span>
                 <span class="n">solar_irr</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">solar_irr</span>
 
                 <span class="n">atm_vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">rhoatm</span><span class="p">,</span> <span class="n">sphalb</span><span class="p">,</span> <span class="n">L_tot</span><span class="p">,</span> <span class="n">solar_irr</span><span class="p">]</span>
 
                 <span class="n">atm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">(</span>
-                    <span class="n">atm_vars</span> <span class="o">+</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meas_wl</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span> <span class="o">*</span> <span class="n">coszen</span><span class="p">]</span>
+                    <span class="n">atm_vars</span> <span class="o">+</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meas_wl</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span> <span class="o">*</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span><span class="p">]</span>
                 <span class="p">)</span>
 
                 <span class="n">atm</span> <span class="o">=</span> <span class="n">atm</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meas_wl</span><span class="p">)</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,))</span>

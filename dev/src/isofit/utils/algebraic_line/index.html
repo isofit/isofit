@@ -4949,7 +4949,17 @@
 <span class="normal">413</span>
 <span class="normal">414</span>
 <span class="normal">415</span>
-<span class="normal">416</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5201,6 +5211,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">fm</span> <span class="o">=</span> <span class="n">fm</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">iv</span> <span class="o">=</span> <span class="n">Inversion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="p">)</span>
 
+        <span class="c1"># Define coszen for geom creation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">RT</span><span class="o">.</span><span class="n">rt_engines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coszen</span> <span class="ow">or</span> <span class="kc">None</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">rfl_bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Reflectance output will be bounded to the surface bounds: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rfl_bounds</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -5268,7 +5281,14 @@
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">meas</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
                     <span class="k">continue</span>
 
-                <span class="n">geom</span> <span class="o">=</span> <span class="n">Geometry</span><span class="p">(</span><span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:],</span> <span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:],</span> <span class="n">esd</span><span class="o">=</span><span class="n">esd</span><span class="p">)</span>
+                <span class="c1"># NOTE skyview factor and background reflectance are currently unused in algebraic line</span>
+                <span class="n">geom</span> <span class="o">=</span> <span class="n">Geometry</span><span class="p">(</span>
+                    <span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:],</span>
+                    <span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:],</span>
+                    <span class="n">esd</span><span class="o">=</span><span class="n">esd</span><span class="p">,</span>
+                    <span class="n">coszen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coszen</span><span class="p">,</span>
+                    <span class="n">full_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
+                <span class="p">)</span>
 
                 <span class="c1"># &quot;Atmospheric&quot; state ALWAYS comes from all bands in the</span>
                 <span class="c1"># atm_interpolated file</span>

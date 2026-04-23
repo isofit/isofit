@@ -5111,11 +5111,11 @@ provides the most significant gains. Setting higher may provide marginal gains.<
 Style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'</p>
 </li>
 <li>
-<p><span class="mkapi-item-name">min_cos_i</span> : 
+<p><span class="mkapi-item-name">max_slope</span> : 
 <span class="mkapi-item-type">float</span> <span class="mkapi-dash">&mdash;</span>
-Minimum cos(i) value used in LUT component calculations.  Only relevant
-if terrain_style is 'dem' and a 6 component model is used. This can avoid
-runaway results at low values where diffuse radiance dominates.</p>
+Max slope value used in LUT component calculations to inform minimum cos_i.
+Only relevant if terrain_style is 'dem' and a 6 component model is used. 
+This can avoid runaway results at low cos_i values where diffuse radiance dominates.</p>
 </li>
 </ul>
 </div>
