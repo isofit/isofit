@@ -95,9 +95,9 @@ def construct_full_state(full_config):
     # Pull the rt names from the config. Seems to be most commonly present.
     rt_config = full_config.forward_model.radiative_transfer
 
-    rt_states = vars(rt_config.radiative_transfer_engines[0])["statevector_names"]
+    rt_states = vars(rt_config.engine)["statevector_names"]
     if not rt_states:
-        rt_states = sorted(rt_config.radiative_transfer_engines[0].lut_names.keys())
+        rt_states = sorted(rt_config.engine.lut_names.keys())
 
     # Check for config type
     if full_config.forward_model.surface.multi_surface_flag:
@@ -286,9 +286,7 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
         )
 
         # Add the statevector names
-        config.forward_model.radiative_transfer.radiative_transfer_engines[
-            0
-        ].statevector_names.append(key)
+        config.forward_model.radiative_transfer.engine.statevector_names.append(key)
 
     return config
 

@@ -202,8 +202,7 @@ def test_multisurface_inversions(args, monkeypatch):
     assert np.isclose(val, args[5][1], atol=0.01)
 
 
-@pytest.mark.xfail
-@pytest.mark.examples
+@pytest.mark.skip(reason="Thermal-IR implementation needs to be updated")
 def test_modtran_one(monkeypatch):
     """Run MODTRAN example dataset."""
 

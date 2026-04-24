@@ -106,7 +106,6 @@ class RadiativeTransferEngine:
         self.interpolator_style = interpolator_style
         self.overwrite_interpolator = overwrite_interpolator
 
-        self.treat_as_emissive = engine_config.treat_as_emissive
         self.engine_base_dir = engine_config.engine_base_dir
         self.sim_path = engine_config.sim_path
         if self.sim_path:

@@ -269,16 +269,6 @@ class ModtranRT(RadiativeTransferEngine):
         solzen = self.load_tp6(f"{file}.tp6")
         coszen = np.cos(np.deg2rad(solzen))
         params = self.load_chn(f"{file}.chn", coszen)
-
-        # Remove thermal terms in VSWIR runs to avoid incorrect usage
-        if self.treat_as_emissive is False:
-            for key in ["thermal_upwelling", "thermal_downwelling"]:
-                if key in params:
-                    Logger.debug(
-                        f"Deleting key because treat_as_emissive is False: {key}"
-                    )
-                    del params[key]
-
         params["solzen"] = solzen
         params["coszen"] = coszen
 

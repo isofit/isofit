@@ -73,41 +73,28 @@ class RadiativeTransfer:
     def __init__(self, full_config: Config):
         config = full_config.forward_model.radiative_transfer
         confIT = full_config.forward_model.instrument
+        confRT = config.engine
 
         self.lut_grid = config.lut_grid
         self.statevec_names = config.statevector.get_element_names()
 
-        self.rt_engines = []
-        for idx in range(len(config.radiative_transfer_engines)):
-            confRT = config.radiative_transfer_engines[idx]
+        # Generate the params for this RTE
+        params = {
+            key: confPriority(key, [confRT, confIT, config]) for key in self._keys
+        }
+        params["engine_config"] = confRT
+        params["n_cores"] = full_config.implementation.n_cores
 
-            if confRT.engine_name not in Engines:
-                raise AttributeError(
-                    f"Invalid radiative transfer engine choice. Got: {confRT.engine_name}; Must be one of: {list(Engines)}"
-                )
+        # Select the right RTE and initialize it
+        self.engine = Engines[confRT.engine_name](**params)
 
-            # Generate the params for this RTE
-            params = {
-                key: confPriority(key, [confRT, confIT, config]) for key in self._keys
-            }
-            params["engine_config"] = confRT
-            params["n_cores"] = full_config.implementation.n_cores
-
-            # Select the right RTE and initialize it
-            rte = Engines[confRT.engine_name](**params)
-            self.rt_engines.append(rte)
-
-            # Make sure the length of the config statevectores match the engine's assumed statevectors
-            if (expected := len(config.statevector.get_element_names())) != (
-                got := len(rte.indices.x_RT)
-            ):
-                error = f"Mismatch between the number of elements for the config statevector and LUT.indices.x_RT: {expected=}, {got=}"
-                Logger.error(error)
-                raise AttributeError(error)
-
-        # The rest of the code relies on sorted order of the individual RT engines which cannot
-        # be guaranteed by the dict JSON or YAML input
-        self.rt_engines.sort(key=lambda x: x.wl[0])
+        # Make sure the length of the config statevectores match the engine's assumed statevectors
+        if (expected := len(self.statevec_names)) != (
+            got := len(self.engine.indices.x_RT)
+        ):
+            error = f"Mismatch between the number of elements for the config and LUT grid: {expected=}, {got=}"
+            Logger.error(error)
+            raise AttributeError(error)
 
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state
@@ -134,15 +121,12 @@ class RadiativeTransfer:
             self.Sa_normalized
         )
 
-        self.wl = np.concatenate([RT.wl for RT in self.rt_engines])
+        self.wl = self.engine.wl
 
         self.bvec = config.unknowns.get_element_names()
         self.bval = np.array([x for x in config.unknowns.get_elements()[0]])
 
-        self.solar_irr = np.concatenate([RT.solar_irr for RT in self.rt_engines])
-
-        # 1c or 3c?
-        self.multipart_transmittance = self.rt_engines[0].multipart_transmittance
+        self.solar_irr = self.engine.solar_irr
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""
@@ -155,16 +139,6 @@ class RadiativeTransfer:
     def Sb(self):
         """Uncertainty due to unmodeled variables."""
         return np.diagflat(np.power(self.bval, 2))
-
-    def get_shared_rtm_quantities(self, x_RT, geom):
-        """Return only the set of RTM quantities (transup, sphalb, etc.) that are contained
-        in all RT engines.
-        """
-        ret = []
-        for RT in self.rt_engines:
-            ret.append(RT.get(x_RT, geom))
-
-        return self.pack_arrays(ret)
 
     def calc_rdn(
         self,
@@ -194,7 +168,7 @@ class RadiativeTransfer:
         atm_surface_scattering = s_alb * rho_dif_dif
 
         # Special case: 1-component model
-        if not self.multipart_transmittance:
+        if not self.engine.multipart_transmittance:
             # we assume rho_dir_dir = rho_dif_dir = rho_dir_dif = rho_dif_dif
             rho_dif_dif = rho_dir_dir
             # eliminate spherical albedo and one reflectance term from numerator if using 1-component model
@@ -256,22 +230,14 @@ class RadiativeTransfer:
         Returns:
             interpolated modeled atmospheric path radiance
         """
-        L_atms = []
 
-        for RT in self.rt_engines:
-            if RT.treat_as_emissive:
-                r = RT.get(x_RT, geom)
-                rdn = r["thermal_upwelling"]
-                L_atms.append(rdn)
-            else:
-                r = RT.get(x_RT, geom)
-                if RT.rt_mode == "rdn":
-                    L_atm = r["rhoatm"]
-                else:
-                    rho_atm = r["rhoatm"]
-                    L_atm = units.transm_to_rdn(rho_atm, geom.coszen, self.solar_irr)
-                L_atms.append(L_atm)
-        return np.hstack(L_atms)
+        r = self.engine.get(x_RT, geom)
+        if self.engine.rt_mode == "rdn":
+            L_atm = r["rhoatm"]
+        else:
+            rho_atm = r["rhoatm"]
+            L_atm = units.transm_to_rdn(rho_atm, geom.coszen, self.solar_irr)
+        return L_atm
 
     def get_L_coupled(self, r: dict, geom: Geometry, rho_dif_dif: np.ndarray = 0):
         """Get the interpolated radiance terms on the sun-to-surface-to-sensor path.
@@ -296,12 +262,12 @@ class RadiativeTransfer:
         # radiances along all optical paths
         L_coupled = []
 
-        for key in self.rt_engines[0].coupling_terms:
+        for key in self.engine.coupling_terms:
             L_coupled.append(
                 units.transm_to_rdn(
                     r[key], coszen=geom.coszen, solar_irr=self.solar_irr
                 )
-                if self.rt_engines[0].rt_mode == "transm"
+                if self.engine.rt_mode == "transm"
                 else r[key]
             )
 
@@ -372,32 +338,27 @@ class RadiativeTransfer:
         """
 
         # Propogate LUT
-        r = self.get_shared_rtm_quantities(x_RT, geom)
+        r = self.engine.get(x_RT, geom)
 
         # Handle 1c L_tot. NOTE: transm_down_dif = total transm for 1c case.
-        if self.multipart_transmittance:
+        if self.engine.multipart_transmittance:
             # Get directional radiances
             L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(
                 r, geom, rho_dif_dif=rho_dif_dif
             )
-        if not self.multipart_transmittance:
-            L_tots = []
-            for RT in self.rt_engines:
-                r = RT.get(x_RT, geom)
-                if RT.treat_as_emissive:
-                    rdn = r["thermal_downwelling"]
-                    L_tots.append(rdn)
+        if not self.engine.multipart_transmittance:
+            r = self.engine.get(x_RT, geom)
+            if self.engine.treat_as_emissive:
+                rdn = r["thermal_downwelling"]
+            else:
+                if self.engine.rt_mode == "rdn":
+                    L_tot = r["transm_down_dif"]
                 else:
-                    if RT.rt_mode == "rdn":
-                        L_tot = r["transm_down_dif"]
-                    else:
-                        L_tot = units.transm_to_rdn(
-                            r["transm_down_dif"],
-                            geom.coszen,
-                            self.solar_irr,
-                        )
-                    L_tots.append(L_tot)
-            L_tot = np.hstack(L_tots)
+                    L_tot = units.transm_to_rdn(
+                        r["transm_down_dif"],
+                        geom.coszen,
+                        self.solar_irr,
+                    )
             L_dir_dir = 0
             L_dif_dir = 0
             L_dir_dif = 0
@@ -543,32 +504,7 @@ class RadiativeTransfer:
         return Kb_RT
 
     def summarize(self, x_RT, geom):
-        ret = []
-        for RT in self.rt_engines:
-            ret.append(RT.summarize(x_RT, geom))
-        ret = "\n".join(ret)
-        return ret
-
-    def pack_arrays(self, rtm_quantities_from_RT_engines):
-        """Take the list of dict outputs from each RT engine and
-        stack their internal arrays in the same order. Keep only
-        those quantities that are common to all RT engines.
-        """
-        # Get the intersection of the sets of keys from each of the rtm_quantities_from_RT_engines
-        shared_rtm_keys = set(rtm_quantities_from_RT_engines[0].keys())
-        if len(rtm_quantities_from_RT_engines) > 1:
-            for rtm_quantities_from_one_RT_engine in rtm_quantities_from_RT_engines[1:]:
-                shared_rtm_keys.intersection_update(
-                    rtm_quantities_from_one_RT_engine.keys()
-                )
-
-        # Concatenate the different band ranges
-        rtm_quantities_concatenated_over_RT_bands = {}
-        for key in shared_rtm_keys:
-            temp = [x[key] for x in rtm_quantities_from_RT_engines]
-            rtm_quantities_concatenated_over_RT_bands[key] = np.hstack(temp)
-
-        return rtm_quantities_concatenated_over_RT_bands
+        return self.engine.summarize(x_RT, geom)
 
 
 def ext550_to_vis(ext550):
