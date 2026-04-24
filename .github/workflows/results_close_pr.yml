@@ -13,4 +13,6 @@ jobs:
           GH_TOKEN: ${{ secrets.ISOFIT_TEST_RESULTS }}
           PR_NUM: ${{ github.event.pull_request.number }}
           REPO: isofit/isofit-test-results
-        run: gh pr close "$PR_NUM" --repo "$REPO"
+        run: |
+          PR_NUMBER=$(gh pr list --repo "$REPO" --search "$PR_NUM" --json number,title --jq '.[] | select(.title == "'"$PR_NUM"'") | .number')
+          gh pr close "$PR_NUM" --repo "$REPO"
