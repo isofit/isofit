@@ -600,9 +600,34 @@ def wavelength_cal(
             output_file=paths.modtran_template_path,
         )
 
-        tmpl.build_main_config(
+        logging.info("Writing main configuration file.")
+        # add aerosol elements from climatology
+        aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
+            tmpl.load_climatology(
+                paths.aerosol_climatology,
+                mean_latitude,
+                mean_longitude,
+                dt,
+                lut_params=lut_params,
+            )
+        )
+
+        tmpl.build_config(
             paths=paths,
-            lut_params=lut_params,
+            n_cores=n_cores,
+            use_superpixels=True,
+            surface_category=surface_category,
+            emulator_base=emulator_base,
+            uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+            prebuilt_lut_path=prebuilt_lut,
+            inversion_windows=INVERSION_WINDOWS,
+            multipart_transmittance=multipart_transmittance,
+            segmentation_size=n_rows,
+            multiple_restarts=False,
+            pressure_elevation=False,
+            aerosol_model_file=aerosol_model_path,
+            aerosol_lut_grid=aerosol_lut_grid,
+            aerosol_state_vector=aerosol_state_vector,
             h2o_lut_grid=h2o_lut_grid,
             elevation_lut_grid=(
                 elevation_lut_grid
@@ -624,20 +649,6 @@ def wavelength_cal(
                 if relative_azimuth_lut_grid is not None
                 else [mean_relative_azimuth]
             ),
-            mean_latitude=mean_latitude,
-            mean_longitude=mean_longitude,
-            dt=dt,
-            use_superpixels=True,
-            n_cores=n_cores,
-            surface_category=surface_category,
-            emulator_base=emulator_base,
-            uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-            multiple_restarts=False,
-            segmentation_size=n_rows,
-            pressure_elevation=False,
-            prebuilt_lut_path=prebuilt_lut,
-            inversion_windows=INVERSION_WINDOWS,
-            multipart_transmittance=multipart_transmittance,
         )
 
         add_wavelength_elements(
