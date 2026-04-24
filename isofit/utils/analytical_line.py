@@ -538,7 +538,6 @@ class Worker(object):
                 bg_rfl=self.bg_rfl[r, c, :] if len(self.bg_rfl) else None,
                 coszen=self.coszen,
                 full_config=self.config,
-
             )
 
             # "Atmospheric" state ALWAYS comes from all bands in the
