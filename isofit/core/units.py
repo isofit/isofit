@@ -361,3 +361,12 @@ def ft_to_m(ft):
     """
     m = ft / 3.280839895
     return m
+
+
+def ext550_to_vis(ext550):
+    """VIS is defined as a function of the surface aerosol extinction coefficient
+    at 550 nm in km-1, EXT550, by the formula VIS[km] = ln(50) / (EXT550 + 0.01159),
+    where 0.01159 is the surface Rayleigh scattering coefficient at 550 nm in km-1
+    (see MODTRAN6 manual, p. 50).
+    """
+    return np.log(50.0) / (ext550 + 0.01159)
