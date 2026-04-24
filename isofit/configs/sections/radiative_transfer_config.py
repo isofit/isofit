@@ -174,7 +174,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
            Keep to a small number for systems with little memory and slow read.
         """
 
-        # 6S parameters - not the corcommemnd
+        # 6S parameters - not the recommended
         # TODO: these should come from a template file, as in modtran
         self._day_type = int
         self.day = None
@@ -428,8 +428,8 @@ class RadiativeTransferConfig(BaseConfigSection):
         self._max_slope_type = float
         self.max_slope = 90.0
         """
-        float: Max slope value used in LUT component calculations to inform minimum cos_i.  
-        Only relevant if terrain_style is 'dem' and a 6 component model is used. 
+        float: Max slope value used in LUT component calculations to inform minimum cos_i.
+        Only relevant if terrain_style is 'dem' and a 6 component model is used.
         This can avoid runaway results at low cos_i values where diffuse radiance dominates.
         """
 
@@ -443,7 +443,18 @@ class RadiativeTransferConfig(BaseConfigSection):
             self.lut_grid[key] = sorted(self.lut_grid[key])
         self.lut_grid = OrderedDict(sorted(self.lut_grid.items(), key=lambda t: t[0]))
 
-        self.engine = RadiativeTransferEngineConfig(sub_configdic["engine"])
+        if not (engine := sub_configdic.get("engine")):
+            logging.error(
+                "Config does not have an 'engine' key, checking if this config is before ISOFIT v3.9"
+            )
+            if rte := sub_configdic.get("radiative_transfer_engines"):
+                key = list(rte.keys())[0]
+                engine = rte[key]
+                logging.warning(
+                    f"Old config detected, taking the first engine available: {key}"
+                )
+
+        self.engine = RadiativeTransferEngineConfig(engine)
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
