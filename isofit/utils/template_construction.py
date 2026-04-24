@@ -55,6 +55,7 @@ class Pathnames:
         skyview_factor=None,
         subs: bool = False,
         classify_multisurface: bool = False,
+        use_background_rfl: bool = True,
         dn_uncertainty_file: str = None,
         eof_path=None,
     ):
@@ -128,6 +129,17 @@ class Pathnames:
 
         self.surface_template_path = abspath(join(self.data_directory, "surface.mat"))
         self.surface_working_paths = {}
+
+        if use_background_rfl:
+            self.bgrfl_working_path = abspath(
+                join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl"))
+            )
+            self.atm_presolve = abspath(
+                join(self.output_directory, rdn_fname.replace("_rdn", "_atm_presolve"))
+            )
+        else:
+            self.bgrfl_working_path = None
+            self.atm_presolve = None
 
         if copy_input_files is True:
             self.radiance_working_path = abspath(
@@ -215,6 +227,13 @@ class Pathnames:
         else:
             self.svf_working_path = None
             self.svf_subs_path = None
+
+        if use_background_rfl:
+            self.bgrfl_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_bgrfl")
+            )
+        else:
+            self.bgrfl_subs_path = None
 
         self.rdn_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_rdn")
@@ -702,6 +721,7 @@ def build_config(
     retrieve_co2: bool = False,
     presolve: bool = False,
     terrain_style: str = "flat",
+    use_background_rfl: bool = False,
     max_slope: float = 20.0,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
@@ -734,6 +754,7 @@ def build_config(
         retrieve_co2:                         flag to include CO2 in lut and retrieval
         presolve:                             set this up as a presolve configuration
         terrain_style:                        style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
+        use_background_rfl:                   flag to determine which surface derivatives to use in OE
         max_slope:                            maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat
     """
 
@@ -747,11 +768,13 @@ def build_config(
             state_output_path = paths.h2o_subs_path
             posterior_output_path = None
             rfl_output_path = None
+            bgrfl_input_path = None
 
         else:
             state_output_path = paths.state_subs_path
             posterior_output_path = paths.uncert_subs_path
             rfl_output_path = paths.rfl_subs_path
+            bgrfl_input_path = paths.bgrfl_subs_path
 
     else:
         rdn_input_path = paths.radiance_working_path
@@ -763,71 +786,80 @@ def build_config(
             state_output_path = paths.h2o_working_path
             posterior_output_path = None
             rfl_output_path = None
+            bgrfl_input_path = None
+
         else:
             state_output_path = paths.state_working_path
             posterior_output_path = paths.uncert_working_path
             rfl_output_path = paths.rfl_working_path
+            bgrfl_input_path = paths.bgrfl_working_path
 
     input_config = make_input_config(
-        rdn_input_path,
-        loc_input_path,
-        obs_input_path,
-        svf_input_path,
-        paths.rdn_factors_path,
+        rdn_input_path=rdn_input_path,
+        loc_input_path=loc_input_path,
+        obs_input_path=obs_input_path,
+        svf_input_path=svf_input_path,
+        rdn_factors_path=paths.rdn_factors_path,
+        bgrfl_path=bgrfl_input_path,
     )
     output_config = make_output_config(
-        state_output_path,
-        posterior_output_path,
-        rfl_output_path,
+        state_output_path=state_output_path,
+        posterior_output_path=posterior_output_path,
+        rfl_output_path=rfl_output_path,
     )
 
     config = {
         "forward_model": {
             "instrument": make_instrument_config(
-                paths.wavelength_path,
-                paths.input_channelized_uncertainty_path,
-                paths.channelized_uncertainty_working_path,
-                paths.eof_path,
-                paths.eof_working_path,
-                paths.noise_path,
-                segmentation_size,
-                use_superpixels,
-                uncorrelated_radiometric_uncertainty,
-                paths.dn_uncertainty_file,
+                wavelength_path=paths.wavelength_path,
+                input_channelized_uncertainty_path=paths.input_channelized_uncertainty_path,
+                channelized_uncertainty_working_path=paths.channelized_uncertainty_working_path,
+                eof_path=paths.eof_path,
+                eof_working_path=paths.eof_working_path,
+                noise_path=paths.noise_path,
+                segmentation_size=segmentation_size,
+                use_superpixels=use_superpixels,
+                uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+                dn_uncertainty_file=paths.dn_uncertainty_file,
             ),
             "radiative_transfer": make_rt_config(
-                paths.lut_h2o_directory if presolve else paths.full_lut_directory,
-                paths.h2o_template_path if presolve else paths.modtran_template_path,
-                paths.aerosol_tpl_path,
-                paths.earth_sun_distance_path,
-                paths.irradiance_file,
-                paths.sixs_path,
-                paths.modtran_path,
-                h2o_lut_grid,
-                aerosol_lut_grid,
-                aerosol_model_file,
-                aerosol_state_vector,
-                co2_lut_grid,
-                elevation_lut_grid,
-                emulator_base,
-                multipart_transmittance,
-                prebuilt_lut_path,
-                presolve,
-                pressure_elevation,
-                retrieve_co2,
-                relative_azimuth_lut_grid,
-                to_sensor_zenith_lut_grid,
-                to_sun_zenith_lut_grid,
-                terrain_style,
-                max_slope,
+                lut_directory=(
+                    paths.lut_h2o_directory if presolve else paths.full_lut_directory
+                ),
+                modtran_template_path=(
+                    paths.h2o_template_path if presolve else paths.modtran_template_path
+                ),
+                aerosol_tpl_path=paths.aerosol_tpl_path,
+                earth_sun_distance_path=paths.earth_sun_distance_path,
+                irradiance_file=paths.irradiance_file,
+                sixs_path=paths.sixs_path,
+                modtran_path=paths.modtran_path,
+                h2o_lut_grid=h2o_lut_grid,
+                aerosol_lut_grid=aerosol_lut_grid,
+                aerosol_model_file=aerosol_model_file,
+                aerosol_state_vector=aerosol_state_vector,
+                co2_lut_grid=co2_lut_grid,
+                elevation_lut_grid=elevation_lut_grid,
+                emulator_base=emulator_base,
+                multipart_transmittance=multipart_transmittance,
+                prebuilt_lut_path=prebuilt_lut_path,
+                presolve=presolve,
+                pressure_elevation=pressure_elevation,
+                retrieve_co2=retrieve_co2,
+                relative_azimuth_lut_grid=relative_azimuth_lut_grid,
+                to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid,
+                to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
+                terrain_style=terrain_style,
+                max_slope=max_slope,
             ),
             "surface": make_surface_config(
-                paths.surface_class_working_path,
-                paths.surface_class_subs_path,
-                paths.surface_working_paths,
-                surface_category,
-                pressure_elevation,
-                use_superpixels,
+                surface_class_working_path=paths.surface_class_working_path,
+                surface_class_subs_path=paths.surface_class_subs_path,
+                surface_working_paths=paths.surface_working_paths,
+                surface_category=surface_category,
+                pressure_elevation=pressure_elevation,
+                use_superpixels=use_superpixels,
+                use_background_rfl=use_background_rfl,
             ),
         },
         "implementation": make_implementation_config(
@@ -1606,6 +1638,7 @@ def make_surface_config(
     surface_category="multicomponent_surface",
     pressure_elevation=False,
     use_superpixels=False,
+    use_background_rfl=False,
 ):
 
     # Initialize config dict
@@ -1645,12 +1678,14 @@ def make_surface_config(
                 "surface_int": int(i),
                 "surface_file": surface_path,
                 "surface_category": surface_category,
+                "use_background_rfl": use_background_rfl,
             }
 
     # Single surface run
     else:
         surface_config_dict["surface_file"] = surface_working_paths[surface_category]
         surface_config_dict["surface_category"] = surface_category
+        surface_config_dict["use_background_rfl"] = use_background_rfl
 
     # Accumulate statevector
     for category, path in surface_working_paths.items():
@@ -1747,6 +1782,7 @@ def make_input_config(
     obs_input_path: str,
     svf_input_path: str = None,
     rdn_factors_path: str = None,
+    bgrfl_path: str = None,
 ):
     input_config = {}
     input_config["measured_radiance_file"] = rdn_input_path
@@ -1756,6 +1792,8 @@ def make_input_config(
         input_config["skyview_factor_file"] = svf_input_path
     if rdn_factors_path:
         input_config["radiometry_correction_file"] = rdn_factors_path
+    if bgrfl_path:
+        input_config["background_reflectance_file"] = bgrfl_path
 
     return input_config
 

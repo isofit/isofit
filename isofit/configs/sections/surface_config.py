@@ -82,6 +82,9 @@ class SurfaceConfig(BaseConfigSection):
         self._surface_category_type = str
         self.surface_category = None
 
+        self._use_background_rfl_type = bool
+        self.use_background_rfl = False
+
         self._surface_class_file_type = str
         self.surface_class_file = None
 

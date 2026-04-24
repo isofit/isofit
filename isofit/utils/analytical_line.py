@@ -77,6 +77,7 @@ def analytical_line(
     output_unc_file: str = None,
     atm_file: str = None,
     skyview_factor_file: str = None,
+    bgrfl_file: str = None,
     loglevel: str = "INFO",
     logfile: str = None,
     initializer: str = "algebraic",
@@ -311,6 +312,7 @@ def analytical_line(
             logfile,
             initializer,
             skyview_factor_file,
+            bgrfl_file,
         ]
         workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
@@ -373,6 +375,7 @@ class Worker(object):
         logfile: str,
         initializer: str,
         skyview_factor_file: str,
+        bgrfl_file: str,
     ):
         """
         Worker class to help run a subset of spectra.
@@ -427,6 +430,14 @@ class Worker(object):
             )
         else:
             self.svf = []
+
+        # Open background rfl file
+        if bgrfl_file:
+            self.bg_rfl = envi.open(envi_header(bgrfl_file)).open_memmap(
+                interleave="bip"
+            )
+        else:
+            self.bg_rfl = []
 
         # Lines and samples
         self.n_lines = self.rdn.shape[0]
@@ -524,6 +535,7 @@ class Worker(object):
                 loc=self.loc[r, c, :],
                 esd=self.esd,
                 svf=self.svf[r, c] if len(self.svf) else 1,
+                bg_rfl=self.bg_rfl[r, c, :] if len(self.bg_rfl) else None,
                 coszen=self.coszen,
                 full_config=self.config,
             )
@@ -677,6 +689,7 @@ class Worker(object):
 @click.option("--output_rfl_file", help="TODO", type=str, default=None)
 @click.option("--output_unc_file", help="TODO", type=str, default=None)
 @click.option("--skyview_factor_file", help="TODO", type=str, default=None)
+@click.option("--bgrfl_file", help="TODO", type=str, default=None)
 @click.option("--atm_file", help="TODO", type=str, default=None)
 @click.option("--loglevel", help="TODO", type=str, default="INFO")
 @click.option("--logfile", help="TODO", type=str, default=None)

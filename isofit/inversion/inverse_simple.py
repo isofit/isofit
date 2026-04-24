@@ -294,6 +294,17 @@ def invert_analytical(
         else rho_dif_dir
     )
 
+    # Estimation of background radiance
+    L_bg = fm.RT.calc_rdn_bg(
+        rho_dir_dif=rho_dir_dif,
+        rho_dif_dif=rho_dif_dif,
+        L_dir_dif=L_dir_dif,
+        L_dif_dif=L_dif_dif,
+        L_tot=L_tot,
+        s_alb=s_alb,
+        geom=geom,
+    )
+
     # Get all the RT quantities
     (r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = fm.RT.calc_RT_quantities(
         x_RT, geom, rho_dif_dif=rho_dif_dif
@@ -301,10 +312,7 @@ def invert_analytical(
 
     # Path radiance and spherical albedo
     L_atm = fm.RT.get_L_atm(x_RT, geom)
-    s = r["sphalb"]
-
-    # Background conditions equal to the superpixel reflectance
-    bg = s * rho_dif_dir
+    s_alb = r["sphalb"]
 
     # Get superpixel EOF shift if used
     eof_offset = fm.eof_offset(sub_surface, sub_RT, sub_instrument)
@@ -318,9 +326,8 @@ def invert_analytical(
 
     # The H matrix does not change as a function of x-vector
     H = fm.surface.analytical_model(
-        bg,
-        L_tot=L_tot,
-        geom=geom,
+        L_tot,
+        geom,
         L_dir_dir=L_dir_dir,
         L_dir_dif=L_dir_dif,
         L_dif_dir=L_dif_dir,
@@ -359,7 +366,7 @@ def invert_analytical(
         LI_rcond = dpotrf(P_rcond)[0]
         C_rcond = dpotri(LI_rcond)[0]
 
-        y = meas[winidx] - L_atm[winidx] - eof_offset[winidx]
+        y = meas[winidx] - L_atm[winidx] - eof_offset[winidx] - L_bg[winidx]
         xk = dsymv(
             1,
             C_rcond,
