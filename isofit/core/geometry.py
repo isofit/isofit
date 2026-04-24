@@ -24,6 +24,7 @@ from datetime import datetime
 import numpy as np
 
 from isofit.core import units
+from isofit.configs import configs
 
 
 class Geometry:
@@ -38,6 +39,8 @@ class Geometry:
         esd: np.array = None,
         bg_rfl: np.array = None,
         svf: float = 1,
+        coszen: float = None,
+        full_config: configs.Config = {},
     ):
         """Initialize geometry object.
         Args:
@@ -47,14 +50,12 @@ class Geometry:
             esd: Earth sun distance array.
             bg_rfl: Background reflectance spectrum.
             svf: Sky view factor.
+            coszen: Cosine of the solar zenith angle for top of atmosphere.
+            config: isofit config.
         """
         # Set some benign defaults...
-        self.observer_zenith = (
-            0  # REVIEW: pytest/test_geometry asserts 0, change to None?
-        )
-        self.observer_azimuth = (
-            0  # REVIEW: pytest/test_geometry asserts 0, change to None?
-        )
+        self.observer_zenith = None
+        self.observer_azimuth = None
         self.solar_zenith = None
         self.solar_azimuth = None
         self.observer_altitude_km = None
@@ -73,6 +74,9 @@ class Geometry:
         self.bg_rfl = bg_rfl
         self.cos_i = None
         self.skyview_factor = svf
+
+        self.max_slope = 0.0
+        self.terrain_style = "flat"
 
         # The 'obs' object is observation metadata that follows a historical
         # AVIRIS-NG format.  It arrives to our initializer in the form of
@@ -107,6 +111,84 @@ class Geometry:
         if dt is not None:
             self.esd_factor = self.get_esd_factor(dt)
 
+        # Determine how to treat coszen
+        self.use_universal_coszen = True
+
+        # Allow for backwards compatibility where config is not given
+        if not full_config:
+            # If no config given, prioritize using the OBS data
+            if self.solar_zenith is not None:
+                self.coszen = np.cos(np.radians(self.solar_zenith))
+                self.use_universal_coszen = False
+            # If OBS data is not present, then fall back to using the coszen input
+            else:
+                self.coszen = coszen
+
+        # In the more common case that Isofit config is provided...
+        else:
+            # Update terrain parameters from config
+            rt_config = full_config.forward_model.radiative_transfer
+            self.max_slope = rt_config.max_slope
+            self.terrain_style = rt_config.terrain_style
+
+            # 1. If user has a lut grid that contains solar_zenith this takes priority
+            if rt_config.lut_grid is not None and "solar_zenith" in rt_config.lut_grid:
+                self.coszen = np.cos(np.radians(self.solar_zenith))
+                self.use_universal_coszen = False
+
+            # 2. If it's not in the lut grid, and user doesn't give a coszen, we should
+            # raise a helpful warning, but still allow them to use the OBS data
+            elif coszen is None and self.solar_zenith is not None:
+                self.coszen = np.cos(np.radians(self.solar_zenith))
+                self.use_universal_coszen = False
+                logging.warning(
+                    "coszen was not defined and solar zenith was not found in the lut grid. "
+                    "This will proceed with the OBS data, however, this may cause small errors in the forward model."
+                )
+
+            # 3. In this case, the user does not have solar zenith in the lut grid
+            # and cozen is correctly defined (based on the RT Engine)
+            elif coszen is not None:
+                self.coszen = coszen
+
+            else:
+                raise ValueError(
+                    "coszen is not defined and valid solar zenith not found in OBS data."
+                )
+
+        if self.use_universal_coszen:
+            logging.info(f"The coszen will be universal:   coszen={coszen}")
+        else:
+            logging.info(
+                f"The coszen is pixel dependent and will based on the OBS data"
+            )
+
+        if self.coszen is not None:
+
+            # Pretend that the surface is flat, regardless of input geometry
+            if self.terrain_style == "flat":
+                self.cos_i = self.coszen
+
+            # Set min cosi (which is at max slope facing away from sun)
+            self.min_cosi = max(
+                0,
+                np.sin(np.arccos(self.coszen))
+                * np.sin(np.radians(self.max_slope))
+                * np.cos(np.radians(180))
+                + self.coszen * np.cos(np.radians(self.max_slope)),
+            )
+
+            # Check bounds
+            self.coszen = max(self.min_cosi, min(self.coszen, 1.0))
+            self.cos_i = max(self.min_cosi, min(self.cos_i, 1.0))
+            self.skyview_factor = (
+                1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
+            )
+        else:
+            logging.warning(
+                "Unable to determine coszen. Proceeding without will cause errors during the inversion."
+            )
+
     def get_esd_factor(self, date_time: datetime):
         """Get distance ratio from sun based on time of year, relative to day 1
         Args:
@@ -118,24 +200,3 @@ class Geometry:
 
         day_of_year = date_time.timetuple().tm_yday
         return float(self.earth_sun_distance[day_of_year - 1, 1])
-
-    def verify(self, coszen):
-        """Verify important geometry data such as coszen, cos_i, slope, aspect, and sky view prior to inversion."""
-        valid_data = {}
-
-        # Populate coszen if NaN
-        coszen = np.cos(np.deg2rad(self.solar_zenith)) if np.isnan(coszen) else coszen
-
-        # Local solar zenith angle as a function of surface slope and aspect
-        cos_i = self.cos_i if self.cos_i is not None else coszen
-
-        # Ensure coszen, cos_i respect 0-1 bounds.
-        valid_data["coszen"] = np.clip(coszen, 0.0, 1.0)
-        valid_data["cos_i"] = np.clip(cos_i, 0.0, 1.0)
-
-        # Assume skyview of 1.0 if outside 0-1 (e.g., NaN data).
-        valid_data["skyview_factor"] = (
-            1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
-        )
-
-        return valid_data

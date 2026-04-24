@@ -721,8 +721,8 @@ def build_config(
     retrieve_co2: bool = False,
     presolve: bool = False,
     terrain_style: str = "flat",
-    cos_i_min: float = 0.3,
     use_background_rfl: bool = False,
+    max_slope: float = 20.0,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -754,8 +754,8 @@ def build_config(
         retrieve_co2:                         flag to include CO2 in lut and retrieval
         presolve:                             set this up as a presolve configuration
         terrain_style:                        style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
-        cos_i_min:                            minimum cosine of incidence angle to allow isofit to use in the forward model
         use_background_rfl:                   flag to determine which surface derivatives to use in OE
+        max_slope:                            maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat
     """
 
     if use_superpixels:
@@ -850,7 +850,7 @@ def build_config(
                 to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid,
                 to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
                 terrain_style=terrain_style,
-                cos_i_min=cos_i_min,
+                max_slope=max_slope,
             ),
             "surface": make_surface_config(
                 surface_class_working_path=paths.surface_class_working_path,
@@ -1480,7 +1480,7 @@ def make_rt_config(
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
     terrain_style: str = "flat",
-    cos_i_min: float = 0.3,
+    max_slope: float = 20.0,
 ):
     avc = np.sum(
         [
@@ -1523,7 +1523,7 @@ def make_rt_config(
         "lut_grid": {},
         "unknowns": {"H2O_ABSCO": 0.0},
         "terrain_style": terrain_style,
-        "cos_i_min": cos_i_min,
+        "max_slope": max_slope,
     }
 
     vswir = {}

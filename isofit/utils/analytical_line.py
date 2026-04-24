@@ -464,6 +464,9 @@ class Worker(object):
         # How many iterations to use for invert_analytical
         self.num_iter = num_iter
 
+        # Define coszen for geom creation
+        self.coszen = self.fm.RT.rt_engines[0].coszen or None
+
         if config.input.radiometry_correction_file is not None:
             self.radiance_correction, wl = load_spectrum(
                 config.input.radiometry_correction_file
@@ -533,6 +536,9 @@ class Worker(object):
                 esd=self.esd,
                 svf=self.svf[r, c] if len(self.svf) else 1,
                 bg_rfl=self.bg_rfl[r, c, :] if len(self.bg_rfl) else None,
+                coszen=self.coszen,
+                full_config=self.config,
+
             )
 
             # "Atmospheric" state ALWAYS comes from all bands in the
