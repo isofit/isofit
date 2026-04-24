@@ -18,23 +18,22 @@
 from __future__ import annotations
 
 import logging
-from os import getenv
-from os.path import abspath, join, exists
 import subprocess
+from os import getenv
+from os.path import abspath, exists, join
 from pathlib import Path
 
 import numpy as np
 
-from isofit.core.fileio import IO
-from isofit.data import env
-from isofit.core.units import cm_to_mm, transm_to_rdn
 from isofit.core.common import (
-    json_load_ascii,
     calculate_resample_matrix,
+    json_load_ascii,
     resample_spectrum,
 )
+from isofit.core.fileio import IO
+from isofit.core.units import cm_to_mm, transm_to_rdn
+from isofit.data import env
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
-
 
 Logger = logging.getLogger(__name__)
 
