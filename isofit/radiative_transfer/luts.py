@@ -1273,3 +1273,75 @@ def cleanup(file):
                     f"The LUT status was determined to be incomplete, auto-removing: {file}"
                 )
                 os.remove(file)
+
+
+def calc_shards(grid, wl, chunk, storage="8gb"):
+    """
+    Attempts to calculate the best sharding strategy for a Zarr store given a LUT grid
+    and the target file storage size per shard
+
+    Parameters
+    ----------
+    grid : dict
+    wl : iterable
+    chunk : iterable
+    storage : str
+
+    Returns
+    -------
+    best, groups
+
+    """
+    dtype = np.dtype("float64").itemsize
+    if isinstance(storage, str):
+        from isofit.core import units
+
+        storage = units.byte_string_to_float(storage)
+
+    space = np.prod(chunk) * dtype  # Determine how much space each chunk takes
+    target = int(storage / space)  # Target number of chunks per shard
+
+    # Not technically the fastest but it's small
+    divisors = lambda n: np.unique([n // i for i in range(1, n + 1) if not n % i])
+
+    # Viable shard shapes
+    lens = [len(v) for v in grid.values()]
+    shape = np.array([len(wl)] + lens)
+    candidates = [divisors(s) for s in shape[1:]]
+
+    # Of these, how many files are created by each sharding strategy
+    shards = common.combos(candidates)
+
+    # Insert the wavelength dimension as a single shard
+    shards = np.column_stack([np.full(shards.shape[0], len(wl)), shards])
+
+    # Ensure shards don't split chunks
+    shards = shards[np.sum(shards % chunk, axis=1) == 0]
+
+    # Chunks per shard
+    cpf = np.prod(shards / chunk, axis=1).astype(int)
+
+    # Return the strategy that is closest to the target number of chunks per shard
+    idx = np.abs(cpf - target).argmin()
+    best = shards[idx]
+
+    # Split the points into shard groups
+    points = common.combos([np.arange(v) for v in lens])
+    indices = points // best[1:]
+    groups = {}
+    for i, key in enumerate(indices):
+        groups.setdefault(tuple(key), []).append(points[i])
+
+    # Useful information
+    Logger.info(f"Number of points: {np.prod(shape):,}")
+    Logger.info(f"Target chunks per file: {target} ({target * space / 2**30:.2f}gb)")
+    Logger.info(f"Shapes:")
+    Logger.info(f"  dimensions: {shape}")
+    Logger.info(f"    chunking: {np.array(chunk)}")
+    Logger.info(f"Recommended")
+    Logger.info(f"    sharding: {best}")
+    Logger.info(f"Produces:")
+    Logger.info(f"  Chunks per file: {cpf[idx]} ({cpf[idx] * space / 2**30:.2f}gb)")
+    Logger.info(f"  Number of files: {np.prod((shape / best).astype(int))}")
+
+    return best, groups
