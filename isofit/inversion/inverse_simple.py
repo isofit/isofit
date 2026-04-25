@@ -16,6 +16,22 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
+
+"""Simple (non-iterative) and analytical inversion routines for ISOFIT.
+
+Provides stand-alone functions for obtaining an initial atmospheric and
+surface state estimate from a measured radiance spectrum.  These are used
+to seed the iterative gradient-descent solver in
+`isofit.inversion.inverse` as well as to provide lightweight
+stand-alone inversions.  Key entry points are:
+
+* `invert_simple` — heuristic full-state initialiser.
+* `invert_algebraic` — closed-form Lambertian reflectance retrieval.
+* `invert_analytical` — analytical MAP surface retrieval for a fixed
+  atmosphere.
+* `invert_liquid_water` — Beer-Lambert liquid-water path-length fit.
+"""
+
 from __future__ import annotations
 
 import os
@@ -155,9 +171,10 @@ def invert_algebraic(
         geom: geometry object corresponding to given measurement
 
 
-    Return:
-        rfl_est: estimate of the surface reflectance based on the given surface model and specified atmospheric state
-        coeffs: atmospheric parameters used for the inversion, returned for convenience
+    Returns:
+        rfl_est: Estimate of the surface reflectance based on the given surface model and specified atmospheric state.
+        coeffs: Tuple of atmospheric optical parameters used for the inversion
+            `(L_atm, sphalb, L_tot, transup, L_up)`, returned for convenience.
     """
 
     _, rho_init = surface.calc_rfl(x_surface, geom)
@@ -230,25 +247,42 @@ def invert_analytical(
     outside_ret_const: float = -0.01,
     fill_value: float = -9999.0,
 ):
-    """Perform an analytical estimate of the conditional MAP estimate for
-    a fixed atmosphere.  Based on the "Inner loop" from Susiluoto et al. (2025).
-    doi: https://doi.org/10.3390/rs17223719
+    """Perform an analytical MAP estimate of the surface state for a fixed atmosphere.
+
+    Implements the analytical "inner loop" from Susiluoto et al. (2025),
+    doi: https://doi.org/10.3390/rs17223719.  The atmosphere is held fixed at
+    the values encoded in `x0` while the surface reflectance parameters are
+    updated analytically using Cholesky-based linear algebra.
 
     Args:
-        fm: isofit forward model
-        winidx: indices of surface components of state vector (to be solved)
-        meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
-        geom: geometry object corresponding to given measurement
-        x0: the initialization state including surface from the superpixel
-            and the atm from the smoothed atmosphere.
-        num_iter: number of interations to run through
-        hash_table: a hash table to use locally
-        hash_size: max size of given hash table
-        diag_uncert: flag indicating whether to diagonalize the uncertainty
+        fm: ISOFIT forward model.
+        winidx: Indices into the instrument wavelength grid that define the
+            retrieval window (the channels used in the cost function).
+        meas: Measured radiance in uW/nm/sr/cm², shape `(nbands,)`.
+        geom: Geometry object for the current observation.
+        x0: Initial state vector.  The surface portion is taken from the
+            superpixel aggregate and the atmospheric portion from the
+            smoothed atmosphere.
+        sub_state: State vector for the background / superpixel context used
+            to derive the radiative-transfer coupling terms
+            (e.g. spherical albedo coupling and EOF offset).
+        num_iter: Number of analytical update iterations to perform.
+        hash_table: Optional pre-allocated hash table for caching SVD
+            inverses.
+        hash_size: Maximum number of entries to keep in `hash_table`.
+        diag_uncert: If `True`, return only the diagonal of the posterior
+            covariance (as a vector); otherwise return the full matrix.
+        outside_ret_const: Value assigned to surface reflectance channels
+            that fall outside the retrieval window.  Set to `None` to
+            use the prior mean instead.
+        fill_value: Placeholder used for invalid uncertainty estimates.
 
     Returns:
-        x: MAP estimate of the mean
-        S: diagonal conditional posterior covariance estimate
+        trajectory: Array of state vectors at each iteration, shape
+            `(num_iter + 1, nstate)`.
+        S: If `diag_uncert` is `True`, a vector of posterior standard
+            deviations for the solved surface channels; otherwise the full
+            posterior covariance matrix of those channels.
     """
     from scipy.linalg.blas import dsymv
     from scipy.linalg.lapack import dpotrf, dpotri

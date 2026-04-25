@@ -17,6 +17,14 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
+
+"""Markov Chain Monte Carlo (MCMC) inversion for ISOFIT.
+
+Provides a Metropolis-Hastings MCMC sampler that draws samples from the
+posterior distribution of the state vector given a measured radiance.
+This is an alternative to the gradient-based `Inversion` solver
+and is useful for uncertainty quantification.
+"""
 from __future__ import annotations
 
 import numpy as np
@@ -28,8 +36,26 @@ from isofit.inversion.inverse import Inversion
 
 
 class MCMCInversion(Inversion):
+    """Inversion via Markov Chain Monte Carlo sampling.
+
+    Draws samples from the posterior distribution of the state vector using
+    a Metropolis-Hastings algorithm.  The sampler is initialized at the
+    MAP (maximum a posteriori) solution found by the parent
+    `Inversion` solver and then explores
+    the posterior using a Gaussian proposal distribution derived from the
+    posterior covariance.
+    """
+
     def __init__(self, full_config: Config, forward: ForwardModel):
-        """Initialize and apply defaults."""
+        """Initialize the MCMC inversion and apply configuration defaults.
+
+        Args:
+            full_config: Top-level ISOFIT configuration object.  MCMC
+                settings are read from
+                `full_config.implementation.inversion.mcmc`.
+            forward: Configured forward model used to evaluate the
+                likelihood of proposed state vectors.
+        """
 
         Inversion.__init__(self, full_config, forward)
         mcmc_config = full_config.implementation.inversion.mcmc
@@ -42,7 +68,20 @@ class MCMCInversion(Inversion):
         self.restart_every = mcmc_config.restart_every
 
     def stable_mvnpdf(self, mean, cov, x):
-        """Stable inverse via Singular Value Decomposition, using only the significant eigenvectors."""
+        """Evaluate a multivariate Gaussian log-PDF using a numerically stable SVD inverse.
+
+        Uses Singular Value Decomposition and retains only eigenvectors
+        corresponding to strictly positive eigenvalues, avoiding numerical
+        issues with near-singular covariance matrices.
+
+        Args:
+            mean: Mean vector of the distribution, shape `(n,)`.
+            cov: Covariance matrix of the distribution, shape `(n, n)`.
+            x: Query point at which to evaluate the log-PDF, shape `(n,)`.
+
+        Returns:
+            log_pdf: Scalar log-probability density at ``x``.
+        """
 
         U, V, D = scipy.linalg.svd(cov)
         use = np.where(V > 0)[0]
@@ -56,7 +95,24 @@ class MCMCInversion(Inversion):
         return lead + diverg
 
     def log_density(self, x, rdn_meas, geom, bounds):
-        """Log probability density combines prior and likelihood terms."""
+        """Compute the unnormalized log posterior density for a state vector.
+
+        The log posterior is the sum of the log prior and the log data
+        likelihood.  Returns ``-inf`` immediately if any element of ``x``
+        violates ``bounds``.
+
+        Args:
+            x: Candidate state vector, shape `(nstate,)`.
+            rdn_meas: Measured radiance in uW/nm/sr/cm², shape `(nbands,)`.
+            geom: Geometry object for the current observation.
+            bounds: Two-row array of lower and upper bounds on the state
+                vector, shape `(2, nstate)`, or `None` to disable
+                bounds checking.
+
+        Returns:
+            log_dens: Scalar unnormalized log posterior density, or
+            `-inf` if `x` is out of bounds.
+        """
 
         # First check bounds
         if bounds is not None and any(np.logical_or(x < bounds[0], x > bounds[1])):
@@ -77,8 +133,22 @@ class MCMCInversion(Inversion):
         return pa + pm
 
     def invert(self, rdn_meas, geom):
-        """Inverts a meaurement. Returns an array of state vector samples.
-        Similar to Inversion.invert() but returns a list of samples."""
+        """Invert a measured radiance and return posterior state vector samples.
+
+        Runs the Metropolis-Hastings MCMC sampler.  The chain is initialized
+        at the MAP solution from `Inversion.invert()`
+        and periodically restarted to guard against getting stuck in
+        low-probability regions.  Samples collected before each burnin
+        period are discarded.
+
+        Args:
+            rdn_meas: Measured radiance in uW/nm/sr/cm², shape `(nbands,)`.
+            geom: Geometry object for the current observation.
+
+        Returns:
+            samples: Array of accepted state vector samples drawn from the
+            posterior distribution, shape `(iterations, nstate)`.
+        """
 
         # We will truncate non-surface parameters to their bounds, but leave
         # Surface reflectance unconstrained so it can dip slightly below zero
