@@ -40,7 +40,11 @@ Logger = logging.getLogger(__name__)
 
 class LibRadTranRT(RadiativeTransferEngine):
 
-    def __init__(self, engine_config: RadiativeTransferEngineConfig, **kwargs):
+    def __init__(self, full_config, wl=[], fwhm=[]):
+        super().__init__(full_config, wl, fwhm)
+
+        # TODO Add check that sim path exists
+        self.sim_path = self.config_atmosphere.sim_path
 
         self.albedos = [0.0, 0.1, 0.5]
         self.wl_1 = 340.0
@@ -107,8 +111,6 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             raise FileNotFoundError(error)
 
         self.lrt_bin_dir = abspath(join(self.libradtran, "bin"))
-
-        super().__init__(engine_config, **kwargs)
 
     def preSim(self):
 
