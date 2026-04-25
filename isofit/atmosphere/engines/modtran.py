@@ -47,9 +47,16 @@ tropopause_altitude_km = 17.0
 
 
 class ModtranRT(RadiativeTransferEngine):
-    """A model of photon transport including the atmosphere."""
 
-    max_buffer_time = 0.5
+    def __init__(self, full_config, wl=[], fwhm=[]):
+        """A model of photon transport including the atmosphere."""
+        super().__init__(full_config, wl, fwhm)
+
+        self.max_buffer_time = 0.5
+        self.engine_base_dir = self.config_atmosphere.sim_path
+
+        # TODO Add check that sim path exists
+        self.sim_path = self.config_atmosphere.sim_path
 
     @staticmethod
     def parseTokens(tokens: list, coszen: float) -> dict:
@@ -570,7 +577,9 @@ class ModtranRT(RadiativeTransferEngine):
             lvl0["EXTC"] = [float(v) / total_extc550 for v in total_extc]
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
 
-        if self.multipart_transmittance:
+        if full_config.forward_model.multipart_transmittance:
+            # TODO: move setting of multipart rfl values to config
+            self.test_rfls = [0.0, 0.1, 0.5]
             const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)
             # Here we copy the original config and just change the surface reflectance
             param[0]["MODTRANINPUT"]["CASE"] = 0

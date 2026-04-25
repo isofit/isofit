@@ -46,23 +46,6 @@ from isofit.radiative_transfer.engines import Engines
 Logger = logging.getLogger(__file__)
 
 
-def confPriority(key, configs):
-    """
-    Selects a key from a config if the value for that key is not None
-    Prioritizes returning the first value found in the configs list
-
-    TODO: ISOFIT configs are annoying and will create keys to NoneTypes
-    Should use mlky to handle key discovery at runtime instead of like this
-    """
-    value = None
-    for config in configs:
-        if hasattr(config, key):
-            value = getattr(config, key)
-            if value is not None:
-                break
-    return value
-
-
 class RadiativeTransfer:
     """This class controls the radiative transfer component of the forward
     model. An ordered dictionary is maintained of individual RTMs (MODTRAN,
@@ -73,18 +56,6 @@ class RadiativeTransfer:
     RTMs and bands. For example, H20STR is shared between both VISNIR and
     TIR. This class maintains the master list of statevectors.
     """
-
-    # Keys to retrieve from 3 sections to use the preferred
-    # Prioritizes retrieving from radiative_transfer_engines first, then instrument, then radiative_transfer
-    _keys = [
-        "interpolator_style",
-        "overwrite_interpolator",
-        "lut_grid",
-        "lut_path",
-        "wavelength_file",
-    ]
-
-    ############ From RTE ##################
 
     # Allows engines to outright disable the parallelized sims if they do nothing
     _disable_makeSim = False
@@ -108,32 +79,71 @@ class RadiativeTransfer:
     coszen = property(lambda self: self["coszen"])
     solar_irr = property(lambda self: self["solar_irr"])
 
-    def __init__(self, full_config: Config):
-        config = full_config.forward_model.radiative_transfer
-        confIT = full_config.forward_model.instrument
-        confRT = config.engine
+    def __init__(
+        self,
+        full_config: Config,
+        wl: np.array = [],  # Wavelength override
+        fwhm: np.array = [],  # fwhm override
+    ):
+        config_atmosphere = full_config.forward_model.atmosphere
 
-        self.lut_grid = config.lut_grid
-        self.statevec_names = config.statevector.get_element_names()
+        self.n_cores = full_config.implementation.n_cores
+        # Check to see if this check is necessary
+        if self.n_cores is None:
+            self.n_cores = multiprocessing.cpu_count()
 
-        # Generate the params for this RTE
-        params = {
-            key: confPriority(key, [confRT, confIT, config]) for key in self._keys
-        }
-        params["engine_config"] = confRT
-        params["n_cores"] = full_config.implementation.n_cores
+        # TODO Need to make sure this fits in with inheritance - keep lut_path as somehting that can be fed in?
+        self.lut_grid = config_atmosphere.lut_grid
+        # self.lut_path = lut_path = str(lut_path) or full_config.atmosphere.lut_path
+        self.lut_path = config_atmosphere.lut_path
+        self.statevec_names = config_atmosphere.statevector.get_element_names()
 
-        # Select the right RTE and initialize it
-        self.engine = Engines[confRT.engine_name](**params)
+        # Irradiance file TODO Check how this relates to OCI
+        self.solar_irr = self.engine.solar_irr
 
-        # Make sure the length of the config statevectores match the engine's assumed statevectors
-        if (expected := len(self.statevec_names)) != (
-            got := len(self.engine.indices.x_RT)
-        ):
-            error = f"Mismatch between the number of elements for the config and LUT grid: {expected=}, {got=}"
-            Logger.error(error)
-            raise AttributeError(error)
+        lut_exists = os.path.isfile(self.lut_path)
+        if not lut_exists and self.lut_grid is None:
+            raise AttributeError(
+                "Must provide either a prebuilt LUT file or a LUT grid"
+            )
 
+        # TODO Check that this is in fashion
+        self.interpolator_style = (
+            config_atmosphere.interpolator_style
+            if config_atmosphere.interpolator_style
+            else config_instrument.get("interpolator_style")
+        )
+        self.overwrite_interpolator = (
+            config_atmosphere.overwrite_interpolator
+            if config_atmosphere.overwrite_interpolator
+            else config_instrument.get("overwrite_interpolator")
+        )
+
+        self.coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
+        self.rt_mode = (
+            config_atmosphere.rt_mode if engine_config.rt_mode is not None else "transm"
+        )
+
+        # Use explicitely passed first
+        if not any(wl) or not any(fwhm):
+            self.wavelength_file = (
+                config_atmosphere.wavelength_file
+                if config_atmosphere.wavelength_file
+                else config_instrument.get("wavelength_file")
+            )
+            if os.path.exists(wavelength_file):
+                Logger.info(f"Loading from wavelength_file: {wavelength_file}")
+                wl, fwhm = common.load_wavelen(wavelength_file)
+        if not wl or not fwhm:
+            e = "No wavelength information found, please provide either as file or input argument"
+            logger.error(e)
+            raise AttributeError(e)
+
+        # Set for downstream engines may use
+        self.wl = wl
+        self.fwhm = fwhm
+
+        # Priors
         # Retrieved variables.  We establish scaling, bounds, and
         # initial guesses for each state vector element.  The state
         # vector elements are all free parameters in the RT lookup table,
@@ -159,111 +169,27 @@ class RadiativeTransfer:
             self.Sa_normalized
         )
 
-        self.wl = self.engine.wl
+        # Uncertainty
+        self.bvec = config_atmosphere.unknowns.get_element_names()
+        self.bval = np.array([x for x in config_atmosphere.unknowns.get_elements()[0]])
 
-        self.bvec = config.unknowns.get_element_names()
-        self.bval = np.array([x for x in config.unknowns.get_elements()[0]])
-
-        self.solar_irr = self.engine.solar_irr
-
-        # ##################       From RTE      ###############3
-        # def __init__(
-        #    self,
-        #    engine_config: RadiativeTransferEngineConfig,
-        #    lut_path: str = "",
-        #    lut_grid: dict = None,
-        #    wavelength_file: str = None,
-        #    interpolator_style: str = "mlg",
-        #    build_interpolators: bool = True,
-        #    overwrite_interpolator: bool = False,
-        #    wl: np.array = [],  # Wavelength override
-        #    fwhm: np.array = [],  # fwhm override
-        #    n_cores: int = 1,  # number of cores to use for special activities (not simulations)
-        # ):
-        if lut_path is None:
-            Logger.error(
-                "The lut_path must be a valid path at this time. Either it exists as a valid LUT or a LUT will be generated to that path"
-            )
-
-        # Keys of the engine_config are available via self unless overridden
-        # eg. engine_config.lut_names == self.lut_names
-        self.engine_config = engine_config
-        self.n_cores = n_cores
-        if self.n_cores is None:
-            self.n_cores = multiprocessing.cpu_count()
-
-        # Verify either the LUT file exists or a LUT grid is provided
-        self.lut_path = lut_path = str(lut_path) or engine_config.lut_path
-        logging.debug(f"lut_grid {lut_grid}")
-        try:
-            logging.debug(f"self.lut_grid {self.lut_grid}")
-        except:
-            logging.debug("self.lut_grid: None")
-        logging.debug(f"lut_grid is none {lut_grid is None}")
-        exists = os.path.isfile(lut_path)
-        if not exists and lut_grid is None:
-            raise AttributeError(
-                "Must provide either a prebuilt LUT file or a LUT grid"
-            )
-
-        # Save parameters to instance
-        self.interpolator_style = interpolator_style
-        self.overwrite_interpolator = overwrite_interpolator
-
-        self.engine_base_dir = engine_config.engine_base_dir
-        self.sim_path = engine_config.sim_path
-        if self.sim_path:
-            self.sim_path = Path(self.sim_path)
-
-        # Enable special modes
-        self.rt_mode = (
-            engine_config.rt_mode if engine_config.rt_mode is not None else "transm"
-        )
-        self.coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
-        self.multipart_transmittance = engine_config.multipart_transmittance
-        self.glint_model = engine_config.glint_model
-        if self.glint_model and not self.multipart_transmittance:
-            raise AttributeError(
-                "Using the glint model requires a multipart transmittance LUT table"
-            )
-
-        # Specify wavelengths and fwhm to be used for either resampling an existing LUT or building a new instance
-        if not any(wl) or not any(fwhm):
-            self.wavelength_file = wavelength_file
-            if os.path.exists(wavelength_file):
-                Logger.info(f"Loading from wavelength_file: {wavelength_file}")
-                try:
-                    wl, fwhm = common.load_wavelen(wavelength_file)
-                except:
-                    pass
-
-        # Set for downstream engines may use
-        self.wl = wl
-        self.fwhm = fwhm
-
-        # ToDo: move setting of multipart rfl values to config
-        if self.multipart_transmittance:
-            self.test_rfls = [0.0, 0.1, 0.5]
-
-        # Extract from LUT file if available, otherwise initialize it
-        if exists:
+        # Logic for Pre-built LUT TODO: Move to generic class?
+        if lut_exists:
             Logger.info(f"Prebuilt LUT provided")
             Logger.debug(
                 f"Reading from store: {lut_path}, subset={engine_config.lut_names}"
             )
-            self.lut = luts.load(lut_path, subset=engine_config.lut_names)
-            self.lut_grid = lut_grid or luts.extractGrid(self.lut)
+            self.lut = luts.load(self.lut_path, subset=config_atmosphere.lut_names)
+            self.lut_grid = self.lut_grid or luts.extractGrid(self.lut)
             self.points = luts.extractPoints(self.lut)
             self.lut_names = list(self.lut_grid.keys())
             Logger.info(f"LUT grid loaded from file")
-            Logger.debug(f"{self.lut_grid}")
 
             # remove 'point' if added to lut_names after subsetting
             if "point" in self.lut_names:
                 remove = np.where(self.lut_names == "point")
                 self.lut_names = np.delete(self.lut_names, remove)
 
-            # Enable special modes - argument: get from prebuilt LUT netCDF if available
             self.rt_mode = self.lut.attrs.get("RT_mode", "transm")
             if self.rt_mode not in ["transm", "rdn"]:
                 Logger.error(
@@ -273,6 +199,7 @@ class RadiativeTransfer:
                     "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
                 )
 
+            # TODO Clean OCI irr path
             # sc - Bandaid for code to know whether to use gaussian assumptions
             #      Currently, if using tsis, then OCI, which is non-gaussian
             srf_file = None
@@ -280,10 +207,11 @@ class RadiativeTransfer:
             if irr_file.stem == "tsis_f0_0p1":
                 srf_file = irr_file.parent / "pace_oci_rsr.nc"
 
+            # TODO Is this ever necessary?? - A lot of this logic is the nested self.lut calls we want to abstract out.
             # If necessary, resample prebuilt LUT to desired instrument spectral response
             if (
-                not len(wl) == len(self.lut.wl)
-                or not all(wl == self.lut.wl)
+                not len(self.wl) == len(self.lut.wl)
+                or not all(self.wl == self.lut.wl)
                 or (srf_file is not None)
             ):
                 # Discover variables along the wl dim
@@ -313,26 +241,19 @@ class RadiativeTransfer:
                 conv["fwhm"] = ("wl", fwhm)
                 # Exchange the lut with the resampled version
                 self.lut = conv
-        else:
-            Logger.info(f"No LUT store found, beginning initialization and simulations")
-            # Check if both wavelengths and fwhm are provided for building the LUT
-            if not any(wl) or not any(fwhm):
-                Logger.error(
-                    "No wavelength information found, please provide either as file or input argument"
-                )
-                raise AttributeError(
-                    "No wavelength information found, please provide either as file or input argument"
-                )
 
+        else:
+            # TODO This may go into the engines classes? That way we could support generic?
+            Logger.info(f"No LUT store found, beginning initialization and simulations")
             Logger.debug(f"Writing store to: {self.lut_path}")
-            self.lut_grid = lut_grid
-            self.lut_names = list(lut_grid)
-            self.points = common.combos(lut_grid.values())
+
+            self.lut_names = list(self.lut_grid.keys())
+            self.points = common.combos(self.lut_grid.values())
 
             # Verify no duplicates exist else downstream functions will fail
             duplicates = False
 
-            for dim, vals in lut_grid.items():
+            for dim, vals in self.lut_grid.items():
                 if np.unique(vals).size < len(vals):
                     duplicates = True
                     Logger.error(
@@ -344,25 +265,27 @@ class RadiativeTransfer:
                     "Input lut_grid detected to have duplicates, please correct them before continuing"
                 )
 
-            if self.engine_config.rte_configure_and_exit:
+            if config_atmosphere.rte_configure_and_exit:
                 Logger.warning(
                     "rte_configure_and_exit is enabled, the LUT file will not be created"
                 )
             else:
+                # TODO Check keys
                 Logger.info(f"Initializing LUT file")
                 self.lut = luts.Create(
                     file=self.lut_path,
-                    wl=wl,
+                    wl=self.wl,
                     grid=self.lut_grid,
                     attrs={"RT_mode": self.rt_mode},
-                    onedim={"fwhm": fwhm},
-                    compression=engine_config.lut_compression,
-                    complevel=engine_config.lut_complevel,
+                    onedim={"fwhm": self.fwhm},
+                    compression=full_config.implementation.lut_compression,
+                    complevel=full_config.implementation.lut_complevel,
                 )
 
             # Create and populate a LUT file
             self.runSimulations()
 
+        # big TODO Abstract into LUT and engines TODO
         # Write the NetCDF information to the log file so devs have that info during debugging
         # Have to create a fileobj to capture the text because it doesn't return (prints straight to stdout by default)
         info = io.StringIO()
@@ -395,9 +318,10 @@ class RadiativeTransfer:
         # Attach interpolators
         if build_interpolators:
             # revise call to reference lut
+            # TODO Need to correct reference
             self.build_interpolators()
 
-            geometry_keys = set(engine_config.statevector_names or self.lut_names)
+            geometry_keys = set(config_atmosphere.statevector_names or self.lut_names)
 
             matches = common.compare(geometry_keys, self.geometry_input_names)
             if matches:
@@ -428,6 +352,12 @@ class RadiativeTransfer:
             # If it wasn't a geom key, it's x_RT
             self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
             Logger.debug(f"Interpolators built")
+
+        # Make sure the length of the config statevectores match the engine's assumed statevectors
+        if (expected := len(self.statevec_names)) != (got := len(self.indices.x_RT)):
+            error = f"Mismatch between the number of elements for the config and LUT grid: {expected=}, {got=}"
+            Logger.error(error)
+            raise AttributeError(error)
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""

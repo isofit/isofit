@@ -156,6 +156,9 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
+        # Special run modes:
+        self.multipart_transmittance = full_config.forward_model.multipart_transmittance
+
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
 
