@@ -16,7 +16,19 @@
 #
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
-#
+"""Optimal-estimation inversion for ISOFIT.
+
+Contains the `Inversion` class, which implements a nonlinear
+least-squares retrieval using the Rodgers (2000) optimal-estimation
+framework.  The solver minimizes the sum of a measurement residual term
+(scaled by the observation-noise covariance) and a prior regularization
+term (scaled by the prior covariance), iterating with a trust-region
+reflective algorithm from `scipy.optimize`.
+
+See Also:
+    `isofit.inversion.inverse_mcmc` for a Bayesian MCMC alternative.
+    `isofit.inversion.inverse_simple` for the heuristic initialiser.
+"""
 from __future__ import annotations
 
 import logging
@@ -34,9 +46,30 @@ error_code = -1
 
 
 class Inversion:
+    """Nonlinear least-squares optimal-estimation inversion.
+
+    Solves for the state vector (surface reflectance, atmospheric parameters,
+    and instrument calibration) that best explains a measured radiance
+    spectrum given prior knowledge encoded in the forward model.  The cost
+    function is based on the Rodgers (2000) formalism and is minimised with
+    a trust-region reflective (TRF) algorithm.
+
+    When an *integration grid* is configured, the inversion is repeated for
+    every grid point and the solution with the lowest final cost is returned.
+    Grid points can either fix certain state-vector elements (the default)
+    or be used as alternative starting points (`inversion_grid_as_preseed`).
+    """
+
     def __init__(self, full_config: Config, forward: ForwardModel):
-        """Initialization specifies retrieval subwindows for calculating
-        measurement cost distributions."""
+        """Initialise the inversion and compute retrieval-window channel indices.
+
+        Args:
+            full_config: Top-level ISOFIT configuration object.  Inversion
+                settings are read from
+                `full_config.implementation.inversion`.
+            forward: Configured forward model that provides the Jacobian,
+                prior, noise covariance, and measurement simulation.
+        """
 
         config: InversionConfig = full_config.implementation.inversion
         self.config = config
@@ -122,6 +155,17 @@ class Inversion:
             self.least_squares_params[key] = item
 
     def full_statevector(self, x_free):
+        """Reconstruct the full state vector from the free (non-fixed) elements.
+
+        Inserts `x_free` into the positions given by `self.inds_free` and
+        fills any fixed positions from `self.x_fixed`.
+
+        Args:
+            x_free: Values for the free state-vector elements, shape `(n_free,)`.
+
+        Returns:
+            x: Complete state vector of length `nstate`.
+        """
         x = np.zeros(self.fm.nstate)
         if self.x_fixed is not None:
             x[self.inds_fixed] = self.x_fixed
@@ -129,9 +173,24 @@ class Inversion:
         return x
 
     def calc_conditional_prior(self, x_free, geom):
-        """Calculate prior distribution of radiance. This depends on the
-        location in the state space. Return the inverse covariance and
-        its square root (for non-quadratic error residual calculation)."""
+        """Calculate the prior distribution conditioned on any fixed state-vector elements.
+
+        When an integration grid is active (i.e., some state-vector elements
+        are held fixed), the prior mean and covariance of the free elements
+        are obtained by conditioning the joint prior on the fixed values.
+        Otherwise the full prior is returned unchanged.
+
+        Args:
+            x_free: Current values of the free state-vector elements, shape `(n_free,)`.
+            geom: Geometry object for the current observation.
+
+        Returns:
+            xa_free: Conditional prior mean for the free elements.
+            Sa_free: Conditional prior covariance matrix for the free elements.
+            Sa_free_inv: Inverse of `Sa_free`.
+            Sa_free_inv_sqrt: Square root of `Sa_free_inv` (used for the
+                residual-based cost formulation).
+        """
 
         x = self.full_statevector(x_free)
         xa = self.fm.xa(x, geom)
@@ -153,9 +212,21 @@ class Inversion:
             return xa_free, Sa_free, Sa_free_inv, Sa_free_inv_sqrt
 
     def calc_prior(self, x, geom):
-        """Calculate prior distribution of radiance. This depends on the
-        location in the state space. Return the inverse covariance and
-        its square root (for non-quadratic error residual calculation)."""
+        """Evaluate the prior distribution at a full state vector.
+
+        Returns the prior mean and covariance (together with its pre-computed
+        inverse and inverse square root) as provided by the forward model.
+
+        Args:
+            x: Full state vector, shape `(nstate,)`.
+            geom: Geometry object for the current observation.
+
+        Returns:
+            xa: Prior mean state vector.
+            Sa: Prior covariance matrix.
+            Sa_inv: Inverse of `Sa`.
+            Sa_inv_sqrt: Square root of `Sa_inv`.
+        """
 
         xa = self.fm.xa(x, geom)
         Sa, Sa_inv, Sa_inv_sqrt = self.fm.Sa(x, geom)
@@ -163,8 +234,24 @@ class Inversion:
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
     def calc_posterior(self, x, geom, meas):
-        """Calculate posterior distribution of state vector. This depends
-        both on the location in the state space and the radiance (via noise)."""
+        """Calculate the posterior distribution of the state vector.
+
+        Computes the posterior covariance `S_hat`, the Jacobian `K`, and
+        the gain matrix `G` following Rodgers (2000).  If
+        `cressie_map_confidence` is enabled, `S_hat` is recomputed at the
+        prior mean as suggested by Cressie (ASA 2018) for statistically
+        consistent posterior confidence intervals.
+
+        Args:
+            x: Current state vector, shape `(nstate,)`.
+            geom: Geometry object for the current observation.
+            meas: Measured radiance in uW/nm/sr/cm2, shape `(nbands,)`.
+
+        Returns:
+            S_hat: Posterior covariance matrix of the state vector.
+            K: Jacobian matrix `d meas / d x`, shape `(nbands, nstate)`.
+            G: Gain matrix (`S_hat @ K.T @ Seps_inv`), shape `(nstate, nbands)`.
+        """
 
         xa = self.fm.xa(x, geom)
         Sa, Sa_inv, Sa_inv_sqrt = self.fm.Sa(x, geom)
@@ -196,10 +283,22 @@ class Inversion:
         return S_hat, K, G
 
     def calc_Seps(self, x, meas, geom):
-        """Calculate (zero-mean) measurement distribution in radiance terms.
-        This depends on the location in the state space. This distribution is
-        calculated over one or more subwindows of the spectrum. Return the
-        inverse covariance and its square root."""
+        """Compute the observation-noise covariance restricted to the retrieval windows.
+
+        `Seps` captures both instrument measurement noise and variability
+        from unresolved forward-model parameters.  This method extracts the
+        sub-matrix corresponding to `self.winidx` and returns its inverse
+        and inverse square root for use in the cost function.
+
+        Args:
+            x: Current state vector, shape `(nstate,)`.
+            meas: Measured radiance in uW/nm/sr/cm2, shape `(nbands,)`.
+            geom: Geometry object for the current observation.
+
+        Returns:
+            Seps_inv: Inverse of the windowed noise covariance, shape `(n_win, n_win)`.
+            Seps_inv_sqrt: Square root of `Seps_inv`, shape `(n_win, n_win)`.
+        """
 
         Seps = self.fm.Seps(x, meas, geom)
         wn = len(self.winidx)
@@ -220,6 +319,7 @@ class Inversion:
         the Rodgers (2000) Chi-square version. All measurement
         distributions are calculated over subwindows of the full
         spectrum.
+
         Args:
             x_free: decision variables - portion of the statevector not fixed by a static integration grid
             geom: Geometry to use for inversion
@@ -295,6 +395,7 @@ class Inversion:
 
     def invert(self, meas, geom):
         """Inverts a meaurement and returns a state vector.
+
         Args:
             meas: a one-D scipy vector of radiance in uW/nm/sr/cm2
             geom: a geometry object
@@ -396,32 +497,3 @@ class Inversion:
 
         final_solution = np.array(solutions[np.argmin(costs)])
         return final_solution
-
-    def forward_uncertainty(self, x, meas, geom):
-        """
-        Can this be depreciated?
-        Uncertainty file is generated by a direct call to calc_posterior.
-
-        Dev branch path and mdl will not return expected values:
-            -> keys don't match
-                rfl != rho_dir_dir for example
-
-        Args:
-            x: statevector
-            meas: a one-D scipy vector of radiance in uW/nm/sr/cm2
-            geom: a geometry object
-        Returns:
-            lamb: the converged lambertian surface reflectance
-            path: the converged path radiance estimate
-            mdl: the modeled radiance estimate
-            S_hat: the posterior covariance of the state vector
-            K: the derivative matrix d meas_x / d state_x
-            G: the G matrix from the CD Rodgers 2000 formalism
-        """
-
-        dark_surface = np.zeros(self.fm.surface.wl.shape)
-        path = self.fm.calc_meas(x, geom, rfl=dark_surface)
-        mdl = self.fm.calc_meas(x, geom)
-        lamb = self.fm.calc_lamb(x, geom)
-        S_hat, K, G = self.calc_posterior(x, geom, meas)
-        return lamb, mdl, path, S_hat, K, G
