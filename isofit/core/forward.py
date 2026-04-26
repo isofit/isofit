@@ -47,7 +47,7 @@ class ForwardModel:
 
     State vector elements always go in the following order:
       (1) Surface parameters
-      (2) Radiative Transfer (RT) parameters
+      (2) Atmospheric Radiative Transfer parameters
       (3) Instrument parameters
 
     The parameter bounds, scales, initial values, and names are all
@@ -70,7 +70,7 @@ class ForwardModel:
         self.instrument = Instrument(self.full_config)
         self.n_meas = self.instrument.n_chan
 
-        # Build the radiative transfer model
+        # Build the atmospheric radiative transfer model
         if cache_atmosphere:
             self.atmosphere = cache_atmosphere
         else:
@@ -129,7 +129,7 @@ class ForwardModel:
         # non-reflectance surface parameters
         self.idx_surf_nonrfl = self.idx_surface[len(self.surface.idx_lamb) :]
 
-        # radiative transfer portion
+        # atmospheric radiative transfer portion
         self.idx_atmosphere = np.arange(
             len(self.atmosphere.statevec_names), dtype=int
         ) + len(self.idx_surface)
