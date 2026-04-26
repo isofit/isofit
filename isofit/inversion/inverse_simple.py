@@ -97,17 +97,15 @@ def heuristic_atmosphere(
         # atmospheric parameters (such as aerosol, if it is there).
         for h2o in fm.atmosphere.engine.lut_grid[h2oname]:
             # Get Atmospheric terms at high spectral resolution
-            x_atmosphere_2 = x_atmosphere.copy()
-            x_atmosphere_2[ind_sv] = h2o
+            x_atmosphere_guess = x_atmosphere.copy()
+            x_atmosphere_guess[ind_sv] = h2o
 
             # pass in all zeros, as this is ONLY used for Ls, which we will
             # assume is not present
             r, coeffs = invert_algebraic(
-                fm.surface,
-                fm.atmosphere,
-                fm.instrument,
+                fm,
                 x_surface,
-                x_atmosphere_2,
+                x_atmosphere_guess,
                 x_instrument,
                 meas,
                 geom,

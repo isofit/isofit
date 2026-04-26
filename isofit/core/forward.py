@@ -247,7 +247,7 @@ class ForwardModel:
             x_surface[self.idx_surf_rfl] = rfl
 
         # Call surface reflectance w.r.t. surface, upsample
-        rho_dir_dir, rho_dif_dir = self.calc_rfl(x_surface, geom)
+        rho_dir_dir, rho_dif_dir = self.calc_rfl(x, geom)
         rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
         rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
 
@@ -336,8 +336,7 @@ class ForwardModel:
             L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(
                 r, geom, rho_dif_dif=rho_dif_dif
             )
-        if not self.atmosphere.multipart_transmittance:
-            r = self.atmosphere.get(x_atmosphere, geom)
+        else:
             if self.atmosphere.atmosphere_mode == "rdn":
                 L_tot = r["transm_down_dif"]
             else:
@@ -421,9 +420,9 @@ class ForwardModel:
         # If no rho_dif_dif passed eq_11_term -> 1
         eq_11_term = 1 - (r["sphalb"] * rho_dif_dif)
 
-        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
         L_dif_dir /= eq_11_term
         L_dif_dif /= eq_11_term
+        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
 
         return L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
@@ -549,7 +548,7 @@ class ForwardModel:
         x_surface, x_atmosphere, x_instrument = self.unpack(x)
 
         # Call surface reflectance w.r.t. surface, upsample
-        rho_dir_dir, rho_dif_dir = self.calc_rfl(x_surface, geom)
+        rho_dir_dir, rho_dif_dir = self.calc_rfl(x, geom)
         rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
         rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
 
@@ -593,9 +592,6 @@ class ForwardModel:
             r=r,
             geom=geom,
         )
-
-        # Call surface emission, upsample
-        Ls_hi = self.upsample(self.surface.wl, self.calc_Ls(x_surface, geom))
 
         # Call derivative of rfl wrt surface state, upsample
         drfl_dsurface_hi = self.upsample(
@@ -664,7 +660,7 @@ class ForwardModel:
         x_surface, x_atmosphere, x_instrument = self.unpack(x)
 
         # Call surface reflectance w.r.t. surface, upsample
-        rho_dir_dir, rho_dif_dir = self.calc_rfl(x_surface, geom)
+        rho_dir_dir, rho_dif_dir = self.calc_rfl(x, geom)
         rho_dir_dir_hi = self.upsample(self.surface.wl, rho_dir_dir)
         rho_dif_dir_hi = self.upsample(self.surface.wl, rho_dif_dir)
 
@@ -806,7 +802,7 @@ class ForwardModel:
         (which is very unlikely though).
         """
         if len(self.bvec) == 0:
-            Kb_atmosphere = np.zeros((0, len(self.atmosphere.wl.shape)))
+            Kb_atmosphere = np.zeros((0, len(self.atmosphere.wl)))
 
         # ToDo: might require modification in case more unknowns are added
         # The following statement captures the case that H2O is not part
