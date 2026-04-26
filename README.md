@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/pypi/l/isofit.svg)](https://github.com/isofit/isofit/blob/master/LICENSE)
 [![Python versions](https://img.shields.io/pypi/pyversions/isofit.svg)](https://img.shields.io/pypi/pyversions/isofit.svg)
 [![Downloads](https://static.pepy.tech/badge/isofit)](https://pepy.tech/project/isofit)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6908949.svg)](https://doi.org/10.5281/zenodo.6908949)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.6908949-blue)](https://doi.org/10.5281/zenodo.6908949)
 
 ISOFIT is a Python toolkit for retrieving surface reflectance, atmospheric state, and instrument calibration from imaging spectrometer radiance data. It is built around the [optimal estimation](https://isofit.github.io/isofit/latest/information/bibliography/) framework and is designed for flexibility — users can combine different radiative transfer models, surface priors, and uncertainty models to suit their sensors and science questions. The effort began with a straightforward optimal estimation [implementation](https://doi.org/10.1016/j.rse.2018.07.003), and has grown considerably - see the [bibilography](https://isofit.github.io/isofit/latest/information/bibliography/) for the latest science.
 
