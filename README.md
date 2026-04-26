@@ -92,27 +92,28 @@ isofit download all
 isofit build
 ```
 
-This fetches the sRTMnet emulator, 6S, surface libraries, and pre-configured example datasets into `~/.isofit/`.  
-See [Additional Data](https://isofit.github.io/isofit/latest/extra_downloads/data/) for customising download paths.
+This fetches the sRTMnet emulator, 6S, surface libraries, and pre-configured example datasets into `~/.isofit/`.  For users that want a smaller or mosre custom download, see [Additional Data](https://isofit.github.io/isofit/latest/extra_downloads/data/) for customization.
 
-### 2. Run an example
+### 2. Run an example to test
 
 ```bash
 cd $(isofit path examples)/image_cube/small
 bash default.sh
 ```
 
-### 3. Run on your own data
+### 3. Start using!
 
-Point ISOFIT at a radiance cube, location file, and observation file using a JSON config.  
-The [sRTMnet quickstart](https://isofit.github.io/isofit/latest/getting_started/quickstarts/srtmnet/) walks through a complete configuration for new users.
+Leverage the command line interface to build surface models, run isofit on scenes, or perform a wavelength calibration.  
 
----
+To get going, you'll need a radiance image, a location file (with lat, lon, and elevation), and an observation file with sensor and solar geometry.  To get running, ISOFIT ships with both examples (all command line scripts) and tutorials (jupyter notebooks that annotate calls in python and the command line):
 
-## Examples
+#### Tutorials
+| Tutorial | Description |
+|---|---|
+| [apply_oe](https://isofit.github.io/isofit-tutorials/latest/notebooks/apply_oe/) | Full walkthrough of inputs and outputs of apply_oe |
+| [single pixel inversion](https://isofit.github.io/isofit-tutorials/latest/notebooks/neon_single_pixel/) | Learn how to use isofit modules in your own code by building and executing individual modules on a single pixel |
 
-ISOFIT ships with a range of worked examples covering different sensors, scenes, and retrieval configurations:
-
+#### Examples
 | Example | Description |
 |---|---|
 | `image_cube/small` | Fast analytical retrieval — good first run |
@@ -123,16 +124,18 @@ ISOFIT ships with a range of worked examples covering different sensors, scenes,
 | `NEON` | National Ecological Observatory Network data |
 | `SeaBASS_prism_001` | Coastal / water target single-pixel case |
 
-Full instructions: **[Running Examples](https://isofit.github.io/isofit/latest/examples/)**
+Full instructions for **[running examples](https://isofit.github.io/isofit/latest/examples/)**.
 
 ---
 
-## Radiative Transfer Models
+## Atmospheric Radiative Transfer Models
 
-ISOFIT supports several RTM backends.  The recommended starting point for new users is **sRTMnet**, a neural-network emulator that requires no licensed software:
+ISOFIT supports several atmospheric RTM backends.  The recommended starting point for new users is **sRTMnet**, a neural-network emulator that requires no licensed software:
 
 - **[sRTMnet quickstart](https://isofit.github.io/isofit/latest/getting_started/quickstarts/srtmnet/)** — automatic install via `isofit download`
 - **[MODTRAN quickstart](https://isofit.github.io/isofit/latest/getting_started/quickstarts/modtran/)** — requires a MODTRAN 6 licence
+- **6S** — Second Simulation of a Satellite Signal in the Solar Spectrum vector code.  Automatic download and build with `isofit download`.
+- **libRadtran** — library for radiative transfer.  Automatic download and build with `isofit download`.
 
 
 ## Contributing
