@@ -417,7 +417,7 @@ class CreateNetCDF(Create):
 
 
 class CreateZarr(Create):
-    def __init__(self, file, *args, **kwargs):
+    def __init__(self, file, *args, buffered=False, **kwargs):
         """
         Prepare a Zarr v3 LUT store
 
@@ -457,6 +457,14 @@ class CreateZarr(Create):
         self.min_shards = 63
 
         super().__init__(file, *args, **kwargs)
+
+        self.buffer = {}
+        if buffered:
+            shape = list(self.sizes.values())
+            self.buffer = {
+                key: np.full(shape, vals, "float64")
+                for key, vals in self.alldim.items()
+            }
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -579,6 +587,9 @@ class CreateZarr(Create):
         finalize : bool, default=False
             Calls the `finalize` function
         """
+        # Automatically insert data into the buffer if it's available instead of writing to disk
+        store = self.buffer or self.z
+
         unknowns = set()
         for point, data in self.hold:
             for key, vals in data.items():
@@ -586,19 +597,26 @@ class CreateZarr(Create):
                     continue
 
                 if key in self.consts:
-                    self.z[key][...] = vals
+                    store[key][...] = vals
 
                 elif key in self.onedim:
-                    self.z[key][:] = vals
+                    store[key][:] = vals
 
                 elif key in self.alldim:
                     index = (slice(None),) + tuple(self.pointIndices(point))
-                    self.z[key][index] = vals
+                    store[key][index] = vals
 
                 else:
                     unknowns.update([key])
 
         return unknowns
+
+    def flush_buffer(self, slices):
+        """
+        Needs to be manually called
+        """
+        for key, vals in self.buffer.items():
+            self.z[key][slices] = vals
 
     def queuePoint(self, *args, **kwargs):
         """
@@ -1301,6 +1319,16 @@ def cleanup(file):
                 os.remove(file)
 
 
+def shard_to_coord(group, shards, shape):
+    """
+    Converts a shard index to shard coordinates (the slice of the full store for this
+    shard).
+    """
+    start = np.array(group) * shards
+    end = np.minimum(start + shards, shape)
+    return tuple(slice(s, e) for s, e in zip(start, end))
+
+
 def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None):
     """
     Attempts to calculate the best sharding strategy for a Zarr store given a LUT grid
@@ -1362,8 +1390,14 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None):
     pidxs = common.combos([np.arange(v) for v in lens])
     indices = pidxs // best[1:]
     groups = {}
+    coords = {}
     for i, key in enumerate(indices):
-        groups.setdefault(tuple(key), []).append(points[i])
+        key = tuple(key)
+        groups.setdefault(key, []).append(points[i])
+        if key not in coords:
+            coord = shard_to_coord(key, best[1:], shape[1:])
+            coord = (slice(None),) + coord
+            coords[key] = coord
 
     # Useful information
     Logger.info(f"Number of points: {np.prod(shape):,}")
@@ -1377,4 +1411,4 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None):
     Logger.info(f"  Chunks per file: {cpf[idx]} ({cpf[idx] * space / 2**30:.2f}gb)")
     Logger.info(f"  Number of files: {np.prod((shape / best).astype(int))}")
 
-    return tuple(best), groups
+    return tuple(best), groups, coords

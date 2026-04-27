@@ -475,20 +475,21 @@ class RadiativeTransferEngine:
             Logger.info("Executing parallel simulations")
 
             if groups := getattr(self.lut, "groups", None):
+                coords = self.lut.coords
                 simmer = ray.put(self.makeSim)
                 reader = ray.put(self.readSim)
                 lut_args = ray.put(
                     {
                         "file": self.lut.file,
-                        "mode": "a",
                         "wl": self.lut.wl,
                         "grid": self.lut.grid,
-                        "init": False,
                     }
                 )
 
                 workers = [
-                    ShardWriter.remote(lut_args, shard, points, simmer, reader)
+                    ShardWriter.remote(
+                        lut_args, shard, coords[shard], points, simmer, reader
+                    )
                     for shard, points in groups.items()
                 ]
                 jobs = [worker.run.remote() for worker in workers]
@@ -806,12 +807,13 @@ def streamSimulation(
 
 @ray.remote(num_cpus=1)
 class ShardWriter:
-    def __init__(self, lut, shard, points, simmer, reader):
+    def __init__(self, lut, shard, coord, points, simmer, reader):
         self.lut = lut
         if isinstance(lut, dict):
-            self.lut = luts.create(**lut)
+            self.lut = luts.create(**lut, mode="a", init=False, buffered=True)
 
         self.shard = shard
+        self.coord = coord
         self.points = points
         self.simmer = simmer
         self.reader = reader
@@ -830,7 +832,7 @@ class ShardWriter:
                 self.lut.queuePoint(point, data)
 
         Logger.info(f"Finished points {self.shard}, flushing to disk")
-        self.lut.flush()
+        self.lut.flush_buffer(slices=self.coord)
 
         Logger.info(f"Finished shard {self.shard}")
         return point, chunkless

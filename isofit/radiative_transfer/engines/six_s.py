@@ -133,7 +133,7 @@ class SixSRT(RadiativeTransferEngine):
 
         # Only execute when either the 6S input (ext.inp) or output (no extension) files are missing
         if os.path.exists(outp) and os.path.exists(inpt):
-            Logger.warning(f"6S sim files already exist: {outp}, {inpt}")
+            # Logger.warning(f"6S sim files already exist: {outp}, {inpt}")
             return
 
         cmd = self.rebuild_cmd(point, wlinf=self.wl[0], wlsup=self.wl[-1])
