@@ -487,13 +487,12 @@ class RadiativeTransferEngine:
                     }
                 )
 
-                workers = [
-                    ShardWriter.remote(
+                jobs = [
+                    shardWriter.remote(
                         lut_args, shard, coords[shard], points, simmer, reader
                     )
                     for shard, points in groups.items()
                 ]
-                jobs = [worker.run.remote() for worker in workers]
                 report = common.Track(
                     jobs,
                     step=1,
@@ -503,7 +502,7 @@ class RadiativeTransferEngine:
                 )
 
                 # Update the lut as point simulations stream in
-                saved = []
+                saved = set()
                 while jobs:
                     [done], jobs = ray.wait(jobs, num_returns=1)
 
@@ -514,8 +513,9 @@ class RadiativeTransferEngine:
                     if ret:
                         point, data = ret
                         data = {k: v for k, v in data.items() if k not in saved}
-                        saved += list(data)
+                        saved.update(data)
                         if data:
+                            Logger.info(f"Saved chunkless: {saved}")
                             self.lut.queuePoint(point, data)
 
                     report(len(jobs))
@@ -809,33 +809,25 @@ def streamSimulation(
 
 
 @ray.remote(num_cpus=1)
-class ShardWriter:
-    def __init__(self, lut, shard, coord, points, simmer, reader):
-        self.lut = lut
-        if isinstance(lut, dict):
-            self.lut = luts.create(**lut, mode="a", init=False, buffered=True)
+def shardWriter(self, lut, shard, coord, points, simmer, reader):
+    """ """
+    if isinstance(lut, dict):
+        lut = luts.create(**lut, mode="a", init=False, buffered=True)
 
-        self.shard = shard
-        self.coord = coord
-        self.points = points
-        self.simmer = simmer
-        self.reader = reader
+    Logger.info(f"Starting shard {shard}")
 
-    def run(self):
-        Logger.info(f"Starting shard {self.shard}")
+    for point in points:
+        simmer(point)  # Execute the simulation
+        data = reader(point)  # Read the simulation results
 
-        for point in self.points:
-            self.simmer(point)  # Execute the simulation
-            data = self.reader(point)  # Read the simulation results
+        # Remove non-chunk data
+        chunkless = {k: v for k, v in data.items() if k not in luts.Keys.alldim}
+        data = {k: v for k, v in data.items() if k in luts.Keys.alldim}
+        if data:
+            lut.queuePoint(point, data)
 
-            # Remove non-chunk data
-            chunkless = {k: v for k, v in data.items() if k not in luts.Keys.alldim}
-            data = {k: v for k, v in data.items() if k in luts.Keys.alldim}
-            if data:
-                self.lut.queuePoint(point, data)
+    Logger.info(f"Finished points {shard}, flushing to disk")
+    lut.flush_buffer(slices=coord)
 
-        Logger.info(f"Finished points {self.shard}, flushing to disk")
-        self.lut.flush_buffer(slices=self.coord)
-
-        Logger.info(f"Finished shard {self.shard}")
-        return point, chunkless
+    Logger.info(f"Finished shard {shard}")
+    return point, chunkless
