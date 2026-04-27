@@ -252,8 +252,7 @@ def invert_analytical(
     sub_surface, sub_atmosphere, sub_instrument = fm.unpack(sub_state)
 
     # Surface reflectance at the wl resolution of fm.RT
-    rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
-    rho_dir_dir = fm.upsample(fm.surface.wl, rho_dir_dir)
+    rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_state, geom)
     rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
 
     rho_dif_dif = (
