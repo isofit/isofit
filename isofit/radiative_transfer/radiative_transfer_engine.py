@@ -491,7 +491,7 @@ class RadiativeTransferEngine:
                     ShardWriter.remote(lut_args, shard, points, simmer, reader)
                     for shard, points in groups.items()
                 ]
-                jobs = [workers.run.remote() for worker in workers]
+                jobs = [worker.run.remote() for worker in workers]
                 report = common.Track(
                     jobs,
                     step=1,

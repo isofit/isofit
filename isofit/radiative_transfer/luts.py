@@ -453,6 +453,9 @@ class CreateZarr(Create):
         self.sharding = "1gb"
         self.shards = None
 
+        # TODO: yep
+        self.min_shards = 63
+
         super().__init__(file, *args, **kwargs)
 
     def __getitem__(self, key: str) -> Any:
@@ -500,7 +503,11 @@ class CreateZarr(Create):
         """
         if self.sharding:
             self.shards, self.groups = calc_shards(
-                self.grid, self.wl, self.chunks, storage=self.sharding
+                self.grid,
+                self.wl,
+                self.chunks,
+                storage=self.sharding,
+                min_shards=self.min_shards,
             )
 
         self.z.attrs.update(self.attrs)
@@ -1294,7 +1301,7 @@ def cleanup(file):
                 os.remove(file)
 
 
-def calc_shards(grid, wl, chunk, storage="8gb"):
+def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None):
     """
     Attempts to calculate the best sharding strategy for a Zarr store given a LUT grid
     and the target file storage size per shard
@@ -1305,6 +1312,7 @@ def calc_shards(grid, wl, chunk, storage="8gb"):
     wl : iterable
     chunk : iterable
     storage : str
+    min_shards : int
 
     Returns
     -------
@@ -1336,6 +1344,11 @@ def calc_shards(grid, wl, chunk, storage="8gb"):
 
     # Ensure shards don't split chunks
     shards = shards[np.sum(shards % chunk, axis=1) == 0]
+
+    # 1 shard == 1 file, only consider shardings that reach the minimum number of files
+    if min_shards:
+        files = np.prod((shape / shards).astype(int), axis=1)
+        shards = shards[files >= min_shards]
 
     # Chunks per shard
     cpf = np.prod(shards / chunk, axis=1).astype(int)
