@@ -20,7 +20,7 @@ import isofit.utils.template_construction as tmpl
 from isofit.core import isofit, units
 from isofit.core.common import envi_header
 from isofit.debug.resource_tracker import FileResources
-from isofit.radiative_transfer.engines.modtran import ModtranRT
+from isofit.atmosphere.engines.modtran import ModtranRT
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
 from isofit.utils import (
@@ -113,7 +113,7 @@ def apply_oe(
     terrain_style="dem",
 ):
     """
-    Applies OE over a flightline using a radiative transfer engine. This executes
+    Applies OE over a flightline using an atmospheric radiative transfer engine. This executes
     ISOFIT in a generalized way, accounting for the types of variation that might be
     considered typical.
 
@@ -158,7 +158,7 @@ def apply_oe(
     atmosphere_type : str, default="ATM_MIDLAT_SUMMER"
         Atmospheric profile to be used for MODTRAN and libRadtran simulations only.
         However, if presolve mode enabled this is used to inform max water
-        column vapor for any radiative transfer model. Valid options include:
+        column vapor for any atmospheric radiative transfer model. Valid options include:
         ATM_MIDLAT_SUMMER, ATM_TROPICAL, ATM_MIDLAT_WINTER,
         ATM_SUBARC_SUMMER, ATM_SUBARC_WINTER, or ATM_US_STANDARD_1976.
     channelized_uncertainty_path : str, default=None
