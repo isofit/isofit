@@ -926,25 +926,6 @@ def extractGrid(ds: xr.Dataset) -> dict:
     return grid
 
 
-def saveDataset(file: str, ds: xr.Dataset) -> None:
-    """
-    Handles saving an xarray.Dataset to a NetCDF file for ISOFIT. Will detect if the
-    point dim needs to be unstacked before saving (regular grids) or not (irregular)
-
-    Parameters
-    ----------
-    file: str
-        Path to save the `ds` object to. This will be a NetCDF, recommended extension
-        is `.nc`
-    ds: xarray.Dataset
-        Data object to save
-    """
-    if "MultiIndex" in str(ds.indexes["point"]):
-        ds = ds.unstack("point")
-
-    ds.to_netcdf(file)
-
-
 def cleanup(file):
     """
     Checks the ``ISOFIT status`` attribute on a LUT and removes the file if it is
