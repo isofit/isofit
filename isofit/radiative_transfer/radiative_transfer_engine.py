@@ -827,10 +827,10 @@ class ShardWriter:
             chunkless = {k: v for k, v in data.items() if k not in luts.Keys.alldim}
             data = {k: v for k, v in data.items() if k in luts.Keys.alldim}
             if data:
-                lut.queuePoint(point, data)
+                self.lut.queuePoint(point, data)
 
         Logger.info(f"Finished points {self.shard}, flushing to disk")
-        lut.flush()
+        self.lut.flush()
 
         Logger.info(f"Finished shard {self.shard}")
         return point, chunkless
