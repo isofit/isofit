@@ -479,10 +479,10 @@ class RadiativeTransferEngine:
                 reader = ray.put(self.readSim)
                 lut_args = ray.put(
                     {
-                        "file": lut.file,
+                        "file": self.lut.file,
                         "mode": "a",
-                        "wl": lut.wl,
-                        "grid": lut.grid,
+                        "wl": self.lut.wl,
+                        "grid": self.lut.grid,
                         "init": False,
                     }
                 )
