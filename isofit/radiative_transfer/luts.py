@@ -20,6 +20,7 @@ from netCDF4 import Dataset
 from packaging.version import Version
 
 from isofit import __version__
+from isofit.core import common
 
 Logger = logging.getLogger(__name__)
 
