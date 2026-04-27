@@ -474,7 +474,7 @@ class RadiativeTransferEngine:
         if not self._disable_makeSim:
             Logger.info("Executing parallel simulations")
 
-            if groups := getattr(self.lut, "groups"):
+            if groups := getattr(self.lut, "groups", None):
                 simmer = ray.put(self.makeSim)
                 reader = ray.put(self.readSim)
                 lut_args = ray.put(

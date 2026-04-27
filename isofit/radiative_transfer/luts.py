@@ -450,9 +450,8 @@ class CreateZarr(Create):
 
         # TODO: Integrate into config
         self.sharding = "1gb"
+        self.shard = None
 
-        init = kwargs.get("init")
-        kwargs["init"] = False
         super().__init__(file, *args, **kwargs)
 
     def __getitem__(self, key: str) -> Any:
