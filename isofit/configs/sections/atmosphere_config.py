@@ -66,13 +66,26 @@ class AtmosphereStateVectorConfig(StateVectorConfig):
         self._set_statevector_config_options(sub_configdic)
 
 
-class AtmosphereEngineConfig(BaseConfigSection):
+class AtmosphereUnknownsConfig(BaseConfigSection):
     """
-    Atmospheric radiative transfer engine unknowns configuration.
+    Atmosphere unknowns configuration.
+    """
+
+    def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+        self._H2O_ABSCO_type = float
+        self.H2O_ABSCO = None
+
+        self.set_config_options(sub_configdic)
+
+
+class AtmosphereConfig(BaseConfigSection):
+    """
+    Atmosphere configuration.
     """
 
     def __init__(self, sub_configdic: dict = None, name: str = None):
-        super().__init__()
+
         self._name_type = str
         self.name = name
         """str: Name of config - optional, and not currently used."""
@@ -268,15 +281,73 @@ class AtmosphereEngineConfig(BaseConfigSection):
         self.emulator_batch_size = 4096
         """int: Batch size for sRTMnet predictions. Set smaller to reduce memory usage, larger for faster emulation."""
 
+        self._statevector_type = AtmosphereStateVectorConfig
+        self.statevector: StateVectorConfig = AtmosphereStateVectorConfig({})
+
+        self._lut_grid_type = OrderedDict
+        self.lut_grid = None
+
+        self._unknowns_type = AtmosphereUnknownsConfig
+        self.unknowns: AtmosphereUnknownsConfig = None
+
+        self._interpolator_style_type = str
+        self.interpolator_style = "mlg_numba"
+        """str: Style of interpolation.
+        - mlg   = Multilinear Grid
+        - rg    = RegularGrid
+        Speed performance:
+            mlg >> stacked rg >> unstacked rg
+        Caching provides significant gains for rg, marginal for mlg"""
+
+        self._overwrite_interpolator_type = bool
+        self.overwrite_interpolator = False
+        """bool: Overwrite any existing interpolator pickles"""
+
+        self._cache_size_type = int
+        self.cache_size = 16
+        """int: Size of the cache to store interpolation lookups. Defaults to 16 which
+        provides the most significant gains. Setting higher may provide marginal gains."""
+
+        #######################################################################################
+        ########################################################################################
+        ########################################################################################
+        ########################################################################################
+        # TODO: this part  here is a little hairy and not sure if i totally have this correct.
+        self._engine_type = AtmosphereConfig
+        self.engine = self
+
+        if not (engine := sub_configdic.get("engine")):
+            logging.error(
+                "Config does not have an 'engine' key, checking if this config is before ISOFIT v3.9"
+            )
+            if rte := sub_configdic.get("radiative_transfer_engines"):
+                key = list(rte.keys())[0]
+                sub_configdic.update(rte[key])
+                logging.warning(
+                    f"Old config detected, taking the first engine available: {key}"
+                )
+
         self.set_config_options(sub_configdic)
 
+        # Sort lut_grid
+        for key, value in self.lut_grid.items():
+            self.lut_grid[key] = sorted(self.lut_grid[key])
+        self.lut_grid = OrderedDict(sorted(self.lut_grid.items(), key=lambda t: t[0]))
+
+        # Sort lut_names
         if self.lut_names is not None:
             keys = list(self.lut_names.keys())
             keys.sort()
             self.lut_names = {i: self.lut_names[i] for i in keys}
 
+        # Sort statevector names
         if self.statevector_names is not None:
             self.statevector_names.sort()
+        # TODO: this part  here is a little hairy and not sure if i totally have this correct.
+
+    ########################################################################################
+    ########################################################################################
+    ########################################################################################
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
@@ -368,82 +439,6 @@ class AtmosphereEngineConfig(BaseConfigSection):
         if isinstance(self.lut_complevel, int) and self.lut_complevel < 1:
             errors.append("The LUT complevel must be and int greater than 0")
 
-        return errors, warnings
-
-
-class AtmosphereUnknownsConfig(BaseConfigSection):
-    """
-    Atmosphere unknowns configuration.
-    """
-
-    def __init__(self, sub_configdic: dict = None):
-        super().__init__()
-        self._H2O_ABSCO_type = float
-        self.H2O_ABSCO = None
-
-        self.set_config_options(sub_configdic)
-
-
-class AtmosphereConfig(BaseConfigSection):
-    """
-    Atmosphere configuration.
-    """
-
-    def __init__(self, sub_configdic: dict = None):
-        self._statevector_type = AtmosphereStateVectorConfig
-        self.statevector: StateVectorConfig = AtmosphereStateVectorConfig({})
-
-        self._lut_grid_type = OrderedDict
-        self.lut_grid = None
-
-        self._unknowns_type = AtmosphereUnknownsConfig
-        self.unknowns: AtmosphereUnknownsConfig = None
-
-        self._interpolator_style_type = str
-        self.interpolator_style = "mlg_numba"
-        """str: Style of interpolation.
-        - mlg   = Multilinear Grid
-        - rg    = RegularGrid
-        Speed performance:
-            mlg >> stacked rg >> unstacked rg
-        Caching provides significant gains for rg, marginal for mlg"""
-
-        self._overwrite_interpolator_type = bool
-        self.overwrite_interpolator = False
-        """bool: Overwrite any existing interpolator pickles"""
-
-        self._cache_size_type = int
-        self.cache_size = 16
-        """int: Size of the cache to store interpolation lookups. Defaults to 16 which
-        provides the most significant gains. Setting higher may provide marginal gains."""
-
-        self._engine_type = AtmosphereEngineConfig
-        self.engine = None
-
-        self.set_config_options(sub_configdic)
-
-        # sort lut_grid
-        for key, value in self.lut_grid.items():
-            self.lut_grid[key] = sorted(self.lut_grid[key])
-        self.lut_grid = OrderedDict(sorted(self.lut_grid.items(), key=lambda t: t[0]))
-
-        if not (engine := sub_configdic.get("engine")):
-            logging.error(
-                "Config does not have an 'engine' key, checking if this config is before ISOFIT v3.9"
-            )
-            if rte := sub_configdic.get("radiative_transfer_engines"):
-                key = list(rte.keys())[0]
-                engine = rte[key]
-                logging.warning(
-                    f"Old config detected, taking the first engine available: {key}"
-                )
-
-        self.engine = AtmosphereEngineConfig(engine)
-
-    def _check_config_validity(self) -> List[str]:
-        errors = list()
-        warnings = list()
-
         for key, item in self.lut_grid.items():
             if len(item) < 2:
                 errors.append(
@@ -451,10 +446,6 @@ class AtmosphereConfig(BaseConfigSection):
                 )
             if np.unique(item).size < len(item):
                 errors.append(f"Detected duplicate values in lut_grid item {key}")
-
-        er, warn = self.engine.check_config_validity()
-        errors.extend(er)
-        warnings.extend(warn)
 
         kinds = [
             "rg",
