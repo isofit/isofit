@@ -35,18 +35,45 @@ import numpy as np
 import xarray as xr
 
 from isofit import ray
-from isofit.configs.sections.radiative_transfer_config import (
-    RadiativeTransferEngineConfig,
-)
 from isofit.core import common, units
 from isofit.core.common import eps, svd_inv_sqrt
-from isofit.radiative_transfer import luts
-from isofit.radiative_transfer.engines import Engines
+from isofit.luts import Reader
 
 Logger = logging.getLogger(__file__)
 
 
-class RadiativeTransfer:
+class Keys:
+    # Constants, not along any dimension
+    consts = {
+        "coszen": np.nan,
+        "solzen": np.nan,
+    }
+
+    # Along the wavelength dimension only
+    onedim = {
+        "fwhm": np.nan,
+        "solar_irr": np.nan,
+    }
+
+    # Keys along all dimensions, ie. wl and point
+    alldim = {
+        "rhoatm": np.nan,
+        "sphalb": np.nan,
+        "transm_down_dir": 0,
+        "transm_down_dif": 0,
+        "transm_up_dir": 0,
+        "transm_up_dif": 0,
+        "thermal_upwelling": np.nan,
+        "thermal_downwelling": np.nan,
+        # add keys for radiances along all optical paths
+        "dir-dir": 0,
+        "dif-dir": 0,
+        "dir-dif": 0,
+        "dif-dif": 0,
+    }
+
+
+class Atmosphere(Reader):
     """This class controls the radiative transfer component of the forward
     model. An ordered dictionary is maintained of individual RTMs (MODTRAN,
     for example). We loop over the dictionary concatenating the radiation
@@ -82,20 +109,21 @@ class RadiativeTransfer:
     def __init__(
         self,
         full_config: Config,
+        lut_path: str = "",  # lut_path override
         wl: np.array = [],  # Wavelength override
         fwhm: np.array = [],  # fwhm override
+        n_core: int = None,  # n_core override
     ):
         config_atmosphere = full_config.forward_model.atmosphere
 
-        self.n_cores = full_config.implementation.n_cores
+        self.n_cores = n_core or full_config.implementation.n_cores
         # Check to see if this check is necessary
         if self.n_cores is None:
             self.n_cores = multiprocessing.cpu_count()
 
-        # TODO Need to make sure this fits in with inheritance - keep lut_path as somehting that can be fed in?
+        # Initially pull lut information from config
+        self.lut_path = lut_path or full_config.atmosphere.lut_path
         self.lut_grid = config_atmosphere.lut_grid
-        # self.lut_path = lut_path = str(lut_path) or full_config.atmosphere.lut_path
-        self.lut_path = config_atmosphere.lut_path
         self.statevec_names = config_atmosphere.statevector.get_element_names()
 
         # Irradiance file TODO Check how this relates to OCI
@@ -107,16 +135,11 @@ class RadiativeTransfer:
                 "Must provide either a prebuilt LUT file or a LUT grid"
             )
 
-        # TODO Check that this is in fashion
+        # TODO: overwrite_interpolator not hooked up. Check if we even want this override
         self.interpolator_style = (
             config_atmosphere.interpolator_style
             if config_atmosphere.interpolator_style
             else config_instrument.get("interpolator_style")
-        )
-        self.overwrite_interpolator = (
-            config_atmosphere.overwrite_interpolator
-            if config_atmosphere.overwrite_interpolator
-            else config_instrument.get("overwrite_interpolator")
         )
 
         self.coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
@@ -172,6 +195,15 @@ class RadiativeTransfer:
         # Uncertainty
         self.bvec = config_atmosphere.unknowns.get_element_names()
         self.bval = np.array([x for x in config_atmosphere.unknowns.get_elements()[0]])
+        # Create LUT (for generic this will be fake executed
+        self.lut_names = list(self.lut_grid.keys())
+        self.points = common.combos(self.lut_grid.values())
+
+        # Load lut
+        self.lut = couple(self.load(self.lut_path, subset=config_atmosphere.lut_names))
+        self.points = self.extractPoints(self.lut)
+
+        # Make lut if you have to
 
         # Logic for Pre-built LUT TODO: Move to generic class?
         if lut_exists:
@@ -667,3 +699,51 @@ class RadiativeTransfer:
             data[key] = case_0[key]
 
         return data
+
+
+def couple(ds, inplace=True):
+    """
+    Calculates coupled terms on the input Dataset
+
+    Parameters
+    ----------
+    ds: xr.Dataset
+        Dataset to process on
+    inplace: bool, default=True
+        Insert the coupled terms in-place to the original Dataset. If False, copy the
+        Dataset first
+
+    Returns
+    -------
+    ds: xr.Dataset
+        Dataset with coupled terms
+    """
+    terms = {
+        "dir-dir": ("transm_down_dir", "transm_up_dir"),
+        "dif-dir": ("transm_down_dif", "transm_up_dir"),
+        "dir-dif": ("transm_down_dir", "transm_up_dif"),
+        "dif-dif": ("transm_down_dif", "transm_up_dif"),
+    }
+
+    # Detect if coupling needs to occur first
+    data = ds.get(list(terms))
+    calc = False
+    if data is None:
+        # Not all keys exist
+        calc = "missing"
+    elif not bool(data.any().to_array().all()):
+        # If any key is empty
+        calc = "empty"
+
+    if calc:
+        Logger.debug(f"A coupled term is {calc}, calculating")
+        if not inplace:
+            ds = ds.copy()
+
+        for term, (key1, key2) in terms.items():
+            try:
+                ds[term] = ds[key1] * ds[key2]
+            except KeyError:
+                ds[term] = 0
+
+    return ds

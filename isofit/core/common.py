@@ -1042,3 +1042,22 @@ def compare(a, b, threshold=0.8, not_same=True):
                 matches.setdefault(x, []).append(y)
 
     return matches
+
+
+def saveDataset(file: str, ds: xr.Dataset) -> None:
+    """
+    Handles saving an xarray.Dataset to a NetCDF file for ISOFIT. Will detect if the
+    point dim needs to be unstacked before saving (regular grids) or not (irregular)
+
+    Parameters
+    ----------
+    file: str
+        Path to save the `ds` object to. This will be a NetCDF, recommended extension
+        is `.nc`
+    ds: xarray.Dataset
+        Data object to save
+    """
+    if "MultiIndex" in str(ds.indexes["point"]):
+        ds = ds.unstack("point")
+
+    ds.to_netcdf(file)
