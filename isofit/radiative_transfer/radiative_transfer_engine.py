@@ -515,11 +515,13 @@ class RadiativeTransferEngine:
                         point, data = ret
                         data = {k: v for k, v in data.items() if k not in saved}
                         saved += list(data)
-                        self.lut.queuePoint((point, data))
+                        if data:
+                            self.lut.queuePoint(point, data)
 
-                    if report(len(jobs)) and self.lut.hold:
-                        Logger.info("Flushing netCDF to disk")
-                        self.lut.flush()
+                    report(len(jobs))
+                    # if report(len(jobs)) and self.lut.hold:
+                    #     Logger.info("Flushing netCDF to disk")
+                    #     self.lut.flush()
 
                 # Shouldn't be hit but just in case
                 if self.lut.hold:
