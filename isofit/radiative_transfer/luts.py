@@ -462,7 +462,7 @@ class CreateZarr(Create):
         if buffered:
             shape = list(self.sizes.values())
             self.buffer = {
-                key: np.full(shape, vals, "float64")
+                key: np.full(self.shards, vals, "float64")
                 for key, vals in self.alldim.items()
             }
 
@@ -603,7 +603,10 @@ class CreateZarr(Create):
                     store[key][:] = vals
 
                 elif key in self.alldim:
-                    index = (slice(None),) + tuple(self.pointIndices(point))
+                    index = self.pointIndices(point)
+                    if self.shards:
+                        index = index % self.shards[1:]
+                    index = (slice(None),) + tuple(index)
                     store[key][index] = vals
 
                 else:
