@@ -510,7 +510,7 @@ class CreateZarr(Create):
             The initialized dataset
         """
         if self.sharding:
-            self.shards, self.groups = calc_shards(
+            self.shards, self.groups, self.coords = calc_shards(
                 self.grid,
                 self.wl,
                 self.chunks,
