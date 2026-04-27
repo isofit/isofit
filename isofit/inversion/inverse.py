@@ -325,10 +325,10 @@ class Inversion:
 
             # Update regions outside retrieval windows to match priors
             if self.config.priors_in_initial_guess:
-                prior_subset_idx = np.arange(len(x0))[self.fm.idx_surf_rfl][
-                    self.outside_ret_windows
-                ]
-                x0[prior_subset_idx] = self.fm.surface.xa(x0, geom)[prior_subset_idx]
+                prior_subset_idx = self.fm.idx_surf_rfl[self.outside_ret_windows]
+                x0[prior_subset_idx] = self.fm.surface.xa(
+                    x0[self.fm.idx_surface], geom
+                )[self.outside_ret_windows]
 
             trajectory.append(x0)
 
@@ -357,7 +357,7 @@ class Inversion:
 
             # Record initializaation state
             geom.x_surf_init = x[self.fm.idx_surface]
-            geom.x_RT_init = x[self.fm.idx_RT]
+            geom.x_atmosphere_init = x[self.fm.idx_atmosphere]
 
             # Seps is the covariance of "observation noise" including both
             # measurement noise from the instrument as well as variability due to
