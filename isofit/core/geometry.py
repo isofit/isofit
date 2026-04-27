@@ -127,12 +127,12 @@ class Geometry:
         # In the more common case that Isofit config is provided...
         else:
             # Update terrain parameters from config
-            rt_config = full_config.forward_model.radiative_transfer
-            self.max_slope = rt_config.max_slope
-            self.terrain_style = rt_config.terrain_style
+            self.max_slope = full_config.forward_model.surface.max_slope
+            self.terrain_style = full_config.forward_model.surface.terrain_style
+            self.lut_grid = full_config.forward_model.atmosphere.lut_grid
 
             # 1. If user has a lut grid that contains solar_zenith this takes priority
-            if rt_config.lut_grid is not None and "solar_zenith" in rt_config.lut_grid:
+            if self.lut_grid is not None and "solar_zenith" in self.lut_grid:
                 self.coszen = np.cos(np.radians(self.solar_zenith))
                 self.use_universal_coszen = False
 
@@ -147,7 +147,7 @@ class Geometry:
                 )
 
             # 3. In this case, the user does not have solar zenith in the lut grid
-            # and cozen is correctly defined (based on the RT Engine)
+            # and cozen is correctly defined (based on the atmospheric RT Engine)
             elif coszen is not None:
                 self.coszen = coszen
 

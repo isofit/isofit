@@ -39,7 +39,7 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
     n = np.ones(len(x))
     D = np.c_[n, x, w]
     np.savetxt(hi_res_wavlengths, D, fmt="%8.6f")
-    config["forward_model"]["radiative_transfer"]["engine"][
+    config["forward_model"]["atmosphere"]["engine"][
         "wavelength_file"
     ] = hi_res_wavlengths
 
