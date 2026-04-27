@@ -84,7 +84,7 @@ class Create:
     def __init__(
         self,
         file: str,
-        mode: "w",
+        mode: str = "w",
         wl: np.ndarray,
         grid: dict,
         attrs: dict = {},
