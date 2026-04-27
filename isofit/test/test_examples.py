@@ -61,9 +61,7 @@ def test_pasadena_modtran(args, monkeypatch):
 
 
 @pytest.mark.examples
-@mock.patch(
-    "isofit.radiative_transfer.engines.modtran.ModtranRT.makeSim", new=lambda *_: ...
-)
+@mock.patch("isofit.atmosphere.engines.modtran.ModtranRT.makeSim", new=lambda *_: ...)
 def test_pasadena_topoflux(monkeypatch):
     """Run Pasadena topoflux example dataset."""
 

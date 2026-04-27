@@ -75,7 +75,7 @@ class Config(BaseConfigSection):
         self._forward_model_type = ForwardModelConfig
         self.forward_model = ForwardModelConfig({})
         """ForwardModelConfig: forward_model config. Holds information about surface models,
-        radiative transfer models, and the instrument.
+        atmosphere radiative transfer models, and the instrument.
         """
 
         self._implementation_type = ImplementationConfig

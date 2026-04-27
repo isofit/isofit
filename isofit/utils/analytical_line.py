@@ -197,7 +197,7 @@ def analytical_line(
     ]
     bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
     num_bands = len(full_idx_surf_rfl)
-    engine_name = config.forward_model.radiative_transfer.engine.engine_name
+    engine_name = config.forward_model.atmosphere.engine.engine_name
     isofit_version = config.implementation.isofit_version
     rfl_output = initialize_output(
         output_metadata,

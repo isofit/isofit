@@ -17,12 +17,10 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
-from typing import Dict, List, Type
-
 from isofit.configs.base_config import BaseConfigSection
-from isofit.configs.sections.instrument_config import InstrumentConfig
-from isofit.configs.sections.radiative_transfer_config import RadiativeTransferConfig
 from isofit.configs.sections.surface_config import SurfaceConfig
+from isofit.configs.sections.atmosphere_config import AtmosphereConfig
+from isofit.configs.sections.instrument_config import InstrumentConfig
 
 
 class ForwardModelConfig(BaseConfigSection):
@@ -33,22 +31,22 @@ class ForwardModelConfig(BaseConfigSection):
     def __init__(self, sub_configdic: dict = None):
         super().__init__()
 
-        self._instrument_type = InstrumentConfig
-        self.instrument: InstrumentConfig = None
-        """
-        Instrument: instrument config section. 
-        """
-
         self._surface_type = SurfaceConfig
         self.surface: SurfaceConfig = None
         """
         Surface: surface config section. 
         """
 
-        self._radiative_transfer_type = RadiativeTransferConfig
-        self.radiative_transfer: RadiativeTransferConfig = None
+        self._atmosphere_type = AtmosphereConfig
+        self.atmosphere: AtmosphereConfig = None
         """
-        RadiativeTransfer: radiative transfer config section.
+        Atmosphere: atmospheric radiative transfer config section.
+        """
+
+        self._instrument_type = InstrumentConfig
+        self.instrument: InstrumentConfig = None
+        """
+        Instrument: instrument config section. 
         """
 
         self._model_discrepancy_file_type = str

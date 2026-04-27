@@ -93,11 +93,11 @@ def construct_full_state(full_config):
     instrument_states = instrument.statevec_names
 
     # Pull the rt names from the config. Seems to be most commonly present.
-    rt_config = full_config.forward_model.radiative_transfer
+    atmosphere_config = full_config.forward_model.atmosphere
 
-    rt_states = vars(rt_config.engine)["statevector_names"]
+    rt_states = vars(atmosphere_config.engine)["statevector_names"]
     if not rt_states:
-        rt_states = sorted(rt_config.engine.lut_names.keys())
+        rt_states = sorted(atmosphere_config.engine.lut_names.keys())
 
     # Check for config type
     if full_config.forward_model.surface.multi_surface_flag:
@@ -281,12 +281,12 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
     # Experimental: added statevector elements
     for key, value in isurface.get("rt_statevector_elements", {}).items():
         # Add the statevector params
-        config.forward_model.radiative_transfer.statevector.surface_elevation_km = (
+        config.forward_model.atmosphere.statevector.surface_elevation_km = (
             StateVectorElementConfig(value)
         )
 
         # Add the statevector names
-        config.forward_model.radiative_transfer.engine.statevector_names.append(key)
+        config.forward_model.atmosphere.engine.statevector_names.append(key)
 
     return config
 

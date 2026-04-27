@@ -20,7 +20,7 @@
 import logging
 import os
 from collections import OrderedDict
-from typing import Dict, List, Type
+from typing import List
 
 import numpy as np
 
@@ -32,9 +32,9 @@ from isofit.configs.sections.statevector_config import (
 from isofit.data import env
 
 
-class RTStateVectorConfig(StateVectorConfig):
+class AtmosphereStateVectorConfig(StateVectorConfig):
     """
-    RT State vector configuration.
+    Atmosphere state vector configuration.
     """
 
     def __init__(self, sub_configdic: dict = None):
@@ -66,9 +66,9 @@ class RTStateVectorConfig(StateVectorConfig):
         self._set_statevector_config_options(sub_configdic)
 
 
-class RadiativeTransferEngineConfig(BaseConfigSection):
+class AtmosphereEngineConfig(BaseConfigSection):
     """
-    Radiative transfer unknowns configuration.
+    Atmospheric radiative transfer engine unknowns configuration.
     """
 
     def __init__(self, sub_configdic: dict = None, name: str = None):
@@ -79,11 +79,11 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._engine_name_type = str
         self.engine_name = None
-        """str: Name of radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet', 'LibRadTran']."""
+        """str: Name of atmospheric radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet', 'LibRadTran']."""
 
         self._engine_base_dir_type = str
         self.engine_base_dir = None
-        """str: base directory of the given radiative transfer engine on user's OS."""
+        """str: base directory of the given atmospheric radiative transfer engine on user's OS."""
 
         self._engine_lut_file_type = str
         self.engine_lut_file = None
@@ -95,7 +95,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._wavelength_range_type = list()
         self.wavelength_range = None
-        """List: The wavelength range to execute this radiative transfer engine over."""
+        """List: The wavelength range to execute this atmospheric radiative transfer engine over."""
 
         self._environment_type = str
         self.environment = None
@@ -103,15 +103,15 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._lut_path_type = str
         self.lut_path = None
-        """str: The path to the look up table directory used by the radiative transfer engine."""
+        """str: The path to the look up table directory used by the atmospheric radiative transfer engine."""
 
         self._sim_path_type = str
         self.sim_path = None
-        """str: Path to the simulation outputs for the radiative transfer engine."""
+        """str: Path to the simulation outputs for the atmospheric radiative transfer engine."""
 
         self._template_file_type = str
         self.template_file = None
-        """str: A template file to be used as the base-configuration for the given radiative transfer engine."""
+        """str: A template file to be used as the base-configuration for the given atmospheric radiative transfer engine."""
 
         self._glint_model_type = bool
         self.glint_model = False
@@ -122,20 +122,20 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
 
         self._rt_mode_type = str
         self.rt_mode = "transm"
-        """str: Radiative transfer mode of LUT simulations.
+        """str: Atmospheric radiative transfer mode of LUT simulations.
         'transm' for transmittances, 'rdn' for reflected radiance."""
 
         self._lut_names_type = dict
         self.lut_names = None
-        """Dictionary: Names of the elements to run this radiative transfer element on.  Must be a subset
-        of the keys in radiative_transfer->lut_grid.  If not specified, uses all keys from
-        radiative_transfer-> lut_grid.  Auto-sorted (alphabetically) below."""
+        """Dictionary: Names of the elements to run this atmospheric radiative transfer element on.  Must be a subset
+        of the keys in atmosphere->lut_grid.  If not specified, uses all keys from
+        atmosphere-> lut_grid.  Auto-sorted (alphabetically) below."""
 
         self._statevector_names_type = list()
         self.statevector_names = None
-        """List: Names of the statevector elements to use with this radiative transfer engine.  Must be a subset
-        of the keys in radiative_transfer->statevector.  If not specified, uses all keys from
-        radiative_transfer->statevector.  Auto-sorted (alphabetically) below."""
+        """List: Names of the statevector elements to use with this atmospheric radiative transfer engine.  Must be a subset
+        of the keys in atmosphere->statevector.  If not specified, uses all keys from
+        atmosphere->statevector.  Auto-sorted (alphabetically) below."""
 
         self._lut_compression_type = str
         self.lut_compression = "zlib"
@@ -260,7 +260,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         # MODTRAN, 6S, and libRadtran
         self._rte_configure_and_exit_type = bool
         self.rte_configure_and_exit = False
-        """bool: Indicates that code should terminate as soon as all radiative transfer engine configuration files are
+        """bool: Indicates that code should terminate as soon as all atmospheric radiative transfer engine configuration files are
         written (without running them)"""
 
         # sRTMnet
@@ -282,25 +282,23 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         errors = list()
         warnings = list()
 
-        from isofit.radiative_transfer.engines import Engines
+        from isofit.atmosphere.engines import Engines
 
         if self.engine_name not in Engines:
             errors.append(
-                "radiative_transfer->raditive_transfer_model: {} not in one of the"
+                "atmosphere->engine_name: {} not in one of the"
                 " available models: {}".format(self.engine_name, list(Engines))
             )
 
         valid_rt_modes = ["transm", "rdn"]
         if self.rt_mode not in valid_rt_modes:
             errors.append(
-                "radiative_transfer->raditive_transfer_mode: {} not in one of the"
+                "atmosphere->rt_mode: {} not in one of the"
                 " available modes: {}".format(self.rt_mode, valid_rt_modes)
             )
 
         if not (self.emulator_batch_size > 0):
-            errors.append(
-                "radiative_transfer->emulator_batch_size must be a positive integer."
-            )
+            errors.append("atmosphere->emulator_batch_size must be a positive integer.")
 
         # Only check for missing files when a prebuilt LUT is not provided
         if not os.path.exists(self.lut_path):
@@ -310,7 +308,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                 if value and key[-5:] == "_file" and key != "emulator_file":
                     if os.path.isfile(value) is False:
                         errors.append(
-                            "Config value radiative_transfer->{}: {} not found".format(
+                            "Config value atmosphere->{}: {} not found".format(
                                 key, value
                             )
                         )
@@ -341,7 +339,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
                     )
 
                 if self.emulator_file.endswith(".6c"):
-                    from isofit.radiative_transfer.engines.six_s import get_exe
+                    from isofit.atmosphere.engines.six_s import get_exe
 
                     if "co2" not in get_exe(self.engine_base_dir, version=True):
                         errors.append(
@@ -364,7 +362,7 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
             for file in files:
                 if file is not None and not os.path.isfile(file):
                     errors.append(
-                        f"Radiative transfer engine file not found on system: {file}"
+                        f"Atmospheric radiative transfer engine file not found on system: {file}"
                     )
 
         if isinstance(self.lut_complevel, int) and self.lut_complevel < 1:
@@ -373,9 +371,9 @@ class RadiativeTransferEngineConfig(BaseConfigSection):
         return errors, warnings
 
 
-class RadiativeTransferUnknownsConfig(BaseConfigSection):
+class AtmosphereUnknownsConfig(BaseConfigSection):
     """
-    Radiative transfer unknowns configuration.
+    Atmosphere unknowns configuration.
     """
 
     def __init__(self, sub_configdic: dict = None):
@@ -386,20 +384,20 @@ class RadiativeTransferUnknownsConfig(BaseConfigSection):
         self.set_config_options(sub_configdic)
 
 
-class RadiativeTransferConfig(BaseConfigSection):
+class AtmosphereConfig(BaseConfigSection):
     """
-    Forward model configuration.
+    Atmosphere configuration.
     """
 
     def __init__(self, sub_configdic: dict = None):
-        self._statevector_type = RTStateVectorConfig
-        self.statevector: StateVectorConfig = RTStateVectorConfig({})
+        self._statevector_type = AtmosphereStateVectorConfig
+        self.statevector: StateVectorConfig = AtmosphereStateVectorConfig({})
 
         self._lut_grid_type = OrderedDict
         self.lut_grid = None
 
-        self._unknowns_type = RadiativeTransferUnknownsConfig
-        self.unknowns: RadiativeTransferUnknownsConfig = None
+        self._unknowns_type = AtmosphereUnknownsConfig
+        self.unknowns: AtmosphereUnknownsConfig = None
 
         self._interpolator_style_type = str
         self.interpolator_style = "mlg_numba"
@@ -419,21 +417,7 @@ class RadiativeTransferConfig(BaseConfigSection):
         """int: Size of the cache to store interpolation lookups. Defaults to 16 which
         provides the most significant gains. Setting higher may provide marginal gains."""
 
-        self._terrain_style_type = str
-        self.terrain_style = "flat"
-        """
-        Style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
-        """
-
-        self._max_slope_type = float
-        self.max_slope = 90.0
-        """
-        float: Max slope value used in LUT component calculations to inform minimum cos_i.
-        Only relevant if terrain_style is 'dem' and a 6 component model is used.
-        This can avoid runaway results at low cos_i values where diffuse radiance dominates.
-        """
-
-        self._engine_type = RadiativeTransferEngineConfig
+        self._engine_type = AtmosphereEngineConfig
         self.engine = None
 
         self.set_config_options(sub_configdic)
@@ -454,7 +438,7 @@ class RadiativeTransferConfig(BaseConfigSection):
                     f"Old config detected, taking the first engine available: {key}"
                 )
 
-        self.engine = RadiativeTransferEngineConfig(engine)
+        self.engine = AtmosphereEngineConfig(engine)
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
@@ -494,11 +478,5 @@ class RadiativeTransferConfig(BaseConfigSection):
                     "Invalid degree number. Should be an integer, e.g. nds-3, got"
                     f" {degrees!r} from {self.interpolator_style!r}[4:]"
                 )
-
-        terrain_options = ["flat", "dem", "solved"]
-        if self.terrain_style not in terrain_options:
-            errors.append(
-                f"surface->terrain_style is set as {self.terrain_style}, but must be one of: {terrain_options}"
-            )
 
         return errors, warnings
