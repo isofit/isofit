@@ -451,7 +451,7 @@ class CreateZarr(Create):
 
         # TODO: Integrate into config
         self.sharding = "1gb"
-        self.shard = None
+        self.shards = None
 
         super().__init__(file, *args, **kwargs)
 
@@ -499,7 +499,7 @@ class CreateZarr(Create):
             The initialized dataset
         """
         if self.sharding:
-            self.shard, self.groups = calc_shards(
+            self.shards, self.groups = calc_shards(
                 self.grid, self.wl, self.chunks, storage=self.sharding
             )
 
