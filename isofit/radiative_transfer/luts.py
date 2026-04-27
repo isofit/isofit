@@ -1364,4 +1364,4 @@ def calc_shards(grid, wl, chunk, storage="8gb"):
     Logger.info(f"  Chunks per file: {cpf[idx]} ({cpf[idx] * space / 2**30:.2f}gb)")
     Logger.info(f"  Number of files: {np.prod((shape / best).astype(int))}")
 
-    return best, groups
+    return tuple(best), groups
