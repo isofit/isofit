@@ -84,6 +84,7 @@ class Create:
     def __init__(
         self,
         file: str,
+        mode: "w",
         wl: np.ndarray,
         grid: dict,
         attrs: dict = {},
@@ -104,6 +105,8 @@ class Create:
             Filepath for the LUT.
         wl : np.ndarray
             The wavelength array.
+        mode : str, default="w"
+            File mode to open with
         grid : dict
             The LUT grid, formatted as {str: Iterable}.
         attrs: dict, defaults={}
@@ -322,7 +325,7 @@ class CreateNetCDF(Create):
             )
             var[:] = vals
 
-        with Dataset(self.file, "w", format="NETCDF4") as ds:
+        with Dataset(self.file, self.mode, format="NETCDF4") as ds:
             # Dimensions
             ds.createDimension("wl", len(self.wl))
             createVariable("wl", self.wl, ("wl",))
@@ -413,14 +416,16 @@ class CreateNetCDF(Create):
 
 
 class CreateZarr(Create):
-    def __init__(self, file, *args, **kwargs):
+    def __init__(self, file, mode="w", sharding=False, *args, **kwargs):
         """
-        Prepare a Zarr v2 LUT store
+        Prepare a Zarr v3 LUT store
 
         Parameters
         ----------
         file : str
             Filepath for the LUT.
+        mode : str, default="w"
+            File mode to open with
         wl : np.ndarray
             The wavelength array.
         grid : dict
@@ -439,8 +444,13 @@ class CreateZarr(Create):
         self.flush_immediately = False
 
         self.store = zarr.storage.LocalStore(file)
-        self.z = zarr.open_group(store=self.store, mode="w", zarr_format=3)
+        self.z = zarr.open_group(store=self.store, mode=mode, zarr_format=3)
 
+        # TODO: Integrate into config
+        self.sharding = "1gb"
+
+        init = kwargs.get("init")
+        kwargs["init"] = False
         super().__init__(file, *args, **kwargs)
 
     def __getitem__(self, key: str) -> Any:
@@ -486,6 +496,11 @@ class CreateZarr(Create):
         None | xr.Dataset
             The initialized dataset
         """
+        if self.sharding:
+            self.shard, self.groups = calc_shards(
+                self.grid, self.wl, self.chunks, storage=self.sharding
+            )
+
         self.z.attrs.update(self.attrs)
 
         # Coordinates
@@ -532,6 +547,7 @@ class CreateZarr(Create):
                     data=vals,
                     fill_value=None,
                     chunks=self.chunks,
+                    shards=self.shards,
                     dimension_names=dims,
                 )
             else:
@@ -541,6 +557,7 @@ class CreateZarr(Create):
                     dtype="float64",
                     fill_value=vals,
                     chunks=self.chunks,
+                    shards=self.shards,
                     dimension_names=dims,
                 )
 
@@ -1326,8 +1343,9 @@ def calc_shards(grid, wl, chunk, storage="8gb"):
     best = shards[idx]
 
     # Split the points into shard groups
-    points = common.combos([np.arange(v) for v in lens])
-    indices = points // best[1:]
+    points = common.combos(grid.values())
+    pidxs = common.combos([np.arange(v) for v in lens])
+    indices = pidxs // best[1:]
     groups = {}
     for i, key in enumerate(indices):
         groups.setdefault(tuple(key), []).append(points[i])

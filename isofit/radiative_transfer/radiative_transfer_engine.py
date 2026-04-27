@@ -22,10 +22,10 @@ from __future__ import annotations
 
 import io
 import logging
+import multiprocessing
 import os
 import sys
 import time
-import multiprocessing
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Callable
@@ -474,46 +474,34 @@ class RadiativeTransferEngine:
         if not self._disable_makeSim:
             Logger.info("Executing parallel simulations")
 
-            # Place into shared memory space to avoid spilling
-            lut_names = ray.put(self.lut_names)
-            makeSim = ray.put(self.makeSim)
-            readSim = ray.put(self.readSim)
-            lut_path = ray.put(self.lut_path)
-            buffer_time = ray.put(self.max_buffer_time)
-            rte_configure_and_exit = ray.put(self.engine_config.rte_configure_and_exit)
-            lut = ray.put(self.lut) if isinstance(self.lut, luts.CreateZarr) else None
-
-            jobs = [
-                streamSimulation.remote(
-                    point,
-                    lut_names,
-                    makeSim,
-                    readSim,
-                    lut_path,
-                    max_buffer_time=buffer_time,
-                    rte_configure_and_exit=self.engine_config.rte_configure_and_exit,
-                    lut=lut,
+            if groups := getattr(self.lut, "groups"):
+                simmer = ray.put(self.makeSim)
+                reader = ray.put(self.readSim)
+                lut_args = ray.put(
+                    {
+                        "file": lut.file,
+                        "mode": "a",
+                        "wl": lut.wl,
+                        "grid": lut.grid,
+                        "init": False,
+                    }
                 )
-                for point in self.points
-            ]
 
-            if self.engine_config.rte_configure_and_exit:
-                # Block until all jobs finish
-                ray.get(jobs)
-
-                Logger.warning("Exiting early due to rte_configure_and_exit")
-                sys.exit(0)
-            else:
-                # Report a percentage complete every 10% and flush to disk at those intervals
+                workers = [
+                    ShardWriter.remote(lut_args, shard, points, simmer, reader)
+                    for shard, points in groups.items()
+                ]
+                jobs = [workers.run.remote() for worker in workers]
                 report = common.Track(
                     jobs,
-                    step=10,
+                    step=1,
                     reverse=True,
                     print=Logger.info,
-                    message="simulations complete",
+                    message="shards complete",
                 )
 
                 # Update the lut as point simulations stream in
+                saved = []
                 while jobs:
                     [done], jobs = ray.wait(jobs, num_returns=1)
 
@@ -522,7 +510,10 @@ class RadiativeTransferEngine:
 
                     # If a simulation fails then it will return None
                     if ret:
-                        self.lut.queuePoint(*ret)
+                        point, data = ret
+                        data = {k: v for k, v in data.items() if k not in saved}
+                        saved += list(data)
+                        self.lut.queuePoint((point, data))
 
                     if report(len(jobs)) and self.lut.hold:
                         Logger.info("Flushing netCDF to disk")
@@ -533,7 +524,71 @@ class RadiativeTransferEngine:
                     Logger.warning("Not all points were flushed, doing so now")
                     self.lut.flush()
 
-            del lut_names, makeSim, readSim, lut_path, buffer_time
+            else:
+                # Place into shared memory space to avoid spilling
+                lut_names = ray.put(self.lut_names)
+                makeSim = ray.put(self.makeSim)
+                readSim = ray.put(self.readSim)
+                lut_path = ray.put(self.lut_path)
+                buffer_time = ray.put(self.max_buffer_time)
+                rte_configure_and_exit = ray.put(
+                    self.engine_config.rte_configure_and_exit
+                )
+                lut = (
+                    ray.put(self.lut) if isinstance(self.lut, luts.CreateZarr) else None
+                )
+
+                jobs = [
+                    streamSimulation.remote(
+                        point,
+                        lut_names,
+                        makeSim,
+                        readSim,
+                        lut_path,
+                        max_buffer_time=buffer_time,
+                        rte_configure_and_exit=self.engine_config.rte_configure_and_exit,
+                        lut=lut,
+                    )
+                    for point in self.points
+                ]
+
+                if self.engine_config.rte_configure_and_exit:
+                    # Block until all jobs finish
+                    ray.get(jobs)
+
+                    Logger.warning("Exiting early due to rte_configure_and_exit")
+                    sys.exit(0)
+                else:
+                    # Report a percentage complete every 10% and flush to disk at those intervals
+                    report = common.Track(
+                        jobs,
+                        step=10,
+                        reverse=True,
+                        print=Logger.info,
+                        message="simulations complete",
+                    )
+
+                    # Update the lut as point simulations stream in
+                    while jobs:
+                        [done], jobs = ray.wait(jobs, num_returns=1)
+
+                        # Retrieve the return of the finished job
+                        ret = ray.get(done)
+
+                        # If a simulation fails then it will return None
+                        if ret:
+                            self.lut.queuePoint(*ret)
+
+                        if report(len(jobs)) and self.lut.hold:
+                            Logger.info("Flushing netCDF to disk")
+                            self.lut.flush()
+
+                    # Shouldn't be hit but just in case
+                    if self.lut.hold:
+                        Logger.warning("Not all points were flushed, doing so now")
+                        self.lut.flush()
+
+                del lut_names, makeSim, readSim, lut_path, buffer_time
         else:
             Logger.debug("makeSim is disabled for this engine")
 
@@ -747,3 +802,35 @@ def streamSimulation(
             return point, data
     else:
         Logger.warning(f"No data was returned for point {point}")
+
+
+@ray.remote(num_cpus=1)
+class ShardWriter:
+    def __init__(self, lut, shard, points, simmer, reader):
+        self.lut = lut
+        if isinstance(lut, dict):
+            self.lut = luts.create(**lut)
+
+        self.shard = shard
+        self.points = points
+        self.simmer = simmer
+        self.reader = reader
+
+    def run(self):
+        Logger.info(f"Starting shard {self.shard}")
+
+        for point in self.points:
+            self.simmer(point)  # Execute the simulation
+            data = self.reader(point)  # Read the simulation results
+
+            # Remove non-chunk data
+            chunkless = {k: v for k, v in data.items() if k not in luts.Keys.alldim}
+            data = {k: v for k, v in data.items() if k in luts.Keys.alldim}
+            if data:
+                lut.queuePoint(point, data)
+
+        Logger.info(f"Finished points {self.shard}, flushing to disk")
+        lut.flush()
+
+        Logger.info(f"Finished shard {self.shard}")
+        return point, chunkless
