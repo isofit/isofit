@@ -416,7 +416,7 @@ class CreateNetCDF(Create):
 
 
 class CreateZarr(Create):
-    def __init__(self, file, mode="w", sharding=False, *args, **kwargs):
+    def __init__(self, file, *args, **kwargs):
         """
         Prepare a Zarr v3 LUT store
 
@@ -444,7 +444,9 @@ class CreateZarr(Create):
         self.flush_immediately = False
 
         self.store = zarr.storage.LocalStore(file)
-        self.z = zarr.open_group(store=self.store, mode=mode, zarr_format=3)
+        self.z = zarr.open_group(
+            store=self.store, mode=kwargs.get("mode", "w"), zarr_format=3
+        )
 
         # TODO: Integrate into config
         self.sharding = "1gb"
