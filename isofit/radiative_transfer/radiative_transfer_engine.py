@@ -483,6 +483,7 @@ class RadiativeTransferEngine:
                         "file": self.lut.file,
                         "wl": self.lut.wl,
                         "grid": self.lut.grid,
+                        "shards": self.lut.shards,
                     }
                 )
 

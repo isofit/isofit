@@ -417,7 +417,7 @@ class CreateNetCDF(Create):
 
 
 class CreateZarr(Create):
-    def __init__(self, file, *args, buffered=False, **kwargs):
+    def __init__(self, file, *args, buffered=False, shards=None, **kwargs):
         """
         Prepare a Zarr v3 LUT store
 
@@ -451,7 +451,7 @@ class CreateZarr(Create):
 
         # TODO: Integrate into config
         self.sharding = "1gb"
-        self.shards = None
+        self.shards = shards
 
         # TODO: yep
         self.min_shards = 63
