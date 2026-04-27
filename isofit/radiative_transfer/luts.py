@@ -84,9 +84,9 @@ class Create:
     def __init__(
         self,
         file: str,
-        mode: str = "w",
         wl: np.ndarray,
         grid: dict,
+        mode: str = "w",
         attrs: dict = {},
         consts: dict = {},
         onedim: dict = {},
@@ -105,10 +105,10 @@ class Create:
             Filepath for the LUT.
         wl : np.ndarray
             The wavelength array.
-        mode : str, default="w"
-            File mode to open with
         grid : dict
             The LUT grid, formatted as {str: Iterable}.
+        mode : str, default="w"
+            File mode to open with
         attrs: dict, defaults={}
             Dict of dataset attributes, ie. {"RT_mode": "transm"}
         consts : dict, optional, default={}
