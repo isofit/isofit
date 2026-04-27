@@ -809,7 +809,7 @@ def streamSimulation(
 
 
 @ray.remote(num_cpus=1)
-def shardWriter(self, lut, shard, coord, points, simmer, reader):
+def shardWriter(lut, shard, coord, points, simmer, reader):
     """ """
     if isinstance(lut, dict):
         lut = luts.create(**lut, mode="a", init=False, buffered=True)
