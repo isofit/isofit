@@ -23,16 +23,15 @@ import os
 import re
 import subprocess
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 
+from isofit.atmosphere import Atmosphere
 from isofit.core import units
-from isofit.core.common import resample_spectrum
-from isofit.core.fileio import IO
+from isofit.core.common import resample_spectrum, load_esd
 from isofit.data import env
 from isofit.data.cli.sixs import get_exe
-from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+from isofit.luts import Writer
 
 Logger = logging.getLogger(__file__)
 
@@ -65,7 +64,7 @@ SIXS_TEMPLATE = """\
 class SixSRT(Atmosphere, Writer):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(self, full_config, wl=[], fwhm=[], modtran_emulation=False):
+    def __init__(self, full_config, wl=[], fwhm=[], modtran_emulation=False, **kwargs):
 
         current = os.environ.get("SIXS_DIR")
         if not current:
@@ -91,7 +90,6 @@ class SixSRT(Atmosphere, Writer):
         if not fwhm:
             self.fwhm = np.full(self.wl.size, 2.0)
 
-        self.config = full_config.forward_model.atmosphere
         self.exe = get_exe(self.engine_base_dir)
         Logger.debug(f"Using 6S executable: {self.exe}")
 
@@ -99,7 +97,7 @@ class SixSRT(Atmosphere, Writer):
         if "CO2" in self.exe.name:
             self.co2_mode = True
 
-        super().__init__(full_config, wl=self.wl, fwhm=self.fwhm)
+        super().__init__(full_config, wl=self.wl, fwhm=self.fwhm, **kwargs)
 
         # TODO Add check that sim path exists
         self.sim_path = self.config_atmosphere.sim_path
@@ -108,10 +106,10 @@ class SixSRT(Atmosphere, Writer):
         if not hasattr(self, "esd"):
             self.load_esd()
 
-    def _lut(self, lut_path, lut_names, build_interpolators):
-        self.write_lut(lut_path, lut_names, build_inteprolators)
+    def _lut(self, build_interpolators):
+        self.write_lut()
 
-        return super()._lut(lut_path, lut_names, build_interpolators)
+        return super()._lut(build_interpolators)
 
     def preSim(self):
         """
@@ -250,7 +248,7 @@ class SixSRT(Atmosphere, Writer):
         if "observer_altitude_km" in vals:
             vals["alt"] = min(vals["observer_altitude_km"], 99)
 
-        ### ASL to AGL
+        # ASL to AGL
         vals["alt"] = max(min(vals["alt"] - vals["elev"], 99), 0.01)
 
         if "observer_azimuth" in vals:
@@ -298,7 +296,7 @@ class SixSRT(Atmosphere, Writer):
         """
         Loads the earth-sun distance file
         """
-        self.esd = IO.load_esd()
+        self.esd = load_esd()
 
         dt = datetime(2000, self.engine_config.month, self.engine_config.day)
         self.day_of_year = dt.timetuple().tm_yday

@@ -32,7 +32,7 @@ import numpy as np
 
 from isofit.core import common, units
 from isofit.core.common import svd_inv_sqrt
-from isofit.luts import Reader
+from isofit.luts import LUT, Reader, sub
 
 Logger = logging.getLogger(__file__)
 
@@ -104,10 +104,11 @@ class Atmosphere(Reader):
     def __init__(
         self,
         full_config: Config,
-        lut_path: str = '',     # lut_path override
-        wl: np.array = [],      # Wavelength override
-        fwhm: np.array = [],    # fwhm override
-        n_core: int = None,     # n_core override
+        lut_path: str = "",  # lut_path override
+        wl: np.array = [],  # Wavelength override
+        fwhm: np.array = [],  # fwhm override
+        n_core: int = None,  # n_core override
+        build_interpolators: bool = True
     ):
         self.config = full_config.forward_model.atmosphere
 
@@ -129,14 +130,13 @@ class Atmosphere(Reader):
 
         lut_exists = os.path.isfile(self.lut_path)
         if lut_exists:
-            Logger.info(f"Prebuilt LUT provided")
+            Logger.info("Prebuilt LUT provided")
         elif not lut_exists and self.lut_grid is None:
             raise AttributeError(
                 "Must provide either a prebuilt LUT file or a LUT grid"
             )
 
         # TODO: overwrite_interpolator not hooked up. Check if we even want this override
-        self.build_interpolators = True
         self.interpolator_style = (
             self.config.interpolator_style
             if self.config.interpolator_style
@@ -144,19 +144,21 @@ class Atmosphere(Reader):
         )
 
         self.coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
-        self.rt_mode = (
-            self.config.rt_mode or "transm"
-        )
+        self.rt_mode = self.config.rt_mode or "transm"
 
         # Use explicitely passed first
         if not any(wl) or not any(fwhm):
-            self.wavelength_file = self.config.wavelength_file
-            if os.path.exists(wavelength_file):
-                Logger.info(f"Loading from wavelength_file: {wavelength_file}")
-                wl, fwhm = common.load_wavelen(wavelength_file)
+            self.wavelength_file = (
+                self.config.wavelength_file
+                or full_config.forward.instrument.wavelength_file
+            )
+            if os.path.exists(self.wavelength_file):
+                Logger.info(f"Loading from wavelength_file: {self.wavelength_file}")
+                wl, fwhm = common.load_wavelen(self.wavelength_file)
+
         if not wl or not fwhm:
             e = "No wavelength information found, please provide either as file or input argument"
-            logger.error(e)
+            Logger.error(e)
             raise AttributeError(e)
 
         # Set for downstream engines may use
@@ -195,15 +197,15 @@ class Atmosphere(Reader):
         # Create LUT (for generic this will be fake executed
         self.lut_names = list(self.lut_grid.keys())
         self.points = common.combos(self.lut_grid.values())
-            
+
         # Wrapper for the create-load logic that depends on the engine
         # create_lut will include the build logic within engines
         self.lut = self._lut(
             self.lut_path,
             self.lut_names,
-            build_interpolators=self.build_interpolators
+            build_interpolators=build_interpolators
         )
-        Logger.info(f"LUT grid loaded from file")
+        Logger.info("LUT grid loaded from file")
 
         # remove 'point' if added to lut_names after subsetting
         if "point" in self.lut_names:
@@ -244,7 +246,7 @@ class Atmosphere(Reader):
     def _lut(self, build_interpolators: int = True):
         """Generic LUT load from pre-built LUT. Will be superseded by
         inheriting writer classes
-        
+
         TODO: Make sure that loaded LUT matches config LUT
         """
         # TODO
@@ -286,31 +288,21 @@ class Atmosphere(Reader):
             Logger.error(error)
             raise AttributeError(error)
 
-        ds = self.couple(self.load(
-            self.lut_path,
-            subset=self.config.lut_names
-        ))
+        ds = self.couple(self.load(self.lut_path, subset=self.config.lut_names))
 
         # Limit the wavelength per the config, does not affect data on disk
         if self.config.wavelength_range is not None:
             Logger.info(
-                f"Subsetting wavelengths to range: {engine_config.wavelength_range}"
+                f"Subsetting wavelengths to range: {self.config.wavelength_range}"
             )
             ds = sub(ds, "wl", dict(zip(["gte", "lte"], self.config.wavelength_range)))
 
         interpolators = self.build_interpolators(
-            ds,
-            Keys,
-            interpolator_style=self.interpolator_style
+            ds, Keys, interpolator_style=self.interpolator_style
         )
         Logger.debug(f"Interpolators built")
 
-        return LUT(
-            ds,
-            len(self.lut_names),
-            indices,
-            interpolators=interpolators
-        )
+        return LUT(ds, len(self.lut_names), indices, interpolators=interpolators)
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""
@@ -335,7 +327,7 @@ class Atmosphere(Reader):
             interpolated modeled atmospheric path radiance
         """
 
-        r = self.engine.get(x_RT, geom)
+        r = self.lut(x_RT, geom)
         if self.engine.rt_mode == "rdn":
             L_atm = r["rhoatm"]
         else:

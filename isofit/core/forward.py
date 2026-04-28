@@ -27,7 +27,7 @@ from scipy.interpolate import interp1d
 from scipy.io import loadmat
 from scipy.linalg import block_diag
 
-from isofit.atmosphere.atmosphere import Atmosphere
+from isofit.atmosphere import Atmospheres
 from isofit.core.common import eps
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
@@ -74,7 +74,7 @@ class ForwardModel:
         if cache_atmosphere:
             self.atmosphere = cache_atmosphere
         else:
-            self.atmosphere = Atmosphere(self.full_config)
+            self.atmosphere = Atmospheres(self.full_config)
 
         # Build the surface model
         self.surface = Surface(full_config)

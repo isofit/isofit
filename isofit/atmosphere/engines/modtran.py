@@ -24,7 +24,6 @@ import logging
 import os
 import re
 import subprocess
-import time
 from copy import deepcopy
 from sys import platform
 
@@ -32,18 +31,14 @@ import numpy as np
 import scipy.interpolate
 import scipy.stats
 
+from isofit.atmosphere import Atmosphere
 from isofit.core import units
 from isofit.core.common import json_load_ascii, recursive_replace
-from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+from isofit.luts import Writer
 
 Logger = logging.getLogger(__file__)
 
-### Variables ###
-
-eps = 1e-5  # used for finite difference derivative calculations
-tropopause_altitude_km = 17.0
-
-### Classes ###
+TROPOPAUSE_ALTITUDE_KM = 17.0
 
 
 class ModtranRT(Atmosphere, Writer):
@@ -52,6 +47,7 @@ class ModtranRT(Atmosphere, Writer):
         """A model of photon transport including the atmosphere."""
         super().__init__(full_config, **kwargs)
 
+        self.full_config = full_config
         self.max_buffer_time = 0.5
         self.engine_base_dir = self.config.sim_path
         self.sim_path = self.config.sim_path
@@ -460,7 +456,7 @@ class ModtranRT(Atmosphere, Writer):
                     )  # Append lists, don't add altitudes!
 
                     prof_unt_tdelta_kelvin = np.where(
-                        np.array(altitudes) <= tropopause_altitude_km, val, 0
+                        np.array(altitudes) <= TROPOPAUSE_ALTITUDE_KM, val, 0
                     )
 
                     altitude_dict = {
@@ -511,7 +507,7 @@ class ModtranRT(Atmosphere, Writer):
                             ]["PROFILE"]
                         )
                         prof_temperature = np.where(
-                            prof_altitude <= tropopause_altitude_km,
+                            prof_altitude <= TROPOPAUSE_ALTITUDE_KM,
                             prof_temperature + val,
                             prof_temperature,
                         )
@@ -522,7 +518,7 @@ class ModtranRT(Atmosphere, Writer):
                     else:
                         # If a temperature profile does not exist, then use UNT_TDELTA_KELVIN
                         prof_unt_tdelta_kelvin = np.where(
-                            prof_altitude <= tropopause_altitude_km, val, 0.0
+                            prof_altitude <= TROPOPAUSE_ALTITUDE_KM, val, 0.0
                         )
                         prof_unt_tdelta_kelvin_dict = {
                             "TYPE": "PROF_TEMPERATURE",
@@ -580,7 +576,7 @@ class ModtranRT(Atmosphere, Writer):
             lvl0["EXTC"] = [float(v) / total_extc550 for v in total_extc]
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
 
-        if full_config.forward_model.multipart_transmittance:
+        if self.full_config.forward_model.multipart_transmittance:
             # TODO: move setting of multipart rfl values to config
             self.test_rfls = [0.0, 0.1, 0.5]
             const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)

@@ -1061,3 +1061,37 @@ def saveDataset(file: str, ds: xr.Dataset) -> None:
         ds = ds.unstack("point")
 
     ds.to_netcdf(file)
+
+
+def load_esd(file=None):
+    """
+    Loads an earth_sun_distance file. Defaults to the
+    [env.data]/earth_sun_distance.txt if not provided
+
+    Parameters
+    ----------
+    file : str, default=None
+        ESD file to load
+
+    Returns
+    -------
+    np.array
+        Loaded ESD. If the file fails to load, creates a default
+    """
+    if file is None:
+        file = env.path("data", "earth_sun_distance.txt")
+
+    try:
+        esd = np.loadtxt(file)
+        logging.debug(f"Loaded ESD from file: {file}")
+    except FileNotFoundError:
+        logging.warning(
+            "Earth-sun-distance file not found on system. "
+            "Proceeding without might cause some inaccuracies down the line."
+        )
+        esd = np.ones((366, 2))
+        esd[:, 0] = np.arange(1, 367, 1)
+
+    return esd
+
+

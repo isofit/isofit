@@ -90,17 +90,9 @@ class AtmosphereConfig(BaseConfigSection):
         self.name = name
         """str: Name of config - optional, and not currently used."""
 
-        self._engine_name_type = str
-        self.engine_name = None
-        """str: Name of atmospheric radiative transfer engine to use - options ['modtran', '6s', 'sRTMnet', 'LibRadTran']."""
-
         self._engine_base_dir_type = str
         self.engine_base_dir = None
         """str: base directory of the given atmospheric radiative transfer engine on user's OS."""
-
-        self._engine_lut_file_type = str
-        self.engine_lut_file = None
-        """str: File containing the prebuilt LUT file (hdf5)."""
 
         self._wavelength_file_type = str
         self.wavelength_file = None
@@ -109,10 +101,6 @@ class AtmosphereConfig(BaseConfigSection):
         self._wavelength_range_type = list()
         self.wavelength_range = None
         """List: The wavelength range to execute this atmospheric radiative transfer engine over."""
-
-        self._environment_type = str
-        self.environment = None
-        """str: Additional environment directives for the shell script."""
 
         self._lut_path_type = str
         self.lut_path = None
@@ -125,13 +113,6 @@ class AtmosphereConfig(BaseConfigSection):
         self._template_file_type = str
         self.template_file = None
         """str: A template file to be used as the base-configuration for the given atmospheric radiative transfer engine."""
-
-        self._glint_model_type = bool
-        self.glint_model = False
-        """
-        Flag to indicate whether to use the sun and sky glint model from Gege (2012, 2014) in the forward model.
-        Only currently functional with multipart MODTRAN.
-        """
 
         self._rt_mode_type = str
         self.rt_mode = "transm"
@@ -180,12 +161,6 @@ class AtmosphereConfig(BaseConfigSection):
         self._emulator_aux_file_type = str
         self.emulator_aux_file = None
         """str: path to emulator auxiliary data - expected npz format"""
-
-        self._predict_parallel_chunks_type = int
-        self.predict_parallel_chunks = 20
-        """int: If emulator predictions are in parallel. How many chunks to run.
-           Keep to a small number for systems with little memory and slow read.
-        """
 
         # 6S parameters - not the recommended
         # TODO: these should come from a template file, as in modtran
@@ -343,11 +318,6 @@ class AtmosphereConfig(BaseConfigSection):
         # Sort statevector names
         if self.statevector_names is not None:
             self.statevector_names.sort()
-        # TODO: this part  here is a little hairy and not sure if i totally have this correct.
-
-    ########################################################################################
-    ########################################################################################
-    ########################################################################################
 
     def _check_config_validity(self) -> List[str]:
         errors = list()

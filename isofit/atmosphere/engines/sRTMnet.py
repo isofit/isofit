@@ -30,13 +30,12 @@ import h5py
 import numpy as np
 import torch
 import yaml
-from scipy.interpolate import interp1d
 
+from isofit.atmosphere import Atmosphere
 from isofit.core import units
 from isofit.core.common import calculate_resample_matrix, resample_spectrum
-from isofit.radiative_transfer import luts
-from isofit.radiative_transfer.engines import SixSRT
-from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+from isofit.atmosphere.engines import SixSRT
+from isofit.luts import Writer
 
 Logger = logging.getLogger(__file__)
 
@@ -264,7 +263,7 @@ class SRTMnetModel(torch.nn.Module):
                     for _ckey, ckey in enumerate(self.component_keys):
                         outdict[ckey].append(
                             self.batch_resample(
-                                out[:, _ckey * nc : (_ckey + 1) * nc],
+                                out[:, _ckey * nc:(_ckey + 1) * nc],
                                 convert_to_rdn=False,
                                 resample_dict=resample_dict,
                             )
@@ -348,7 +347,7 @@ class SimulatedModtranRT(Atmosphere, Writer):
 
         else:
             raise ValueError(
-                f"Invalid extension for emulator aux file. Use .npz or .6c"
+                "Invalid extension for emulator aux file. Use .npz or .6c"
             )
 
         # Pack the emulator Aux the same regardless of input file type.
@@ -392,20 +391,18 @@ class SimulatedModtranRT(Atmosphere, Writer):
             config,
             wl=self.sim_wl,
             fwhm=self.sim_fwhm,
-            lut_path=config.lut_path,
-            lut_grid=self.lut_grid,
             modtran_emulation=True,
-            build_interpolators=False,
+            build_interpolators=False
         )
 
-        if self.engine_config.rte_configure_and_exit:
+        if self.config.configure_and_exit:
             return
 
         # Extract useful information from the sim
         self.esd = sim.esd
         self.sim_lut_path = config.lut_path
 
-        ## Prepare the sim results for the emulator
+        # Prepare the sim results for the emulator
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
         # Safe to replace here
         if sim.lut[aux_rt_quantities].isnull().any():
@@ -444,8 +441,6 @@ class SimulatedModtranRT(Atmosphere, Writer):
             "emulator_coszen": self.emulator_coszen,
             "emulator_sol_irr": self.emulator_sol_irr,
         }
-
-        import multiprocessing
 
         Logger.info(f"Loading and predicting with emulator on {self.n_cores} cores")
 
