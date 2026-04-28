@@ -27,7 +27,6 @@ class Writer
         zeros: List[str] = [],
         compression: str = "zlib",
         complevel: int = None,
-        configure_and_exit: bool = False
     ):
         """
         Prepare a LUT netCDF

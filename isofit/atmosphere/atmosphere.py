@@ -109,10 +109,10 @@ class Atmosphere(Reader):
     def __init__(
         self,
         full_config: Config,
-        lut_path: str = "",  # lut_path override
-        wl: np.array = [],  # Wavelength override
-        fwhm: np.array = [],  # fwhm override
-        n_core: int = None,  # n_core override
+        lut_path: str = '',     # lut_path override
+        wl: np.array = [],      # Wavelength override
+        fwhm: np.array = [],    # fwhm override
+        n_core: int = None,     # n_core override
     ):
         config_atmosphere = full_config.forward_model.atmosphere
 
@@ -130,12 +130,15 @@ class Atmosphere(Reader):
         self.solar_irr = self.engine.solar_irr
 
         lut_exists = os.path.isfile(self.lut_path)
-        if not lut_exists and self.lut_grid is None:
+        if lut_exists:
+            Logger.info(f"Prebuilt LUT provided")
+        elif not lut_exists and self.lut_grid is None:
             raise AttributeError(
                 "Must provide either a prebuilt LUT file or a LUT grid"
             )
 
         # TODO: overwrite_interpolator not hooked up. Check if we even want this override
+        self.build_interpolators = True
         self.interpolator_style = (
             config_atmosphere.interpolator_style
             if config_atmosphere.interpolator_style
@@ -198,38 +201,29 @@ class Atmosphere(Reader):
         # Create LUT (for generic this will be fake executed
         self.lut_names = list(self.lut_grid.keys())
         self.points = common.combos(self.lut_grid.values())
+            
+        # Wrapper for the create-load logic that depends on the engine
+        self.lut = self.create_lut(
+            self.lut_path,
+            self.lut_names,
+            build_interpolators=self.build_interpolators
+        )
+        Logger.info(f"LUT grid loaded from file")
 
-        # Load lut
-        self.lut = couple(self.load(self.lut_path, subset=config_atmosphere.lut_names))
-        self.points = self.extractPoints(self.lut)
+        # remove 'point' if added to lut_names after subsetting
+        if "point" in self.lut_names:
+            remove = np.where(self.lut_names == "point")
+            self.lut_names = np.delete(self.lut_names, remove)
 
-        # Make lut if you have to
-
-        # Logic for Pre-built LUT TODO: Move to generic class?
-        if lut_exists:
-            Logger.info(f"Prebuilt LUT provided")
-            Logger.debug(
-                f"Reading from store: {lut_path}, subset={engine_config.lut_names}"
+        # TODO Could abstract unit conversion
+        self.rt_mode = self.lut.rt_mode
+        if self.rt_mode not in ["transm", "rdn"]:
+            Logger.error(
+                "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
             )
-            self.lut = luts.load(self.lut_path, subset=config_atmosphere.lut_names)
-            self.lut_grid = self.lut_grid or luts.extractGrid(self.lut)
-            self.points = luts.extractPoints(self.lut)
-            self.lut_names = list(self.lut_grid.keys())
-            Logger.info(f"LUT grid loaded from file")
-
-            # remove 'point' if added to lut_names after subsetting
-            if "point" in self.lut_names:
-                remove = np.where(self.lut_names == "point")
-                self.lut_names = np.delete(self.lut_names, remove)
-
-            self.rt_mode = self.lut.attrs.get("RT_mode", "transm")
-            if self.rt_mode not in ["transm", "rdn"]:
-                Logger.error(
-                    "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
-                )
-                raise ValueError(
-                    "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
-                )
+            raise ValueError(
+                "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
+            )
 
             # TODO Clean OCI irr path
             # sc - Bandaid for code to know whether to use gaussian assumptions
@@ -246,33 +240,8 @@ class Atmosphere(Reader):
                 or not all(self.wl == self.lut.wl)
                 or (srf_file is not None)
             ):
-                # Discover variables along the wl dim
-                keys = {key for key in self.lut if "wl" in self.lut[key].dims} - {
-                    "fwhm",
-                }
-                # Apply resampling to these keys
-                conv = xr.apply_ufunc(
-                    common.resample_spectrum,
-                    self.lut[keys],
-                    kwargs={
-                        "wl": self.lut.wl,
-                        "wl2": wl,
-                        "fwhm2": fwhm,
-                        "srf_file": srf_file,
-                    },  # Use srf_file if OCI
-                    input_core_dims=[["wl"]],  # Only operate on keys with this dim
-                    exclude_dims=set(["wl"]),  # Allows changing the wl size
-                    output_core_dims=[["wl"]],  # Adds wl to the expected output dims
-                    keep_attrs="override",
-                    # on_missing_core_dim = 'copy' # Newer versions of xarray support this
-                )
-                # If not on newer versions, add keys not on the wl dim
-                for key in list(self.lut.drop_dims("wl")):
-                    conv[key] = self.lut[key]
-                # Override the fwhm
-                conv["fwhm"] = ("wl", fwhm)
-                # Exchange the lut with the resampled version
-                self.lut = conv
+                self.lut = self.resample_xarray(self.lut, wl, fwhm, srf_file)
+
 
         else:
             # TODO This may go into the engines classes? That way we could support generic?
@@ -337,7 +306,8 @@ class Atmosphere(Reader):
 
         self.n_chan = len(self.wl)
 
-        # TODO: This is a bad variable name - change (it's the number of input dimensions of the lut (p) not the number of samples)
+        # TODO: This is a bad variable name - 
+        # change (it's the number of input dimensions of the lut (p) not the number of samples)
         self.n_point = len(self.lut_names)
 
         # Simple 1-item cache for rte.interpolate()
@@ -390,6 +360,31 @@ class Atmosphere(Reader):
             error = f"Mismatch between the number of elements for the config and LUT grid: {expected=}, {got=}"
             Logger.error(error)
             raise AttributeError(error)
+
+    def create_lut(self, lut_path, lut_names, build_interpolators: int = True)
+        """Generic LUT load from pre-built LUT. Will be superseded by
+        inheriting writer classes
+        
+        TODO: Make sure that loaded LUT matches config LUT
+        """
+        # TODO
+        indices = SimpleNamespace(geom={}, x_RT=[])
+
+        ds, interpolators = self.build_interpolators(
+            self.couple(self.load(
+                self.lut_path,
+                subset=config_atmosphere.lut_names
+            )),
+            Keys,
+            interpolator_style=self.interpolator_style
+        )
+
+        return LUT(
+            ds,
+            len(self.lut_names),
+            indices,
+            interpolators=interpolators
+        )
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""
@@ -747,3 +742,4 @@ def couple(ds, inplace=True):
                 ds[term] = 0
 
     return ds
+
