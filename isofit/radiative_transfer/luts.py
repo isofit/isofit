@@ -466,6 +466,8 @@ class CreateZarr(Create):
                 for key, vals in self.alldim.items()
             }
 
+        self.data = self.buffer or self.z
+
     def __getitem__(self, key: str) -> Any:
         """
         Retrieves a value from the Zarr store
@@ -493,7 +495,8 @@ class CreateZarr(Create):
         value : any
             Value to set
         """
-        self.z[key][...] = value
+        # Automatically insert data into the buffer if it's available instead of writing to disk
+        self.data[key][...] = value
 
     def initialize(self, ret=False) -> None | xr.Dataset:
         """
@@ -588,9 +591,6 @@ class CreateZarr(Create):
         finalize : bool, default=False
             Calls the `finalize` function
         """
-        # Automatically insert data into the buffer if it's available instead of writing to disk
-        store = self.buffer or self.z
-
         unknowns = set()
         for point, data in self.hold:
             for key, vals in data.items():
@@ -598,17 +598,17 @@ class CreateZarr(Create):
                     continue
 
                 if key in self.consts:
-                    store[key][...] = vals
+                    self.data[key][...] = vals
 
                 elif key in self.onedim:
-                    store[key][:] = vals
+                    self.data[key][:] = vals
 
                 elif key in self.alldim:
                     index = self.pointIndices(point)
                     if self.buffer:
                         index = index % self.shards[1:]
                     index = (slice(None),) + tuple(index)
-                    store[key][index] = vals
+                    self.data[key][index] = vals
 
                 else:
                     unknowns.update([key])
@@ -619,6 +619,10 @@ class CreateZarr(Create):
         """
         Needs to be manually called
         """
+        # If the group key is given instead of the slices tuple, retrieve from coords
+        if not isinstance(slices[0], slice):
+            slices = self.coords[slices]
+
         for key, vals in self.buffer.items():
             self.z[key][slices] = vals
 

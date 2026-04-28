@@ -391,6 +391,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             lut_grid=self.lut_grid,
             modtran_emulation=True,
             build_interpolators=False,
+            n_cores=self.n_cores,
         )
 
         if self.engine_config.rte_configure_and_exit:
@@ -399,18 +400,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Extract useful information from the sim
         self.esd = sim.esd
         self.sim_lut_path = config.lut_path
-
-        ## Prepare the sim results for the emulator
-        # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
-        # Safe to replace here
-        if sim.lut[aux_rt_quantities].isnull().any():
-            Logger.debug("Simulator detected to have NaNs, replacing with 0s")
-            sim.lut = sim.lut.fillna(0)
-
-        # Interpolate the sim results from its wavelengths to the emulator wavelengths
-        Logger.info("Interpolating simulator quantities to emulator size")
-        sixs = sim.lut[aux_rt_quantities]
-        resample = sixs.interp({"wl": aux["emulator_wavelengths"]})
 
         # Convert our irradiance to date 0 then back to current date
         # sc - If statement to make sure tsis solar model is used if supplied
@@ -424,9 +413,47 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             sol_irr = aux["solar_irr"]  # Otherwise, use sRTMnet f0
         irr_ref = sim.esd[200, 1]  # Irradiance factor
         irr_cur = sim.esd[sim.day_of_year - 1, 1]  # Factor for current date
-        sol_irr = sol_irr * irr_ref**2 / irr_cur**2
+        self.sim_sol_irr = sol_irr * irr_ref**2 / irr_cur**2
 
-        self.emulator_sol_irr = sol_irr
+        sixs = sim.lut[aux_rt_quantities]
+        if groups := getattr(self.lut, "groups", None):
+            from rich.console import Console
+
+            Console = Console()
+            with Progress(console=Console) as progress:
+                for group in progress.track(groups, "Interpolating Shards"):
+                    slices = self.lut.coords[group]
+                    sim = sixs[slices].load()
+                    data = self.process(sim, slices)
+                    self.lut.flush_buffer(slices)
+                    del sim
+        else:
+            self.process(sixs)
+
+        # Insert these into the LUT file
+        return {
+            "coszen": sixs["coszen"],
+            "solzen": sixs["solzen"],
+            "solar_irr": resample_spectrum(
+                self.sim_sol_irr, self.emu_wl, self.wl, self.fwhm
+            ),
+        }
+
+        ## Prepare the sim results for the emulator
+        # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
+        # Safe to replace here
+
+    def process(self, sim, slices=slice(None)):
+        """ """
+        if sim.isnull().any():
+            Logger.debug("Simulator detected to have NaNs, replacing with 0s")
+            sim = sim.fillna(0)
+
+        # Interpolate the sim results from its wavelengths to the emulator wavelengths
+        Logger.info("Interpolating simulator quantities to emulator size")
+        resample = sim.interp({"wl": aux["emulator_wavelengths"]})
+
+        self.emulator_sol_irr = self.sim_sol_irr[slices]
         self.emulator_coszen = sim["coszen"]
         self.emulator_H = calculate_resample_matrix(self.emu_wl, self.wl, self.fwhm)
 
@@ -563,13 +590,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             self.rt_mode = "rdn"
             self.lut.setAttr("RT_mode", "rdn")
             self.lut.flush()
-
-        # Insert these into the LUT file
-        return {
-            "coszen": sim["coszen"],
-            "solzen": sim["solzen"],
-            "solar_irr": resample_spectrum(sol_irr, self.emu_wl, self.wl, self.fwhm),
-        }
 
     def makeSim(self, point):
         """

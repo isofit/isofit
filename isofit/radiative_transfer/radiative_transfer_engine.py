@@ -613,7 +613,7 @@ class RadiativeTransferEngine:
 
         # Reload the LUT now that it's populated
         Logger.debug("Reloading LUT")
-        self.lut = luts.load(self.lut_path)
+        self.lut = luts.load(self.lut_path, load=False)
 
     def summarize(self, x_RT, *_):
         """
