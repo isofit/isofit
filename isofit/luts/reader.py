@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import atexit
 import gc
 import logging
@@ -15,6 +17,62 @@ from isofit.core import common
 from isofit.luts import optimizedInterp, sub
 
 Logger = logging.getLogger(__name__)
+
+
+class LUT:
+    def __init__(ds, n_point: int, indices: SimpleNamespace, lut_interpolators: dict = {}):
+        self.n_point = n_point
+        self.indices = indices
+        self.ds = ds
+        self.wl = ds.wl
+        self.rt_mode = ds.attrs.get("RT_mode", "transm")
+        self.lut_inteprolators = lut_interpolators
+
+    def __call__(x_RT: np.array, geom: Geometry):
+        """
+        Retrieves the interpolation values for a given point
+
+        Parameters
+        ----------
+        x_RT: np.array
+            Radiative-transfer portion of the statevector
+        geom: Geometry
+            Local geometry conditions for lookup
+
+        Returns
+        -------
+        self.interpolate(point): dict
+            ...
+        """
+        point = np.zeros(self.n_point)
+
+        point[self.indices.x_RT] = x_RT
+        for i, key in self.indices.geom.items():
+            point[i] = getattr(geom, key)
+
+        # convert observer zenith to MODTRAN convention if needed
+        if self.indices.convert_observer_zenith:
+            point[self.indices.convert_observer_zenith] = (
+                180.0 - point[self.indices.convert_observer_zenith]
+            )
+
+        return self.interpolate(point)
+
+    def interpolate(self, point: np.array) -> dict:
+        """
+        Compiles the results of the interpolators for a given point
+        """
+        if self.cached.point.size and (point == self.cached.point).all():
+            return self.cached.value
+
+        # Run the interpolators
+        value = {key: lut(point) for key, lut in self.lut_inteprolators.items()}
+
+        # Update the cache
+        self.cached.point = point
+        self.cached.value = value
+
+        return value
 
 
 class Reader:
@@ -296,7 +354,7 @@ class Reader:
                 version=interpolator_style,
             )
 
-        return luts
+        return ds, luts
 
     @staticmethod
     def extractGrid(ds: xr.Dataset) -> dict:
@@ -342,3 +400,38 @@ class Reader:
             return (points, names)
 
         return points
+
+    @staticmethod
+    def resample_xarray(lut, wl, fwhm, srf_file=""):
+        """To support OCI resampling"""
+        
+        # Discover variables along the wl dim
+        keys = {key for key in lut if "wl" in lut[key].dims} - {"fwhm"}
+
+        # Apply resampling to these keys
+        # Use srf_file if OCI
+        kwargs = {
+            "wl": lut.wl,
+            "wl2": wl,
+            "fwhm2": fwhm,
+        }
+        if srf_file:
+            kwargs["srf_file"] = srf_file
+        conv_lut = xr.apply_ufunc(
+            common.resample_spectrum,
+            lut[keys],
+            kwargs=kwargs,
+            input_core_dims=[["wl"]],  # Only operate on keys with this dim
+            exclude_dims=set(["wl"]),  # Allows changing the wl size
+            output_core_dims=[["wl"]],  # Adds wl to the expected output dims
+            keep_attrs="override",
+            # on_missing_core_dim = 'copy' # Newer versions of xarray support this
+        )
+        # If not on newer versions, add keys not on the wl dim
+        for key in list(self.lut.drop_dims("wl")):
+            conv_lut[key] = self.lut[key]
+        # Override the fwhm
+        conv_lut["fwhm"] = ("wl", fwhm)
+
+        return conv_lut
+
