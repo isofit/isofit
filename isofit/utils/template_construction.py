@@ -577,6 +577,12 @@ def check_surface_model(
     """
     if os.path.isfile(surface_path):
         if surface_path.endswith(".mat"):
+
+            if surface_category == "lut_surface":
+                raise ValueError(
+                    "Apply OE using lut_surface can only be run from a .json surface file."
+                )
+
             # check wavelength grid of surface model if provided
             model_dict = loadmat(surface_path)
             wl_surface = model_dict["wl"][0]
@@ -1613,6 +1619,13 @@ def make_surface_config(
         "multi_surface_flag": False,
     }
 
+    # Check if we are running LUTSurface
+    surface_lut_file = None
+    if surface_category == "lut_surface":
+        surface_lut_file = loadmat(surface_working_paths[surface_category])[
+            "surface_lut_file"
+        ][0]
+
     # Check to see if a classification file is being propogated
     # If so, use multisurface
     if surface_class_working_path:
@@ -1645,12 +1658,14 @@ def make_surface_config(
                 "surface_int": int(i),
                 "surface_file": surface_path,
                 "surface_category": surface_category,
+                "surface_lut_file": surface_lut_file,
             }
 
     # Single surface run
     else:
         surface_config_dict["surface_file"] = surface_working_paths[surface_category]
         surface_config_dict["surface_category"] = surface_category
+        surface_config_dict["surface_lut_file"] = surface_lut_file
 
     # Accumulate statevector
     for category, path in surface_working_paths.items():

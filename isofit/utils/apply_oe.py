@@ -308,6 +308,11 @@ def apply_oe(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
 
+    if surface_category == "lut_surface" and use_superpixels:
+        raise ValueError(
+            "Analytical line method does not work for LUT surface at this time."
+        )
+
     # Load in water column upper bound polynomials
     modtran_polynomials_dict = ModtranRT.modtran_water_upperbound_polynomials()
     if atmosphere_type not in modtran_polynomials_dict:

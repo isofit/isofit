@@ -324,7 +324,7 @@ class Inversion:
             x0 = invert_simple(self.fm, meas, geom)
 
             # Update regions outside retrieval windows to match priors
-            if self.config.priors_in_initial_guess:
+            if self.config.priors_in_initial_guess and not self.fm.is_lut_surface:
                 prior_subset_idx = np.arange(len(x0))[self.fm.idx_surf_rfl][
                     self.outside_ret_windows
                 ]

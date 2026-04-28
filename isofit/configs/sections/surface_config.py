@@ -94,6 +94,9 @@ class SurfaceConfig(BaseConfigSection):
         self._wavelength_file_type = str
         self.wavelength_file = None
 
+        self._surface_lut_file_type = str
+        self.surface_lut_file = None
+
         """bool: This field, if present and set to true, forces us to use any initialization state and never change.
         The state is preserved in the geometry object so that this object stays stateless"""
         self._select_on_init_type = bool
