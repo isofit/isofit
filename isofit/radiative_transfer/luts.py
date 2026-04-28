@@ -450,7 +450,7 @@ class CreateZarr(Create):
         )
 
         # TODO: Integrate into config
-        self.sharding = "1gb"
+        self.sharding = "4gb"
         self.shards = shards
 
         # TODO: yep
@@ -516,6 +516,7 @@ class CreateZarr(Create):
                 self.chunks,
                 storage=self.sharding,
                 min_shards=self.min_shards,
+                scale=len(self.alldim),
             )
 
         self.z.attrs.update(self.attrs)
@@ -605,7 +606,9 @@ class CreateZarr(Create):
                 elif key in self.alldim:
                     index = self.pointIndices(point)
                     if self.shards:
-                        index = index % self.shards[1:]
+                        idx = index % self.shards[1:]
+                        Logger.warning(f"Converted index {index} to {idx}")
+                        index = idx
                     index = (slice(None),) + tuple(index)
                     store[key][index] = vals
 
@@ -1332,23 +1335,50 @@ def shard_to_coord(group, shards, shape):
     return tuple(slice(s, e) for s, e in zip(start, end))
 
 
-def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None):
+def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
     """
-    Attempts to calculate the best sharding strategy for a Zarr store given a LUT grid
-    and the target file storage size per shard
+    Determine an optimal Zarr sharding strategy for a LUT and group points by shard.
+
+    This function computes candidate shard shapes that:
+    - evenly divide the LUT dimensions
+    - do not split chunks
+    - approximately match a target storage size per shard
+
+    It then selects the shard shape whose number of chunks per shard is closest
+    to the target, and groups LUT points into shard-aligned partitions.
 
     Parameters
     ----------
-    grid : dict
+    grid : dict[str, Iterable]
+        LUT grid definition as {dimension_name: values}. These define the
+        non-wavelength dimensions of the LUT.
     wl : iterable
-    chunk : iterable
-    storage : str
-    min_shards : int
+        Wavelength dimension values.
+    chunk : iterable of int
+        Chunk shape used for Zarr storage. Must align with the full LUT shape
+        (wl + grid dimensions).
+    storage : str or float, default="8gb"
+        Target storage size per shard. Determines how many chunks should be grouped
+        into a shard.
+    min_shards : int, optional
+        Minimum number of shards to produce. Candidate shardings that
+        result in fewer shards are discarded.
+    scale : int, default=1
+        Multiplier applied to the estimated chunk size. Useful when multiple arrays
+        are written per chunk, to better approximate the actual memory when in buffered
+        mode.
 
     Returns
     -------
-    best, groups
-
+    best : tuple of int
+        Selected shard shape, including the wavelength dimension as the first axis.
+    groups : dict[tuple[int, ...], list[tuple]]
+        Mapping from shard index (multi-dimensional shard ID) to the list of
+        grid points (coordinate tuples) that fall within that shard.
+    coords : dict[tuple[int, ...], tuple[slice, ...]]
+        Mapping from shard index to the corresponding global array slice
+        (including wavelength as the leading dimension). These slices can be
+        used directly to write shard-aligned data into a Zarr array.
     """
     dtype = np.dtype("float64").itemsize
     if isinstance(storage, str):
@@ -1356,7 +1386,9 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None):
 
         storage = units.byte_string_to_float(storage)
 
-    space = np.prod(chunk) * dtype  # Determine how much space each chunk takes
+    space = (
+        np.prod(chunk) * dtype * int(scale)
+    )  # Determine how much space each chunk takes
     target = int(storage / space)  # Target number of chunks per shard
 
     # Not technically the fastest but it's small
