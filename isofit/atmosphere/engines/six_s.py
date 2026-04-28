@@ -85,19 +85,23 @@ class SixSRT(BaseAtmosphere, Writer):
 
         # Overwrite the wavelengths, because we're going to use these no matter what (6S runs at 2.5 nm)
         # NOTE - this wavelength range is fairly inclusive, but need not be hardcoded at these start and end points
-        if not wl:
-            self.wl = np.arange(350, 2500 + 2.5, 2.5)
-        if not fwhm:
-            self.fwhm = np.full(self.wl.size, 2.0)
+        if not any(wl):
+            wl = np.arange(350, 2500 + 2.5, 2.5)
+        if not any(fwhm):
+            fwhm = np.full(self.wl.size, 2.0)
 
+        self.wl = wl
+        self.fwhm = fwhm
+
+        super().__init__(full_config, wl=self.wl, fwhm=self.fwhm, **kwargs)
+
+        self.engine_base_dir = self.config.engine_base_dir
         self.exe = get_exe(self.engine_base_dir)
         Logger.debug(f"Using 6S executable: {self.exe}")
 
         self.co2_mode = False
         if "CO2" in self.exe.name:
             self.co2_mode = True
-
-        super().__init__(full_config, wl=self.wl, fwhm=self.fwhm, **kwargs)
 
         # TODO Add check that sim path exists
         self.sim_path = self.config_atmosphere.sim_path
@@ -107,7 +111,7 @@ class SixSRT(BaseAtmosphere, Writer):
             self.load_esd()
 
     def _lut(self, build_interpolators):
-        self.write_lut()
+        self.write()
 
         return super()._lut(build_interpolators)
 

@@ -74,7 +74,7 @@ class ForwardModel:
         if cache_atmosphere:
             self.atmosphere = cache_atmosphere
         else:
-            self.atmosphere = Atmospheres(self.full_config)
+            self.atmosphere = Atmosphere(self.full_config)
 
         # Build the surface model
         self.surface = Surface(full_config)

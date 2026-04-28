@@ -18,24 +18,22 @@ Logger = logging.getLogger(__name__)
 
 
 class Writer:
-    def __init__(self, full_config, **kwargs):
-        self.compression = full_config.forward_model.atmosphere.lut_compression
-        self.complevel = full_config.forward_model.atmosphere.lut_complevel
-
     def write(self): 
         """Initialize a LUT and run simulations
         """
         # Run sims and write lut
         if not self.configure_and_exit:
-            lut_writer = self.prepare(
+            self.prepare(
                 file=self.lut_path,
+                keys=self.keys,
                 wl=self.wl,
                 grid=self.lut_grid,
                 attrs={"RT_mode": self.rt_mode},
                 onedim={"fwhm": self.fwhm},
-                compression=self.compression,
-                complevel=self.complevel,
+                compression=self.config.lut_compression,
+                complevel=self.config.lut_complevel,
             )
+            self.lut = self.load(self.lut_path)
 
         self.runSimulations()
 
@@ -44,6 +42,7 @@ class Writer:
     def prepare(
         self,
         file: str,
+        keys: Keys,
         wl: np.ndarray,
         grid: dict,
         attrs: dict = {},
@@ -108,9 +107,9 @@ class Writer:
         self.sizes = {key: len(val) for key, val in grid.items()}
         self.attrs = attrs
 
-        self.consts = {**Keys.consts, **consts}
-        self.onedim = {**Keys.onedim, **onedim}
-        self.alldim = {**Keys.alldim, **alldim}
+        self.consts = {**keys.consts, **consts}
+        self.onedim = {**keys.onedim, **onedim}
+        self.alldim = {**keys.alldim, **alldim}
 
         self.compression = compression
         self.complevel = complevel
@@ -489,3 +488,21 @@ class Writer:
         )
         return filename
 
+
+def cleanup(file):
+    """
+    Checks the ``ISOFIT status`` attribute on a LUT and removes the file if it is
+    incomplete.
+
+    Parameters
+    ----------
+    file : str
+        Path to the file to check
+    """
+    if os.path.exists(file):
+        with Dataset(file, "r") as ds:
+            if ds.getncattr("ISOFIT status") == "<incomplete>":
+                Logger.error(
+                    f"The LUT status was determined to be incomplete, auto-removing: {file}"
+                )
+                os.remove(file)

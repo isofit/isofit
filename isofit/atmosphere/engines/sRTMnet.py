@@ -37,7 +37,8 @@ from isofit.core.common import calculate_resample_matrix, resample_spectrum
 from isofit.atmosphere.engines import SixSRT
 from isofit.luts import Writer
 
-Logger = logging.getLogger(__file__)
+# Logger = logging.getLogger(__file__)
+Logger = logging.getLogger()
 
 
 class SRTMnetModel(torch.nn.Module):
@@ -321,6 +322,11 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
     }
     _disable_makeSim = True
 
+    def __init__(self, full_config, **kwargs):
+        super().__init__(full_config, **kwargs)
+
+        self.full_config = full_config
+
     def _lut(self, build_interpolators):
         self.write()
 
@@ -331,18 +337,14 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins
         simulations itself
         """
-        Logger.info("Creating a simulator configuration")
-        # Create a copy of the engine_config and populate it with 6S parameters
-        config = build_sixs_config(self.engine_config)
-
         # Track the sRTMnet file used in the LUT attributes
-        self.lut.setAttr("sRTMnet", str(config.emulator_file))
+        # self.lut.setAttr("sRTMnet", str(config.emulator_file))
 
         # Get the component mode up front
-        if self.engine_config.emulator_file.endswith(".h5"):
+        if self.config.emulator_file.endswith(".h5"):
             self.component_mode = "3c"
 
-        elif self.engine_config.emulator_file.endswith(".6c"):
+        elif self.config.emulator_file.endswith(".6c"):
             self.component_mode = "6c"
 
         else:
@@ -353,7 +355,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         # Pack the emulator Aux the same regardless of input file type.
         # Enforce types
         if self.component_mode == "3c":
-            aux = dict(np.load(config.emulator_aux_file, allow_pickle=True))
+            aux = dict(np.load(self.config.emulator_aux_file, allow_pickle=True))
             aux_dict = {}
             for key, value in self.aux_quantities.items():
                 if len(aux.get(key, [])):
@@ -363,7 +365,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         else:
             aux = {}
-            with h5py.File(config.emulator_file, "r") as model:
+            with h5py.File(self.config.emulator_file, "r") as model:
                 for key, value in self.aux_quantities.items():
                     if value == dict:
                         aux[key] = {
@@ -385,10 +387,14 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         self.sim_wl = np.arange(350, 2500 + 2.5, 2.5)
         self.sim_fwhm = np.full(self.sim_wl.size, 2.0)
 
+        Logger.info("Creating a simulator configuration")
+        # Create a copy of the engine_config and populate it with 6S parameters
+        full_config = build_sixs_config(self.full_config)
+
         # Build the 6S simulations
         Logger.info("Building simulator and executing (6S)")
         sim = SixSRT(
-            config,
+            full_config,
             wl=self.sim_wl,
             fwhm=self.sim_fwhm,
             modtran_emulation=True,
@@ -591,17 +597,18 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         return {}
 
 
-def build_sixs_config(engine_config):
+def build_sixs_config(config):
     """
     Builds a configuration object for a 6S simulation using a MODTRAN template
     """
-    if not os.path.exists(engine_config.template_file):
-        raise FileNotFoundError(
-            f"MODTRAN template file does not exist: {engine_config.template_file}"
-        )
-
     # First create a copy of the starting config
-    config = deepcopy(engine_config)
+    full_config = deepcopy(config)
+    config = full_config.forward_model.atmosphere
+
+    if not os.path.exists(config.template_file):
+        raise FileNotFoundError(
+            f"MODTRAN template file does not exist: {config.template_file}"
+        )
 
     # Populate the 6S parameter values from a modtran template file
     with open(config.template_file, "r") as file:
@@ -646,4 +653,6 @@ def build_sixs_config(engine_config):
     path = Path(config.lut_path)
     config.lut_path = path.parent / f"6S.{path.name}"
 
-    return config
+    full_config.forward_model.atmosphere = config
+
+    return full_config
