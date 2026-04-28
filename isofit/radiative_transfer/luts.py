@@ -417,7 +417,9 @@ class CreateNetCDF(Create):
 
 
 class CreateZarr(Create):
-    def __init__(self, file, *args, buffered=False, shards=None, **kwargs):
+    def __init__(
+        self, file, *args, buffered=False, shards=None, min_shards=1, **kwargs
+    ):
         """
         Prepare a Zarr v3 LUT store
 
@@ -442,8 +444,6 @@ class CreateZarr(Create):
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
         """
-        self.flush_immediately = False
-
         self.store = zarr.storage.LocalStore(file)
         self.z = zarr.open_group(
             store=self.store, mode=kwargs.get("mode", "w"), zarr_format=3
@@ -454,7 +454,7 @@ class CreateZarr(Create):
         self.shards = shards
 
         # TODO: yep
-        self.min_shards = 63
+        self.min_shards = min_shards
 
         super().__init__(file, *args, **kwargs)
 
@@ -564,8 +564,8 @@ class CreateZarr(Create):
                     key=key,
                     data=vals,
                     fill_value=None,
-                    chunks=self.chunks,
-                    shards=self.shards,
+                    chunks=tuple(self.chunks),
+                    shards=tuple(self.shards),
                     dimension_names=dims,
                 )
             else:
@@ -575,7 +575,7 @@ class CreateZarr(Create):
                     dtype="float64",
                     fill_value=vals,
                     chunks=self.chunks,
-                    shards=self.shards,
+                    shards=tuple(self.shards),
                     dimension_names=dims,
                 )
 
@@ -605,10 +605,8 @@ class CreateZarr(Create):
 
                 elif key in self.alldim:
                     index = self.pointIndices(point)
-                    if self.shards:
-                        idx = index % self.shards[1:]
-                        Logger.warning(f"Converted index {index} to {idx}")
-                        index = idx
+                    if self.buffer:
+                        index = index % self.shards[1:]
                     index = (slice(None),) + tuple(index)
                     store[key][index] = vals
 
@@ -630,7 +628,9 @@ class CreateZarr(Create):
         subclass only
         """
         super().queuePoint(*args, **kwargs)
-        if self.flush_immediately:
+
+        # Don't hold a queue when buffered
+        if self.buffer:
             self.flush()
 
     def getAttr(self, key: str) -> Any:
@@ -1370,7 +1370,7 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
 
     Returns
     -------
-    best : tuple of int
+    best : np.array[int]
         Selected shard shape, including the wavelength dimension as the first axis.
     groups : dict[tuple[int, ...], list[tuple]]
         Mapping from shard index (multi-dimensional shard ID) to the list of
@@ -1446,4 +1446,4 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
     Logger.info(f"  Chunks per file: {cpf[idx]} ({cpf[idx] * space / 2**30:.2f}gb)")
     Logger.info(f"  Number of files: {np.prod((shape / best).astype(int))}")
 
-    return tuple(best), groups, coords
+    return best, groups, coords

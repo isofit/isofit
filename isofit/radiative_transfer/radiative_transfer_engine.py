@@ -484,6 +484,7 @@ class RadiativeTransferEngine:
                         "wl": self.lut.wl,
                         "grid": self.lut.grid,
                         "shards": self.lut.shards,
+                        "min_shards": self.n_cores,
                     }
                 )
 
