@@ -196,6 +196,7 @@ class BaseAtmosphere(Reader):
         # Create LUT (for generic this will be fake executed
         self.lut_names = set(list(self.lut_grid.keys()) or self.config.statevector_names)
         self.n_lut_input_dim = len(self.lut_names)
+        self.keys = Keys
 
         # Wrapper for the create-load logic that depends on the engine
         # create_lut will include the build logic within engines
