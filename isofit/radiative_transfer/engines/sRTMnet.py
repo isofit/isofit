@@ -417,17 +417,18 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         sixs = sim.lut[aux_rt_quantities]
         if groups := getattr(self.lut, "groups", None):
-            from rich.console import Console
-            from rich.progress import Progress
-
-            Console = Console()
-            with Progress(console=Console) as progress:
-                for group in progress.track(groups, "Interpolating Shards"):
-                    slices = self.lut.coords[group]
-                    sim = sixs[slices].load()
-                    data = self.process(sim, slices)
-                    self.lut.flush_buffer(slices)
-                    del sim
+            # from rich.console import Console
+            # from rich.progress import Progress
+            #
+            # Console = Console()
+            # with Progress(console=Console) as progress:
+            #     for group in progress.track(groups, "Interpolating Shards"):
+            for group in groups:
+                slices = self.lut.coords[group]
+                sim = sixs[slices].load()
+                data = self.process(sim, slices)
+                self.lut.flush_buffer(slices)
+                del sim
         else:
             self.process(sixs)
 
