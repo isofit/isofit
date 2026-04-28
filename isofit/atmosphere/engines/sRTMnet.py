@@ -293,7 +293,7 @@ class SRTMnetModel(torch.nn.Module):
         return outdict
 
 
-class SimulatedModtranRT(RadiativeTransferEngine):
+class SimulatedModtranRT(Atmosphere, Writer):
     """
     A hybrid surrogate-model and emulator of MODTRAN-like results.  A description of
     the model can be found in:
@@ -322,10 +322,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
     }
     _disable_makeSim = True
 
-    def _lut(self, lut_path, lut_names, build_interpolators):
-        self.write_lut(lut_path, lut_names, build_inteprolators)
+    def _lut(self, build_interpolators):
+        self.write()
 
-        return super()._lut(lut_path, lut_names, build_interpolators)
+        return super()._lut(build_interpolators)
 
     def preSim(self):
         """

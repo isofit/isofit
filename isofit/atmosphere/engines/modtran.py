@@ -48,20 +48,18 @@ tropopause_altitude_km = 17.0
 
 class ModtranRT(Atmosphere, Writer):
 
-    def __init__(self, full_config, wl=[], fwhm=[]):
+    def __init__(self, full_config, **kwargs):
         """A model of photon transport including the atmosphere."""
-        super().__init__(full_config, wl, fwhm)
+        super().__init__(full_config, **kwargs)
 
         self.max_buffer_time = 0.5
-        self.engine_base_dir = self.config_atmosphere.sim_path
+        self.engine_base_dir = self.config.sim_path
+        self.sim_path = self.config.sim_path
 
-        # TODO Add check that sim path exists
-        self.sim_path = self.config_atmosphere.sim_path
+    def _lut(self, build_interpolators):
+        self.write()
 
-    def _lut(self, lut_path, lut_names, build_interpolators):
-        self.write_lut(lut_path, lut_names, build_inteprolators)
-
-        return super()._lut(lut_path, lut_names, build_interpolators)
+        return super()._lut(build_interpolators)
 
     @staticmethod
     def parseTokens(tokens: list, coszen: float) -> dict:
