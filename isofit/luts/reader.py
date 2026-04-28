@@ -7,6 +7,7 @@ import os
 from functools import reduce
 from pathlib import Path
 from typing import Any, List, Union
+from types import SimpleNamespace
 
 import numpy as np
 import xarray as xr
@@ -21,9 +22,13 @@ Logger = logging.getLogger(__name__)
 
 class LUT:
     def __init__(
-        ds, n_point: int, indices: SimpleNamespace, lut_interpolators: dict = {}
+        self,
+        ds,
+        n_lut_input_dim: int,
+        indices: SimpleNamespace,
+        lut_interpolators: dict = {}
     ):
-        self.n_point = n_point
+        self.n_lut_input_dim = n_lut_input_dim
         self.indices = indices
         self.ds = ds
         self.wl = ds.wl
@@ -47,7 +52,7 @@ class LUT:
         self.interpolate(point): dict
             ...
         """
-        point = np.zeros(self.n_point)
+        point = np.zeros(self.n_lut_input_dim)
 
         point[self.indices.x_RT] = x_RT
         for i, key in self.indices.geom.items():
@@ -107,12 +112,29 @@ class LUT:
         with Dataset(self.file, "a") as ds:
             ds[key][:] = value
 
-    def __repr__(self) -> str:
-        return f"LUT(wl={self.wl.size}, grid={self.sizes})"
+    def __repr__(self):
+        lut_dict = {
+            coord: np.unique(self.ds.coords[coord].values) 
+            for coord in self.ds.coords 
+            if coord not in ['wl', 'point']
+        }
+
+        header = f"<LUT>"
+        lines = [header]
+        
+        for name, values in lut_dict.items():
+            n_points = len(values)
+            v_min, v_max = values.min(), values.max()
+            
+            line = f"{name:<8} - ({n_points} pts): [{v_min}...{v_max}]"
+            lines.append(line)
+            
+        return "\n".join(lines)
 
 
 class Reader:
     def load(
+        self,
         file,
         mode: str = "a",
         lock: bool = False,

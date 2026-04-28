@@ -26,7 +26,7 @@ class Writer:
         """Initialize a LUT and run simulations
         """
         # Run sims and write lut
-        if not configure_and_exit:
+        if not self.configure_and_exit:
             lut_writer = self.prepare(
                 file=self.lut_path,
                 wl=self.wl,
@@ -318,7 +318,7 @@ class Writer:
             readSim = ray.put(self.readSim)
             lut_path = ray.put(self.lut_path)
             buffer_time = ray.put(self.max_buffer_time)
-            rte_configure_and_exit = ray.put(self.engine_config.rte_configure_and_exit)
+            configure_and_exit = ray.put(self.engine_config.configure_and_exit)
 
             jobs = [
                 streamSimulation.remote(
@@ -328,16 +328,16 @@ class Writer:
                     readSim,
                     lut_path,
                     max_buffer_time=buffer_time,
-                    rte_configure_and_exit=self.engine_config.rte_configure_and_exit,
+                    configure_and_exit=self.engine_config.configure_and_exit,
                 )
                 for point in self.points
             ]
 
-            if self.engine_config.rte_configure_and_exit:
+            if self.engine_config.configure_and_exit:
                 # Block until all jobs finish
                 ray.get(jobs)
 
-                Logger.warning("Exiting early due to rte_configure_and_exit")
+                Logger.warning("Exiting early due to configure_and_exit")
                 sys.exit(0)
             else:
                 # Report a percentage complete every 10% and flush to disk at those intervals
@@ -393,7 +393,7 @@ class Writer:
         reader: Callable,
         output: str,
         max_buffer_time: float = 0.5,
-        rte_configure_and_exit: bool = False,
+        configure_and_exit: bool = False,
     ):
         """Run a simulation for a single point and stream the results to a saved lut file.
 
@@ -404,7 +404,7 @@ class Writer:
             reader (function): function to read the results of the simulation
             output (str): LUT store to save results to
             max_buffer_time (float, optional): _description_. Defaults to 0.5.
-            rte_configure_and_exit (bool, optional): exit early if not executing simulations
+            configure_and_exit (bool, optional): exit early if not executing simulations
         """
         Logger.debug(f"Simulating(point={point})")
 
@@ -415,7 +415,7 @@ class Writer:
         simmer(point)
 
         # No data will be produced, just configuration files
-        if rte_configure_and_exit:
+        if configure_and_exit:
             return
 
         # Read the simulation results

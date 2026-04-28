@@ -25,7 +25,7 @@ import h5py
 import numpy as np
 import yaml
 
-from isofit.atmosphere import Atmosphere
+from isofit.atmosphere import BaseAtmosphere
 from isofit.core.common import spectral_response_function
 from isofit.luts import Writer
 
@@ -151,7 +151,7 @@ def reduce_points(points, Xproj_vectors, Xproj_values, Xmu, Xsigma):
     return Z @ H
 
 
-class KernelFlowsRT(Atmosphere, Writer):
+class KernelFlowsRT(BaseAtmosphere, Writer):
     """
     Radiative transfer emulation based on KernelFlows.jl and VSWIREmulator.jl. A description of
     the model can be found in:

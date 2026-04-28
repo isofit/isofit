@@ -1,11 +1,13 @@
-from .atmosphere import Atmosphere
+from .atmosphere import BaseAtmosphere
 from isofit.atmosphere.engines import Engines
 
 
-class Atmospheres:
-    def __new__(full_config):
+class Atmosphere:
+    def __new__(self, full_config):
         engine = Engines.get(
-            full_config.forward_model.atmosphere.engine_name,
-            Atmosphere
+            full_config.forward_model.atmosphere.engine_name
         )
+        # Always default to base atmosphere
+        engine = engine or BaseAtmosphere
+        
         return engine(full_config)

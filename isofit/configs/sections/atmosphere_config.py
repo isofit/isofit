@@ -246,8 +246,8 @@ class AtmosphereConfig(BaseConfigSection):
         """str: libRadtran-only path to phase function moments file. Uses custom phase function instead of default Henyey-Greenstein."""
 
         # MODTRAN, 6S, and libRadtran
-        self._rte_configure_and_exit_type = bool
-        self.rte_configure_and_exit = False
+        self._configure_and_exit_type = bool
+        self.configure_and_exit = False
         """bool: Indicates that code should terminate as soon as all atmospheric radiative transfer engine configuration files are
         written (without running them)"""
 
@@ -283,24 +283,9 @@ class AtmosphereConfig(BaseConfigSection):
         """int: Size of the cache to store interpolation lookups. Defaults to 16 which
         provides the most significant gains. Setting higher may provide marginal gains."""
 
-        #######################################################################################
-        ########################################################################################
-        ########################################################################################
-        ########################################################################################
         # TODO: this part  here is a little hairy and not sure if i totally have this correct.
-        self._engine_type = AtmosphereConfig
-        self.engine = self
-
-        if not (engine := sub_configdic.get("engine")):
-            logging.error(
-                "Config does not have an 'engine' key, checking if this config is before ISOFIT v3.9"
-            )
-            if rte := sub_configdic.get("radiative_transfer_engines"):
-                key = list(rte.keys())[0]
-                sub_configdic.update(rte[key])
-                logging.warning(
-                    f"Old config detected, taking the first engine available: {key}"
-                )
+        self._engine_name_type = str
+        self.engine_name = "Prebuilt"
 
         self.set_config_options(sub_configdic)
 
