@@ -48,7 +48,7 @@ class LUTSurface(Surface):
     For a NetCDF lookup table, it contains the following fields:
         - Coordinates:
             * wl
-            * Other LUT dimensions (e.g., SZA, VZA, RAA, grain size)
+            * Other LUT dimensions (e.g., solar_zenith, observer_zenith, relative_azimuth, grain size)
         - Data Variables:
             * rho_dif_dir: (LUT Axes..., n_wl)
             * rho_dir_dir: (LUT Axes..., n_wl) [optional]
@@ -58,7 +58,7 @@ class LUTSurface(Surface):
 
     Reflectance keys should either be rho_dif_dir (or both can be included).
 
-    Any of the angles are optional, but if provided should be in degrees and named "SZA", "VZA", and "RAA".
+    Any of the angles are optional, but if provided should be in degrees and named "solar_zenith", "observer_zenith", and "relative_azimuth".
 
     You can also choose to run a mixed pixel retrieval by adding data variables of length wl with key name "endmember_TYPE".
     Where you can fill in TYPE for given surface(s) you would like to mix. You may use any number of endmembers.
@@ -153,7 +153,7 @@ class LUTSurface(Surface):
 
         # Checking the statevec names prior to running
         for name in self.statevec_names:
-            if name in ["SZA", "VZA", "RAA"]:
+            if name in ["solar_zenith", "observer_zenith", "relative_azimuth"]:
                 raise ValueError(
                     f"Variable:{name} in the statevector is not supported."
                 )
@@ -215,9 +215,9 @@ class LUTSurface(Surface):
 
         # Find any relevant geometry indices
         # This assumes LUT is in units of degrees for geometry
-        self.sza_ind = self.lut_names.index("SZA") if "SZA" in self.lut_names else None
-        self.vza_ind = self.lut_names.index("VZA") if "VZA" in self.lut_names else None
-        self.raa_ind = self.lut_names.index("RAA") if "RAA" in self.lut_names else None
+        self.sza_ind = self.lut_names.index("solar_zenith") if "solar_zenith" in self.lut_names else None
+        self.vza_ind = self.lut_names.index("observer_zenith") if "observer_zenith" in self.lut_names else None
+        self.raa_ind = self.lut_names.index("relative_azimuth") if "relative_azimuth" in self.lut_names else None
 
     def get_default_state(self, name, config, index=None):
         """Used to handle dynamic loading of state config which are unknown in the LUTSurface case."""
