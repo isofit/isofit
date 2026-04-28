@@ -25,7 +25,7 @@ from pathlib import Path
 
 import numpy as np
 
-from isofit.atmosphere import Atmosphere
+from isofit.atmosphere import BaseAtmosphere
 from isofit.core.common import (
     calculate_resample_matrix,
     json_load_ascii,
@@ -39,7 +39,7 @@ from isofit.luts import Writer
 Logger = logging.getLogger(__name__)
 
 
-class LibRadTranRT(Atmosphere, Writer):
+class LibRadTranRT(BaseAtmosphere, Writer):
 
     def __init__(self, full_config, **kwargs):
         super().__init__(full_config, **kwargs)

@@ -27,7 +27,7 @@ from scipy.interpolate import interp1d
 from scipy.io import loadmat
 from scipy.linalg import block_diag
 
-from isofit.atmosphere import Atmospheres
+from isofit.atmosphere import Atmosphere
 from isofit.core.common import eps
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument

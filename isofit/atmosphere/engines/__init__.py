@@ -11,4 +11,5 @@ Engines = {
     "6s": SixSRT,
     "sRTMnet": SimulatedModtranRT,
     "LibRadTran": LibRadTranRT,
+    "Prebuilt": None
 }

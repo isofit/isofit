@@ -34,7 +34,8 @@ from isofit.core import common, units
 from isofit.core.common import svd_inv_sqrt
 from isofit.luts import LUT, Reader, sub
 
-Logger = logging.getLogger(__file__)
+# Logger = logging.getLogger(__file__)
+Logger = logging.getLogger()
 
 
 class Keys:
@@ -68,7 +69,7 @@ class Keys:
     }
 
 
-class Atmosphere(Reader):
+class BaseAtmosphere(Reader):
     """This class controls the radiative transfer component of the forward
     model. An ordered dictionary is maintained of individual RTMs (MODTRAN,
     for example). We loop over the dictionary concatenating the radiation
@@ -98,8 +99,9 @@ class Atmosphere(Reader):
     ]
 
     # These properties enable easy access to the lut data
-    coszen = property(lambda self: self["coszen"])
-    solar_irr = property(lambda self: self["solar_irr"])
+    # TODO Having hard time unpacking this syntax
+    # coszen = property(lambda self: self["coszen"])
+    # solar_irr = property(lambda self: self["solar_irr"])
 
     def __init__(
         self,
@@ -107,12 +109,12 @@ class Atmosphere(Reader):
         lut_path: str = "",  # lut_path override
         wl: np.array = [],  # Wavelength override
         fwhm: np.array = [],  # fwhm override
-        n_core: int = None,  # n_core override
+        n_cores: int = None,  # n_core override
         build_interpolators: bool = True
     ):
         self.config = full_config.forward_model.atmosphere
 
-        self.n_cores = n_core or full_config.implementation.n_cores
+        self.n_cores = n_cores or full_config.implementation.n_cores
         # Check to see if this check is necessary
         if self.n_cores is None:
             self.n_cores = multiprocessing.cpu_count()
@@ -123,10 +125,7 @@ class Atmosphere(Reader):
         self.statevec_names = self.config.statevector.get_element_names()
 
         # Configure and exit flag
-        self.configure_and_exit = self.config.rte_configure_and_exit
-
-        # Irradiance file TODO Check how this relates to OCI
-        self.solar_irr = self.engine.solar_irr
+        self.configure_and_exit = self.config.configure_and_exit
 
         lut_exists = os.path.isfile(self.lut_path)
         if lut_exists:
@@ -150,13 +149,13 @@ class Atmosphere(Reader):
         if not any(wl) or not any(fwhm):
             self.wavelength_file = (
                 self.config.wavelength_file
-                or full_config.forward.instrument.wavelength_file
+                or full_config.forward_model.instrument.wavelength_file
             )
             if os.path.exists(self.wavelength_file):
                 Logger.info(f"Loading from wavelength_file: {self.wavelength_file}")
                 wl, fwhm = common.load_wavelen(self.wavelength_file)
 
-        if not wl or not fwhm:
+        if not any(wl) or not any(fwhm):
             e = "No wavelength information found, please provide either as file or input argument"
             Logger.error(e)
             raise AttributeError(e)
@@ -195,14 +194,12 @@ class Atmosphere(Reader):
         self.bvec = self.config.unknowns.get_element_names()
         self.bval = np.array([x for x in self.config.unknowns.get_elements()[0]])
         # Create LUT (for generic this will be fake executed
-        self.lut_names = list(self.lut_grid.keys())
-        self.points = common.combos(self.lut_grid.values())
+        self.lut_names = set(list(self.lut_grid.keys()) or self.config.statevector_names)
+        self.n_lut_input_dim = len(self.lut_names)
 
         # Wrapper for the create-load logic that depends on the engine
         # create_lut will include the build logic within engines
         self.lut = self._lut(
-            self.lut_path,
-            self.lut_names,
             build_interpolators=build_interpolators
         )
         Logger.info("LUT grid loaded from file")
@@ -249,10 +246,10 @@ class Atmosphere(Reader):
 
         TODO: Make sure that loaded LUT matches config LUT
         """
-        # TODO
+        # TODO Decide if indices needs to be class property
         indices = SimpleNamespace(geom={}, x_RT=[])
 
-        geometry_keys = set(self.config.statevector_names or self.lut_names)
+        geometry_keys = self.lut_names
         matches = common.compare(geometry_keys, self.geometry_input_names)
         if matches:
             Logger.warning(
@@ -263,32 +260,42 @@ class Atmosphere(Reader):
 
         # Hidden assumption: geometry keys come first, then come RTE keys
         self.geometry_input_names = set(self.geometry_input_names) - geometry_keys
-        self.indices.geom = {
+        indices.geom = {
             i: key
             for i, key in enumerate(self.lut_names)
             if key in self.geometry_input_names
         }
 
         # check if values of observer zenith in LUT are given in MODTRAN convention
-        self.indices.convert_observer_zenith = None
+        indices.convert_observer_zenith = None
         if "observer_zenith" in self.lut_grid.keys():
             if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
-                self.indices.convert_observer_zenith = [
+                indices.convert_observer_zenith = [
                     i
-                    for i in self.indices.geom
-                    if self.indices.geom[i] == "observer_zenith"
+                    for i in indices.geom
+                    if indices.geom[i] == "observer_zenith"
                 ][0]
 
         # If it wasn't a geom key, it's x_RT
-        self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
+        indices.x_RT = list(
+            set(range(self.n_lut_input_dim))
+            - set(indices.geom)
+        )
 
         # Make sure the length of the config statevectores match the engine's assumed statevectors
-        if (expected := len(self.statevec_names)) != (got := len(self.indices.x_RT)):
+        if (expected := len(self.statevec_names)) != (got := len(indices.x_RT)):
             error = f"Mismatch between the number of elements for the config and LUT grid: {expected=}, {got=}"
             Logger.error(error)
             raise AttributeError(error)
 
-        ds = self.couple(self.load(self.lut_path, subset=self.config.lut_names))
+        # Load LUT and run coupling function in one go
+        # TODO formalize pathway for pre-built LUT
+        ds = self.couple(
+            self.load(
+                file=self.lut_path,
+                subset=self.config.lut_names
+            )
+        )
 
         # Limit the wavelength per the config, does not affect data on disk
         if self.config.wavelength_range is not None:
@@ -302,7 +309,12 @@ class Atmosphere(Reader):
         )
         Logger.debug(f"Interpolators built")
 
-        return LUT(ds, len(self.lut_names), indices, interpolators=interpolators)
+        return LUT(
+            ds,
+            self.n_lut_input_dim,
+            indices,
+            lut_interpolators=interpolators
+        )
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""

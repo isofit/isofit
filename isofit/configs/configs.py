@@ -154,9 +154,9 @@ def create_new_config(config_file: str) -> Config:
         with open(config_file, "r") as f:
             # pdb.set_trace()
             config_dict = yaml.safe_load(f)
-    except:
+    except Exception as e:
         raise IOError(
-            "Unexpected configuration file time, only json and yaml supported"
+                f"Unexpected configuration file time, only json and yaml supported:\n {e}"
         )
 
     configdir, f = os.path.split(os.path.abspath(config_file))

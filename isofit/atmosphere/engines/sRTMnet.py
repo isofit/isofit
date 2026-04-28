@@ -31,7 +31,7 @@ import numpy as np
 import torch
 import yaml
 
-from isofit.atmosphere import Atmosphere
+from isofit.atmosphere import BaseAtmosphere
 from isofit.core import units
 from isofit.core.common import calculate_resample_matrix, resample_spectrum
 from isofit.atmosphere.engines import SixSRT
@@ -292,7 +292,7 @@ class SRTMnetModel(torch.nn.Module):
         return outdict
 
 
-class SimulatedModtranRT(Atmosphere, Writer):
+class SimulatedModtranRT(BaseAtmosphere, Writer):
     """
     A hybrid surrogate-model and emulator of MODTRAN-like results.  A description of
     the model can be found in:

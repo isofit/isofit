@@ -26,7 +26,7 @@ from datetime import datetime
 
 import numpy as np
 
-from isofit.atmosphere import Atmosphere
+from isofit.atmosphere import BaseAtmosphere
 from isofit.core import units
 from isofit.core.common import resample_spectrum, load_esd
 from isofit.data import env
@@ -61,7 +61,7 @@ SIXS_TEMPLATE = """\
 """
 
 
-class SixSRT(Atmosphere, Writer):
+class SixSRT(BaseAtmosphere, Writer):
     """A model of photon transport including the atmosphere."""
 
     def __init__(self, full_config, wl=[], fwhm=[], modtran_emulation=False, **kwargs):

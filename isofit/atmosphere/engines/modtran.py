@@ -31,7 +31,7 @@ import numpy as np
 import scipy.interpolate
 import scipy.stats
 
-from isofit.atmosphere import Atmosphere
+from isofit.atmosphere import BaseAtmosphere
 from isofit.core import units
 from isofit.core.common import json_load_ascii, recursive_replace
 from isofit.luts import Writer
@@ -41,7 +41,7 @@ Logger = logging.getLogger(__file__)
 TROPOPAUSE_ALTITUDE_KM = 17.0
 
 
-class ModtranRT(Atmosphere, Writer):
+class ModtranRT(BaseAtmosphere, Writer):
 
     def __init__(self, full_config, **kwargs):
         """A model of photon transport including the atmosphere."""
