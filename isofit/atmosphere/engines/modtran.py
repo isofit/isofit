@@ -46,7 +46,7 @@ tropopause_altitude_km = 17.0
 ### Classes ###
 
 
-class ModtranRT(RadiativeTransferEngine):
+class ModtranRT(Atmosphere, Writer):
 
     def __init__(self, full_config, wl=[], fwhm=[]):
         """A model of photon transport including the atmosphere."""
@@ -57,6 +57,11 @@ class ModtranRT(RadiativeTransferEngine):
 
         # TODO Add check that sim path exists
         self.sim_path = self.config_atmosphere.sim_path
+
+    def _lut(self, lut_path, lut_names, build_interpolators):
+        self.write_lut(lut_path, lut_names, build_inteprolators)
+
+        return super()._lut(lut_path, lut_names, build_interpolators)
 
     @staticmethod
     def parseTokens(tokens: list, coszen: float) -> dict:

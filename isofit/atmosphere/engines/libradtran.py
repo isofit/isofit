@@ -112,6 +112,11 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         self.lrt_bin_dir = abspath(join(self.libradtran, "bin"))
 
+    def _lut(self, lut_path, lut_names, build_interpolators):
+        self.write_lut(lut_path, lut_names, build_inteprolators)
+
+        return super()._lut(lut_path, lut_names, build_interpolators)
+
     def preSim(self):
 
         # define the output wl grid [nm], and stash matrix H

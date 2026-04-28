@@ -126,6 +126,9 @@ class Atmosphere(Reader):
         self.lut_grid = config_atmosphere.lut_grid
         self.statevec_names = config_atmosphere.statevector.get_element_names()
 
+        # Configure and exit flag
+        self.configure_and_exit = config_atmosphere.rte_configure_and_exit
+
         # Irradiance file TODO Check how this relates to OCI
         self.solar_irr = self.engine.solar_irr
 
@@ -203,7 +206,8 @@ class Atmosphere(Reader):
         self.points = common.combos(self.lut_grid.values())
             
         # Wrapper for the create-load logic that depends on the engine
-        self.lut = self.create_lut(
+        # create_lut will include the build logic within engines
+        self.lut = self._lut(
             self.lut_path,
             self.lut_names,
             build_interpolators=self.build_interpolators
@@ -225,143 +229,28 @@ class Atmosphere(Reader):
                 "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
             )
 
-            # TODO Clean OCI irr path
-            # sc - Bandaid for code to know whether to use gaussian assumptions
-            #      Currently, if using tsis, then OCI, which is non-gaussian
-            srf_file = None
-            irr_file = Path(engine_config.irradiance_file)
-            if irr_file.stem == "tsis_f0_0p1":
-                srf_file = irr_file.parent / "pace_oci_rsr.nc"
+        # TODO Clean OCI irr path - Important to trace throughout?
+        # sc - Bandaid for code to know whether to use gaussian assumptions
+        #      Currently, if using tsis, then OCI, which is non-gaussian
+        srf_file = None
+        irr_file = Path(engine_config.irradiance_file)
+        if irr_file.stem == "tsis_f0_0p1":
+            srf_file = irr_file.parent / "pace_oci_rsr.nc"
 
-            # TODO Is this ever necessary?? - A lot of this logic is the nested self.lut calls we want to abstract out.
-            # If necessary, resample prebuilt LUT to desired instrument spectral response
-            if (
-                not len(self.wl) == len(self.lut.wl)
-                or not all(self.wl == self.lut.wl)
-                or (srf_file is not None)
-            ):
-                self.lut = self.resample_xarray(self.lut, wl, fwhm, srf_file)
+        if (
+            not len(self.wl) == len(self.lut.wl)
+            or not all(self.wl == self.lut.wl)
+            or (srf_file is not None)
+        ):
+            self.lut = self.resample_xarray(self.lut, wl, fwhm, srf_file)
 
-
-        else:
-            # TODO This may go into the engines classes? That way we could support generic?
-            Logger.info(f"No LUT store found, beginning initialization and simulations")
-            Logger.debug(f"Writing store to: {self.lut_path}")
-
-            self.lut_names = list(self.lut_grid.keys())
-            self.points = common.combos(self.lut_grid.values())
-
-            # Verify no duplicates exist else downstream functions will fail
-            duplicates = False
-
-            for dim, vals in self.lut_grid.items():
-                if np.unique(vals).size < len(vals):
-                    duplicates = True
-                    Logger.error(
-                        f"Duplicates values were detected in the lut_grid for {dim}: {vals}"
-                    )
-
-            if duplicates:
-                raise AttributeError(
-                    "Input lut_grid detected to have duplicates, please correct them before continuing"
-                )
-
-            if config_atmosphere.rte_configure_and_exit:
-                Logger.warning(
-                    "rte_configure_and_exit is enabled, the LUT file will not be created"
-                )
-            else:
-                # TODO Check keys
-                Logger.info(f"Initializing LUT file")
-                self.lut = luts.Create(
-                    file=self.lut_path,
-                    wl=self.wl,
-                    grid=self.lut_grid,
-                    attrs={"RT_mode": self.rt_mode},
-                    onedim={"fwhm": self.fwhm},
-                    compression=full_config.implementation.lut_compression,
-                    complevel=full_config.implementation.lut_complevel,
-                )
-
-            # Create and populate a LUT file
-            self.runSimulations()
-
-        # big TODO Abstract into LUT and engines TODO
         # Write the NetCDF information to the log file so devs have that info during debugging
         # Have to create a fileobj to capture the text because it doesn't return (prints straight to stdout by default)
         info = io.StringIO()
         self.lut.info(info)
         Logger.debug(f"LUT information:\n{info.getvalue()}")
 
-        # Limit the wavelength per the config, does not affect data on disk
-        if engine_config.wavelength_range is not None:
-            Logger.info(
-                f"Subsetting wavelengths to range: {engine_config.wavelength_range}"
-            )
-            self.lut = luts.sub(
-                self.lut,
-                "wl",
-                dict(zip(["gte", "lte"], engine_config.wavelength_range)),
-            )
-
-        self.n_chan = len(self.wl)
-
-        # TODO: This is a bad variable name - 
-        # change (it's the number of input dimensions of the lut (p) not the number of samples)
-        self.n_point = len(self.lut_names)
-
-        # Simple 1-item cache for rte.interpolate()
-        self.cached = SimpleNamespace(point=np.array([]))
-        Logger.debug(f"LUTs fully loaded")
-
-        # For each point index, determine if that point derives from Geometry or x_RT
-        self.indices = SimpleNamespace(geom={}, x_RT=[])
-
-        # Attach interpolators
-        if build_interpolators:
-            # revise call to reference lut
-            # TODO Need to correct reference
-            self.build_interpolators()
-
-            geometry_keys = set(config_atmosphere.statevector_names or self.lut_names)
-
-            matches = common.compare(geometry_keys, self.geometry_input_names)
-            if matches:
-                Logger.warning(
-                    "A key in the statevector was detected to be close to keys in the geometry keys list:"
-                )
-                for key, strings in matches.items():
-                    Logger.warning(f"  {key!r} should it be one of {strings}?")
-
-            # Hidden assumption: geometry keys come first, then come RTE keys
-            self.geometry_input_names = set(self.geometry_input_names) - geometry_keys
-            self.indices.geom = {
-                i: key
-                for i, key in enumerate(self.lut_names)
-                if key in self.geometry_input_names
-            }
-
-            # check if values of observer zenith in LUT are given in MODTRAN convention
-            self.indices.convert_observer_zenith = None
-            if "observer_zenith" in self.lut_grid.keys():
-                if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
-                    self.indices.convert_observer_zenith = [
-                        i
-                        for i in self.indices.geom
-                        if self.indices.geom[i] == "observer_zenith"
-                    ][0]
-
-            # If it wasn't a geom key, it's x_RT
-            self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
-            Logger.debug(f"Interpolators built")
-
-        # Make sure the length of the config statevectores match the engine's assumed statevectors
-        if (expected := len(self.statevec_names)) != (got := len(self.indices.x_RT)):
-            error = f"Mismatch between the number of elements for the config and LUT grid: {expected=}, {got=}"
-            Logger.error(error)
-            raise AttributeError(error)
-
-    def create_lut(self, lut_path, lut_names, build_interpolators: int = True)
+    def _lut(self, lut_path, lut_names, build_interpolators: int = True)
         """Generic LUT load from pre-built LUT. Will be superseded by
         inheriting writer classes
         
@@ -370,14 +259,60 @@ class Atmosphere(Reader):
         # TODO
         indices = SimpleNamespace(geom={}, x_RT=[])
 
-        ds, interpolators = self.build_interpolators(
-            self.couple(self.load(
-                self.lut_path,
-                subset=config_atmosphere.lut_names
-            )),
+        geometry_keys = set(config_atmosphere.statevector_names or self.lut_names)
+        matches = common.compare(geometry_keys, self.geometry_input_names)
+        if matches:
+            Logger.warning(
+                "A key in the statevector was detected to be close to keys in the geometry keys list:"
+            )
+            for key, strings in matches.items():
+                Logger.warning(f"  {key!r} should it be one of {strings}?")
+
+        # Hidden assumption: geometry keys come first, then come RTE keys
+        self.geometry_input_names = set(self.geometry_input_names) - geometry_keys
+        self.indices.geom = {
+            i: key
+            for i, key in enumerate(self.lut_names)
+            if key in self.geometry_input_names
+        }
+
+        # check if values of observer zenith in LUT are given in MODTRAN convention
+        self.indices.convert_observer_zenith = None
+        if "observer_zenith" in self.lut_grid.keys():
+            if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
+                self.indices.convert_observer_zenith = [
+                    i
+                    for i in self.indices.geom
+                    if self.indices.geom[i] == "observer_zenith"
+                ][0]
+
+        # If it wasn't a geom key, it's x_RT
+        self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
+
+        # Make sure the length of the config statevectores match the engine's assumed statevectors
+        if (expected := len(self.statevec_names)) != (got := len(self.indices.x_RT)):
+            error = f"Mismatch between the number of elements for the config and LUT grid: {expected=}, {got=}"
+            Logger.error(error)
+            raise AttributeError(error)
+
+        ds = couple(self.load(
+            self.lut_path,
+            subset=config_atmosphere.lut_names
+        ))
+
+        # Limit the wavelength per the config, does not affect data on disk
+        if self.config_atmosphere.wavelength_range is not None:
+            Logger.info(
+                f"Subsetting wavelengths to range: {engine_config.wavelength_range}"
+            )
+            ds = sub(ds "wl", dict(zip(["gte", "lte"], self.config_atmosphere.wavelength_range)))
+
+        interpolators = self.build_interpolators(
+            ds,
             Keys,
             interpolator_style=self.interpolator_style
         )
+        Logger.debug(f"Interpolators built")
 
         return LUT(
             ds,
@@ -385,6 +320,24 @@ class Atmosphere(Reader):
             indices,
             interpolators=interpolators
         )
+
+    def write_lut(self, lut_path, lut_names, build_interpolators)
+        # Run sims and write lut
+        lut_writer = Writer(
+            file=self.lut_path,
+            wl=self.wl,
+            grid=self.lut_grid,
+            attrs={"RT_mode": self.rt_mode},
+            onedim={"fwhm": self.fwhm},
+            compression=full_config.implementation.lut_compression,
+            complevel=full_config.implementation.lut_complevel,
+        )
+        if not self.configure_and_exit:
+            lut_writer.initialize()
+
+        self.runSimulations()
+
+        return 
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""

@@ -27,6 +27,7 @@ class LUT:
         self.wl = ds.wl
         self.rt_mode = ds.attrs.get("RT_mode", "transm")
         self.lut_inteprolators = lut_interpolators
+        self.cached = SimpleNamespace(point=np.array([]))
 
     def __call__(x_RT: np.array, geom: Geometry):
         """
@@ -354,7 +355,7 @@ class Reader:
                 version=interpolator_style,
             )
 
-        return ds, luts
+        return luts
 
     @staticmethod
     def extractGrid(ds: xr.Dataset) -> dict:
@@ -434,4 +435,3 @@ class Reader:
         conv_lut["fwhm"] = ("wl", fwhm)
 
         return conv_lut
-
