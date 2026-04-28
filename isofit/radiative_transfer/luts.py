@@ -919,7 +919,7 @@ def load(
     dask: bool = False,
     mode: str = "a",
     lock: bool = False,
-    load: bool = True,
+    load: bool = False,
     coupling: str = "after",
     **kwargs,
 ) -> xr.Dataset:
