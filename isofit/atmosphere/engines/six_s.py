@@ -108,6 +108,11 @@ class SixSRT(RadiativeTransferEngine):
         if not hasattr(self, "esd"):
             self.load_esd()
 
+    def _lut(self, lut_path, lut_names, build_interpolators):
+        self.write_lut(lut_path, lut_names, build_inteprolators)
+
+        return super()._lut(lut_path, lut_names, build_interpolators)
+
     def preSim(self):
         """
         Add the 6S executable in the LUT attributes

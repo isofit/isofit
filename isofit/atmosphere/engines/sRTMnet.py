@@ -322,6 +322,11 @@ class SimulatedModtranRT(RadiativeTransferEngine):
     }
     _disable_makeSim = True
 
+    def _lut(self, lut_path, lut_names, build_interpolators):
+        self.write_lut(lut_path, lut_names, build_inteprolators)
+
+        return super()._lut(lut_path, lut_names, build_interpolators)
+
     def preSim(self):
         """
         sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins
