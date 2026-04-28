@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import atexit
 import gc
 import logging
@@ -10,12 +12,13 @@ import xarray as xr
 from netCDF4 import Dataset
 
 from isofit import __version__
+from isofit import ray
 
 Logger = logging.getLogger(__name__)
 
 
 class Writer:
-    def __init__(self, full_config **kwargs):
+    def __init__(self, full_config, **kwargs):
         self.compression = full_config.forward_model.atmosphere.lut_compression
         self.complevel = full_config.forward_model.atmosphere.lut_complevel
 

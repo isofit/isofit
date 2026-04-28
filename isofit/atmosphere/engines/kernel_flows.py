@@ -25,8 +25,8 @@ import h5py
 import numpy as np
 import yaml
 
-from isofit.core.common import combos, spectral_response_function
 from isofit.atmosphere import Atmosphere
+from isofit.core.common import spectral_response_function
 from isofit.luts import Writer
 
 Logger = logging.getLogger(__file__)
@@ -239,10 +239,10 @@ class KernelFlowsRT(Atmosphere, Writer):
         self.rt_mode = "rdn"
         self.assign_bounds()
 
-    def _lut(self, lut_path, lut_names, build_interpolators):
-        self.write_lut(lut_path, lut_names, build_inteprolators)
+    def _lut(self, build_interpolators):
+        self.write()
 
-        return super()._lut(lut_path, lut_names, build_interpolators)
+        return super()._lut(build_interpolators)
 
     def assign_bounds(self):
         try:
@@ -277,7 +277,7 @@ class KernelFlowsRT(Atmosphere, Writer):
     def h5_to_dict(self, file):
         outdict = {}
         for key, val in file.items():
-            if type(val) == h5py._hl.dataset.Dataset:
+            if isinstance(val, h5py._hl.dataset.Dataset):
                 outdict[key] = np.array(val)
             else:
                 outdict[key] = self.h5_to_dict(val)
@@ -287,7 +287,7 @@ class KernelFlowsRT(Atmosphere, Writer):
         # Track the KernelFlows directory used in the LUT attributes
         self.lut.setAttr("KernelFlows", str(self.config.emulator_file))
 
-        logging.info(f"KF Presim")
+        logging.info("KF Presim")
         self.srf_matrix = np.array(
             [
                 spectral_response_function(self.emulator_wl, wi, fwhmi / 2.355)
