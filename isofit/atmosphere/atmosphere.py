@@ -25,18 +25,13 @@ import io
 import logging
 import multiprocessing
 import os
-import sys
-import time
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Callable
 
 import numpy as np
-import xarray as xr
 
-from isofit import ray
 from isofit.core import common, units
-from isofit.core.common import eps, svd_inv_sqrt
+from isofit.core.common import svd_inv_sqrt
 from isofit.luts import Reader
 
 Logger = logging.getLogger(__file__)
@@ -114,7 +109,7 @@ class Atmosphere(Reader):
         fwhm: np.array = [],    # fwhm override
         n_core: int = None,     # n_core override
     ):
-        config_atmosphere = full_config.forward_model.atmosphere
+        self.config = full_config.forward_model.atmosphere
 
         self.n_cores = n_core or full_config.implementation.n_cores
         # Check to see if this check is necessary
@@ -122,12 +117,12 @@ class Atmosphere(Reader):
             self.n_cores = multiprocessing.cpu_count()
 
         # Initially pull lut information from config
-        self.lut_path = lut_path or full_config.atmosphere.lut_path
-        self.lut_grid = config_atmosphere.lut_grid
-        self.statevec_names = config_atmosphere.statevector.get_element_names()
+        self.lut_path = lut_path or self.config.lut_path
+        self.lut_grid = self.config.lut_grid
+        self.statevec_names = self.config.statevector.get_element_names()
 
         # Configure and exit flag
-        self.configure_and_exit = config_atmosphere.rte_configure_and_exit
+        self.configure_and_exit = self.config.rte_configure_and_exit
 
         # Irradiance file TODO Check how this relates to OCI
         self.solar_irr = self.engine.solar_irr
@@ -143,23 +138,19 @@ class Atmosphere(Reader):
         # TODO: overwrite_interpolator not hooked up. Check if we even want this override
         self.build_interpolators = True
         self.interpolator_style = (
-            config_atmosphere.interpolator_style
-            if config_atmosphere.interpolator_style
-            else config_instrument.get("interpolator_style")
+            self.config.interpolator_style
+            if self.config.interpolator_style
+            else full_config.forward_model.instrument.get("interpolator_style")
         )
 
         self.coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
         self.rt_mode = (
-            config_atmosphere.rt_mode if engine_config.rt_mode is not None else "transm"
+            self.config.rt_mode or "transm"
         )
 
         # Use explicitely passed first
         if not any(wl) or not any(fwhm):
-            self.wavelength_file = (
-                config_atmosphere.wavelength_file
-                if config_atmosphere.wavelength_file
-                else config_instrument.get("wavelength_file")
-            )
+            self.wavelength_file = self.config.wavelength_file
             if os.path.exists(wavelength_file):
                 Logger.info(f"Loading from wavelength_file: {wavelength_file}")
                 wl, fwhm = common.load_wavelen(wavelength_file)
@@ -180,7 +171,7 @@ class Atmosphere(Reader):
         self.bounds, self.scale, self.init = [], [], []
         self.prior_mean, self.prior_sigma = [], []
 
-        for sv, sv_name in zip(*config.statevector.get_elements()):
+        for sv, sv_name in zip(*self.config.statevector.get_elements()):
             self.bounds.append(sv.bounds)
             self.scale.append(sv.scale)
             self.init.append(sv.init)
@@ -199,8 +190,8 @@ class Atmosphere(Reader):
         )
 
         # Uncertainty
-        self.bvec = config_atmosphere.unknowns.get_element_names()
-        self.bval = np.array([x for x in config_atmosphere.unknowns.get_elements()[0]])
+        self.bvec = self.config.unknowns.get_element_names()
+        self.bval = np.array([x for x in self.config.unknowns.get_elements()[0]])
         # Create LUT (for generic this will be fake executed
         self.lut_names = list(self.lut_grid.keys())
         self.points = common.combos(self.lut_grid.values())
@@ -233,7 +224,7 @@ class Atmosphere(Reader):
         # sc - Bandaid for code to know whether to use gaussian assumptions
         #      Currently, if using tsis, then OCI, which is non-gaussian
         srf_file = None
-        irr_file = Path(engine_config.irradiance_file)
+        irr_file = Path(self.config.irradiance_file)
         if irr_file.stem == "tsis_f0_0p1":
             srf_file = irr_file.parent / "pace_oci_rsr.nc"
 
@@ -247,10 +238,10 @@ class Atmosphere(Reader):
         # Write the NetCDF information to the log file so devs have that info during debugging
         # Have to create a fileobj to capture the text because it doesn't return (prints straight to stdout by default)
         info = io.StringIO()
-        self.lut.info(info)
+        self.lut.ds.info(info)
         Logger.debug(f"LUT information:\n{info.getvalue()}")
 
-    def _lut(self, lut_path, lut_names, build_interpolators: int = True)
+    def _lut(self, build_interpolators: int = True):
         """Generic LUT load from pre-built LUT. Will be superseded by
         inheriting writer classes
         
@@ -259,7 +250,7 @@ class Atmosphere(Reader):
         # TODO
         indices = SimpleNamespace(geom={}, x_RT=[])
 
-        geometry_keys = set(config_atmosphere.statevector_names or self.lut_names)
+        geometry_keys = set(self.config.statevector_names or self.lut_names)
         matches = common.compare(geometry_keys, self.geometry_input_names)
         if matches:
             Logger.warning(
@@ -295,17 +286,17 @@ class Atmosphere(Reader):
             Logger.error(error)
             raise AttributeError(error)
 
-        ds = couple(self.load(
+        ds = self.couple(self.load(
             self.lut_path,
-            subset=config_atmosphere.lut_names
+            subset=self.config.lut_names
         ))
 
         # Limit the wavelength per the config, does not affect data on disk
-        if self.config_atmosphere.wavelength_range is not None:
+        if self.config.wavelength_range is not None:
             Logger.info(
                 f"Subsetting wavelengths to range: {engine_config.wavelength_range}"
             )
-            ds = sub(ds "wl", dict(zip(["gte", "lte"], self.config_atmosphere.wavelength_range)))
+            ds = sub(ds, "wl", dict(zip(["gte", "lte"], self.config.wavelength_range)))
 
         interpolators = self.build_interpolators(
             ds,
@@ -320,24 +311,6 @@ class Atmosphere(Reader):
             indices,
             interpolators=interpolators
         )
-
-    def write_lut(self, lut_path, lut_names, build_interpolators)
-        # Run sims and write lut
-        lut_writer = Writer(
-            file=self.lut_path,
-            wl=self.wl,
-            grid=self.lut_grid,
-            attrs={"RT_mode": self.rt_mode},
-            onedim={"fwhm": self.fwhm},
-            compression=full_config.implementation.lut_compression,
-            complevel=full_config.implementation.lut_complevel,
-        )
-        if not self.configure_and_exit:
-            lut_writer.initialize()
-
-        self.runSimulations()
-
-        return 
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""
@@ -395,125 +368,6 @@ class Atmosphere(Reader):
                     )
                 )
             return transup
-
-    def summarize(self, x_RT, geom):
-        return self.engine.summarize(x_RT, geom)
-
-    ################ From RTE ####################
-
-    def __getitem__(self, key):
-        """
-        Enables key indexing for easier access to the numpy object store in
-        self.lut[key]
-        """
-        return self.lut[key].load().data
-
-    def preSim(self):
-        """
-        This is an optional function that can be defined by a subclass RTE to be called
-        directly before runSim() is executed. A subclass may return a dict containing
-        any single or non-dimensional variables to be saved to the LUT file
-        """
-        ...
-
-    def makeSim(self, point: np.array, template_only: bool = False):
-        """
-        Prepares and executes a radiative transfer engine's simulations
-
-        Args:
-            point (np.array): conditions to alter in simulation
-            template_only (bool): only write template file and then stop
-        """
-        raise NotImplemented(
-            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
-        )
-
-    def readSim(self, point: np.array):
-        """
-        Reads simulation results to standard form
-
-        Args:
-            point (np.array): conditions to alter in simulation
-        """
-        raise NotImplemented(
-            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
-        )
-
-    def postSim(self):
-        """
-        This is an optional function that can be defined by a subclass RTE to be called
-        directly after runSim() is finished. A subclass may return a dict containing
-        any single or non-dimensional variables to be saved to the LUT file
-        """
-        ...
-
-    def point_to_filename(self, point: np.array) -> str:
-        """Change a point to a base filename
-
-        Args:
-            point (np.array): conditions to alter in simulation
-
-        Returns:
-            str: basename of the file to use for this point
-        """
-        filename = "_".join(
-            ["%s-%6.4f" % (n, x) for n, x in zip(self.lut_names, point)]
-        )
-        return filename
-
-    # TODO: change this name
-    def get(self, x_RT: np.array, geom: Geometry) -> dict:
-        """
-        Retrieves the interpolation values for a given point
-
-        Parameters
-        ----------
-        x_RT: np.array
-            Radiative-transfer portion of the statevector
-        geom: Geometry
-            Local geometry conditions for lookup
-
-        Returns
-        -------
-        self.interpolate(point): dict
-            ...
-        """
-        point = np.zeros(self.n_point)
-
-        point[self.indices.x_RT] = x_RT
-        for i, key in self.indices.geom.items():
-            point[i] = getattr(geom, key)
-
-        # convert observer zenith to MODTRAN convention if needed
-        if self.indices.convert_observer_zenith:
-            point[self.indices.convert_observer_zenith] = (
-                180.0 - point[self.indices.convert_observer_zenith]
-            )
-
-        return self.interpolate(point)
-
-    def interpolate(self, point: np.array) -> dict:
-        """
-        Compiles the results of the interpolators for a given point
-        """
-        if self.cached.point.size and (point == self.cached.point).all():
-            return self.cached.value
-
-        # Run the interpolators
-        value = {key: lut(point) for key, lut in self.luts.items()}
-
-        # Update the cache
-        self.cached.point = point
-        self.cached.value = value
-
-        return value
-
-    def summarize(self, x_RT, *_):
-        """
-        Pretty prints lut_name=value, ...
-        """
-        pairs = zip(self.lut_names, x_RT)
-        return " ".join([f"{name}={val:5.3f}" for name, val in pairs])
 
     # REVIEW: We need to think about the best place for the two albedo method (here, radiative_transfer.py, utils, etc.)
     @staticmethod
@@ -648,51 +502,57 @@ class Atmosphere(Reader):
 
         return data
 
+    @staticmethod
+    def couple(ds, inplace=True):
+        """
+        Calculates coupled terms on the input Dataset
 
-def couple(ds, inplace=True):
-    """
-    Calculates coupled terms on the input Dataset
+        Parameters
+        ----------
+        ds: xr.Dataset
+            Dataset to process on
+        inplace: bool, default=True
+            Insert the coupled terms in-place to the original Dataset. If False, copy the
+            Dataset first
 
-    Parameters
-    ----------
-    ds: xr.Dataset
-        Dataset to process on
-    inplace: bool, default=True
-        Insert the coupled terms in-place to the original Dataset. If False, copy the
-        Dataset first
+        Returns
+        -------
+        ds: xr.Dataset
+            Dataset with coupled terms
+        """
+        terms = {
+            "dir-dir": ("transm_down_dir", "transm_up_dir"),
+            "dif-dir": ("transm_down_dif", "transm_up_dir"),
+            "dir-dif": ("transm_down_dir", "transm_up_dif"),
+            "dif-dif": ("transm_down_dif", "transm_up_dif"),
+        }
 
-    Returns
-    -------
-    ds: xr.Dataset
-        Dataset with coupled terms
-    """
-    terms = {
-        "dir-dir": ("transm_down_dir", "transm_up_dir"),
-        "dif-dir": ("transm_down_dif", "transm_up_dir"),
-        "dir-dif": ("transm_down_dir", "transm_up_dif"),
-        "dif-dif": ("transm_down_dif", "transm_up_dif"),
-    }
+        # Detect if coupling needs to occur first
+        data = ds.get(list(terms))
+        calc = False
+        if data is None:
+            # Not all keys exist
+            calc = "missing"
+        elif not bool(data.any().to_array().all()):
+            # If any key is empty
+            calc = "empty"
 
-    # Detect if coupling needs to occur first
-    data = ds.get(list(terms))
-    calc = False
-    if data is None:
-        # Not all keys exist
-        calc = "missing"
-    elif not bool(data.any().to_array().all()):
-        # If any key is empty
-        calc = "empty"
+        if calc:
+            Logger.debug(f"A coupled term is {calc}, calculating")
+            if not inplace:
+                ds = ds.copy()
 
-    if calc:
-        Logger.debug(f"A coupled term is {calc}, calculating")
-        if not inplace:
-            ds = ds.copy()
+            for term, (key1, key2) in terms.items():
+                try:
+                    ds[term] = ds[key1] * ds[key2]
+                except KeyError:
+                    ds[term] = 0
 
-        for term, (key1, key2) in terms.items():
-            try:
-                ds[term] = ds[key1] * ds[key2]
-            except KeyError:
-                ds[term] = 0
+        return ds
 
-    return ds
-
+    def summarize(self, x_RT, *_):
+        """
+        Pretty prints lut_name=value, ...
+        """
+        pairs = zip(self.lut_names, x_RT)
+        return " ".join([f"{name}={val:5.3f}" for name, val in pairs])

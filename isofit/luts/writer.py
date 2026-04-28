@@ -14,8 +14,31 @@ from isofit import __version__
 Logger = logging.getLogger(__name__)
 
 
-class Writer
-    def __init__(
+class Writer:
+    def __init__(self, full_config **kwargs):
+        self.compression = full_config.forward_model.atmosphere.lut_compression
+        self.complevel = full_config.forward_model.atmosphere.lut_complevel
+
+    def write(self): 
+        """Initialize a LUT and run simulations
+        """
+        # Run sims and write lut
+        if not configure_and_exit:
+            lut_writer = self.prepare(
+                file=self.lut_path,
+                wl=self.wl,
+                grid=self.lut_grid,
+                attrs={"RT_mode": self.rt_mode},
+                onedim={"fwhm": self.fwhm},
+                compression=self.compression,
+                complevel=self.complevel,
+            )
+
+        self.runSimulations()
+
+        return 
+
+    def prepare(
         self,
         file: str,
         wl: np.ndarray,
@@ -28,8 +51,7 @@ class Writer
         compression: str = "zlib",
         complevel: int = None,
     ):
-        """
-        Prepare a LUT netCDF
+        """Prepare a LUT netCDF
 
         Parameters
         ----------
@@ -60,7 +82,6 @@ class Writer
         attrs["ISOFIT status"] = "<incomplete>"
 
         Logger.info(f"No LUT store found, beginning initialization and simulations")
-        Logger.debug(f"Writing store to: {}")
 
         # Check for duplicates in grid
         duplicates = False
@@ -269,39 +290,6 @@ class Writer
         """
         self.setAttr("ISOFIT status", "success")
 
-    def __setitem__(self, key: str, value: Any) -> None:
-        """
-        Sets a variable in the netCDF.
-
-        Parameters
-        ----------
-        key : str
-            Key to set
-        value : any
-            Value to set
-        """
-        with Dataset(self.file, "a") as ds:
-            ds[key][:] = value
-
-    def __getitem__(self, key: str) -> Any:
-        """
-        Passthrough to __getitem__ on the underlying 'ds' attribute.
-
-        Parameters
-        ----------
-        key : str
-            The name of the item to retrieve.
-
-        Returns
-        -------
-        Any
-            The value of the item retrieved from the 'ds' attribute.
-        """
-        return self.ds[key]
-
-    def __repr__(self) -> str:
-        return f"LUT(wl={self.wl.size}, grid={self.sizes})"
-
     def runSimulations(self) -> None:
         """
         Run all simulations for the LUT grid.
@@ -437,3 +425,64 @@ class Writer
             return point, data
         else:
             Logger.warning(f"No data was returned for point {point}")
+
+    def __getitem__(self, key):
+        """
+        Enables key indexing for easier access to the numpy object store in
+        self.lut[key]
+        """
+        return self.lut[key].load().data
+
+    def preSim(self):
+        """
+        This is an optional function that can be defined by a subclass RTE to be called
+        directly before runSim() is executed. A subclass may return a dict containing
+        any single or non-dimensional variables to be saved to the LUT file
+        """
+        ...
+
+    def makeSim(self, point: np.array, template_only: bool = False):
+        """
+        Prepares and executes a radiative transfer engine's simulations
+
+        Args:
+            point (np.array): conditions to alter in simulation
+            template_only (bool): only write template file and then stop
+        """
+        raise NotImplemented(
+            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
+        )
+
+    def readSim(self, point: np.array):
+        """
+        Reads simulation results to standard form
+
+        Args:
+            point (np.array): conditions to alter in simulation
+        """
+        raise NotImplemented(
+            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
+        )
+
+    def postSim(self):
+        """
+        This is an optional function that can be defined by a subclass RTE to be called
+        directly after runSim() is finished. A subclass may return a dict containing
+        any single or non-dimensional variables to be saved to the LUT file
+        """
+        ...
+
+    def point_to_filename(self, point: np.array) -> str:
+        """Change a point to a base filename
+
+        Args:
+            point (np.array): conditions to alter in simulation
+
+        Returns:
+            str: basename of the file to use for this point
+        """
+        filename = "_".join(
+            ["%s-%6.4f" % (n, x) for n, x in zip(self.lut_names, point)]
+        )
+        return filename
+

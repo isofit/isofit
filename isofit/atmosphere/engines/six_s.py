@@ -62,7 +62,7 @@ SIXS_TEMPLATE = """\
 """
 
 
-class SixSRT(RadiativeTransferEngine):
+class SixSRT(Atmosphere, Writer):
     """A model of photon transport including the atmosphere."""
 
     def __init__(self, full_config, wl=[], fwhm=[], modtran_emulation=False):
@@ -91,7 +91,7 @@ class SixSRT(RadiativeTransferEngine):
         if not fwhm:
             self.fwhm = np.full(self.wl.size, 2.0)
 
-        self.engine_base_dir = engine_config.engine_base_dir
+        self.config = full_config.forward_model.atmosphere
         self.exe = get_exe(self.engine_base_dir)
         Logger.debug(f"Using 6S executable: {self.exe}")
 
@@ -99,7 +99,7 @@ class SixSRT(RadiativeTransferEngine):
         if "CO2" in self.exe.name:
             self.co2_mode = True
 
-        super().__init__(engine_config, wl=self.wl, fwhm=self.fwhm)
+        super().__init__(full_config, wl=self.wl, fwhm=self.fwhm)
 
         # TODO Add check that sim path exists
         self.sim_path = self.config_atmosphere.sim_path

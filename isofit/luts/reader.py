@@ -20,7 +20,9 @@ Logger = logging.getLogger(__name__)
 
 
 class LUT:
-    def __init__(ds, n_point: int, indices: SimpleNamespace, lut_interpolators: dict = {}):
+    def __init__(
+        ds, n_point: int, indices: SimpleNamespace, lut_interpolators: dict = {}
+    ):
         self.n_point = n_point
         self.indices = indices
         self.ds = ds
@@ -75,10 +77,42 @@ class LUT:
 
         return value
 
+    def __getitem__(self, key: str) -> Any:
+        """
+        Passthrough to __getitem__ on the underlying 'ds' attribute.
+
+        Parameters
+        ----------
+        key : str
+            The name of the item to retrieve.
+
+        Returns
+        -------
+        Any
+            The value of the item retrieved from the 'ds' attribute.
+        """
+        return self.ds[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """
+        Sets a variable in the netCDF.
+
+        Parameters
+        ----------
+        key : str
+            Key to set
+        value : any
+            Value to set
+        """
+        with Dataset(self.file, "a") as ds:
+            ds[key][:] = value
+
+    def __repr__(self) -> str:
+        return f"LUT(wl={self.wl.size}, grid={self.sizes})"
+
 
 class Reader:
     def load(
-        self,
         file,
         mode: str = "a",
         lock: bool = False,
@@ -247,7 +281,7 @@ class Reader:
 
         if dask:
             Logger.debug(f"Using Dask to load: {file}")
-            ds = xr.open_mfdataset([self.file], mode=mode, lock=lock, **kwargs)
+            ds = xr.open_mfdataset([file], mode=mode, lock=lock, **kwargs)
         else:
             Logger.debug(f"Using Xarray to load: {file}")
             ds = xr.open_dataset(file, mode=mode, lock=lock, **kwargs)
@@ -405,7 +439,7 @@ class Reader:
     @staticmethod
     def resample_xarray(lut, wl, fwhm, srf_file=""):
         """To support OCI resampling"""
-        
+
         # Discover variables along the wl dim
         keys = {key for key in lut if "wl" in lut[key].dims} - {"fwhm"}
 

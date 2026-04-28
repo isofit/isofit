@@ -26,7 +26,8 @@ import numpy as np
 import yaml
 
 from isofit.core.common import combos, spectral_response_function
-from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+from isofit.atmosphere import Atmosphere
+from isofit.luts import Writer
 
 Logger = logging.getLogger(__file__)
 
@@ -150,7 +151,7 @@ def reduce_points(points, Xproj_vectors, Xproj_values, Xmu, Xsigma):
     return Z @ H
 
 
-class KernelFlowsRT(RadiativeTransferEngine):
+class KernelFlowsRT(Atmosphere, Writer):
     """
     Radiative transfer emulation based on KernelFlows.jl and VSWIREmulator.jl. A description of
     the model can be found in:
@@ -160,10 +161,11 @@ class KernelFlowsRT(RadiativeTransferEngine):
         and cross validation (2024). Submitted to Atmospheric Measurement Techniques.
     """
 
-    def __init__(self, engine_config: RadiativeTransferEngineConfig, **kwargs):
+    def __init__(self, full_config: AtmosphereConfig, **kwargs):
+        super().__init__(full_config, **kwargs)
 
         # read VSWIREmulator struct from jld2 file into a dictionary
-        self.f = self.h5_to_dict(h5py.File(engine_config.emulator_file, "r"))
+        self.f = self.h5_to_dict(h5py.File(self.config.emulator_file, "r"))
 
         self.emulator_wl = self.f["wls"]
         self.emulator_internal_idx = self.f["inputdims"].astype(int)
@@ -173,7 +175,7 @@ class KernelFlowsRT(RadiativeTransferEngine):
         self.points_bound_min = self.f["xmin"]
         self.points_bound_max = self.f["xmax"]
 
-        with open(engine_config.template_file, "r") as tpl_f:
+        with open(self.config.template_file, "r") as tpl_f:
             template = yaml.safe_load(tpl_f)
         try:
             # global KEYMAPPING
@@ -232,9 +234,6 @@ class KernelFlowsRT(RadiativeTransferEngine):
             lambda x: np.exp(x) - 0.1,
         ]
 
-        # Run super now....we need the lut_grid to go on
-        super().__init__(engine_config, **kwargs)
-
         # override default radiative transfer simulation mode
         # as KernelFlowsGP always runs in radiance space
         self.rt_mode = "rdn"
@@ -286,7 +285,7 @@ class KernelFlowsRT(RadiativeTransferEngine):
 
     def preSim(self):
         # Track the KernelFlows directory used in the LUT attributes
-        self.lut.setAttr("KernelFlows", str(self.engine_config.emulator_file))
+        self.lut.setAttr("KernelFlows", str(self.config.emulator_file))
 
         logging.info(f"KF Presim")
         self.srf_matrix = np.array(
