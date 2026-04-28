@@ -418,6 +418,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         sixs = sim.lut[aux_rt_quantities]
         if groups := getattr(self.lut, "groups", None):
             from rich.console import Console
+            from rich.progress import Progress
 
             Console = Console()
             with Progress(console=Console) as progress:
