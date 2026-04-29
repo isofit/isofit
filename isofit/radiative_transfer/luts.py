@@ -521,6 +521,7 @@ class CreateZarr(Create):
                 min_shards=self.min_shards,
                 scale=len(self.alldim),
             )
+            self.setAttr("shards", self.shards.tolist())
 
         self.z.attrs.update(self.attrs)
 

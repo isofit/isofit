@@ -423,8 +423,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             # Console = Console()
             # with Progress(console=Console) as progress:
             #     for group in progress.track(groups, "Interpolating Shards"):
-            for group in groups:
+            for i, group in enumerate(groups):
+                print(f"Processing shard {i} of {len(groups)}")
                 slices = self.lut.coords[group]
+                slices = dict(zip(list(sixs.dims), slices))
                 sim = sixs[slices].load()
                 data = self.process(sim, slices)
                 self.lut.flush_buffer(slices)
