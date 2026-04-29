@@ -420,12 +420,12 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             sixs = sixs.unstack()
 
             for i, group in enumerate(groups):
-                print(f"Processing shard {i} of {len(groups)}")
+                print(f"Processing shard {i+1} of {len(groups)}")
                 slices = self.lut.coords[group]
                 # self.sim_sol_irr = sim_sol_irr[slices]
                 slices = dict(zip(list(sixs.dims), slices))
                 sim = sixs[slices].load()
-                sim = sim.stack(list(sim.dims)[1:]).transpose("point", "wl")
+                sim = sim.stack(point=list(sim.dims)[1:]).transpose("point", "wl")
                 data = self.process(sim)
                 self.lut.flush_buffer(slices)
                 del sim
