@@ -18,6 +18,7 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
+import logging
 import json
 import os
 from collections import OrderedDict
@@ -34,6 +35,10 @@ from numba import float64, int32, njit
 from scipy.interpolate import RegularGridInterpolator
 
 from isofit.core import units
+from isofit.data import env
+
+
+Logger = logging.getLogger(__name__)
 
 # small value used in finite difference derivatives
 eps = 1e-5

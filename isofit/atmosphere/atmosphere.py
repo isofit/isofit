@@ -127,6 +127,8 @@ class BaseAtmosphere(Reader):
         # Configure and exit flag
         self.configure_and_exit = self.config.configure_and_exit
 
+        self.multipart_transmittance = self.config.multipart_transmittance
+
         lut_exists = os.path.isfile(self.lut_path)
         if lut_exists:
             Logger.info("Prebuilt LUT provided")

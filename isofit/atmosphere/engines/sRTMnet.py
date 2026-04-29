@@ -323,9 +323,10 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
     _disable_makeSim = True
 
     def __init__(self, full_config, **kwargs):
+        self.full_config = full_config
+
         super().__init__(full_config, **kwargs)
 
-        self.full_config = full_config
 
     def _lut(self, build_interpolators):
         self.write()
