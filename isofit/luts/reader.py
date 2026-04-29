@@ -6,8 +6,8 @@ import logging
 import os
 from functools import reduce
 from pathlib import Path
-from typing import Any, List, Union
 from types import SimpleNamespace
+from typing import Any, List, Union
 
 import numpy as np
 import xarray as xr
@@ -26,7 +26,7 @@ class LUT:
         ds,
         n_lut_input_dim: int,
         indices: SimpleNamespace,
-        lut_interpolators: dict = {}
+        lut_interpolators: dict = {},
     ):
         self.n_lut_input_dim = n_lut_input_dim
         self.indices = indices
@@ -36,7 +36,7 @@ class LUT:
         self.lut_inteprolators = lut_interpolators
         self.cached = SimpleNamespace(point=np.array([]))
 
-    def __call__(x_RT: np.array, geom: Geometry):
+    def __call__(self, x_RT: np.array, geom: Geometry):
         """
         Retrieves the interpolation values for a given point
 
@@ -114,21 +114,21 @@ class LUT:
 
     def __repr__(self):
         lut_dict = {
-            coord: np.unique(self.ds.coords[coord].values) 
-            for coord in self.ds.coords 
-            if coord not in ['wl', 'point']
+            coord: np.unique(self.ds.coords[coord].values)
+            for coord in self.ds.coords
+            if coord not in ["wl", "point"]
         }
 
         header = f"<LUT>"
         lines = [header]
-        
+
         for name, values in lut_dict.items():
             n_points = len(values)
             v_min, v_max = values.min(), values.max()
-            
+
             line = f"{name:<8} - ({n_points} pts): [{v_min}...{v_max}]"
             lines.append(line)
-            
+
         return "\n".join(lines)
 
 
