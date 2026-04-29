@@ -1115,8 +1115,8 @@ def load(
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
-    if coupling not in ("before", "before-save", "after", "after-save"):
-        raise AttributeError("Coupling must be set to either 'before' or 'after'")
+    # if coupling not in ("before", "before-save", "after", "after-save"):
+    #     raise AttributeError("Coupling must be set to either 'before' or 'after'")
 
     if file.endswith(".zarr"):
         if dask:
@@ -1230,10 +1230,10 @@ def load(
         Logger.info("Loading LUT into memory")
         ds.load()
 
-    # Handle NaNs in the LUT. Keep as is (if all NaN). Set to 0 (if partial NaN)
-    Logger.debug("Attempting to detect NaNs")
-
     if check:
+        # Handle NaNs in the LUT. Keep as is (if all NaN). Set to 0 (if partial NaN)
+        Logger.debug("Attempting to detect NaNs")
+
         for key, data in ds.items():
             nans = data.isnull()
             if nans.any():
