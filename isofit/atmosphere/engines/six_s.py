@@ -28,7 +28,7 @@ import numpy as np
 
 from isofit.atmosphere import BaseAtmosphere
 from isofit.core import units
-from isofit.core.common import resample_spectrum, load_esd
+from isofit.core.common import load_esd, resample_spectrum
 from isofit.data import env
 from isofit.data.cli.sixs import get_exe
 from isofit.luts import Writer
@@ -83,15 +83,15 @@ class SixSRT(BaseAtmosphere, Writer):
 
         self.modtran_emulation = modtran_emulation
 
+        self.wl = wl
+        self.fwhm = fwhm
+
         # Overwrite the wavelengths, because we're going to use these no matter what (6S runs at 2.5 nm)
         # NOTE - this wavelength range is fairly inclusive, but need not be hardcoded at these start and end points
         if not any(wl):
             wl = np.arange(350, 2500 + 2.5, 2.5)
         if not any(fwhm):
             fwhm = np.full(self.wl.size, 2.0)
-
-        self.wl = wl
-        self.fwhm = fwhm
 
         super().__init__(full_config, wl=self.wl, fwhm=self.fwhm, **kwargs)
 
