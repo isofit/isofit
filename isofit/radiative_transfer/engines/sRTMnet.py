@@ -413,7 +413,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             sol_irr = aux["solar_irr"]  # Otherwise, use sRTMnet f0
         irr_ref = sim.esd[200, 1]  # Irradiance factor
         irr_cur = sim.esd[sim.day_of_year - 1, 1]  # Factor for current date
-        sim_sol_irr = sol_irr * irr_ref**2 / irr_cur**2
+        self.sim_sol_irr = sol_irr * irr_ref**2 / irr_cur**2
 
         sixs = sim.lut[aux_rt_quantities]
         if groups := getattr(self.lut, "groups", None):
@@ -422,7 +422,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             for i, group in enumerate(groups):
                 print(f"Processing shard {i} of {len(groups)}")
                 slices = self.lut.coords[group]
-                self.sim_sol_irr = sim_sol_irr[slices]
+                # self.sim_sol_irr = sim_sol_irr[slices]
                 slices = dict(zip(list(sixs.dims), slices))
                 sim = sixs[slices].load()
                 sim = sim.stack(list(sim.dims)[1:]).transpose("point", "wl")
