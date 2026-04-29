@@ -420,11 +420,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         sixs = sim.lut[aux_rt_quantities]
         if groups := getattr(self.lut, "groups", None):
-            dims = list(self.lut_grid)
-            sixs = sixs.unstack().transpose("wl", *dims)
-            outshape = sixs.attrs["shards"]
-            outshape[0] = len(self.wl)
-            outshape = tuple(outshape)
+            dims = sim.lut.attrs["shard order"]
+            order = list(self.lut_grid)
+            sixs = sixs.unstack().transpose("wl", *order)
+            outshape = tuple(self.lut.shards)
 
             from isofit.core.common import Track
 
@@ -456,12 +455,11 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             ),
         }
 
+    def process(self, sim, outshape):
+        """ """
         ## Prepare the sim results for the emulator
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
         # Safe to replace here
-
-    def process(self, sim, outshape):
-        """ """
         if sim.isnull().any():
             Logger.debug("Simulator detected to have NaNs, replacing with 0s")
             sim = sim.fillna(0)

@@ -522,6 +522,7 @@ class CreateZarr(Create):
                 scale=len(self.alldim),
             )
             self.setAttr("shards", self.shards.tolist())
+            self.setAttr("shard order", list(self.sizes))
 
         self.z.attrs.update(self.attrs)
 

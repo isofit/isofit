@@ -261,6 +261,7 @@ class RadiativeTransferEngine:
                     onedim={"fwhm": fwhm},
                     compression=engine_config.lut_compression,
                     complevel=engine_config.lut_complevel,
+                    buffered=True,  # TODO: Don't forget to remove this and figure out a different way for sRTMnet to start buffered
                 )
 
             # Create and populate a LUT file
