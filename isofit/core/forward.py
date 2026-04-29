@@ -158,9 +158,6 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
-        # Special run modes:
-        self.multipart_transmittance = full_config.forward_model.multipart_transmittance
-
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
 
@@ -340,7 +337,7 @@ class ForwardModel:
                 r, geom, rho_dif_dif=rho_dif_dif
             )
         else:
-            if self.atmosphere.atmosphere_mode == "rdn":
+            if self.atmosphere.rt_mode == "rdn":
                 L_tot = r["transm_down_dif"]
             else:
                 L_tot = transm_to_rdn(
@@ -390,7 +387,7 @@ class ForwardModel:
                 transm_to_rdn(
                     r[key], coszen=geom.coszen, solar_irr=self.atmosphere.solar_irr
                 )
-                if self.atmosphere.atmosphere_mode == "transm"
+                if self.atmosphere.rt_mode == "transm"
                 else r[key]
             )
 

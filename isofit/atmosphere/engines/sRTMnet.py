@@ -32,9 +32,9 @@ import torch
 import yaml
 
 from isofit.atmosphere import BaseAtmosphere
+from isofit.atmosphere.engines import SixSRT
 from isofit.core import units
 from isofit.core.common import calculate_resample_matrix, resample_spectrum
-from isofit.atmosphere.engines import SixSRT
 from isofit.luts import Writer
 
 # Logger = logging.getLogger(__file__)
@@ -264,7 +264,7 @@ class SRTMnetModel(torch.nn.Module):
                     for _ckey, ckey in enumerate(self.component_keys):
                         outdict[ckey].append(
                             self.batch_resample(
-                                out[:, _ckey * nc:(_ckey + 1) * nc],
+                                out[:, _ckey * nc : (_ckey + 1) * nc],
                                 convert_to_rdn=False,
                                 resample_dict=resample_dict,
                             )
@@ -349,9 +349,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             self.component_mode = "6c"
 
         else:
-            raise ValueError(
-                "Invalid extension for emulator aux file. Use .npz or .6c"
-            )
+            raise ValueError("Invalid extension for emulator aux file. Use .npz or .6c")
 
         # Pack the emulator Aux the same regardless of input file type.
         # Enforce types
@@ -399,7 +397,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             wl=self.sim_wl,
             fwhm=self.sim_fwhm,
             modtran_emulation=True,
-            build_interpolators=False
+            build_interpolators=False,
         )
 
         if self.config.configure_and_exit:
@@ -407,7 +405,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         # Extract useful information from the sim
         self.esd = sim.esd
-        self.sim_lut_path = config.lut_path
+        self.sim_lut_path = self.config.lut_path
 
         # Prepare the sim results for the emulator
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
@@ -423,10 +421,10 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         # Convert our irradiance to date 0 then back to current date
         # sc - If statement to make sure tsis solar model is used if supplied
-        if os.path.basename(config.irradiance_file) == "tsis_f0_0p1.txt":
+        if os.path.basename(self.config.irradiance_file) == "tsis_f0_0p1.txt":
             # Load coarser TSIS model to match emulator expectations
             _, sol_irr = np.loadtxt(
-                os.path.split(config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
+                os.path.split(self.config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
             ).T
             sol_irr = sol_irr / 10  # Convert to uW cm-2 sr-1 nm-1
         else:
@@ -436,7 +434,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         sol_irr = sol_irr * irr_ref**2 / irr_cur**2
 
         self.emulator_sol_irr = sol_irr
-        self.emulator_coszen = sim["coszen"]
+        self.emulator_coszen = float(sim.lut["coszen"])
         self.emulator_H = calculate_resample_matrix(self.emu_wl, self.wl, self.fwhm)
 
         # Pack into dictionary for passing convenience to torch
