@@ -451,6 +451,7 @@ class CreateZarr(Create):
 
         # TODO: Integrate into config
         self.sharding = "4gb"
+        self.sharding = "128gb"  # experimental sRTMnet break the node settings
         self.shards = shards
 
         # TODO: yep
