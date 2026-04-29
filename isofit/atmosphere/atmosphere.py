@@ -143,6 +143,10 @@ class BaseAtmosphere(Reader):
             else full_config.forward_model.instrument.get("interpolator_style")
         )
 
+        self.multipart_transmittance = (
+            full_config.forward_model.atmosphere.multipart_transmittance
+        )
+
         self.coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
         self.rt_mode = self.config.rt_mode or "transm"
 
