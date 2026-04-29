@@ -433,8 +433,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             for i, group in enumerate(groups):
                 Logger.info(f"Processing shard {i+1}/{len(groups)}")
                 slices = self.lut.coords[group]
-                slices = dict(zip(dims, slices))
-                shard = sixs[slices].load()
+                todict = dict(zip(dims, slices))
+                shard = sixs[todict].load()
                 shard = shard.stack(point=dims[1:]).transpose("point", "wl")
                 Logger.debug(shard)
                 data = self.process(shard, outshape)
