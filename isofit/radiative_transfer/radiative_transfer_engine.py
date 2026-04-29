@@ -153,7 +153,7 @@ class RadiativeTransferEngine:
                 subset=engine_config.lut_names,
                 chunks={},
                 check=False,
-                coupling=None,
+                coupling="",
             )
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points = luts.extractPoints(self.lut)
