@@ -406,7 +406,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         # Extract useful information from the sim
         self.esd = sim.esd
-        self.sim_lut_path = config.lut_path
+        self.sim_lut_path = self.config.lut_path
 
         # Prepare the sim results for the emulator
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
@@ -422,10 +422,10 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         # Convert our irradiance to date 0 then back to current date
         # sc - If statement to make sure tsis solar model is used if supplied
-        if os.path.basename(config.irradiance_file) == "tsis_f0_0p1.txt":
+        if os.path.basename(self.config.irradiance_file) == "tsis_f0_0p1.txt":
             # Load coarser TSIS model to match emulator expectations
             _, sol_irr = np.loadtxt(
-                os.path.split(config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
+                os.path.split(self.config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
             ).T
             sol_irr = sol_irr / 10  # Convert to uW cm-2 sr-1 nm-1
         else:
