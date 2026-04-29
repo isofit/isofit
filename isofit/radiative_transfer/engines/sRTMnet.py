@@ -422,6 +422,9 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         if groups := getattr(self.lut, "groups", None):
             dims = list(self.lut_grid)
             sixs = sixs.unstack().transpose("wl", *dims)
+            outshape = sixs.attrs["shards"]
+            outshape[0] = len(self.wl)
+            outshape = tuple(outshape)
 
             from isofit.core.common import Track
 
@@ -434,12 +437,15 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 slices = dict(zip(dims, slices))
                 shard = sixs[slices].load()
                 shard = shard.stack(point=dims).transpose("point", "wl")
-                data = self.process(shard)
+                data = self.process(shard, outshape)
                 self.lut.flush_buffer(slices)
                 del shard
                 report(i + 1)
         else:
-            self.process(sixs)
+            outshape = (len(self.wl),) + tuple(
+                len(self.lut_grid[n]) for n in self.lut_grid
+            )
+            self.process(sixs, outshape)
 
         # Insert these into the LUT file
         return {
@@ -454,7 +460,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
         # Safe to replace here
 
-    def process(self, sim):
+    def process(self, sim, outshape):
         """ """
         if sim.isnull().any():
             Logger.debug("Simulator detected to have NaNs, replacing with 0s")
@@ -584,9 +590,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 Logger.debug(f"Cleanup {key}")
                 del emulator
 
-                outshape = (len(self.wl),) + tuple(
-                    len(self.lut_grid[n]) for n in self.lut_grid
-                )
                 for outkey in lp.keys():
                     self.lut[outkey] = lp[outkey].T.reshape(outshape)
                 self.lut.flush()
