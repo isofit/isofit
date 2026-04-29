@@ -152,7 +152,7 @@ class RadiativeTransferEngine:
                 lut_path,
                 subset=engine_config.lut_names,
                 chunks={},
-                checks=False,
+                check=False,
                 coupling=None,
             )
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
