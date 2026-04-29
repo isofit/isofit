@@ -104,7 +104,7 @@ class SixSRT(BaseAtmosphere, Writer):
             self.co2_mode = True
 
         # TODO Add check that sim path exists
-        self.sim_path = self.config_atmosphere.sim_path
+        self.sim_path = self.config.sim_path
 
         # If the LUT file already exists, still need to calc this post init
         if not hasattr(self, "esd"):

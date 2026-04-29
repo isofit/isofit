@@ -45,7 +45,7 @@ class LibRadTranRT(BaseAtmosphere, Writer):
         super().__init__(full_config, **kwargs)
 
         # TODO Add check that sim path exists
-        self.sim_path = self.config_atmosphere.sim_path
+        self.sim_path = self.config.sim_path
 
         self.albedos = [0.0, 0.1, 0.5]
         self.wl_1 = 340.0
