@@ -195,7 +195,7 @@ class Instrument:
                 self.bval = np.hstack([self.bval, self.unknowns.stray_srf_uncertainty])
 
         # Determine whether the calibration is fixed.  If it is fixed,
-        # and the wavelengths of radiative transfer modeling and instrument
+        # and the wavelengths of atmospheric radiative transfer modeling and instrument
         # are the same, then we can bypass computationally expensive sampling
         # operations later.
         self.calibration_fixed = True
@@ -224,7 +224,7 @@ class Instrument:
         # First we take care of radiometric uncertainties, which add
         # in quadrature.  We sum their squared values.  Systematic
         # radiometric uncertainties account for differences in sampling
-        # and radiative transfer that manifest predictably as a function
+        # and atmospheric radiative transfer that manifest predictably as a function
         # of wavelength.
         if self.unknowns:
             if self.unknowns.channelized_radiometric_uncertainty_file is not None:

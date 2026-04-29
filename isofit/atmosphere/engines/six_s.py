@@ -23,16 +23,15 @@ import os
 import re
 import subprocess
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 
+from isofit.atmosphere import BaseAtmosphere
 from isofit.core import units
-from isofit.core.common import resample_spectrum
-from isofit.core.fileio import IO
+from isofit.core.common import load_esd, resample_spectrum
 from isofit.data import env
 from isofit.data.cli.sixs import get_exe
-from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+from isofit.luts import Writer
 
 Logger = logging.getLogger(__file__)
 
@@ -62,15 +61,13 @@ SIXS_TEMPLATE = """\
 """
 
 
-class SixSRT(RadiativeTransferEngine):
+class SixSRT(BaseAtmosphere, Writer):
     """A model of photon transport including the atmosphere."""
 
-    def __init__(
-        self,
-        engine_config: RadiativeTransferEngineConfig,
-        modtran_emulation=False,
-        **kwargs,
-    ):
+    def __init__(self, full_config, wl=[], fwhm=[], modtran_emulation=False, **kwargs):
+
+        self.config = full_config.forward_model.atmosphere
+
         current = os.environ.get("SIXS_DIR")
         if not current:
             Logger.debug(f"Setting SIXS_DIR={env.sixs}")
@@ -90,25 +87,35 @@ class SixSRT(RadiativeTransferEngine):
 
         # Overwrite the wavelengths, because we're going to use these no matter what (6S runs at 2.5 nm)
         # NOTE - this wavelength range is fairly inclusive, but need not be hardcoded at these start and end points
-        self.wl = np.arange(350, 2500 + 2.5, 2.5)
-        self.fwhm = np.full(self.wl.size, 2.0)
+        if not any(wl):
+            wl = np.arange(350, 2500 + 2.5, 2.5)
+        if not any(fwhm):
+            fwhm = np.full(wl.size, 2.0)
 
-        kwargs["wl"] = self.wl
-        kwargs["fwhm"] = self.fwhm
+        self.wl = wl
+        self.fwhm = fwhm
 
-        self.engine_base_dir = engine_config.engine_base_dir
-        self.exe = get_exe(self.engine_base_dir)
+        self.engine_base_dir = self.config.engine_base_dir
+        self.exe = get_exe(self.config.engine_base_dir)
         Logger.debug(f"Using 6S executable: {self.exe}")
 
         self.co2_mode = False
         if "CO2" in self.exe.name:
             self.co2_mode = True
 
-        super().__init__(engine_config, **kwargs)
+        # TODO Add check that sim path exists
+        self.sim_path = self.config.sim_path
 
         # If the LUT file already exists, still need to calc this post init
         if not hasattr(self, "esd"):
             self.load_esd()
+
+        super().__init__(full_config, wl=self.wl, fwhm=self.fwhm, **kwargs)
+
+    def _lut(self, build_interpolators):
+        self.write()
+
+        return super()._lut(build_interpolators)
 
     def preSim(self):
         """
@@ -138,7 +145,7 @@ class SixSRT(RadiativeTransferEngine):
 
         cmd = self.rebuild_cmd(point, wlinf=self.wl[0], wlsup=self.wl[-1])
 
-        if not self.engine_config.rte_configure_and_exit:
+        if not self.config.configure_and_exit:
             call = subprocess.run(cmd, shell=True, capture_output=True)
             if call.stdout:
                 Logger.error(call.stdout.decode())
@@ -175,7 +182,7 @@ class SixSRT(RadiativeTransferEngine):
         self.load_esd()
 
         try:
-            irr = np.loadtxt(self.engine_config.irradiance_file, comments="#")
+            irr = np.loadtxt(self.config.irradiance_file, comments="#")
         except FileNotFoundError:
             raise FileNotFoundError(
                 "Solar irradiance file not found on system. "
@@ -212,10 +219,10 @@ class SixSRT(RadiativeTransferEngine):
             "AOT550": 0.01,
             "H2OSTR": 0,
             "O3": 0.30,
-            "day": self.engine_config.day,
-            "month": self.engine_config.month,
-            "elev": abs(max(self.engine_config.elev, 0)),
-            "alt": min(self.engine_config.alt, 99),
+            "day": self.config.day,
+            "month": self.config.month,
+            "elev": abs(max(self.config.elev, 0)),
+            "alt": min(self.config.alt, 99),
             "atm_file": None,
             "abscf_data_directory": None,
             "wlinf": units.nm_to_micron(wlinf),
@@ -226,10 +233,10 @@ class SixSRT(RadiativeTransferEngine):
 
         # Assume geometry values are provided by the config
         vals.update(
-            solzen=self.engine_config.solzen,
-            viewzen=self.engine_config.viewzen,
-            solaz=self.engine_config.solaz,
-            viewaz=self.engine_config.viewaz,
+            solzen=self.config.solzen,
+            viewzen=self.config.viewzen,
+            solaz=self.config.solaz,
+            viewaz=self.config.viewaz,
         )
 
         # Add the point with its names
@@ -247,7 +254,7 @@ class SixSRT(RadiativeTransferEngine):
         if "observer_altitude_km" in vals:
             vals["alt"] = min(vals["observer_altitude_km"], 99)
 
-        ### ASL to AGL
+        # ASL to AGL
         vals["alt"] = max(min(vals["alt"] - vals["elev"], 99), 0.01)
 
         if "observer_azimuth" in vals:
@@ -295,9 +302,9 @@ class SixSRT(RadiativeTransferEngine):
         """
         Loads the earth-sun distance file
         """
-        self.esd = IO.load_esd()
+        self.esd = load_esd()
 
-        dt = datetime(2000, self.engine_config.month, self.engine_config.day)
+        dt = datetime(2000, self.config.month, self.config.day)
         self.day_of_year = dt.timetuple().tm_yday
         self.irr_factor = self.esd[self.day_of_year - 1, 1]
 

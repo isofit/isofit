@@ -25,22 +25,27 @@ from pathlib import Path
 
 import numpy as np
 
+from isofit.atmosphere import BaseAtmosphere
 from isofit.core.common import (
     calculate_resample_matrix,
     json_load_ascii,
+    load_esd,
     resample_spectrum,
 )
-from isofit.core.fileio import IO
 from isofit.core.units import cm_to_mm, transm_to_rdn
 from isofit.data import env
-from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+from isofit.luts import Writer
 
 Logger = logging.getLogger(__name__)
 
 
-class LibRadTranRT(RadiativeTransferEngine):
+class LibRadTranRT(BaseAtmosphere, Writer):
 
-    def __init__(self, engine_config: RadiativeTransferEngineConfig, **kwargs):
+    def __init__(self, full_config, **kwargs):
+        super().__init__(full_config, **kwargs)
+
+        # TODO Add check that sim path exists
+        self.sim_path = self.config.sim_path
 
         self.albedos = [0.0, 0.1, 0.5]
         self.wl_1 = 340.0
@@ -77,10 +82,10 @@ class LibRadTranRT(RadiativeTransferEngine):
         self.sh_template = "#!/bin/bash\n" "cd {lrt_bin_dir}\n" "{uvspecs}\n"
 
         # Retrieve the path to libRadtran
-        if engine_config.engine_base_dir:
-            self.libradtran = engine_config.engine_base_dir
+        if self.config.engine_base_dir:
+            self.libradtran = self.config.engine_base_dir
             Logger.debug(
-                f"Using engine_config.engine_base_dir for libRadtran path: {self.libradtran}"
+                f"Using self.config.engine_base_dir for libRadtran path: {self.libradtran}"
             )
         else:
             self.libradtran = env.path("libradtran", key="libradtran.version")
@@ -99,7 +104,7 @@ class LibRadTranRT(RadiativeTransferEngine):
         if not self.libradtran.exists():
             error = f"""\
 LibRadTran directory not found: {self.libradtran}. Please use one of the following to set it correctly:
-- Configuration: engine_config.engine_base_dir
+- Configuration: self.config.engine_base_dir
 - ISOFIT ini: libradtran
 - Environment variable: LIBRADTRAN_DIR\
 """
@@ -108,7 +113,10 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         self.lrt_bin_dir = abspath(join(self.libradtran, "bin"))
 
-        super().__init__(engine_config, **kwargs)
+    def _lut(self, build_interpolators):
+        self.write()
+
+        return super()._lut(build_interpolators)
 
     def preSim(self):
 
@@ -117,7 +125,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         self.matrix_H = calculate_resample_matrix(self.lrt_wl, self.wl, self.fwhm)
 
         # load static information from MODTRAN template
-        self.template = json_load_ascii(self.engine_config.template_file)["MODTRAN"]
+        self.template = json_load_ascii(self.config.template_file)["MODTRAN"]
         self.modtran_geom = self.template[0]["MODTRANINPUT"]["GEOMETRY"]
         self.modtran_surf = self.template[0]["MODTRANINPUT"]["SURFACE"]
         self.modtran_atmos = self.template[0]["MODTRANINPUT"]["ATMOSPHERE"]
@@ -173,7 +181,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             raise ValueError("Verify units of solar irradiance are in uW/nm/cm2.")
 
         # apply ESD correction
-        self.esd = IO.load_esd()
+        self.esd = load_esd()
         irr_ref = self.esd[200, 1]
         irr_cur = self.esd[self.day_of_year - 1, 1]
         solar_irr = solar_irr * irr_ref**2 / irr_cur**2
@@ -210,7 +218,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             Logger.warning(f"libRadtran sim files already exist for point {point}")
             return
 
-        if not self.engine_config.rte_configure_and_exit:
+        if not self.config.configure_and_exit:
             call = subprocess.run(
                 cmd, shell=True, capture_output=True, cwd=self.lrt_bin_dir
             )
@@ -317,16 +325,16 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
                 "wl_2": self.wl_2,
                 "wl_res_out": self.wl_res_out,
                 "path_solar": self.path_solar,
-                "band_model": self.engine_config.reptran_band_model,
+                "band_model": self.config.reptran_band_model,
                 "atmos": self.atmosphere_type_lrt,
                 "libradtran_dir": self.libradtran,
                 "nstr": self.nstr,
-                "ssa_scale": self.engine_config.ssa_scale,
-                "gg_set": self.engine_config.gg_set,
-                "tau_file": self.engine_config.tau_file,
-                "ssa_file": self.engine_config.ssa_file,
-                "gg_file": self.engine_config.gg_file,
-                "moments_file": self.engine_config.moments_file,
+                "ssa_scale": self.config.ssa_scale,
+                "gg_set": self.config.gg_set,
+                "tau_file": self.config.tau_file,
+                "ssa_file": self.config.ssa_file,
+                "gg_file": self.config.gg_file,
+                "moments_file": self.config.moments_file,
             }
         )
 
@@ -395,36 +403,36 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         # see docs page for more information here, https://www.libradtran.org
         # King-Byrne vs. internal libradtran spline-interp based AOD at 550 and aerosol profile.
         lrt_run_inp = self.libradtran_inp_template
-        if self.engine_config.kb_alpha_1 is not None:
+        if self.config.kb_alpha_1 is not None:
             vals["alpha_0"] = (
                 np.log(vals["aot"])
-                - (self.engine_config.kb_alpha_1 * np.log(0.550))
-                - (self.engine_config.kb_alpha_2 * (np.log(0.550) ** 2))
+                - (self.config.kb_alpha_1 * np.log(0.550))
+                - (self.config.kb_alpha_2 * (np.log(0.550) ** 2))
             )
-            vals["alpha_1"] = self.engine_config.kb_alpha_1
-            vals["alpha_2"] = self.engine_config.kb_alpha_2
+            vals["alpha_1"] = self.config.kb_alpha_1
+            vals["alpha_2"] = self.config.kb_alpha_2
 
             lrt_run_inp += "aerosol_king_byrne {alpha_0} {alpha_1} {alpha_2}\n"
 
         else:
             lrt_run_inp += "aerosol_set_tau_at_wvl 550 {aot}\n"
 
-        if self.engine_config.ssa_scale is not None:
+        if self.config.ssa_scale is not None:
             lrt_run_inp += "aerosol_modify ssa scale {ssa_scale}\n"
 
-        if self.engine_config.gg_set is not None:
+        if self.config.gg_set is not None:
             lrt_run_inp += "aerosol_modify gg set {gg_set}\n"
 
-        if self.engine_config.tau_file is not None:
+        if self.config.tau_file is not None:
             lrt_run_inp += "aerosol_file tau {tau_file}\n"
 
-        if self.engine_config.ssa_file is not None:
+        if self.config.ssa_file is not None:
             lrt_run_inp += "aerosol_file ssa {ssa_file}\n"
 
-        if self.engine_config.gg_file is not None:
+        if self.config.gg_file is not None:
             lrt_run_inp += "aerosol_file gg {gg_file}\n"
 
-        if self.engine_config.moments_file is not None:
+        if self.config.moments_file is not None:
             lrt_run_inp += "aerosol_file moments {moments_file}\n"
 
         runs = [

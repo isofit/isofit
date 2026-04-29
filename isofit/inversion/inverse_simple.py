@@ -84,7 +84,7 @@ def heuristic_atmosphere(
             continue
 
         # ignore unused names
-        if h2oname not in fm.atmosphere.engine.lut_names:
+        if h2oname not in fm.atmosphere.lut_names:
             continue
 
         # find the index in the lookup table associated with water vapor
@@ -95,7 +95,7 @@ def heuristic_atmosphere(
         # calculating the band ratio that we would see if this were the
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in fm.atmosphere.engine.lut_grid[h2oname]:
+        for h2o in fm.atmosphere.lut_grid[h2oname]:
             # Get Atmospheric terms at high spectral resolution
             x_atmosphere_guess = x_atmosphere.copy()
             x_atmosphere_guess[ind_sv] = h2o

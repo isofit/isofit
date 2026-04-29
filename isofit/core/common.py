@@ -18,6 +18,7 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
+import logging
 import json
 import os
 from collections import OrderedDict
@@ -34,6 +35,10 @@ from numba import float64, int32, njit
 from scipy.interpolate import RegularGridInterpolator
 
 from isofit.core import units
+from isofit.data import env
+
+
+Logger = logging.getLogger(__name__)
 
 # small value used in finite difference derivatives
 eps = 1e-5
@@ -1042,3 +1047,56 @@ def compare(a, b, threshold=0.8, not_same=True):
                 matches.setdefault(x, []).append(y)
 
     return matches
+
+
+def saveDataset(file: str, ds: xr.Dataset) -> None:
+    """
+    Handles saving an xarray.Dataset to a NetCDF file for ISOFIT. Will detect if the
+    point dim needs to be unstacked before saving (regular grids) or not (irregular)
+
+    Parameters
+    ----------
+    file: str
+        Path to save the `ds` object to. This will be a NetCDF, recommended extension
+        is `.nc`
+    ds: xarray.Dataset
+        Data object to save
+    """
+    if "MultiIndex" in str(ds.indexes["point"]):
+        ds = ds.unstack("point")
+
+    ds.to_netcdf(file)
+
+
+def load_esd(file=None):
+    """
+    Loads an earth_sun_distance file. Defaults to the
+    [env.data]/earth_sun_distance.txt if not provided
+
+    Parameters
+    ----------
+    file : str, default=None
+        ESD file to load
+
+    Returns
+    -------
+    np.array
+        Loaded ESD. If the file fails to load, creates a default
+    """
+    if file is None:
+        file = env.path("data", "earth_sun_distance.txt")
+
+    try:
+        esd = np.loadtxt(file)
+        logging.debug(f"Loaded ESD from file: {file}")
+    except FileNotFoundError:
+        logging.warning(
+            "Earth-sun-distance file not found on system. "
+            "Proceeding without might cause some inaccuracies down the line."
+        )
+        esd = np.ones((366, 2))
+        esd[:, 0] = np.arange(1, 367, 1)
+
+    return esd
+
+

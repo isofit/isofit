@@ -30,15 +30,15 @@ import h5py
 import numpy as np
 import torch
 import yaml
-from scipy.interpolate import interp1d
 
+from isofit.atmosphere import BaseAtmosphere
+from isofit.atmosphere.engines import SixSRT
 from isofit.core import units
 from isofit.core.common import calculate_resample_matrix, resample_spectrum
-from isofit.radiative_transfer import luts
-from isofit.radiative_transfer.engines import SixSRT
-from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+from isofit.luts import Writer
 
-Logger = logging.getLogger(__file__)
+# Logger = logging.getLogger(__file__)
+Logger = logging.getLogger()
 
 
 class SRTMnetModel(torch.nn.Module):
@@ -293,7 +293,7 @@ class SRTMnetModel(torch.nn.Module):
         return outdict
 
 
-class SimulatedModtranRT(RadiativeTransferEngine):
+class SimulatedModtranRT(BaseAtmosphere, Writer):
     """
     A hybrid surrogate-model and emulator of MODTRAN-like results.  A description of
     the model can be found in:
@@ -322,34 +322,38 @@ class SimulatedModtranRT(RadiativeTransferEngine):
     }
     _disable_makeSim = True
 
+    def __init__(self, full_config, **kwargs):
+        self.full_config = full_config
+
+        super().__init__(full_config, **kwargs)
+
+    def _lut(self, build_interpolators):
+        self.write()
+
+        return super()._lut(build_interpolators)
+
     def preSim(self):
         """
         sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins
         simulations itself
         """
-        Logger.info("Creating a simulator configuration")
-        # Create a copy of the engine_config and populate it with 6S parameters
-        config = build_sixs_config(self.engine_config)
-
         # Track the sRTMnet file used in the LUT attributes
-        self.lut.setAttr("sRTMnet", str(config.emulator_file))
+        # self.lut.setAttr("sRTMnet", str(config.emulator_file))
 
         # Get the component mode up front
-        if self.engine_config.emulator_file.endswith(".h5"):
+        if self.config.emulator_file.endswith(".h5"):
             self.component_mode = "3c"
 
-        elif self.engine_config.emulator_file.endswith(".6c"):
+        elif self.config.emulator_file.endswith(".6c"):
             self.component_mode = "6c"
 
         else:
-            raise ValueError(
-                f"Invalid extension for emulator aux file. Use .npz or .6c"
-            )
+            raise ValueError("Invalid extension for emulator aux file. Use .npz or .6c")
 
         # Pack the emulator Aux the same regardless of input file type.
         # Enforce types
         if self.component_mode == "3c":
-            aux = dict(np.load(config.emulator_aux_file, allow_pickle=True))
+            aux = dict(np.load(self.config.emulator_aux_file, allow_pickle=True))
             aux_dict = {}
             for key, value in self.aux_quantities.items():
                 if len(aux.get(key, [])):
@@ -359,7 +363,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         else:
             aux = {}
-            with h5py.File(config.emulator_file, "r") as model:
+            with h5py.File(self.config.emulator_file, "r") as model:
                 for key, value in self.aux_quantities.items():
                     if value == dict:
                         aux[key] = {
@@ -381,31 +385,33 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         self.sim_wl = np.arange(350, 2500 + 2.5, 2.5)
         self.sim_fwhm = np.full(self.sim_wl.size, 2.0)
 
+        Logger.info("Creating a simulator configuration")
+        # Create a copy of the engine_config and populate it with 6S parameters
+        full_config = build_sixs_config(self.full_config)
+
         # Build the 6S simulations
         Logger.info("Building simulator and executing (6S)")
         sim = SixSRT(
-            config,
+            full_config,
             wl=self.sim_wl,
             fwhm=self.sim_fwhm,
-            lut_path=config.lut_path,
-            lut_grid=self.lut_grid,
             modtran_emulation=True,
             build_interpolators=False,
         )
 
-        if self.engine_config.rte_configure_and_exit:
+        if self.config.configure_and_exit:
             return
 
         # Extract useful information from the sim
         self.esd = sim.esd
-        self.sim_lut_path = config.lut_path
+        self.sim_lut_path = self.config.lut_path
 
-        ## Prepare the sim results for the emulator
+        # Prepare the sim results for the emulator
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
         # Safe to replace here
         if sim.lut[aux_rt_quantities].isnull().any():
             Logger.debug("Simulator detected to have NaNs, replacing with 0s")
-            sim.lut = sim.lut.fillna(0)
+            sim.lut.ds = sim.lut.ds.fillna(0)
 
         # Interpolate the sim results from its wavelengths to the emulator wavelengths
         Logger.info("Interpolating simulator quantities to emulator size")
@@ -414,10 +420,10 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # Convert our irradiance to date 0 then back to current date
         # sc - If statement to make sure tsis solar model is used if supplied
-        if os.path.basename(config.irradiance_file) == "tsis_f0_0p1.txt":
+        if os.path.basename(self.config.irradiance_file) == "tsis_f0_0p1.txt":
             # Load coarser TSIS model to match emulator expectations
             _, sol_irr = np.loadtxt(
-                os.path.split(config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
+                os.path.split(self.config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
             ).T
             sol_irr = sol_irr / 10  # Convert to uW cm-2 sr-1 nm-1
         else:
@@ -427,7 +433,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         sol_irr = sol_irr * irr_ref**2 / irr_cur**2
 
         self.emulator_sol_irr = sol_irr
-        self.emulator_coszen = sim["coszen"]
+        self.emulator_coszen = float(sim.lut["coszen"])
         self.emulator_H = calculate_resample_matrix(self.emu_wl, self.wl, self.fwhm)
 
         # Pack into dictionary for passing convenience to torch
@@ -439,8 +445,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             "emulator_coszen": self.emulator_coszen,
             "emulator_sol_irr": self.emulator_sol_irr,
         }
-
-        import multiprocessing
 
         Logger.info(f"Loading and predicting with emulator on {self.n_cores} cores")
 
@@ -459,14 +463,14 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             response_offset = aux.get("response_offset", 0.0)
 
             emulator = SRTMnetModel(
-                input_file=self.engine_config.emulator_file,
+                input_file=self.config.emulator_file,
                 key="3c",
                 n_cores=self.n_cores,
             )
             lp = emulator.predict(
                 [data.values],  # surrogate data (6S)
                 [resample.values],  #  stacked 3c data interpolated to emulator wl
-                batch_size=self.engine_config.emulator_batch_size,
+                batch_size=self.config.emulator_batch_size,
                 response_scaler=[response_scaler],
                 response_offset=[response_offset],
                 resample_dict=resample_dict,
@@ -486,7 +490,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             add_vector = None
             if len(feature_point_names) > 0 and feature_point_names[0] != "None":
                 # Populate the 6S parameter values from a modtran template file
-                with open(self.engine_config.template_file, "r") as file:
+                with open(self.config.template_file, "r") as file:
                     data = yaml.safe_load(file)["MODTRAN"][0]["MODTRANINPUT"]
 
                 add_vector = np.zeros((self.points.shape[0], len(feature_point_names)))
@@ -524,7 +528,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 Logger.debug(f"Loading emulator {key}")
 
                 emulator = SRTMnetModel(
-                    input_file=self.engine_config.emulator_file,
+                    input_file=self.config.emulator_file,
                     key=key,
                     n_cores=self.n_cores,
                 )
@@ -538,7 +542,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                     [
                         resample[x].values for x in mapping[key]
                     ],  #  6S data interpolated to emulator wl
-                    batch_size=self.engine_config.emulator_batch_size,
+                    batch_size=self.config.emulator_batch_size,
                     response_scaler=response_scaler,
                     response_offset=response_offset,
                     resample_dict=resample_dict,
@@ -566,8 +570,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # Insert these into the LUT file
         return {
-            "coszen": sim["coszen"],
-            "solzen": sim["solzen"],
+            "coszen": sim.lut["coszen"],
+            "solzen": sim.lut["solzen"],
             "solar_irr": resample_spectrum(sol_irr, self.emu_wl, self.wl, self.fwhm),
         }
 
@@ -591,17 +595,18 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         return {}
 
 
-def build_sixs_config(engine_config):
+def build_sixs_config(config):
     """
     Builds a configuration object for a 6S simulation using a MODTRAN template
     """
-    if not os.path.exists(engine_config.template_file):
-        raise FileNotFoundError(
-            f"MODTRAN template file does not exist: {engine_config.template_file}"
-        )
-
     # First create a copy of the starting config
-    config = deepcopy(engine_config)
+    full_config = deepcopy(config)
+    config = full_config.forward_model.atmosphere
+
+    if not os.path.exists(config.template_file):
+        raise FileNotFoundError(
+            f"MODTRAN template file does not exist: {config.template_file}"
+        )
 
     # Populate the 6S parameter values from a modtran template file
     with open(config.template_file, "r") as file:
@@ -646,4 +651,6 @@ def build_sixs_config(engine_config):
     path = Path(config.lut_path)
     config.lut_path = path.parent / f"6S.{path.name}"
 
-    return config
+    full_config.forward_model.atmosphere = config
+
+    return full_config

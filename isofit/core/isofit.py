@@ -178,7 +178,7 @@ class Isofit:
         # Loop through index pairs and run workers
         loop_total_time = 0
         loop_total_spectra = 0
-        cache_RT = None
+        cache_atmosphere = None
         surface_index = index_spectra_by_surface(input_config, index_pairs)
         for i, (surface_class_str, class_idx_pairs) in enumerate(surface_index.items()):
             logging.info(f"Running surfaces: {surface_class_str}")
@@ -214,7 +214,7 @@ class Isofit:
             )
 
             # Set forward model
-            fm = ForwardModel(config, cache_RT=cache_RT)
+            fm = ForwardModel(config, cache_atmosphere=cache_atmosphere)
             fm.match_statevector(self.full_statevector)
 
             logging.debug(f"Surface: {surface_class_str}")
@@ -267,7 +267,7 @@ class Isofit:
 
             # Cache RT
             if not i:
-                cache_RT = fm.RT
+                cache_atmosphere = fm.atmosphere
 
             del fm
 
