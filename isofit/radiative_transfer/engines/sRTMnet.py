@@ -416,6 +416,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         self.sim_sol_irr = sol_irr * irr_ref**2 / irr_cur**2
 
         self.aux = aux
+        self.sim_coszen = sim["coszen"]
 
         sixs = sim.lut[aux_rt_quantities]
         if groups := getattr(self.lut, "groups", None):
@@ -431,19 +432,19 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 Logger.info(f"Processing shard {i+1}/{len(groups)}")
                 slices = self.lut.coords[group]
                 slices = dict(zip(dims, slices))
-                sim = sixs[slices].load()
-                sim = sim.stack(point=dims).transpose("point", "wl")
-                data = self.process(sim)
+                shard = sixs[slices].load()
+                shard = shard.stack(point=dims).transpose("point", "wl")
+                data = self.process(shard)
                 self.lut.flush_buffer(slices)
-                del sim
+                del shard
                 report(i + 1)
         else:
             self.process(sixs)
 
         # Insert these into the LUT file
         return {
-            "coszen": sixs["coszen"],
-            "solzen": sixs["solzen"],
+            "coszen": sim["coszen"],
+            "solzen": sim["solzen"],
             "solar_irr": resample_spectrum(
                 self.sim_sol_irr, self.emu_wl, self.wl, self.fwhm
             ),
@@ -464,7 +465,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         resample = sim.interp({"wl": self.aux["emulator_wavelengths"]})
 
         self.emulator_sol_irr = self.sim_sol_irr
-        self.emulator_coszen = sim["coszen"]
+        self.emulator_coszen = self.sim_coszen
         self.emulator_H = calculate_resample_matrix(self.emu_wl, self.wl, self.fwhm)
 
         # Pack into dictionary for passing convenience to torch
