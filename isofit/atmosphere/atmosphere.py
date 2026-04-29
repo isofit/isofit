@@ -32,6 +32,7 @@ import numpy as np
 
 from isofit.core import common, units
 from isofit.core.common import svd_inv_sqrt
+from isofit.core.geometry import Geometry
 from isofit.luts import LUT, Reader, sub
 
 # Logger = logging.getLogger(__file__)
@@ -110,7 +111,7 @@ class BaseAtmosphere(Reader):
         wl: np.array = [],  # Wavelength override
         fwhm: np.array = [],  # fwhm override
         n_cores: int = None,  # n_core override
-        build_interpolators: bool = True
+        build_interpolators: bool = True,
     ):
         self.config = full_config.forward_model.atmosphere
 
@@ -194,15 +195,15 @@ class BaseAtmosphere(Reader):
         self.bvec = self.config.unknowns.get_element_names()
         self.bval = np.array([x for x in self.config.unknowns.get_elements()[0]])
         # Create LUT (for generic this will be fake executed
-        self.lut_names = set(list(self.lut_grid.keys()) or self.config.statevector_names)
+        self.lut_names = set(
+            list(self.lut_grid.keys()) or self.config.statevector_names
+        )
         self.n_lut_input_dim = len(self.lut_names)
         self.keys = Keys
 
         # Wrapper for the create-load logic that depends on the engine
         # create_lut will include the build logic within engines
-        self.lut = self._lut(
-            build_interpolators=build_interpolators
-        )
+        self.lut = self._lut(build_interpolators=build_interpolators)
         Logger.info("LUT grid loaded from file")
 
         # remove 'point' if added to lut_names after subsetting
@@ -272,16 +273,11 @@ class BaseAtmosphere(Reader):
         if "observer_zenith" in self.lut_grid.keys():
             if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
                 indices.convert_observer_zenith = [
-                    i
-                    for i in indices.geom
-                    if indices.geom[i] == "observer_zenith"
+                    i for i in indices.geom if indices.geom[i] == "observer_zenith"
                 ][0]
 
         # If it wasn't a geom key, it's x_RT
-        indices.x_RT = list(
-            set(range(self.n_lut_input_dim))
-            - set(indices.geom)
-        )
+        indices.x_RT = list(set(range(self.n_lut_input_dim)) - set(indices.geom))
 
         # Make sure the length of the config statevectores match the engine's assumed statevectors
         if (expected := len(self.statevec_names)) != (got := len(indices.x_RT)):
@@ -291,12 +287,7 @@ class BaseAtmosphere(Reader):
 
         # Load LUT and run coupling function in one go
         # TODO formalize pathway for pre-built LUT
-        ds = self.couple(
-            self.load(
-                file=self.lut_path,
-                subset=self.config.lut_names
-            )
-        )
+        ds = self.couple(self.load(file=self.lut_path, subset=self.config.lut_names))
 
         # Limit the wavelength per the config, does not affect data on disk
         if self.config.wavelength_range is not None:
@@ -310,12 +301,7 @@ class BaseAtmosphere(Reader):
         )
         Logger.debug(f"Interpolators built")
 
-        return LUT(
-            ds,
-            self.n_lut_input_dim,
-            indices,
-            lut_interpolators=interpolators
-        )
+        return LUT(ds, self.n_lut_input_dim, indices, lut_interpolators=interpolators)
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""
@@ -341,7 +327,7 @@ class BaseAtmosphere(Reader):
         """
 
         r = self.lut(x_RT, geom)
-        if self.engine.rt_mode == "rdn":
+        if self.rt_mode == "rdn":
             L_atm = r["rhoatm"]
         else:
             rho_atm = r["rhoatm"]
