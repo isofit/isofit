@@ -95,9 +95,10 @@ def construct_full_state(full_config):
     # Pull the rt names from the config. Seems to be most commonly present.
     atmosphere_config = full_config.forward_model.atmosphere
 
-    rt_states = vars(atmosphere_config.engine)["statevector_names"]
+    rt_states = atmosphere_config.statevector_names
     if not rt_states:
-        rt_states = sorted(atmosphere_config.engine.lut_names.keys())
+        lut_names = atmosphere_config.lut_names or atmosphere_config.lut_grid
+        rt_states = sorted(lut_names.keys()) if lut_names else []
 
     # Check for config type
     if full_config.forward_model.surface.multi_surface_flag:
@@ -286,7 +287,7 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
         )
 
         # Add the statevector names
-        config.forward_model.atmosphere.engine.statevector_names.append(key)
+        config.forward_model.atmosphere.statevector_names.append(key)
 
     return config
 

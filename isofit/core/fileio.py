@@ -374,7 +374,7 @@ class IO:
         self.n_rows = 1
         self.n_cols = 1
         self.bbl = "{" + ",".join([str(1) for n in range(len(self.meas_wl))]) + "}"
-        self.engine_name = config.forward_model.atmosphere.engine.engine_name
+        self.engine_name = config.forward_model.atmosphere.engine_name
 
         # Use the pre-defined full statevec
         if len(full_statevec):
@@ -457,6 +457,9 @@ class IO:
 
         # Load the earth sun distance data
         self.esd = load_esd()
+
+        # coszen stored as scalar in the LUT
+        self.coszen = float(forward.atmosphere.lut["coszen"].values)
 
     def get_components_at_index(self, row: int, col: int) -> InputData:
         """
@@ -812,7 +815,7 @@ class IO:
         )
         wl_names = [("Channel %i" % i) for i in range(len(wl_init))]
         bbl = "{" + ",".join([str(1) for n in range(len(wl_init))]) + "}"
-        engine_name = config.forward_model.atmosphere.engine.engine_name
+        engine_name = config.forward_model.atmosphere.engine_name
 
         for element, element_header, element_name in zip(
             *config.output.get_output_files()
@@ -847,6 +850,7 @@ class IO:
                 engine_name=engine_name,
                 isofit_version=config.implementation.isofit_version,
             )
+
 
 def write_bil_chunk(
     dat: np.array, outfile: str, line: int, shape: tuple, dtype: str = "float32"

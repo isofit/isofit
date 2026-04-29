@@ -126,7 +126,7 @@ class AtmosphereConfig(BaseConfigSection):
         atmosphere-> lut_grid.  Auto-sorted (alphabetically) below."""
 
         self._statevector_names_type = list()
-        self.statevector_names = None
+        self.statevector_names = []
         """List: Names of the statevector elements to use with this atmospheric radiative transfer engine.  Must be a subset
         of the keys in atmosphere->statevector.  If not specified, uses all keys from
         atmosphere->statevector.  Auto-sorted (alphabetically) below."""
@@ -287,6 +287,19 @@ class AtmosphereConfig(BaseConfigSection):
         self._engine_name_type = str
         self.engine_name = "Prebuilt"
 
+        # Backward compatibility: old configs nested RT engine settings under an
+        # "engine" sub-dict. Flatten those into the parent dict so all fields resolve.
+        if (
+            sub_configdic
+            and "engine" in sub_configdic
+            and isinstance(sub_configdic["engine"], dict)
+        ):
+            merged = {
+                **sub_configdic["engine"],
+                **{k: v for k, v in sub_configdic.items() if k != "engine"},
+            }
+            sub_configdic = merged
+
         self.set_config_options(sub_configdic)
 
         # Sort lut_grid
@@ -301,8 +314,7 @@ class AtmosphereConfig(BaseConfigSection):
             self.lut_names = {i: self.lut_names[i] for i in keys}
 
         # Sort statevector names
-        if self.statevector_names is not None:
-            self.statevector_names.sort()
+        self.statevector_names.sort()
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
@@ -327,7 +339,7 @@ class AtmosphereConfig(BaseConfigSection):
             errors.append("atmosphere->emulator_batch_size must be a positive integer.")
 
         # Only check for missing files when a prebuilt LUT is not provided
-        if not os.path.exists(self.lut_path):
+        if self.lut_path is None or not os.path.exists(self.lut_path):
             # Check that all input files exist
             for key in self._get_nontype_attributes():
                 value = getattr(self, key)

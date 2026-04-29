@@ -327,7 +327,6 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         super().__init__(full_config, **kwargs)
 
-
     def _lut(self, build_interpolators):
         self.write()
 
@@ -412,7 +411,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         # Safe to replace here
         if sim.lut[aux_rt_quantities].isnull().any():
             Logger.debug("Simulator detected to have NaNs, replacing with 0s")
-            sim.lut = sim.lut.fillna(0)
+            sim.lut.ds = sim.lut.ds.fillna(0)
 
         # Interpolate the sim results from its wavelengths to the emulator wavelengths
         Logger.info("Interpolating simulator quantities to emulator size")
@@ -464,14 +463,14 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             response_offset = aux.get("response_offset", 0.0)
 
             emulator = SRTMnetModel(
-                input_file=self.engine_config.emulator_file,
+                input_file=self.config.emulator_file,
                 key="3c",
                 n_cores=self.n_cores,
             )
             lp = emulator.predict(
                 [data.values],  # surrogate data (6S)
                 [resample.values],  #  stacked 3c data interpolated to emulator wl
-                batch_size=self.engine_config.emulator_batch_size,
+                batch_size=self.config.emulator_batch_size,
                 response_scaler=[response_scaler],
                 response_offset=[response_offset],
                 resample_dict=resample_dict,
@@ -491,7 +490,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             add_vector = None
             if len(feature_point_names) > 0 and feature_point_names[0] != "None":
                 # Populate the 6S parameter values from a modtran template file
-                with open(self.engine_config.template_file, "r") as file:
+                with open(self.config.template_file, "r") as file:
                     data = yaml.safe_load(file)["MODTRAN"][0]["MODTRANINPUT"]
 
                 add_vector = np.zeros((self.points.shape[0], len(feature_point_names)))
@@ -529,7 +528,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
                 Logger.debug(f"Loading emulator {key}")
 
                 emulator = SRTMnetModel(
-                    input_file=self.engine_config.emulator_file,
+                    input_file=self.config.emulator_file,
                     key=key,
                     n_cores=self.n_cores,
                 )
@@ -543,7 +542,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
                     [
                         resample[x].values for x in mapping[key]
                     ],  #  6S data interpolated to emulator wl
-                    batch_size=self.engine_config.emulator_batch_size,
+                    batch_size=self.config.emulator_batch_size,
                     response_scaler=response_scaler,
                     response_offset=response_offset,
                     resample_dict=resample_dict,
@@ -571,8 +570,8 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         # Insert these into the LUT file
         return {
-            "coszen": sim["coszen"],
-            "solzen": sim["solzen"],
+            "coszen": sim.lut["coszen"],
+            "solzen": sim.lut["solzen"],
             "solar_irr": resample_spectrum(sol_irr, self.emu_wl, self.wl, self.fwhm),
         }
 

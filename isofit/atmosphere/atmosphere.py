@@ -130,7 +130,7 @@ class BaseAtmosphere(Reader):
 
         self.multipart_transmittance = self.config.multipart_transmittance
 
-        lut_exists = os.path.isfile(self.lut_path)
+        lut_exists = self.lut_path is not None and os.path.isfile(self.lut_path)
         if lut_exists:
             Logger.info("Prebuilt LUT provided")
         elif not lut_exists and self.lut_grid is None:
@@ -320,6 +320,18 @@ class BaseAtmosphere(Reader):
     def Sb(self):
         """Uncertainty due to unmodeled variables."""
         return np.diagflat(np.power(self.bval, 2))
+
+    def get(self, x_RT: np.array, geom: Geometry) -> dict:
+        """Interpolate the LUT at the given RT statevector and geometry.
+
+        Args:
+            x_RT: radiative-transfer portion of the statevector
+            geom: local geometry conditions for lookup
+
+        Returns:
+            dict of interpolated LUT quantities
+        """
+        return self.lut(x_RT, geom)
 
     def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
         """Get the interpolated modeled atmospheric path radiance.
