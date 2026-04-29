@@ -83,15 +83,15 @@ class SixSRT(BaseAtmosphere, Writer):
 
         self.modtran_emulation = modtran_emulation
 
-        self.wl = wl
-        self.fwhm = fwhm
-
         # Overwrite the wavelengths, because we're going to use these no matter what (6S runs at 2.5 nm)
         # NOTE - this wavelength range is fairly inclusive, but need not be hardcoded at these start and end points
         if not any(wl):
             wl = np.arange(350, 2500 + 2.5, 2.5)
         if not any(fwhm):
-            fwhm = np.full(self.wl.size, 2.0)
+            fwhm = np.full(wl.size, 2.0)
+
+        self.wl = wl
+        self.fwhm = fwhm
 
         super().__init__(full_config, wl=self.wl, fwhm=self.fwhm, **kwargs)
 
