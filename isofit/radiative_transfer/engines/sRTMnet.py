@@ -435,7 +435,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 slices = self.lut.coords[group]
                 slices = dict(zip(dims, slices))
                 shard = sixs[slices].load()
-                shard = shard.stack(point=dims).transpose("point", "wl")
+                shard = shard.stack(point=dims[1:]).transpose("point", "wl")
+                Logger.debug(shard)
                 data = self.process(shard, outshape)
                 self.lut.flush_buffer(slices)
                 del shard
