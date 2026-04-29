@@ -418,17 +418,23 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         sixs = sim.lut[aux_rt_quantities]
         if groups := getattr(self.lut, "groups", None):
             sixs = sixs.unstack()
+            dims = list(sixs.dims)[1:]
 
+            from isofit.core.common import Track
+
+            report = Track(
+                groups, step=1, message="shards processed", print=Logger.info
+            )
             for i, group in enumerate(groups):
-                print(f"Processing shard {i+1} of {len(groups)}")
+                Logger.info(f"Processing shard {i+1}/{len(groups)}")
                 slices = self.lut.coords[group]
-                # self.sim_sol_irr = sim_sol_irr[slices]
-                slices = dict(zip(list(sixs.dims), slices))
+                slices = dict(zip(dims, slices))
                 sim = sixs[slices].load()
-                sim = sim.stack(point=list(sim.dims)[1:]).transpose("point", "wl")
+                sim = sim.stack(point=dims).transpose("point", "wl")
                 data = self.process(sim)
                 self.lut.flush_buffer(slices)
                 del sim
+                report(i + 1)
         else:
             self.process(sixs)
 
