@@ -148,11 +148,13 @@ class RadiativeTransferEngine:
             Logger.debug(
                 f"Reading from store: {lut_path}, subset={engine_config.lut_names}"
             )
-            # self.lut = luts.load(lut_path, subset=engine_config.lut_names)
-            import xarray as xr
-
-            self.lut = xr.open_dataset(self.lut_path, chunks={})
-
+            self.lut = luts.load(
+                lut_path,
+                subset=engine_config.lut_names,
+                chunks={},
+                checks=False,
+                coupling=None,
+            )
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points = luts.extractPoints(self.lut)
             self.lut_names = list(self.lut_grid.keys())

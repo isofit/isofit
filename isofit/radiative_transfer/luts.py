@@ -922,6 +922,7 @@ def load(
     lock: bool = False,
     load: bool = False,
     coupling: str = "after",
+    check: bool = True,
     **kwargs,
 ) -> xr.Dataset:
     """
@@ -958,6 +959,9 @@ def load(
             "after-save"
                 After + save to a new file (the original input file with the extension
                 changed to ".coupled-subset.nc")
+    check: bool, default=True
+        Checks the dataset for NaNs and replaces them with 0s if the array is not
+        entirely NaN
 
     Examples
     --------
@@ -1229,20 +1233,21 @@ def load(
     # Handle NaNs in the LUT. Keep as is (if all NaN). Set to 0 (if partial NaN)
     Logger.debug("Attempting to detect NaNs")
 
-    for key, data in ds.items():
-        nans = data.isnull()
-        if nans.any():
-            if nans.all():
-                Logger.warning(f"{key} is fully NaN, leaving as-is")
-                continue
+    if check:
+        for key, data in ds.items():
+            nans = data.isnull()
+            if nans.any():
+                if nans.all():
+                    Logger.warning(f"{key} is fully NaN, leaving as-is")
+                    continue
 
-            count = nans.sum().data
-            total = data.count().data
+                count = nans.sum().data
+                total = data.count().data
 
-            Logger.warning(
-                f"{key} is partially NaN ({count}/{total}, {count/total:.2%}), replacing with 0s"
-            )
-            ds[key] = data.fillna(0)
+                Logger.warning(
+                    f"{key} is partially NaN ({count}/{total}, {count/total:.2%}), replacing with 0s"
+                )
+                ds[key] = data.fillna(0)
 
     return ds
 

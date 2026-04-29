@@ -413,22 +413,20 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             sol_irr = aux["solar_irr"]  # Otherwise, use sRTMnet f0
         irr_ref = sim.esd[200, 1]  # Irradiance factor
         irr_cur = sim.esd[sim.day_of_year - 1, 1]  # Factor for current date
-        self.sim_sol_irr = sol_irr * irr_ref**2 / irr_cur**2
+        sim_sol_irr = sol_irr * irr_ref**2 / irr_cur**2
 
         sixs = sim.lut[aux_rt_quantities]
         if groups := getattr(self.lut, "groups", None):
-            # from rich.console import Console
-            # from rich.progress import Progress
-            #
-            # Console = Console()
-            # with Progress(console=Console) as progress:
-            #     for group in progress.track(groups, "Interpolating Shards"):
+            sixs = sixs.unstack()
+
             for i, group in enumerate(groups):
                 print(f"Processing shard {i} of {len(groups)}")
                 slices = self.lut.coords[group]
+                self.sim_sol_irr = sim_sol_irr[slices]
                 slices = dict(zip(list(sixs.dims), slices))
                 sim = sixs[slices].load()
-                data = self.process(sim, slices)
+                sim = sim.stack(list(sim.dims)[1:]).transpose("point", "wl")
+                data = self.process(sim)
                 self.lut.flush_buffer(slices)
                 del sim
         else:
@@ -447,7 +445,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
         # Safe to replace here
 
-    def process(self, sim, slices=slice(None)):
+    def process(self, sim):
         """ """
         if sim.isnull().any():
             Logger.debug("Simulator detected to have NaNs, replacing with 0s")
@@ -457,7 +455,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         Logger.info("Interpolating simulator quantities to emulator size")
         resample = sim.interp({"wl": aux["emulator_wavelengths"]})
 
-        self.emulator_sol_irr = self.sim_sol_irr[slices]
+        self.emulator_sol_irr = self.sim_sol_irr
         self.emulator_coszen = sim["coszen"]
         self.emulator_H = calculate_resample_matrix(self.emu_wl, self.wl, self.fwhm)
 
