@@ -417,8 +417,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         sixs = sim.lut[aux_rt_quantities]
         if groups := getattr(self.lut, "groups", None):
-            sixs = sixs.unstack()
-            dims = list(sixs.dims)[1:]
+            dims = list(self.lut_grid)
+            sixs = sixs.unstack().transpose("wl", *dims)
 
             from isofit.core.common import Track
 
