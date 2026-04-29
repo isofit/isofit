@@ -415,6 +415,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         irr_cur = sim.esd[sim.day_of_year - 1, 1]  # Factor for current date
         self.sim_sol_irr = sol_irr * irr_ref**2 / irr_cur**2
 
+        self.aux = aux
+
         sixs = sim.lut[aux_rt_quantities]
         if groups := getattr(self.lut, "groups", None):
             dims = list(self.lut_grid)
@@ -459,7 +461,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         # Interpolate the sim results from its wavelengths to the emulator wavelengths
         Logger.info("Interpolating simulator quantities to emulator size")
-        resample = sim.interp({"wl": aux["emulator_wavelengths"]})
+        resample = sim.interp({"wl": self.aux["emulator_wavelengths"]})
 
         self.emulator_sol_irr = self.sim_sol_irr
         self.emulator_coszen = sim["coszen"]
@@ -490,8 +492,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             # dim for each quantity. Convert to DataArray to stack
             # the variables along a new `quantity` dimension
             data = sixs.to_array("quantity").stack(stack=["quantity", "wl"])
-            response_scaler = aux.get("response_scaler", 100.0)
-            response_offset = aux.get("response_offset", 0.0)
+            response_scaler = self.aux.get("response_scaler", 100.0)
+            response_offset = self.aux.get("response_offset", 0.0)
 
             emulator = SRTMnetModel(
                 input_file=self.engine_config.emulator_file,
@@ -517,7 +519,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             Logger.debug("Detected 6c emulator file format")
 
             # This is an array of feature points tacked onto the interpolated 6s values
-            feature_point_names = aux["feature_point_names"].astype(str).tolist()
+            feature_point_names = self.aux["feature_point_names"].astype(str).tolist()
             add_vector = None
             if len(feature_point_names) > 0 and feature_point_names[0] != "None":
                 # Populate the 6S parameter values from a modtran template file
@@ -565,8 +567,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 )
 
                 Logger.info(f"Emulating {key}")
-                response_scaler = [aux["response_scaler"][x] for x in mapping[key]]
-                response_offset = [aux["response_offset"][x] for x in mapping[key]]
+                response_scaler = [self.aux["response_scaler"][x] for x in mapping[key]]
+                response_offset = [self.aux["response_offset"][x] for x in mapping[key]]
 
                 lp = emulator.predict(
                     [sixs[x].values for x in mapping[key]],  # surrogate data (6S)
