@@ -572,7 +572,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 response_offset = [self.aux["response_offset"][x] for x in mapping[key]]
 
                 lp = emulator.predict(
-                    [sixs[x].values for x in mapping[key]],  # surrogate data (6S)
+                    [sim[x].values for x in mapping[key]],  # surrogate data (6S)
                     [
                         resample[x].values for x in mapping[key]
                     ],  #  6S data interpolated to emulator wl
