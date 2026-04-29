@@ -30,6 +30,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
+from isofit.configs import Config
 from isofit.core import common, units
 from isofit.core.common import svd_inv_sqrt
 from isofit.core.geometry import Geometry
@@ -99,10 +100,9 @@ class BaseAtmosphere(Reader):
         "surface_elevation_km",
     ]
 
-    # These properties enable easy access to the lut data
-    # TODO Having hard time unpacking this syntax
-    # coszen = property(lambda self: self["coszen"])
-    # solar_irr = property(lambda self: self["solar_irr"])
+    @property
+    def solar_irr(self) -> np.ndarray:
+        return np.array(self.lut["solar_irr"])
 
     def __init__(
         self,
