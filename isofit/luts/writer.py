@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import atexit
 import gc
 import logging
@@ -13,17 +14,19 @@ from netCDF4 import Dataset
 
 from isofit import __version__
 from isofit import ray
+from isofit.core.common import combos, Track
 
 Logger = logging.getLogger(__name__)
 
 
 class Writer:
+
     def write(self): 
         """Initialize a LUT and run simulations
         """
         # Run sims and write lut
         if not self.configure_and_exit:
-            self.prepare(
+            self.lut = Create(
                 file=self.lut_path,
                 keys=self.keys,
                 wl=self.wl,
@@ -33,13 +36,206 @@ class Writer:
                 compression=self.config.lut_compression,
                 complevel=self.config.lut_complevel,
             )
-            self.lut = self.load(self.lut_path)
 
         self.runSimulations()
 
+    def runSimulations(self) -> None:
+        """
+        Run all simulations for the LUT grid.
+
+        """
+        Logger.info(f"Running any pre-sim functions")
+        pre = self.preSim()
+
+        if pre:
+            Logger.info("Saving pre-sim data to index zero of all dimensions except wl")
+            Logger.debug(f"pre-sim data contains keys: {pre.keys()}")
+
+            point = {key: 0 for key in self.lut_names}
+            self.lut.writePoint(point, data=pre)
+
+        # Make the LUT calls (in parallel if specified)
+        if not self._disable_makeSim:
+            Logger.info("Executing parallel simulations")
+
+            # Place into shared memory space to avoid spilling
+            lut_names = ray.put(self.lut_names)
+            makeSim = ray.put(self.makeSim)
+            readSim = ray.put(self.readSim)
+            lut_path = ray.put(self.lut_path)
+            buffer_time = ray.put(self.max_buffer_time)
+            configure_and_exit = ray.put(self.config.configure_and_exit)
+
+            points = combos(self.lut_grid.values())
+
+            jobs = [
+                self.streamSimulation.remote(
+                    point,
+                    lut_names,
+                    makeSim,
+                    readSim,
+                    lut_path,
+                    max_buffer_time=buffer_time,
+                    configure_and_exit=self.config.configure_and_exit,
+                )
+                for point in points
+            ]
+
+            if self.config.configure_and_exit:
+                # Block until all jobs finish
+                ray.get(jobs)
+
+                Logger.warning("Exiting early due to configure_and_exit")
+                sys.exit(0)
+            else:
+                # Report a percentage complete every 10% and flush to disk at those intervals
+                report = Track(
+                    jobs,
+                    step=10,
+                    reverse=True,
+                    print=Logger.info,
+                    message="simulations complete",
+                )
+
+                # Update the lut as point simulations stream in
+                while jobs:
+                    [done], jobs = ray.wait(jobs, num_returns=1)
+
+                    # Retrieve the return of the finished job
+                    ret = ray.get(done)
+
+                    # If a simulation fails then it will return None
+                    if ret:
+                        self.lut.queuePoint(*ret)
+
+                    if report(len(jobs)):
+                        Logger.info("Flushing netCDF to disk")
+                        self.lut.flush()
+
+                # Shouldn't be hit but just in case
+                if self.lut.hold:
+                    Logger.warning("Not all points were flushed, doing so now")
+                    self.lut.flush()
+
+            del lut_names, makeSim, readSim, lut_path, buffer_time
+        else:
+            Logger.debug("makeSim is disabled for this engine")
+
+        Logger.info(f"Running any post-sim functions")
+        post = self.postSim()
+
+        if post:
+            Logger.info("Saving post-sim data to index zero of all dimensions except wl")
+            Logger.debug(f"post-sim data contains keys: {post.keys()}")
+
+            point = {key: 0 for key in self.lut_names}
+            self.lut.writePoint(point, data=post)
+
+        self.lut.finalize()
+
+    @ray.remote(num_cpus=1)
+    def streamSimulation(
+        point: np.array,
+        lut_names: list,
+        simmer: Callable,
+        reader: Callable,
+        output: str,
+        max_buffer_time: float = 0.5,
+        configure_and_exit: bool = False,
+    ):
+        """Run a simulation for a single point and stream the results to a saved lut file.
+
+        Args:
+            point (np.array): conditions to alter in simulation
+            lut_names (list): Dimension names aka lut_names
+            simmer (function): function to run the simulation
+            reader (function): function to read the results of the simulation
+            output (str): LUT store to save results to
+            max_buffer_time (float, optional): _description_. Defaults to 0.5.
+            configure_and_exit (bool, optional): exit early if not executing simulations
+        """
+        Logger.debug(f"Simulating(point={point})")
+
+        # Slight delay to prevent all subprocesses from starting simultaneously
+        time.sleep(np.random.rand() * max_buffer_time)
+
+        # Execute the simulation
+        simmer(point)
+
+        # No data will be produced, just configuration files
+        if configure_and_exit:
+            return
+
+        # Read the simulation results
+        data = reader(point)
+
+        # Save the results to our LUT format
+        if data:
+            Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
+
+            return point, data
+        else:
+            Logger.warning(f"No data was returned for point {point}")
+
+
         return 
 
-    def prepare(
+    def preSim(self):
+        """
+        This is an optional function that can be defined by a subclass RTE to be called
+        directly before runSim() is executed. A subclass may return a dict containing
+        any single or non-dimensional variables to be saved to the LUT file
+        """
+        ...
+
+    def makeSim(self, point: np.array, template_only: bool = False):
+        """
+        Prepares and executes a radiative transfer engine's simulations
+
+        Args:
+            point (np.array): conditions to alter in simulation
+            template_only (bool): only write template file and then stop
+        """
+        raise NotImplemented(
+            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
+        )
+
+    def readSim(self, point: np.array):
+        """
+        Reads simulation results to standard form
+
+        Args:
+            point (np.array): conditions to alter in simulation
+        """
+        raise NotImplemented(
+            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
+        )
+
+    def postSim(self):
+        """
+        This is an optional function that can be defined by a subclass RTE to be called
+        directly after runSim() is finished. A subclass may return a dict containing
+        any single or non-dimensional variables to be saved to the LUT file
+        """
+        ...
+
+    def point_to_filename(self, point: np.array) -> str:
+        """Change a point to a base filename
+
+        Args:
+            point (np.array): conditions to alter in simulation
+
+        Returns:
+            str: basename of the file to use for this point
+        """
+        filename = "_".join(
+            ["%s-%6.4f" % (n, x) for n, x in zip(self.lut_names, point)]
+        )
+        return filename
+
+
+class Create:
+    def __init__(
         self,
         file: str,
         keys: Keys,
@@ -53,7 +249,8 @@ class Writer:
         compression: str = "zlib",
         complevel: int = None,
     ):
-        """Prepare a LUT netCDF
+        """
+        Prepare a LUT netCDF
 
         Parameters
         ----------
@@ -82,22 +279,6 @@ class Writer:
         # Track the ISOFIT version that created this LUT
         attrs["ISOFIT version"] = __version__
         attrs["ISOFIT status"] = "<incomplete>"
-
-        Logger.info(f"No LUT store found, beginning initialization and simulations")
-
-        # Check for duplicates in grid
-        duplicates = False
-        for dim, vals in grid.items():
-            if np.unique(vals).size < len(vals):
-                duplicates = True
-                Logger.error(
-                    f"Duplicates values were detected in the lut_grid for {dim}: {vals}"
-                )
-
-        if duplicates:
-            raise AttributeError(
-                "Input lut_grid detected to have duplicates, please correct them before continuing"
-            )
 
         self.file = file
         self.wl = wl
@@ -292,201 +473,38 @@ class Writer:
         """
         self.setAttr("ISOFIT status", "success")
 
-    def runSimulations(self) -> None:
+    def __setitem__(self, key: str, value: Any) -> None:
         """
-        Run all simulations for the LUT grid.
+        Sets a variable in the netCDF.
 
+        Parameters
+        ----------
+        key : str
+            Key to set
+        value : any
+            Value to set
         """
-        Logger.info(f"Running any pre-sim functions")
-        pre = self.preSim()
+        with Dataset(self.file, "a") as ds:
+            ds[key][:] = value
 
-        if pre:
-            Logger.info("Saving pre-sim data to index zero of all dimensions except wl")
-            Logger.debug(f"pre-sim data contains keys: {pre.keys()}")
-
-            point = {key: 0 for key in self.lut_names}
-            self.lut.writePoint(point, data=pre)
-
-        # Make the LUT calls (in parallel if specified)
-        if not self._disable_makeSim:
-            Logger.info("Executing parallel simulations")
-
-            # Place into shared memory space to avoid spilling
-            lut_names = ray.put(self.lut_names)
-            makeSim = ray.put(self.makeSim)
-            readSim = ray.put(self.readSim)
-            lut_path = ray.put(self.lut_path)
-            buffer_time = ray.put(self.max_buffer_time)
-            configure_and_exit = ray.put(self.engine_config.configure_and_exit)
-
-            jobs = [
-                streamSimulation.remote(
-                    point,
-                    lut_names,
-                    makeSim,
-                    readSim,
-                    lut_path,
-                    max_buffer_time=buffer_time,
-                    configure_and_exit=self.engine_config.configure_and_exit,
-                )
-                for point in self.points
-            ]
-
-            if self.engine_config.configure_and_exit:
-                # Block until all jobs finish
-                ray.get(jobs)
-
-                Logger.warning("Exiting early due to configure_and_exit")
-                sys.exit(0)
-            else:
-                # Report a percentage complete every 10% and flush to disk at those intervals
-                report = common.Track(
-                    jobs,
-                    step=10,
-                    reverse=True,
-                    print=Logger.info,
-                    message="simulations complete",
-                )
-
-                # Update the lut as point simulations stream in
-                while jobs:
-                    [done], jobs = ray.wait(jobs, num_returns=1)
-
-                    # Retrieve the return of the finished job
-                    ret = ray.get(done)
-
-                    # If a simulation fails then it will return None
-                    if ret:
-                        self.lut.queuePoint(*ret)
-
-                    if report(len(jobs)):
-                        Logger.info("Flushing netCDF to disk")
-                        self.lut.flush()
-
-                # Shouldn't be hit but just in case
-                if self.lut.hold:
-                    Logger.warning("Not all points were flushed, doing so now")
-                    self.lut.flush()
-
-            del lut_names, makeSim, readSim, lut_path, buffer_time
-        else:
-            Logger.debug("makeSim is disabled for this engine")
-
-        Logger.info(f"Running any post-sim functions")
-        post = self.postSim()
-
-        if post:
-            Logger.info("Saving post-sim data to index zero of all dimensions except wl")
-            Logger.debug(f"post-sim data contains keys: {post.keys()}")
-
-            point = {key: 0 for key in self.lut_names}
-            self.lut.writePoint(point, data=post)
-
-        self.lut.finalize()
-
-    @ray.remote(num_cpus=1)
-    def streamSimulation(
-        point: np.array,
-        lut_names: list,
-        simmer: Callable,
-        reader: Callable,
-        output: str,
-        max_buffer_time: float = 0.5,
-        configure_and_exit: bool = False,
-    ):
-        """Run a simulation for a single point and stream the results to a saved lut file.
-
-        Args:
-            point (np.array): conditions to alter in simulation
-            lut_names (list): Dimension names aka lut_names
-            simmer (function): function to run the simulation
-            reader (function): function to read the results of the simulation
-            output (str): LUT store to save results to
-            max_buffer_time (float, optional): _description_. Defaults to 0.5.
-            configure_and_exit (bool, optional): exit early if not executing simulations
+    def __getitem__(self, key: str) -> Any:
         """
-        Logger.debug(f"Simulating(point={point})")
+        Passthrough to __getitem__ on the underlying 'ds' attribute.
 
-        # Slight delay to prevent all subprocesses from starting simultaneously
-        time.sleep(np.random.rand() * max_buffer_time)
+        Parameters
+        ----------
+        key : str
+            The name of the item to retrieve.
 
-        # Execute the simulation
-        simmer(point)
-
-        # No data will be produced, just configuration files
-        if configure_and_exit:
-            return
-
-        # Read the simulation results
-        data = reader(point)
-
-        # Save the results to our LUT format
-        if data:
-            Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
-
-            return point, data
-        else:
-            Logger.warning(f"No data was returned for point {point}")
-
-    def __getitem__(self, key):
+        Returns
+        -------
+        Any
+            The value of the item retrieved from the 'ds' attribute.
         """
-        Enables key indexing for easier access to the numpy object store in
-        self.lut[key]
-        """
-        return self.lut[key].load().data
+        return self.ds[key]
 
-    def preSim(self):
-        """
-        This is an optional function that can be defined by a subclass RTE to be called
-        directly before runSim() is executed. A subclass may return a dict containing
-        any single or non-dimensional variables to be saved to the LUT file
-        """
-        ...
-
-    def makeSim(self, point: np.array, template_only: bool = False):
-        """
-        Prepares and executes a radiative transfer engine's simulations
-
-        Args:
-            point (np.array): conditions to alter in simulation
-            template_only (bool): only write template file and then stop
-        """
-        raise NotImplemented(
-            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
-        )
-
-    def readSim(self, point: np.array):
-        """
-        Reads simulation results to standard form
-
-        Args:
-            point (np.array): conditions to alter in simulation
-        """
-        raise NotImplemented(
-            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
-        )
-
-    def postSim(self):
-        """
-        This is an optional function that can be defined by a subclass RTE to be called
-        directly after runSim() is finished. A subclass may return a dict containing
-        any single or non-dimensional variables to be saved to the LUT file
-        """
-        ...
-
-    def point_to_filename(self, point: np.array) -> str:
-        """Change a point to a base filename
-
-        Args:
-            point (np.array): conditions to alter in simulation
-
-        Returns:
-            str: basename of the file to use for this point
-        """
-        filename = "_".join(
-            ["%s-%6.4f" % (n, x) for n, x in zip(self.lut_names, point)]
-        )
-        return filename
+    def __repr__(self) -> str:
+        return f"LUT(wl={self.wl.size}, grid={self.sizes})"
 
 
 def cleanup(file):

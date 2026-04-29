@@ -66,6 +66,8 @@ class SixSRT(BaseAtmosphere, Writer):
 
     def __init__(self, full_config, wl=[], fwhm=[], modtran_emulation=False, **kwargs):
 
+        self.config = full_config.forward_model.atmosphere
+
         current = os.environ.get("SIXS_DIR")
         if not current:
             Logger.debug(f"Setting SIXS_DIR={env.sixs}")
@@ -93,10 +95,8 @@ class SixSRT(BaseAtmosphere, Writer):
         self.wl = wl
         self.fwhm = fwhm
 
-        super().__init__(full_config, wl=self.wl, fwhm=self.fwhm, **kwargs)
-
         self.engine_base_dir = self.config.engine_base_dir
-        self.exe = get_exe(self.engine_base_dir)
+        self.exe = get_exe(self.config.engine_base_dir)
         Logger.debug(f"Using 6S executable: {self.exe}")
 
         self.co2_mode = False
@@ -104,11 +104,13 @@ class SixSRT(BaseAtmosphere, Writer):
             self.co2_mode = True
 
         # TODO Add check that sim path exists
-        self.sim_path = self.config_atmosphere.sim_path
+        self.sim_path = self.config.sim_path
 
         # If the LUT file already exists, still need to calc this post init
         if not hasattr(self, "esd"):
             self.load_esd()
+
+        super().__init__(full_config, wl=self.wl, fwhm=self.fwhm, **kwargs)
 
     def _lut(self, build_interpolators):
         self.write()
@@ -143,7 +145,7 @@ class SixSRT(BaseAtmosphere, Writer):
 
         cmd = self.rebuild_cmd(point, wlinf=self.wl[0], wlsup=self.wl[-1])
 
-        if not self.engine_config.rte_configure_and_exit:
+        if not self.config.configure_and_exit:
             call = subprocess.run(cmd, shell=True, capture_output=True)
             if call.stdout:
                 Logger.error(call.stdout.decode())
@@ -180,7 +182,7 @@ class SixSRT(BaseAtmosphere, Writer):
         self.load_esd()
 
         try:
-            irr = np.loadtxt(self.engine_config.irradiance_file, comments="#")
+            irr = np.loadtxt(self.config.irradiance_file, comments="#")
         except FileNotFoundError:
             raise FileNotFoundError(
                 "Solar irradiance file not found on system. "
@@ -217,10 +219,10 @@ class SixSRT(BaseAtmosphere, Writer):
             "AOT550": 0.01,
             "H2OSTR": 0,
             "O3": 0.30,
-            "day": self.engine_config.day,
-            "month": self.engine_config.month,
-            "elev": abs(max(self.engine_config.elev, 0)),
-            "alt": min(self.engine_config.alt, 99),
+            "day": self.config.day,
+            "month": self.config.month,
+            "elev": abs(max(self.config.elev, 0)),
+            "alt": min(self.config.alt, 99),
             "atm_file": None,
             "abscf_data_directory": None,
             "wlinf": units.nm_to_micron(wlinf),
@@ -231,10 +233,10 @@ class SixSRT(BaseAtmosphere, Writer):
 
         # Assume geometry values are provided by the config
         vals.update(
-            solzen=self.engine_config.solzen,
-            viewzen=self.engine_config.viewzen,
-            solaz=self.engine_config.solaz,
-            viewaz=self.engine_config.viewaz,
+            solzen=self.config.solzen,
+            viewzen=self.config.viewzen,
+            solaz=self.config.solaz,
+            viewaz=self.config.viewaz,
         )
 
         # Add the point with its names
@@ -302,7 +304,7 @@ class SixSRT(BaseAtmosphere, Writer):
         """
         self.esd = load_esd()
 
-        dt = datetime(2000, self.engine_config.month, self.engine_config.day)
+        dt = datetime(2000, self.config.month, self.config.day)
         self.day_of_year = dt.timetuple().tm_yday
         self.irr_factor = self.esd[self.day_of_year - 1, 1]
 
