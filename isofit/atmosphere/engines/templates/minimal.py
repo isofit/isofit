@@ -7,10 +7,10 @@ Be sure to edit engines/__init__.py to import your custom engine and set its nam
     Engines['CustomRT'] = CustomRT
 """
 
-from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+from isofit.atmosphere import BaseAtmosphere
 
 
-class CustomRT(RadiativeTransferEngine):
+class CustomAtmosphere(BaseAtmosphere):
     """
     This is the minimal version that must be defined. Refer to the full template for
     detailed descriptions.

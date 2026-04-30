@@ -18,9 +18,9 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
 from isofit.configs.base_config import BaseConfigSection
-from isofit.configs.sections.surface_config import SurfaceConfig
 from isofit.configs.sections.atmosphere_config import AtmosphereConfig
 from isofit.configs.sections.instrument_config import InstrumentConfig
+from isofit.configs.sections.surface_config import SurfaceConfig
 
 
 class ForwardModelConfig(BaseConfigSection):
@@ -54,5 +54,24 @@ class ForwardModelConfig(BaseConfigSection):
         """
         Points to an numpy-format covariance matrix. 
         """
+
+        # Backward compatibility: old configs used forward_model.radiative_transfer
+        # with nested radiative_transfer_engines. Flatten the first engine into
+        # forward_model.atmosphere so the rest of the code finds it.
+        if (
+            sub_configdic
+            and "radiative_transfer" in sub_configdic
+            and "atmosphere" not in sub_configdic
+        ):
+            rt = sub_configdic["radiative_transfer"]
+            engines = rt.get("radiative_transfer_engines", {})
+            # Take the first engine (usually the only one, e.g. "vswir")
+            first_engine = next(iter(engines.values()), {}) if engines else {}
+            atmosphere = {**first_engine}
+            # Hoist statevector / lut_grid / unknowns from the RT container
+            for key in ("statevector", "lut_grid", "unknowns"):
+                if key in rt:
+                    atmosphere.setdefault(key, rt[key])
+            sub_configdic = {**sub_configdic, "atmosphere": atmosphere}
 
         self.set_config_options(sub_configdic)

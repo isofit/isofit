@@ -649,7 +649,11 @@ def build_sixs_config(config):
     # Save 6S to a different lut file, prepend 6S to the sRTMnet lut_path
     # REVIEW: Should this write to sim_path instead? I think so
     path = Path(config.lut_path)
-    config.lut_path = path.parent / f"6S.{path.name}"
+    config.lut_path = str(path.parent / f"6S.{path.name}")
+
+    # Ensure sim_path is set so 6S knows where to write simulation files
+    if config.sim_path is None:
+        config.sim_path = str(path.parent)
 
     full_config.forward_model.atmosphere = config
 

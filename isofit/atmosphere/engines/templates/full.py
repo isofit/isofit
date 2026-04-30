@@ -9,10 +9,10 @@ Be sure to edit engines/__init__.py to import your custom engine and set its nam
 
 from __future__ import annotations
 
-from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+from isofit.atmosphere import BaseAtmosphere
 
 
-class CustomRT(RadiativeTransferEngine):
+class CustomAtmosphere(BaseAtmosphere):
     """
     This contains all of the possible pieces that can be defined.
     """
@@ -23,7 +23,7 @@ class CustomRT(RadiativeTransferEngine):
     # Sleep a random amount of time up to max this value at the start of each streamSimulation
     max_buffer_time = 0  # Default in RadiativeTransferEngine
 
-    def __init__(self, engine_config: RadiativeTransferEngineConfig, **kwargs):
+    def __init__(self, engine_config: AtmosphereConfig, **kwargs):
         """
         Not required to be defined. Omit the function to use the default RadiativeTransferEngine.__init__
 

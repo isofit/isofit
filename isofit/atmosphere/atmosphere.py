@@ -378,7 +378,6 @@ class BaseAtmosphere(Reader):
                 )
             return transup
 
-    # REVIEW: We need to think about the best place for the two albedo method (here, radiative_transfer.py, utils, etc.)
     @staticmethod
     def two_albedo_method(
         case_0: dict,
