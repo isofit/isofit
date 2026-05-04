@@ -41,7 +41,7 @@ Logger = logging.getLogger(__file__)
 TROPOPAUSE_ALTITUDE_KM = 17.0
 
 
-class ModtranRT(BaseAtmosphere, Writer):
+class ModtranRT(Writer, BaseAtmosphere):
 
     def __init__(self, full_config, **kwargs):
         """A model of photon transport including the atmosphere."""
@@ -51,11 +51,6 @@ class ModtranRT(BaseAtmosphere, Writer):
         self.max_buffer_time = 0.5
         self.engine_base_dir = self.config.sim_path
         self.sim_path = self.config.sim_path
-
-    def _lut(self, build_interpolators):
-        self.write()
-
-        return super()._lut(build_interpolators)
 
     @staticmethod
     def parseTokens(tokens: list, coszen: float) -> dict:

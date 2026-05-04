@@ -39,7 +39,7 @@ from isofit.luts import Writer
 Logger = logging.getLogger(__name__)
 
 
-class LibRadTranRT(BaseAtmosphere, Writer):
+class LibRadTranRT(Writer, BaseAtmosphere):
 
     def __init__(self, full_config, **kwargs):
         super().__init__(full_config, **kwargs)
@@ -112,11 +112,6 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             raise FileNotFoundError(error)
 
         self.lrt_bin_dir = abspath(join(self.libradtran, "bin"))
-
-    def _lut(self, build_interpolators):
-        self.write()
-
-        return super()._lut(build_interpolators)
 
     def preSim(self):
 

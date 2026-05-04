@@ -151,7 +151,7 @@ def reduce_points(points, Xproj_vectors, Xproj_values, Xmu, Xsigma):
     return Z @ H
 
 
-class KernelFlowsRT(BaseAtmosphere, Writer):
+class KernelFlowsRT(Writer, BaseAtmosphere):
     """
     Radiative transfer emulation based on KernelFlows.jl and VSWIREmulator.jl. A description of
     the model can be found in:
@@ -238,11 +238,6 @@ class KernelFlowsRT(BaseAtmosphere, Writer):
         # as KernelFlowsGP always runs in radiance space
         self.rt_mode = "rdn"
         self.assign_bounds()
-
-    def _lut(self, build_interpolators):
-        self.write()
-
-        return super()._lut(build_interpolators)
 
     def assign_bounds(self):
         try:

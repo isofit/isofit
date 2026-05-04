@@ -130,10 +130,10 @@ class BaseAtmosphere(Reader):
 
         self.multipart_transmittance = self.config.multipart_transmittance
 
-        lut_exists = self.lut_path is not None and os.path.isfile(self.lut_path)
-        if lut_exists:
+        self.lut_exists = self.lut_path is not None and os.path.isfile(self.lut_path)
+        if self.lut_exists:
             Logger.info("Prebuilt LUT provided")
-        elif not lut_exists and self.lut_grid is None:
+        elif not self.lut_exists and self.lut_grid is None:
             raise AttributeError(
                 "Must provide either a prebuilt LUT file or a LUT grid"
             )
@@ -254,10 +254,13 @@ class BaseAtmosphere(Reader):
 
         TODO: Make sure that loaded LUT matches config LUT
         """
-        # TODO Decide if indices needs to be class property
+        # Write the LUT if this function is hooked up (In cases with engine).
+        # if not self.lut_exists:
+        self.write()
+
         indices = SimpleNamespace(geom={}, x_RT=[])
 
-        geometry_keys = self.lut_names
+        geometry_keys = set(self.config.statevector_names or self.lut_names)
         matches = common.compare(geometry_keys, self.geometry_input_names)
         if matches:
             Logger.warning(
@@ -308,6 +311,11 @@ class BaseAtmosphere(Reader):
         Logger.debug(f"Interpolators built")
 
         return LUT(ds, self.n_lut_input_dim, indices, lut_interpolators=interpolators)
+
+    def write(self):
+        raise NotImplemented(
+            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
+        )
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import time
 import atexit
 import gc
 import logging
 import os
+import time
 from pathlib import Path
 from typing import Any, List, Union
 
@@ -12,18 +12,16 @@ import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 
-from isofit import __version__
-from isofit import ray
-from isofit.core.common import combos, Track
+from isofit import __version__, ray
+from isofit.core.common import Track, combos
 
 Logger = logging.getLogger(__name__)
 
 
 class Writer:
 
-    def write(self): 
-        """Initialize a LUT and run simulations
-        """
+    def write(self):
+        """Initialize a LUT and run simulations"""
         # Run sims and write lut
         if not self.configure_and_exit:
             self.lut = Create(
@@ -125,7 +123,9 @@ class Writer:
         post = self.postSim()
 
         if post:
-            Logger.info("Saving post-sim data to index zero of all dimensions except wl")
+            Logger.info(
+                "Saving post-sim data to index zero of all dimensions except wl"
+            )
             Logger.debug(f"post-sim data contains keys: {post.keys()}")
 
             point = {key: 0 for key in self.lut_names}
@@ -155,6 +155,7 @@ class Writer:
             configure_and_exit (bool, optional): exit early if not executing simulations
         """
         Logger.debug(f"Simulating(point={point})")
+        Logger.info(lut_names)
 
         # Slight delay to prevent all subprocesses from starting simultaneously
         time.sleep(np.random.rand() * max_buffer_time)
@@ -177,8 +178,7 @@ class Writer:
         else:
             Logger.warning(f"No data was returned for point {point}")
 
-
-        return 
+        return
 
     def preSim(self):
         """

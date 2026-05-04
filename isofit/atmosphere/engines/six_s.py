@@ -61,7 +61,7 @@ SIXS_TEMPLATE = """\
 """
 
 
-class SixSRT(BaseAtmosphere, Writer):
+class SixSRT(Writer, BaseAtmosphere):
     """A model of photon transport including the atmosphere."""
 
     def __init__(self, full_config, wl=[], fwhm=[], modtran_emulation=False, **kwargs):
@@ -108,14 +108,10 @@ class SixSRT(BaseAtmosphere, Writer):
 
         # If the LUT file already exists, still need to calc this post init
         if not hasattr(self, "esd"):
+            # self.load_esd()
             self.load_esd()
 
         super().__init__(full_config, wl=self.wl, fwhm=self.fwhm, **kwargs)
-
-    def _lut(self, build_interpolators):
-        self.write()
-
-        return super()._lut(build_interpolators)
 
     def preSim(self):
         """
@@ -334,7 +330,7 @@ class SixSRT(BaseAtmosphere, Writer):
         Examples
         --------
         >>> from isofit.data import env
-        >>> from isofit.atmosphere.engines import SixSRT
+        >>> from isofit.radiative_transfer.engines import SixSRT
         >>> SixSRT.parse_file(f'{env.examples}/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000', wl_size=3)
         {'sphalb': array([0.3116, 0.3057, 0.2999]),
          'rhoatm': array([0.2009, 0.1963, 0.1916]),
