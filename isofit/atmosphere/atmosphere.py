@@ -201,8 +201,10 @@ class BaseAtmosphere(Reader):
         self.bvec = self.config.unknowns.get_element_names()
         self.bval = np.array([x for x in self.config.unknowns.get_elements()[0]])
         # Create LUT (for generic this will be fake executed
-        self.lut_names = set(
-            list(self.lut_grid.keys()) or self.config.statevector_names
+
+        # TODO Figure out the sorting here.
+        self.lut_names = sorted(
+            set(list(self.lut_grid.keys()) or self.config.statevector_names)
         )
         self.n_lut_input_dim = len(self.lut_names)
         self.keys = Keys

@@ -155,7 +155,6 @@ class Writer:
             configure_and_exit (bool, optional): exit early if not executing simulations
         """
         Logger.debug(f"Simulating(point={point})")
-        Logger.info(lut_names)
 
         # Slight delay to prevent all subprocesses from starting simultaneously
         time.sleep(np.random.rand() * max_buffer_time)
