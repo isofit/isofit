@@ -734,9 +734,7 @@ class IO:
                 for item in self.output_datasets
             ):
                 rfl_alg_opt, coeffs = invert_algebraic(
-                    fm.surface,
-                    fm.RT,
-                    fm.instrument,
+                    fm,
                     x_surface,
                     x_RT,
                     x_instrument,
@@ -751,7 +749,7 @@ class IO:
 
             if "atmospheric_coefficients_file" in self.output_datasets:
                 rhoatm, sphalb, L_tot, transup, L_Up = coeffs
-                solar_irr = fm.RT.solar_irr
+                solar_irr = fm.atmosphere.solar_irr
 
                 atm_vars = [rhoatm, sphalb, L_tot, solar_irr]
 

@@ -31,7 +31,7 @@ import numpy as np
 import scipy.interpolate
 import scipy.stats
 
-from isofit.atmosphere import BaseAtmosphere
+from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core import units
 from isofit.core.common import json_load_ascii, recursive_replace
 from isofit.luts import Writer
@@ -43,14 +43,8 @@ TROPOPAUSE_ALTITUDE_KM = 17.0
 
 class ModtranRT(Writer, BaseAtmosphere):
 
-    def __init__(self, full_config, **kwargs):
-        """A model of photon transport including the atmosphere."""
-        super().__init__(full_config, **kwargs)
-
-        self.full_config = full_config
-        self.max_buffer_time = 0.5
-        self.engine_base_dir = self.config.sim_path
-        self.sim_path = self.config.sim_path
+    max_buffer_time = 0.5
+    albedos = [0.0, 0.1, 0.5]
 
     @staticmethod
     def parseTokens(tokens: list, coszen: float) -> dict:
@@ -179,7 +173,7 @@ class ModtranRT(Writer, BaseAtmosphere):
         chn = parts[0]
         if len(parts) > 1:
             Logger.debug("Using two albedo method")
-            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls[1:])
+            chn = self.two_albedo_method(*parts, coszen, *self.albedos[1:])
 
         return chn
 
@@ -232,23 +226,23 @@ class ModtranRT(Writer, BaseAtmosphere):
 
         self.filtpath = os.path.join(
             self.sim_path,
-            f"wavelengths_{self.engine_config.engine_name}_{self.wl[0]}_{self.wl[-1]}.flt",
+            f"wavelengths_{self.config.engine_name}_{self.wl[0]}_{self.wl[-1]}.flt",
         )
-        self.template = json_load_ascii(self.engine_config.template_file)["MODTRAN"]
+        self.template = json_load_ascii(self.config.template_file)["MODTRAN"]
 
         # Regenerate MODTRAN input wavelength file
         if not os.path.exists(self.filtpath):
             self.wl2flt(self.wl, self.fwhm, self.filtpath)
 
         # Insert aerosol templates, if specified
-        if self.engine_config.aerosol_model_file is not None:
+        if self.config.aerosol_model_file is not None:
             self.template[0]["MODTRANINPUT"]["AEROSOLS"] = json_load_ascii(
-                self.engine_config.aerosol_template_file
+                self.config.aerosol_template_file
             )
 
         # Insert aerosol data, if specified
-        if self.engine_config.aerosol_model_file is not None:
-            aer_data = np.loadtxt(self.engine_config.aerosol_model_file)
+        if self.config.aerosol_model_file is not None:
+            aer_data = np.loadtxt(self.config.aerosol_model_file)
             self.aer_wl = aer_data[:, 0]
             aer_data = np.transpose(aer_data[:, 1:])
             self.naer = int(len(aer_data) / 3)
@@ -319,7 +313,7 @@ class ModtranRT(Writer, BaseAtmosphere):
         with open(infilepath, "w") as f:
             f.write(modtran_config_str)
 
-        if self.engine_config.rte_configure_and_exit:
+        if self.config.rte_configure_and_exit:
             return
 
         # Specify location of the proper MODTRAN 6.0 binary for this OS
@@ -571,10 +565,9 @@ class ModtranRT(Writer, BaseAtmosphere):
             lvl0["EXTC"] = [float(v) / total_extc550 for v in total_extc]
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
 
-        if self.full_config.forward_model.multipart_transmittance:
+        if self.multipart_transmittance:
             # TODO: move setting of multipart rfl values to config
-            self.test_rfls = [0.0, 0.1, 0.5]
-            const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)
+            const_rfl = np.array(np.array(self.albedos) * 100, dtype=int)
             # Here we copy the original config and just change the surface reflectance
             param[0]["MODTRANINPUT"]["CASE"] = 0
             param[0]["MODTRANINPUT"]["SURFACE"]["SURFP"][

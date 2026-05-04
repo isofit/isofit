@@ -262,7 +262,7 @@ def invert_analytical(
     )
 
     # Get all the atmosphere quantities
-    (r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = (
+    r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = (
         fm.calc_atmosphere_quantities(x_atmosphere, geom, rho_dif_dif=rho_dif_dif)
     )
 

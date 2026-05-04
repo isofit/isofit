@@ -31,7 +31,7 @@ import numpy as np
 import torch
 import yaml
 
-from isofit.atmosphere import BaseAtmosphere
+from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.atmosphere.engines import SixSRT
 from isofit.core import units
 from isofit.core.common import calculate_resample_matrix, resample_spectrum

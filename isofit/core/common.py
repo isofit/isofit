@@ -18,8 +18,8 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #
 
-import logging
 import json
+import logging
 import os
 from collections import OrderedDict
 from difflib import SequenceMatcher
@@ -36,7 +36,6 @@ from scipy.interpolate import RegularGridInterpolator
 
 from isofit.core import units
 from isofit.data import env
-
 
 Logger = logging.getLogger(__name__)
 
@@ -1098,5 +1097,3 @@ def load_esd(file=None):
         esd[:, 0] = np.arange(1, 367, 1)
 
     return esd
-
-

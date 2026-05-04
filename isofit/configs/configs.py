@@ -156,7 +156,7 @@ def create_new_config(config_file: str) -> Config:
             config_dict = yaml.safe_load(f)
     except Exception as e:
         raise IOError(
-                f"Unexpected configuration file time, only json and yaml supported:\n {e}"
+            f"Unexpected configuration file time, only json and yaml supported:\n {e}"
         )
 
     configdir, f = os.path.split(os.path.abspath(config_file))

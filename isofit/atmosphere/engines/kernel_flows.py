@@ -25,7 +25,7 @@ import h5py
 import numpy as np
 import yaml
 
-from isofit.atmosphere import BaseAtmosphere
+from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core.common import spectral_response_function
 from isofit.luts import Writer
 

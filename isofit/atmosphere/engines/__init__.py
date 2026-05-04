@@ -4,12 +4,11 @@ from .modtran import ModtranRT
 from .six_s import SixSRT
 from .sRTMnet import SimulatedModtranRT
 
-
 Engines = {
     "KernelFlowsGP": KernelFlowsRT,
     "modtran": ModtranRT,
     "6s": SixSRT,
     "sRTMnet": SimulatedModtranRT,
     "LibRadTran": LibRadTranRT,
-    "Prebuilt": None
+    "Prebuilt": None,
 }

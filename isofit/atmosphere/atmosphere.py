@@ -127,6 +127,8 @@ class BaseAtmosphere(Reader):
         # Configure and exit flag
         self.configure_and_exit = self.config.configure_and_exit
 
+        self.engine_base_dir = self.config.engine_base_dir
+        self.sim_path = self.config.sim_path
         self.multipart_transmittance = self.config.multipart_transmittance
 
         self.lut_exists = self.lut_path is not None and os.path.isfile(self.lut_path)

@@ -25,7 +25,7 @@ from pathlib import Path
 
 import numpy as np
 
-from isofit.atmosphere import BaseAtmosphere
+from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core.common import (
     calculate_resample_matrix,
     json_load_ascii,

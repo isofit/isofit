@@ -45,10 +45,10 @@ def main():
         "interleave": "bip",
         "byte order": "0",
         "data ignore value": "-9999",
-        "wavelength": wavelengths
+        "wavelength": wavelengths,
     }
-    out_file = envi.create_image(output_hdr_path, hdr, ext='', force=True)
-    output_mm = out_file.open_memmap(interleave='source', writable=True)
+    out_file = envi.create_image(output_hdr_path, hdr, ext="", force=True)
+    output_mm = out_file.open_memmap(interleave="source", writable=True)
 
     # Iterate through dataframe and write to output memmap
     for index, row in spectra_df.iterrows():

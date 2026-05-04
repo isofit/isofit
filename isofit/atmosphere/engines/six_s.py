@@ -26,7 +26,7 @@ from datetime import datetime
 
 import numpy as np
 
-from isofit.atmosphere import BaseAtmosphere
+from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core import units
 from isofit.core.common import load_esd, resample_spectrum
 from isofit.data import env
