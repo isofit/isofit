@@ -57,10 +57,10 @@ def test_subcommand_registration(executable):
         if proc.returncode != 0:
             print()
             print("stdout:")
-            print(stdout_txt, sys.stderr)
+            print(stdout_txt, file=sys.stderr)
             print()
             print("stderr:")
-            print(proc.stdout.read().decode(), file=sys.stderr)
+            print(proc.stderr.read().decode(), file=sys.stderr)
             assert False
 
     subcommand_count = 0

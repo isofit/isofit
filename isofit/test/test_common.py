@@ -72,24 +72,22 @@ def test_load_spectrum():
 def test_svd_inv_sqrt():
     # PSD
     sample_array_3 = np.array([[27, 20], [20, 16]])
-    sample_matrix_3 = np.asmatrix(sample_array_3)
     result_matrix_3, result_matrix_sq_3 = svd_inv_sqrt(sample_array_3)
-    assert result_matrix_3.all() == scipy.linalg.inv(sample_matrix_3).all()
-    assert (result_matrix_sq_3 @ result_matrix_sq_3).all() == result_matrix_3.all()
+    assert np.allclose(result_matrix_3, np.linalg.inv(sample_array_3))
+    assert np.allclose(result_matrix_sq_3 @ result_matrix_sq_3, result_matrix_3)
 
     # PD
     sample_array_4 = np.array([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])
-    sample_matrix_4 = np.asmatrix(sample_array_4)
     result_matrix_4, result_matrix_sq_4 = svd_inv_sqrt(sample_array_4)
-    assert (scipy.linalg.inv(sample_matrix_4)).all() == result_matrix_4.all()
-    assert (result_matrix_sq_4 @ result_matrix_sq_4).all() == result_matrix_4.all()
+    assert np.allclose(result_matrix_4, np.linalg.inv(sample_array_4))
+    assert np.allclose(result_matrix_sq_4 @ result_matrix_sq_4, result_matrix_4)
 
 
 def test_svd_inv():
     sample_array_3 = np.array([[27, 20], [20, 16]])
-    assert svd_inv(sample_array_3).all() == svd_inv_sqrt(sample_array_3)[0].all()
+    assert np.allclose(svd_inv(sample_array_3), svd_inv_sqrt(sample_array_3)[0])
     sample_array_4 = np.array([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])
-    assert svd_inv(sample_array_4).all() == svd_inv_sqrt(sample_array_4)[0].all()
+    assert np.allclose(svd_inv(sample_array_4), svd_inv_sqrt(sample_array_4)[0])
 
 
 def test_recursive_replace():

@@ -179,6 +179,10 @@ def invert_algebraic(
     if not my_RT:
         raise ValueError("No suitable RT object for initialization")
 
+    _, rho_init = surface.calc_rfl(x_surface, geom)
+
+    rho_dif_dif = geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_init
+
     # Get all radiance terms
     (
         rhi,
@@ -187,7 +191,7 @@ def invert_algebraic(
         L_dif_dir,
         L_dir_dif,
         L_dif_dif,
-    ) = RT.calc_RT_quantities(x_RT, geom)
+    ) = RT.calc_RT_quantities(x_RT, geom, rho_dif_dif=rho_dif_dif)
     L_atm = RT.get_L_atm(x_RT, geom)
     sphalb = rhi["sphalb"]
     Ls = surface.calc_Ls(x_surface, geom)
@@ -271,15 +275,6 @@ def invert_analytical(
     x = x0.copy()
     x_surface, x_RT, x_instrument = fm.unpack(x)
 
-    # Get all the RT quantities
-    (r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = fm.RT.calc_RT_quantities(
-        x_RT, geom
-    )
-
-    # Path radiance and spherical albedo
-    L_atm = fm.RT.get_L_atm(x_RT, geom)
-    s = r["sphalb"]
-
     # Get all the surface quantities for the super pixel
     sub_surface, sub_RT, sub_instrument = fm.unpack(sub_state)
 
@@ -287,6 +282,26 @@ def invert_analytical(
     rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_surface, geom)
     rho_dir_dir = fm.upsample(fm.surface.wl, rho_dir_dir)
     rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
+
+    rho_dir_dif = (
+        fm.upsample(fm.surface.wl, geom.bg_rfl)
+        if isinstance(geom.bg_rfl, np.ndarray)
+        else rho_dir_dir
+    )
+    rho_dif_dif = (
+        fm.upsample(fm.surface.wl, geom.bg_rfl)
+        if isinstance(geom.bg_rfl, np.ndarray)
+        else rho_dif_dir
+    )
+
+    # Get all the RT quantities
+    (r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = fm.RT.calc_RT_quantities(
+        x_RT, geom, rho_dif_dif=rho_dif_dif
+    )
+
+    # Path radiance and spherical albedo
+    L_atm = fm.RT.get_L_atm(x_RT, geom)
+    s = r["sphalb"]
 
     # Background conditions equal to the superpixel reflectance
     bg = s * rho_dif_dir

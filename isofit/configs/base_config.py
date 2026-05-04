@@ -50,6 +50,7 @@ class BaseConfigSection(object):
 
     def check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
         message_type = (
             "Invalid type for config option {} in config section {}. The provided value"
             " {} is a {}, " + "but the required value should be a {}."
@@ -85,16 +86,20 @@ class BaseConfigSection(object):
                 )
             )
 
-        errors.extend(self._check_config_validity())
+        er, warn = self._check_config_validity()
+        errors.extend(er)
+        warnings.extend(warn)
 
         # Now do a full check on each submodule
         for key in self._get_nontype_attributes():
             value = getattr(self, key)
             if hasattr(value, "check_config_validity"):
                 logging.debug(f"Configuration check of: {key}")
-                errors.extend(value.check_config_validity())
+                er, warn = value.check_config_validity()
+                errors.extend(er)
+                warnings.extend(warn)
 
-        return errors
+        return errors, warnings
 
     def get_config_options_as_dict(self) -> Dict[str, Dict[str, any]]:
         config_options = OrderedDict()
@@ -118,7 +123,7 @@ class BaseConfigSection(object):
         return data
 
     def _check_config_validity(self) -> List[str]:
-        return list()
+        return list(), list()
 
     def _get_expected_type_for_option_key(self, option_key: str) -> type:
         key = f"_{option_key}_type"
@@ -172,6 +177,6 @@ class BaseConfigSection(object):
         elements, element_names = self.get_elements()
         return element_names
 
-    def get_single_element_by_name(self, name):
+    def get(self, name):
         elements, element_names = self.get_elements()
         return elements[element_names.index(name)]

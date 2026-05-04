@@ -296,9 +296,7 @@ def atm_interpolation(
 
     # Initialize ray cluster
     start_time = time.time()
-    ray.init(
-        **{"ignore_reinit_error": True, "local_mode": n_cores == 1, "num_cpus": n_cores}
-    )
+    ray.init(**{"ignore_reinit_error": True, "num_cpus": n_cores})
 
     n_cores = min(n_cores, n_input_lines)
 

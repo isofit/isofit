@@ -21,7 +21,41 @@ import os
 from typing import Dict, List, Type
 
 from isofit.configs.base_config import BaseConfigSection
-from isofit.configs.sections.statevector_config import StateVectorConfig
+from isofit.configs.sections.statevector_config import (
+    StateVectorConfig,
+    StateVectorElementConfig,
+)
+
+
+class InstrumentStateVectorConfig(StateVectorConfig):
+    """
+    Instrument State vector configuration.
+    """
+
+    def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
+        self._EOF_1_type = StateVectorElementConfig
+        self.EOF_1: StateVectorElementConfig = None
+
+        self._EOF_2_type = StateVectorElementConfig
+        self.EOF_2: StateVectorElementConfig = None
+
+        self._EOF_3_type = StateVectorElementConfig
+        self.EOF_3: StateVectorElementConfig = None
+
+        self._GROW_FWHM_type = StateVectorElementConfig
+        self.GROW_FWHM: StateVectorElementConfig = None
+
+        self._WL_SHIFT_type = StateVectorElementConfig
+        self.WL_SHIFT: StateVectorElementConfig = None
+
+        self._WL_SPACE_type = StateVectorElementConfig
+        self.WL_SPACE: StateVectorElementConfig = None
+
+        assert len(self.get_all_elements()) == len(self._get_nontype_attributes())
+
+        self._set_statevector_config_options(sub_configdic)
 
 
 class InstrumentUnknowns(BaseConfigSection):
@@ -30,6 +64,8 @@ class InstrumentUnknowns(BaseConfigSection):
     """
 
     def __init__(self, sub_configdic: dict = None):
+        super().__init__()
+
         self._channelized_radiometric_uncertainty_file_type = str
         self.channelized_radiometric_uncertainty_file = None
 
@@ -49,6 +85,7 @@ class InstrumentUnknowns(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         file_params = [
             self.channelized_radiometric_uncertainty_file,
@@ -59,7 +96,7 @@ class InstrumentUnknowns(BaseConfigSection):
                 if os.path.isfile(param) is False:
                     errors.append("Instrument unknown file: {} not found".format(param))
 
-        return errors
+        return errors, warnings
 
 
 class InstrumentConfig(BaseConfigSection):
@@ -84,8 +121,8 @@ class InstrumentConfig(BaseConfigSection):
         self.fast_resample = True
         """bool: Approximates a complete resampling by a convolution with a uniform FWHM."""
 
-        self._statevector_type = StateVectorConfig
-        self.statevector: StateVectorConfig = StateVectorConfig({})
+        self._statevector_type = InstrumentStateVectorConfig
+        self.statevector: StateVectorConfig = InstrumentStateVectorConfig({})
 
         self._SNR_type = float
         self.SNR = None
@@ -125,6 +162,7 @@ class InstrumentConfig(BaseConfigSection):
 
     def _check_config_validity(self) -> List[str]:
         errors = list()
+        warnings = list()
 
         noise_options = [
             self.SNR,
@@ -152,4 +190,4 @@ class InstrumentConfig(BaseConfigSection):
                 if os.path.isfile(param) is False:
                     errors.append("Instrument config file: {} not found".format(param))
 
-        return errors
+        return errors, warnings

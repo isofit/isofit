@@ -7,4 +7,5 @@ dependencies:
   - python>=3.8
   - ipykernel
   - ipywidgets
+  - jupyterlab
   - matplotlib

@@ -72,9 +72,9 @@ def files(cwd):
         shutil.rmtree(cwd / flush_dir, ignore_errors=True)
 
     return [
-        str(cwd / "ang20170323t202244_rdn_7k-8k"),
-        str(cwd / "ang20170323t202244_loc_7k-8k"),
-        str(cwd / "ang20170323t202244_obs_7k-8k"),
+        str(cwd / "data" / "ang20170323t202244_rdn_7k-8k"),
+        str(cwd / "data" / "ang20170323t202244_loc_7k-8k"),
+        str(cwd / "data" / "ang20170323t202244_obs_7k-8k"),
         cwd,
     ]
 

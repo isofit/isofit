@@ -16,6 +16,36 @@ CMD = "libradtran"
 URL = f"https://www.libradtran.org/download/{Version}.tar.gz"
 
 
+def fix_paths(directory):
+    """
+    Fixes hardcoded paths in libradtran for different install environments
+
+    LibRadTran assumes packages were installed with MacPorts
+
+    Parameters
+    ----------
+    directory : str
+        Directory with an unbuilt LibRadTran
+    """
+    fix = []
+
+    # brew install [Mac]
+    if Path("/opt/homebrew/Cellar").exists():
+        fix.append(("/opt/local", "/opt/homebrew/Cellar"))
+
+    # apt-get install [Docker]
+    if Path("/usr/bin/nc-config").exists():
+        fix.append(("/opt/local", "/usr"))
+
+    if fix:
+        for file in directory.rglob("*"):
+            if file.is_file():
+                content = file.read_text(encoding="utf-8", errors="ignore")
+                for bad, good in fix:
+                    if bad in content:
+                        file.write_text(content.replace(bad, good), encoding="utf-8")
+
+
 def build(directory):
     """
     Builds a LibRadTran directory
@@ -32,25 +62,13 @@ def build(directory):
     following command in order to compile the program:
     $ sudo xcodebuild -license
     """
-    flags = []
-
-    # LibRadTran assumes GSL was installed with MacPorts
-    # Check if it was installed via brew instead and fix paths if so
-
-    if Path("/opt/homebrew/Cellar/gsl").exists():
-        flags = [
-            'CPPFLAGS="-I/opt/homebrew/include"',
-            'LDFLAGS="-L/opt/homebrew/lib"',
-            'FCFLAGS="-I/opt/homebrew/include"',
-            'FFLAGS="-I/opt/homebrew/include"',
-            "--with-netcdf4=/opt/homebrew",
-        ]
+    fix_paths(directory)
 
     # Configure first
-    command = f"./configure {' '.join(flags)}"
-    print(f"Executing: {command}")
+    command = f"./configure"
+    print(f"Executing config")
     subprocess.run(
-        command,
+        "./configure",
         shell=True,
         # stdout=subprocess.PIPE,
         # stderr=subprocess.PIPE,
