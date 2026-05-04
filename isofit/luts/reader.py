@@ -26,14 +26,15 @@ class LUT:
         ds,
         n_lut_input_dim: int,
         indices: SimpleNamespace,
-        lut_interpolators: dict = {},
+        interpolators: dict = {},
     ):
         self.n_lut_input_dim = n_lut_input_dim
         self.indices = indices
         self.ds = ds
         self.wl = ds.wl
+        self.wl = ds.fwhm
         self.rt_mode = ds.attrs.get("RT_mode", "transm")
-        self.lut_inteprolators = lut_interpolators
+        self.interpolators = interpolators
         self.cached = SimpleNamespace(point=np.array([]))
 
     def __call__(self, x_RT: np.array, geom: Geometry):
@@ -74,7 +75,7 @@ class LUT:
             return self.cached.value
 
         # Run the interpolators
-        value = {key: lut(point) for key, lut in self.lut_inteprolators.items()}
+        value = {key: lut(point) for key, lut in self.interpolators.items()}
 
         # Update the cache
         self.cached.point = point
@@ -459,24 +460,25 @@ class Reader:
         return points
 
     @staticmethod
-    def resample_xarray(lut, wl, fwhm, srf_file=""):
+    def resample_xarray(ds, wl, fwhm, srf_file=""):
         """To support OCI resampling"""
 
         # Discover variables along the wl dim
-        keys = {key for key in lut if "wl" in lut[key].dims} - {"fwhm"}
+        keys = {key for key in ds if "wl" in ds[key].dims} - {"fwhm"}
 
         # Apply resampling to these keys
         # Use srf_file if OCI
         kwargs = {
-            "wl": lut.wl,
+            "wl": ds.wl,
             "wl2": wl,
             "fwhm2": fwhm,
         }
         if srf_file:
             kwargs["srf_file"] = srf_file
-        conv_lut = xr.apply_ufunc(
+
+        conv_ds = xr.apply_ufunc(
             common.resample_spectrum,
-            lut[keys],
+            ds[keys],
             kwargs=kwargs,
             input_core_dims=[["wl"]],  # Only operate on keys with this dim
             exclude_dims=set(["wl"]),  # Allows changing the wl size
@@ -485,9 +487,10 @@ class Reader:
             # on_missing_core_dim = 'copy' # Newer versions of xarray support this
         )
         # If not on newer versions, add keys not on the wl dim
-        for key in list(self.lut.drop_dims("wl")):
-            conv_lut[key] = self.lut[key]
-        # Override the fwhm
-        conv_lut["fwhm"] = ("wl", fwhm)
+        for key in list(ds.drop_dims("wl")):
+            conv_ds[key] = ds[key]
 
-        return conv_lut
+        # Override the fwhm
+        conv_ds["fwhm"] = ("wl", fwhm)
+
+        return conv_ds

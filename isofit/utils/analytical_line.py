@@ -146,7 +146,7 @@ def analytical_line(
         full_idx_surface,
         full_idx_surf_rfl,
         _,
-        full_idx_RT,
+        full_idx_atmosphere,
         full_idx_instrument,
     ) = construct_full_state(config)
 
@@ -158,7 +158,7 @@ def analytical_line(
             input_locations_file=loc_file,
             segmentation_file=lbl_file,
             output_atm_file=atm_file,
-            atm_band_names=[full_statevector[i] for i in full_idx_RT],
+            atm_band_names=[full_statevector[i] for i in full_idx_atmosphere],
             nneighbors=n_atm_neighbors,
             gaussian_smoothing_sigma=smoothing_sigma,
             n_cores=n_cores,
@@ -273,7 +273,7 @@ def analytical_line(
     index_pairs[:, 1] = meshgrid[1].flatten(order="f")
     del meshgrid
 
-    cache_RT = None
+    cache_atmosphere = None
     input_config = deepcopy(config)
     surface_index = index_spectra_by_surface(
         input_config, index_pairs, force_full_res=True
@@ -282,7 +282,7 @@ def analytical_line(
         # Handle multisurface
         config = update_config_for_surface(deepcopy(input_config), surface_class_str)
 
-        fm = ForwardModel(config, cache_RT)
+        fm = ForwardModel(config, cache_atmosphere)
         fm.match_statevector(full_statevector)
 
         # Initialize workers
@@ -293,7 +293,7 @@ def analytical_line(
             full_statevector,
             full_idx_surface,
             full_idx_surf_rfl,
-            full_idx_RT,
+            full_idx_atmosphere,
             rdn_file,
             loc_file,
             obs_file,
@@ -329,9 +329,9 @@ def analytical_line(
             workers.map_unordered(lambda a, b: a.run_chunks.remote(b), line_breaks)
         )
 
-        # Cache RT
+        # Cache atmosphere
         if not i:
-            cache_RT = fm.RT
+            cache_atmosphere = fm.atmosphere
 
         del fm
 
@@ -355,7 +355,7 @@ class Worker(object):
         full_statevector: list,
         full_idx_surface: np.array,
         full_idx_surf_rfl: np.array,
-        full_idx_RT: np.array,
+        full_idx_atmosphere: np.array,
         rdn_file: str,
         loc_file: str,
         obs_file: str,
@@ -402,7 +402,7 @@ class Worker(object):
         self.full_statevector = full_statevector
         self.full_idx_surface = full_idx_surface
         self.full_idx_surf_rfl = full_idx_surf_rfl
-        self.full_idx_RT = full_idx_RT
+        self.full_idx_atmosphere = full_idx_atmosphere
         self.n_rfl_bands = len(full_idx_surf_rfl)
         self.n_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
 
@@ -452,7 +452,7 @@ class Worker(object):
         self.num_iter = num_iter
 
         # Define coszen for geom creation
-        self.coszen = self.fm.RT.rt_engines[0].coszen or None
+        self.coszen = self.fm.atmosphere.rt_engines[0].coszen or None
 
         if config.input.radiometry_correction_file is not None:
             self.radiance_correction, wl = load_spectrum(
@@ -528,7 +528,7 @@ class Worker(object):
 
             # "Atmospheric" state ALWAYS comes from all bands in the
             # atm_interpolated file
-            x_RT = self.rt_state[r, c, :]
+            x_atmosphere = self.rt_state[r, c, :]
 
             # TODO depricate this iv_idx. Abstract the indexing a bit more
             # s.t. we can smooth any statevector element by specifying idx
@@ -541,7 +541,7 @@ class Worker(object):
             lbl_idx = int(self.lbl[r, c, 0])
             sub_state = np.zeros(self.fm.nstate)
             sub_state[self.fm.idx_surface] = self.subs_state[lbl_idx, 0, iv_idx]
-            sub_state[self.fm.idx_RT] = x_RT
+            sub_state[self.fm.idx_atmosphere] = x_atmosphere
             sub_state[self.fm.idx_instrument] = self.subs_state[
                 lbl_idx, 0, self.fm.idx_instrument
             ]
@@ -556,16 +556,16 @@ class Worker(object):
             # SIMPLE uses invert_simple for rfl and non_rfl surface elements
             if self.initializer == "superpixel":
                 x0 = sub_state
-                x0[self.fm.idx_RT] = x_RT
+                x0[self.fm.idx_atmosphere] = x_atmosphere
 
             elif self.initializer == "algebraic":
                 x_surface, _, x_instrument = self.fm.unpack(self.fm.init.copy())
                 rfl_est, coeffs = invert_algebraic(
                     self.fm.surface,
-                    self.fm.RT,
+                    self.fm.atmosphere,
                     self.fm.instrument,
                     x_surface,
-                    x_RT,
+                    x_atmosphere,
                     x_instrument,
                     meas,
                     geom,
@@ -576,14 +576,14 @@ class Worker(object):
                 x0 = np.concatenate(
                     [
                         rfl_est,
-                        x_RT,
+                        x_atmosphere,
                         x_instrument,
                     ]
                 )
 
             elif self.initializer == "simple":
                 x0 = invert_simple(self.fm, meas, geom)
-                x0[self.fm.idx_RT] = x_RT
+                x0[self.fm.idx_atmosphere] = x_atmosphere
 
             else:
                 raise ValueError("No valid initializer given for AOE algorithm")

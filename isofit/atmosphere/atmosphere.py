@@ -37,6 +37,7 @@ from isofit.core.geometry import Geometry
 from isofit.luts import LUT, Reader, sub
 
 Logger = logging.getLogger(__file__)
+# Logger = logging.getLogger()
 
 
 class Keys:
@@ -134,6 +135,7 @@ class BaseAtmosphere(Reader):
         self.lut_exists = self.lut_path is not None and os.path.isfile(self.lut_path)
         if self.lut_exists:
             Logger.info("Prebuilt LUT provided")
+
         elif not self.lut_exists and self.lut_grid is None:
             raise AttributeError(
                 "Must provide either a prebuilt LUT file or a LUT grid"
@@ -168,7 +170,7 @@ class BaseAtmosphere(Reader):
             Logger.error(e)
             raise AttributeError(e)
 
-        # Set for downstream engines may use
+        # Set for downstream engines
         self.wl = wl
         self.fwhm = fwhm
 
@@ -228,21 +230,6 @@ class BaseAtmosphere(Reader):
                 "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
             )
 
-        # TODO Clean OCI irr path - Important to trace throughout?
-        # sc - Bandaid for code to know whether to use gaussian assumptions
-        #      Currently, if using tsis, then OCI, which is non-gaussian
-        srf_file = None
-        irr_file = Path(self.config.irradiance_file)
-        if irr_file.stem == "tsis_f0_0p1":
-            srf_file = irr_file.parent / "pace_oci_rsr.nc"
-
-        if (
-            not len(self.wl) == len(self.lut.wl)
-            or not all(self.wl == self.lut.wl)
-            or (srf_file is not None)
-        ):
-            self.lut = self.resample_xarray(self.lut, wl, fwhm, srf_file)
-
         # Write the NetCDF information to the log file so devs have that info during debugging
         # Have to create a fileobj to capture the text because it doesn't return (prints straight to stdout by default)
         info = io.StringIO()
@@ -297,7 +284,21 @@ class BaseAtmosphere(Reader):
 
         # Load LUT and run coupling function in one go
         # TODO formalize pathway for pre-built LUT
+        ds = self.load(file=self.lut_path, subset=self.config.lut_names)
         ds = self.couple(self.load(file=self.lut_path, subset=self.config.lut_names))
+
+        # Special treatment for PACE OCI
+        srf_file = None
+        irr_file = Path(self.config.irradiance_file)
+        if irr_file.stem == "tsis_f0_0p1":
+            srf_file = irr_file.parent / "pace_oci_rsr.nc"
+
+        if (
+            not len(self.wl) == len(ds.wl)
+            or not all(self.wl == ds.wl)
+            or (srf_file is not None)
+        ):
+            ds = self.resample_xarray(ds, self.wl, self.fwhm, srf_file)
 
         # Limit the wavelength per the config, does not affect data on disk
         if self.config.wavelength_range is not None:
@@ -311,7 +312,7 @@ class BaseAtmosphere(Reader):
         )
         Logger.debug(f"Interpolators built")
 
-        return LUT(ds, self.n_lut_input_dim, indices, lut_interpolators=interpolators)
+        return LUT(ds, self.n_lut_input_dim, indices, interpolators=interpolators)
 
     def write(self):
         raise NotImplemented(

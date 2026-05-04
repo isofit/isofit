@@ -503,7 +503,7 @@ class Create:
         return self.ds[key]
 
     def __repr__(self) -> str:
-        return f"LUT(wl={self.wl.size}, grid={self.sizes})"
+        return f"LUT Writer(wl={self.wl.size}, grid={self.sizes})"
 
 
 def cleanup(file):

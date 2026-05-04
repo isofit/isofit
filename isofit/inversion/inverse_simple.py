@@ -172,6 +172,7 @@ def invert_algebraic(
     L_atm = fm.atmosphere.get_L_atm(x_atmosphere, geom)
     sphalb = rhi["sphalb"]
     Ls = fm.surface.calc_Ls(x_surface, geom)
+
     transup = fm.atmosphere.get_upward_transm(r=rhi, geom=geom)
 
     # Get the wavelengths too - these may also be adjusted

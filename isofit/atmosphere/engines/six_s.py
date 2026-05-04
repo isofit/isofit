@@ -33,7 +33,8 @@ from isofit.data import env
 from isofit.data.cli.sixs import get_exe
 from isofit.luts import Writer
 
-Logger = logging.getLogger(__file__)
+# Logger = logging.getLogger(__file__)
+Logger = logging.getLogger()
 
 eps = 1e-5  # used for finite difference derivative calculations
 
@@ -108,7 +109,6 @@ class SixSRT(Writer, BaseAtmosphere):
 
         # If the LUT file already exists, still need to calc this post init
         if not hasattr(self, "esd"):
-            # self.load_esd()
             self.load_esd()
 
         super().__init__(full_config, wl=self.wl, fwhm=self.fwhm, **kwargs)
