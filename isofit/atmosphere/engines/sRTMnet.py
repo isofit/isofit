@@ -37,8 +37,7 @@ from isofit.core import units
 from isofit.core.common import calculate_resample_matrix, resample_spectrum
 from isofit.luts import Writer
 
-# Logger = logging.getLogger(__file__)
-Logger = logging.getLogger()
+Logger = logging.getLogger(__file__)
 
 
 class SRTMnetModel(torch.nn.Module):

@@ -32,8 +32,8 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_spectrum, load_wavelen
-from isofit.core.fileio import IO, initialize_output, write_bil_chunk
+from isofit.core.common import envi_header, load_esd, load_spectrum, load_wavelen
+from isofit.core.fileio import initialize_output, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.core.multistate import (
@@ -397,7 +397,7 @@ class Worker(object):
         self.class_idx_pairs = class_idx_pairs
 
         # Will fail if env.data isn't set up
-        self.esd = IO.load_esd()
+        self.esd = load_esd()
 
         self.full_statevector = full_statevector
         self.full_idx_surface = full_idx_surface

@@ -36,8 +36,7 @@ from isofit.core.common import svd_inv_sqrt
 from isofit.core.geometry import Geometry
 from isofit.luts import LUT, Reader, sub
 
-# Logger = logging.getLogger(__file__)
-Logger = logging.getLogger()
+Logger = logging.getLogger(__file__)
 
 
 class Keys:
@@ -202,10 +201,8 @@ class BaseAtmosphere(Reader):
         self.bval = np.array([x for x in self.config.unknowns.get_elements()[0]])
         # Create LUT (for generic this will be fake executed
 
-        # TODO Figure out the sorting here.
-        self.lut_names = sorted(
-            set(list(self.lut_grid.keys()) or self.config.statevector_names)
-        )
+        self.lut_names = list(self.lut_grid.keys())
+
         self.n_lut_input_dim = len(self.lut_names)
         self.keys = Keys
 
@@ -257,8 +254,8 @@ class BaseAtmosphere(Reader):
         TODO: Make sure that loaded LUT matches config LUT
         """
         # Write the LUT if this function is hooked up (In cases with engine).
-        # if not self.lut_exists:
-        self.write()
+        if not self.lut_exists:
+            self.write()
 
         indices = SimpleNamespace(geom={}, x_RT=[])
 
