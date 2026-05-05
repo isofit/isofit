@@ -596,9 +596,7 @@ class Worker(object):
                 geom,
                 np.copy(x0),
                 sub_state,
-                self.num_iter,
-                self.hash_table,
-                self.hash_size,
+                self.num_iter=self.num_iter,
             )
             state_est = states[-1]
 
