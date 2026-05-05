@@ -84,7 +84,7 @@ def heuristic_atmosphere(
             continue
 
         # ignore unused names
-        if h2oname not in fm.atmosphere.engine.lut_names:
+        if h2oname not in fm.atmosphere.lut_names:
             continue
 
         # find the index in the lookup table associated with water vapor
@@ -95,7 +95,7 @@ def heuristic_atmosphere(
         # calculating the band ratio that we would see if this were the
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in fm.atmosphere.engine.lut_grid[h2oname]:
+        for h2o in fm.atmosphere.lut_grid[h2oname]:
             # Get Atmospheric terms at high spectral resolution
             x_atmosphere_guess = x_atmosphere.copy()
             x_atmosphere_guess[ind_sv] = h2o
@@ -172,6 +172,7 @@ def invert_algebraic(
     L_atm = fm.atmosphere.get_L_atm(x_atmosphere, geom)
     sphalb = rhi["sphalb"]
     Ls = fm.surface.calc_Ls(x_surface, geom)
+
     transup = fm.atmosphere.get_upward_transm(r=rhi, geom=geom)
 
     # Get the wavelengths too - these may also be adjusted
@@ -262,7 +263,7 @@ def invert_analytical(
     )
 
     # Get all the atmosphere quantities
-    (r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif) = (
+    r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = (
         fm.calc_atmosphere_quantities(x_atmosphere, geom, rho_dif_dif=rho_dif_dif)
     )
 

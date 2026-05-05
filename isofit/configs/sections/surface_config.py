@@ -17,8 +17,7 @@
 # ISOFIT: Imaging Spectrometer Optimal FITting
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 
-import os
-from typing import Dict, List, Type
+from typing import List
 
 import numpy as np
 from scipy.io import loadmat
@@ -94,10 +93,10 @@ class SurfaceConfig(BaseConfigSection):
         self._wavelength_file_type = str
         self.wavelength_file = None
 
-        """bool: This field, if present and set to true, forces us to use any initialization state and never change.
-        The state is preserved in the geometry object so that this object stays stateless"""
         self._select_on_init_type = bool
         self.select_on_init = True
+        """bool: This field, if present and set to true, forces us to use any initialization state and never change.
+        The state is preserved in the geometry object so that this object stays stateless"""
 
         self._selection_metric_type = str
         self.selection_metric = "Euclidean"
@@ -106,9 +105,23 @@ class SurfaceConfig(BaseConfigSection):
         self.statevector: StateVectorConfig = SurfaceStateVectorConfig({})
 
         # Surface Thermal
-        """ Initial Value recommended by Glynn Hulley."""
         self._emissivity_for_surface_T_init_type = float
         self.emissivity_for_surface_T_init = 0.98
+        """ Initial Value recommended by Glynn Hulley."""
+
+        self._terrain_style_type = str
+        self.terrain_style = "flat"
+        """
+        Style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
+        """
+
+        self._max_slope_type = float
+        self.max_slope = 90.0
+        """
+        float: Max slope value used in LUT component calculations to inform minimum cos_i.
+        Only relevant if terrain_style is 'dem' and a 6 component model is used.
+        This can avoid runaway results at low cos_i values where diffuse radiance dominates.
+        """
 
         self.set_config_options(sub_configdic)
 
@@ -204,5 +217,11 @@ class SurfaceConfig(BaseConfigSection):
                 message += f"\n{value}: {key}"
 
             warnings.append(message)
+
+        terrain_options = ["flat", "dem", "solved"]
+        if self.terrain_style not in terrain_options:
+            errors.append(
+                f"surface->terrain_style is set as {self.terrain_style}, but must be one of: {terrain_options}"
+            )
 
         return errors, warnings

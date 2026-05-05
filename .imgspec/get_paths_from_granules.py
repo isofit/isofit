@@ -11,19 +11,25 @@ def parse_args():
     parser = argparse.ArgumentParser()
     products = ["rdn", "obs_ort", "loc", "igm", "glt"]
     formats = ["envi", "hdf"]
-    parser.add_argument("-p", "--product",
-                        help=("Choose one of the following product types: " + ", ".join(products)))
-    parser.add_argument("-f", "--format",
-                        help=("Choose one of the following formats: " + ", ".join(formats)))
+    parser.add_argument(
+        "-p",
+        "--product",
+        help=("Choose one of the following product types: " + ", ".join(products)),
+    )
+    parser.add_argument(
+        "-f",
+        "--format",
+        help=("Choose one of the following formats: " + ", ".join(formats)),
+    )
     args = parser.parse_args()
 
     if args.product:
         if args.product not in products:
-            print("ERROR: Product \"%s\" is not a valid product choice." % args.product)
+            print('ERROR: Product "%s" is not a valid product choice.' % args.product)
             sys.exit(1)
     if args.format:
         if args.format not in formats:
-            print("ERROR: Format \"%s\" is not a valid format choice." % f)
+            print('ERROR: Format "%s" is not a valid format choice.' % f)
             sys.exit(1)
     return args
 
@@ -40,7 +46,9 @@ def main():
         tar_file.close()
         os.remove(g)
 
-    dirs = [d for d in os.listdir(input_dir) if os.path.isdir(os.path.join(input_dir, d))]
+    dirs = [
+        d for d in os.listdir(input_dir) if os.path.isdir(os.path.join(input_dir, d))
+    ]
     instrument = "PRISMA" if dirs[0][:3] == "PRS" else "AVIRIS"
 
     # Get paths based on product type file matching

@@ -25,7 +25,7 @@ from isofit.core.common import (
 )
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
-from isofit.radiative_transfer.engines.modtran import ModtranRT
+from isofit.atmosphere.engines.modtran import ModtranRT
 from isofit.utils.surface_model import surface_model
 
 
@@ -784,50 +784,54 @@ def build_config(
     config = {
         "forward_model": {
             "instrument": make_instrument_config(
-                paths.wavelength_path,
-                paths.input_channelized_uncertainty_path,
-                paths.channelized_uncertainty_working_path,
-                paths.eof_path,
-                paths.eof_working_path,
-                paths.noise_path,
-                segmentation_size,
-                use_superpixels,
-                uncorrelated_radiometric_uncertainty,
-                paths.dn_uncertainty_file,
+                wavelength_path=paths.wavelength_path,
+                input_channelized_uncertainty_path=paths.input_channelized_uncertainty_path,
+                channelized_uncertainty_working_path=paths.channelized_uncertainty_working_path,
+                eof_path=paths.eof_path,
+                eof_working_path=paths.eof_working_path,
+                noise_path=paths.noise_path,
+                segmentation_size=segmentation_size,
+                use_superpixels=use_superpixels,
+                uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+                dn_uncertainty_file=paths.dn_uncertainty_file,
             ),
-            "radiative_transfer": make_rt_config(
-                paths.lut_h2o_directory if presolve else paths.full_lut_directory,
-                paths.h2o_template_path if presolve else paths.modtran_template_path,
-                paths.aerosol_tpl_path,
-                paths.earth_sun_distance_path,
-                paths.irradiance_file,
-                paths.sixs_path,
-                paths.modtran_path,
-                h2o_lut_grid,
-                aerosol_lut_grid,
-                aerosol_model_file,
-                aerosol_state_vector,
-                co2_lut_grid,
-                elevation_lut_grid,
-                emulator_base,
-                multipart_transmittance,
-                prebuilt_lut_path,
-                presolve,
-                pressure_elevation,
-                retrieve_co2,
-                relative_azimuth_lut_grid,
-                to_sensor_zenith_lut_grid,
-                to_sun_zenith_lut_grid,
-                terrain_style,
-                max_slope,
+            "atmosphere": make_atmosphere_config(
+                lut_directory=(
+                    paths.lut_h2o_directory if presolve else paths.full_lut_directory
+                ),
+                modtran_template_path=(
+                    paths.h2o_template_path if presolve else paths.modtran_template_path
+                ),
+                aerosol_tpl_path=paths.aerosol_tpl_path,
+                earth_sun_distance_path=paths.earth_sun_distance_path,
+                irradiance_file=paths.irradiance_file,
+                sixs_path=paths.sixs_path,
+                modtran_path=paths.modtran_path,
+                h2o_lut_grid=h2o_lut_grid,
+                aerosol_lut_grid=aerosol_lut_grid,
+                aerosol_model_file=aerosol_model_file,
+                aerosol_state_vector=aerosol_state_vector,
+                co2_lut_grid=co2_lut_grid,
+                elevation_lut_grid=elevation_lut_grid,
+                emulator_base=emulator_base,
+                multipart_transmittance=multipart_transmittance,
+                prebuilt_lut_path=prebuilt_lut_path,
+                presolve=presolve,
+                pressure_elevation=pressure_elevation,
+                retrieve_co2=retrieve_co2,
+                relative_azimuth_lut_grid=relative_azimuth_lut_grid,
+                to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid,
+                to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
             ),
             "surface": make_surface_config(
-                paths.surface_class_working_path,
-                paths.surface_class_subs_path,
-                paths.surface_working_paths,
-                surface_category,
-                pressure_elevation,
-                use_superpixels,
+                surface_class_working_path=paths.surface_class_working_path,
+                surface_class_subs_path=paths.surface_class_subs_path,
+                surface_working_paths=paths.surface_working_paths,
+                surface_category=surface_category,
+                pressure_elevation=pressure_elevation,
+                use_superpixels=use_superpixels,
+                terrain_style=terrain_style,
+                max_slope=max_slope,
             ),
         },
         "implementation": make_implementation_config(
@@ -1424,7 +1428,7 @@ def write_wavelength_file(filename, wl, fwhm):
     np.savetxt(filename, wl_data, delimiter=" ")
 
 
-def make_rt_config(
+def make_atmosphere_config(
     lut_directory: str,
     modtran_template_path: str,
     aerosol_tpl_path: str = None,
@@ -1447,8 +1451,6 @@ def make_rt_config(
     relative_azimuth_lut_grid: np.array = None,
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
-    terrain_style: str = "flat",
-    max_slope: float = 20.0,
 ):
     avc = np.sum(
         [
@@ -1476,7 +1478,7 @@ def make_rt_config(
     else:
         engine_name = "sRTMnet"
 
-    radiative_transfer_config = {
+    atmosphere_config = {
         "engine": {
             "engine_name": engine_name,
             "multipart_transmittance": multipart_transmittance,
@@ -1488,28 +1490,26 @@ def make_rt_config(
         "statevector": {},
         "lut_grid": {},
         "unknowns": {"H2O_ABSCO": 0.0},
-        "terrain_style": terrain_style,
-        "max_slope": max_slope,
     }
 
-    rte = {}
+    atmosphere_rte = {}
     if emulator_base is not None:
-        rte["emulator_file"] = abspath(emulator_base)
-        rte["earth_sun_distance_file"] = earth_sun_distance_path
-        rte["irradiance_file"] = irradiance_file
-        rte["engine_base_dir"] = sixs_path
+        atmosphere_rte["emulator_file"] = abspath(emulator_base)
+        atmosphere_rte["earth_sun_distance_file"] = earth_sun_distance_path
+        atmosphere_rte["irradiance_file"] = irradiance_file
+        atmosphere_rte["engine_base_dir"] = sixs_path
         if multipart_transmittance:
-            rte["emulator_aux_file"] = abspath(emulator_base)
+            atmosphere_rte["emulator_aux_file"] = abspath(emulator_base)
         else:
-            rte["emulator_aux_file"] = abspath(
+            atmosphere_rte["emulator_aux_file"] = abspath(
                 os.path.splitext(emulator_base)[0] + "_aux.npz"
             )
     else:
-        rte["engine_base_dir"] = modtran_path
-    radiative_transfer_config["engine"].update(rte)
+        atmosphere_rte["engine_base_dir"] = modtran_path
+    atmosphere_config["engine"].update(atmosphere_rte)
 
     if aerosol_model_file is None:
-        radiative_transfer_config["engine"]["aerosol_model_file"] = aerosol_model_file
+        atmosphere_config["engine"]["aerosol_model_file"] = aerosol_model_file
 
     # First, build the general lut grid
     lut_grid = {
@@ -1531,7 +1531,7 @@ def make_rt_config(
             lut_grid[gn] = np.array(gc).tolist()
 
     if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
-        from isofit.radiative_transfer.engines.kernel_flows import bounds_check
+        from isofit.atmosphere.engines.kernel_flows import bounds_check
 
         # Should only modify H2OSTR and surface_elevation_km
         bounds_check(lut_grid, emulator_base, modify=True)
@@ -1551,10 +1551,8 @@ def make_rt_config(
     for tr in np.unique(to_remove):
         lut_grid.pop(tr)
 
-    radiative_transfer_config["lut_grid"].update(lut_grid)
-    radiative_transfer_config["engine"]["lut_names"] = {
-        key: None for key in lut_grid.keys()
-    }
+    atmosphere_config["lut_grid"].update(lut_grid)
+    atmosphere_config["engine"]["lut_names"] = {key: None for key in lut_grid.keys()}
 
     # Now do statevector
     statekeys = ["H2OSTR"]
@@ -1576,7 +1574,7 @@ def make_rt_config(
                 if isinstance(lut_grid[key], list)
                 else list(lut_grid[key].values())
             )
-            radiative_transfer_config["statevector"][key] = {
+            atmosphere_config["statevector"][key] = {
                 "bounds": [grid[0], grid[-1]],
                 "scale": scale,
                 "init": (grid[0] + grid[-1]) / 2.0,
@@ -1585,25 +1583,26 @@ def make_rt_config(
             }
 
     if aerosol_state_vector is not None and presolve is False:
-        radiative_transfer_config["statevector"].update(aerosol_state_vector)
+        atmosphere_config["statevector"].update(aerosol_state_vector)
 
-    # RTE should know about our whole LUT grid and all of our statevectors, so copy them in
-    radiative_transfer_config["engine"]["statevector_names"] = list(
-        radiative_transfer_config["statevector"].keys()
+    # Atmosphere RT engine should know about our whole LUT grid and all of our statevectors, so copy them in
+    atmosphere_config["engine"]["statevector_names"] = list(
+        atmosphere_config["statevector"].keys()
     )
 
-    return radiative_transfer_config
+    return atmosphere_config
 
 
 def make_surface_config(
-    surface_class_working_path=None,
-    surface_class_subs_path=None,
+    surface_class_working_path: str = None,
+    surface_class_subs_path: str = None,
     surface_working_paths: dict = None,
-    surface_category="multicomponent_surface",
-    pressure_elevation=False,
-    use_superpixels=False,
+    surface_category: str = "multicomponent_surface",
+    pressure_elevation: bool = False,
+    use_superpixels: bool = False,
+    terrain_style: str = "flat",
+    max_slope: float = 20.0,
 ):
-
     # Initialize config dict
     surface_config_dict = {
         "multi_surface_flag": False,
@@ -1641,12 +1640,16 @@ def make_surface_config(
                 "surface_int": int(i),
                 "surface_file": surface_path,
                 "surface_category": surface_category,
+                "terrain_style": terrain_style,
+                "max_slope": max_slope,
             }
 
     # Single surface run
     else:
         surface_config_dict["surface_file"] = surface_working_paths[surface_category]
         surface_config_dict["surface_category"] = surface_category
+        surface_config_dict["terrain_style"] = terrain_style
+        surface_config_dict["max_slope"] = max_slope
 
     # Accumulate statevector
     for category, path in surface_working_paths.items():

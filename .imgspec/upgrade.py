@@ -26,41 +26,41 @@ import spectral.io.envi as envi
 
 # Return the header associated with an image file
 def find_header(imgfile):
-    if os.path.exists(imgfile + '.hdr'):
-        return imgfile + '.hdr'
-    ind = imgfile.rfind('.raw')
+    if os.path.exists(imgfile + ".hdr"):
+        return imgfile + ".hdr"
+    ind = imgfile.rfind(".raw")
     if ind >= 0:
-        return imgfile[0:ind] + '.hdr'
-    ind = imgfile.rfind('.img')
+        return imgfile[0:ind] + ".hdr"
+    ind = imgfile.rfind(".img")
     if ind >= 0:
-        return imgfile[0:ind] + '.hdr'
-    raise IOError('No header found for file {0}'.format(imgfile));
+        return imgfile[0:ind] + ".hdr"
+    raise IOError("No header found for file {0}".format(imgfile))
 
 
 # parse the command line (perform the correction on all command line arguments)
 def main():
     parser = argparse.ArgumentParser(description="Upgrade AVIRIS-C radiances")
-    parser.add_argument('infile', type=str, metavar='INPUT')
-    parser.add_argument('outfile', type=str, metavar='OUTPUT')
-    parser.add_argument('--scaling', '-s', action='store')
-    parser.add_argument('--verbose', '-v', action='store_true')
+    parser.add_argument("infile", type=str, metavar="INPUT")
+    parser.add_argument("outfile", type=str, metavar="OUTPUT")
+    parser.add_argument("--scaling", "-s", action="store")
+    parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
 
     hdrfile = find_header(args.infile)
     hdr = envi.read_envi_header(hdrfile)
-    hdr['data type'] = '4'
-    hdr['byte order'] = '0'
-    if hdr['interleave'] != 'bip':
-        raise ValueError('I expected BIP interleave')
-    hdr['interleave'] = 'bil'
-    hdr['data ignore value'] = '-9999'
-    envi.write_envi_header(args.outfile + '.hdr', hdr)
-    lines = int(hdr['lines'])
-    samples = int(hdr['samples'])
-    bands = int(hdr['bands'])
+    hdr["data type"] = "4"
+    hdr["byte order"] = "0"
+    if hdr["interleave"] != "bip":
+        raise ValueError("I expected BIP interleave")
+    hdr["interleave"] = "bil"
+    hdr["data ignore value"] = "-9999"
+    envi.write_envi_header(args.outfile + ".hdr", hdr)
+    lines = int(hdr["lines"])
+    samples = int(hdr["samples"])
+    bands = int(hdr["bands"])
     frame = samples * bands
     if args.verbose:
-        print('Lines: %i  Samples: %i  Bands: %i\n' % (lines, samples, bands))
+        print("Lines: %i  Samples: %i  Bands: %i\n" % (lines, samples, bands))
 
     if args.scaling is None:
         scaling = np.ones(bands, dtype=s.float32)
@@ -68,18 +68,44 @@ def main():
         scaling = s.loadtxt(args.scaling)
 
     prefix = os.path.split(args.infile)[-1][:3]
-    if prefix in ['f95', 'f96', 'f97', 'f98', 'f99', 'f00',
-                  'f01', 'f02', 'f03', 'f04', 'f05']:
+    if prefix in [
+        "f95",
+        "f96",
+        "f97",
+        "f98",
+        "f99",
+        "f00",
+        "f01",
+        "f02",
+        "f03",
+        "f04",
+        "f05",
+    ]:
         gains = s.r_[50.0 * np.ones(160), 100.0 * np.ones(64)]
-    elif prefix in ['f06', 'f07', 'f08', 'f09', 'f10', 'f11',
-                    'f12', 'f13', 'f14', 'f15', 'f16', 'f17',
-                    'f18', 'f19', 'f20', 'f21']:
+    elif prefix in [
+        "f06",
+        "f07",
+        "f08",
+        "f09",
+        "f10",
+        "f11",
+        "f12",
+        "f13",
+        "f14",
+        "f15",
+        "f16",
+        "f17",
+        "f18",
+        "f19",
+        "f20",
+        "f21",
+    ]:
         gains = s.r_[300.0 * np.ones(110), 600.0 * np.ones(50), 1200.0 * np.ones(64)]
     else:
         raise ValueError('Unrecognized year prefix "%s"' % prefix)
 
-    with open(args.infile, 'rb') as fin:
-        with open(args.outfile, 'wb') as fout:
+    with open(args.infile, "rb") as fin:
+        with open(args.outfile, "wb") as fout:
             for line in range(lines):
                 X = np.fromfile(fin, dtype=s.int16, count=frame)
                 X.byteswap(True)

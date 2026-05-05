@@ -27,7 +27,7 @@ from scipy.interpolate import interp1d
 from scipy.io import loadmat
 from scipy.linalg import block_diag
 
-from isofit.atmosphere.atmosphere import Atmosphere
+from isofit.atmosphere import Atmosphere
 from isofit.core.common import eps
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
@@ -337,7 +337,7 @@ class ForwardModel:
                 r, geom, rho_dif_dif=rho_dif_dif
             )
         else:
-            if self.atmosphere.atmosphere_mode == "rdn":
+            if self.atmosphere.rt_mode == "rdn":
                 L_tot = r["transm_down_dif"]
             else:
                 L_tot = transm_to_rdn(
@@ -387,7 +387,7 @@ class ForwardModel:
                 transm_to_rdn(
                     r[key], coszen=geom.coszen, solar_irr=self.atmosphere.solar_irr
                 )
-                if self.atmosphere.atmosphere_mode == "transm"
+                if self.atmosphere.rt_mode == "transm"
                 else r[key]
             )
 

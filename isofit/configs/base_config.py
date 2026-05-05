@@ -179,4 +179,7 @@ class BaseConfigSection(object):
 
     def get(self, name):
         elements, element_names = self.get_elements()
-        return elements[element_names.index(name)]
+        try:
+            return elements[element_names.index(name)]
+        except ValueError:
+            return []

@@ -24,7 +24,6 @@ import logging
 import os
 import re
 import subprocess
-import time
 from copy import deepcopy
 from sys import platform
 
@@ -32,24 +31,20 @@ import numpy as np
 import scipy.interpolate
 import scipy.stats
 
+from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core import units
 from isofit.core.common import json_load_ascii, recursive_replace
-from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+from isofit.luts import Writer
 
 Logger = logging.getLogger(__file__)
 
-### Variables ###
-
-eps = 1e-5  # used for finite difference derivative calculations
-tropopause_altitude_km = 17.0
-
-### Classes ###
+TROPOPAUSE_ALTITUDE_KM = 17.0
 
 
-class ModtranRT(RadiativeTransferEngine):
-    """A model of photon transport including the atmosphere."""
+class ModtranRT(Writer, BaseAtmosphere):
 
     max_buffer_time = 0.5
+    albedos = [0.0, 0.1, 0.5]
 
     @staticmethod
     def parseTokens(tokens: list, coszen: float) -> dict:
@@ -178,7 +173,7 @@ class ModtranRT(RadiativeTransferEngine):
         chn = parts[0]
         if len(parts) > 1:
             Logger.debug("Using two albedo method")
-            chn = self.two_albedo_method(*parts, coszen, *self.test_rfls[1:])
+            chn = self.two_albedo_method(*parts, coszen, *self.albedos[1:])
 
         return chn
 
@@ -231,23 +226,23 @@ class ModtranRT(RadiativeTransferEngine):
 
         self.filtpath = os.path.join(
             self.sim_path,
-            f"wavelengths_{self.engine_config.engine_name}_{self.wl[0]}_{self.wl[-1]}.flt",
+            f"wavelengths_{self.config.engine_name}_{self.wl[0]}_{self.wl[-1]}.flt",
         )
-        self.template = json_load_ascii(self.engine_config.template_file)["MODTRAN"]
+        self.template = json_load_ascii(self.config.template_file)["MODTRAN"]
 
         # Regenerate MODTRAN input wavelength file
         if not os.path.exists(self.filtpath):
             self.wl2flt(self.wl, self.fwhm, self.filtpath)
 
         # Insert aerosol templates, if specified
-        if self.engine_config.aerosol_model_file is not None:
+        if self.config.aerosol_model_file is not None:
             self.template[0]["MODTRANINPUT"]["AEROSOLS"] = json_load_ascii(
-                self.engine_config.aerosol_template_file
+                self.config.aerosol_template_file
             )
 
         # Insert aerosol data, if specified
-        if self.engine_config.aerosol_model_file is not None:
-            aer_data = np.loadtxt(self.engine_config.aerosol_model_file)
+        if self.config.aerosol_model_file is not None:
+            aer_data = np.loadtxt(self.config.aerosol_model_file)
             self.aer_wl = aer_data[:, 0]
             aer_data = np.transpose(aer_data[:, 1:])
             self.naer = int(len(aer_data) / 3)
@@ -318,7 +313,7 @@ class ModtranRT(RadiativeTransferEngine):
         with open(infilepath, "w") as f:
             f.write(modtran_config_str)
 
-        if self.engine_config.rte_configure_and_exit:
+        if self.config.rte_configure_and_exit:
             return
 
         # Specify location of the proper MODTRAN 6.0 binary for this OS
@@ -450,7 +445,7 @@ class ModtranRT(RadiativeTransferEngine):
                     )  # Append lists, don't add altitudes!
 
                     prof_unt_tdelta_kelvin = np.where(
-                        np.array(altitudes) <= tropopause_altitude_km, val, 0
+                        np.array(altitudes) <= TROPOPAUSE_ALTITUDE_KM, val, 0
                     )
 
                     altitude_dict = {
@@ -501,7 +496,7 @@ class ModtranRT(RadiativeTransferEngine):
                             ]["PROFILE"]
                         )
                         prof_temperature = np.where(
-                            prof_altitude <= tropopause_altitude_km,
+                            prof_altitude <= TROPOPAUSE_ALTITUDE_KM,
                             prof_temperature + val,
                             prof_temperature,
                         )
@@ -512,7 +507,7 @@ class ModtranRT(RadiativeTransferEngine):
                     else:
                         # If a temperature profile does not exist, then use UNT_TDELTA_KELVIN
                         prof_unt_tdelta_kelvin = np.where(
-                            prof_altitude <= tropopause_altitude_km, val, 0.0
+                            prof_altitude <= TROPOPAUSE_ALTITUDE_KM, val, 0.0
                         )
                         prof_unt_tdelta_kelvin_dict = {
                             "TYPE": "PROF_TEMPERATURE",
@@ -571,7 +566,8 @@ class ModtranRT(RadiativeTransferEngine):
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
 
         if self.multipart_transmittance:
-            const_rfl = np.array(np.array(self.test_rfls) * 100, dtype=int)
+            # TODO: move setting of multipart rfl values to config
+            const_rfl = np.array(np.array(self.albedos) * 100, dtype=int)
             # Here we copy the original config and just change the surface reflectance
             param[0]["MODTRANINPUT"]["CASE"] = 0
             param[0]["MODTRANINPUT"]["SURFACE"]["SURFP"][

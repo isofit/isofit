@@ -95,10 +95,11 @@ def test_config_terrain_settings(input_obs):
     """Test that max_slope and terrain_style are pulled from full_config"""
 
     full_config = MagicMock()
-    rt = full_config.forward_model.radiative_transfer
-    rt.max_slope = 20.0
-    rt.terrain_style = "dem"
-    rt.lut_grid = None
+    atmosphere = full_config.forward_model.atmosphere
+    surface = full_config.forward_model.surface
+    surface.max_slope = 20.0
+    surface.terrain_style = "dem"
+    atmosphere.lut_grid = None
 
     geom = Geometry(obs=input_obs, full_config=full_config)
 
@@ -109,10 +110,11 @@ def test_config_terrain_settings(input_obs):
 def test_coszen_priority(input_obs):
     """Tests how we expect coszen to be defined based on defined priorities in Geometry"""
     full_config = MagicMock()
-    rt = full_config.forward_model.radiative_transfer
-    rt.lut_grid = {"solar_zenith": [10, 20]}
-    rt.max_slope = 20.0
-    rt.terrain_style = "flat"
+    atmosphere = full_config.forward_model.atmosphere
+    surface = full_config.forward_model.surface
+    atmosphere.lut_grid = {"solar_zenith": [10, 20]}
+    surface.max_slope = 20.0
+    surface.terrain_style = "flat"
 
     # If user has a lut grid that contains solar_zenith this takes priority
     user_coszen = 0.9
@@ -122,7 +124,7 @@ def test_coszen_priority(input_obs):
     assert geom.use_universal_coszen is False
 
     # And test the other case, where no lut grid is given, it should fall back to coszen
-    rt.lut_grid = None
+    atmosphere.lut_grid = None
     geom = Geometry(obs=input_obs, coszen=user_coszen, full_config=full_config)
 
     assert geom.coszen == user_coszen

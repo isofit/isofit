@@ -23,7 +23,7 @@
 import pytest
 
 from isofit.configs import configs
-from isofit.radiative_transfer.engines import ModtranRT
+from isofit.atmosphere.engines import ModtranRT
 
 
 @pytest.mark.xfail
@@ -34,23 +34,11 @@ def test_combined(monkeypatch):
 
     print("Loading config file from the Pasadena example.")
     config_file = "configs/ang20171108t184227_beckmanlawn-multimodtran-topoflux.json"
-    config = configs.create_new_config(config_file)
-    config.get_config_errors()
-    engine_config = config.forward_model.radiative_transfer.radiative_transfer_engines[
-        0
-    ]
+    full_config = configs.create_new_config(config_file)
 
     print("Initialize radiative transfer engine without prebuilt LUT file.")
-    lut_grid = config.forward_model.radiative_transfer.lut_grid
-    rt_engine = ModtranRT(
-        engine_config=engine_config, interpolator_style="mlg", lut_grid=lut_grid
-    )
+    engine = ModtranRT(full_config=full_config)
 
-    # First, we don't provide a prebuilt LUT and run simulations based on a given LUT grid
     print("Run radiative transfer simulations.")
-    rt_engine.runSimulations()
-    del rt_engine
-
-    # Second, we use the just built LUT file and initialize the engine class again
-    print("Initialize radiative transfer engine with prebuilt LUT file.")
-    ModtranRT(engine_config=engine_config, interpolator_style="mlg")
+    engine.runSimulations()
+    del engine
