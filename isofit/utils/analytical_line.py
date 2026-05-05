@@ -561,9 +561,7 @@ class Worker(object):
             elif self.initializer == "algebraic":
                 x_surface, _, x_instrument = self.fm.unpack(self.fm.init.copy())
                 rfl_est, coeffs = invert_algebraic(
-                    self.fm.surface,
-                    self.fm.atmosphere,
-                    self.fm.instrument,
+                    self.fm,
                     x_surface,
                     x_atmosphere,
                     x_instrument,
