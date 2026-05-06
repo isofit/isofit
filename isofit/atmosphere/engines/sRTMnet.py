@@ -322,6 +322,7 @@ class SimulatedModtranRT(Writer, BaseAtmosphere):
     _disable_makeSim = True
 
     def __init__(self, full_config, **kwargs):
+        # SRTMnet needs the full config because you initialize SixS inside it
         self.full_config = full_config
 
         super().__init__(full_config, **kwargs)

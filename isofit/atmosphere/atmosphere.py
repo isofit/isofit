@@ -82,13 +82,6 @@ class BaseAtmosphere(Reader):
     TIR. This class maintains the master list of statevectors.
     """
 
-    # Allows engines to outright disable the parallelized sims if they do nothing
-    _disable_makeSim = False
-
-    # Sleep a random amount of time up to max this value at the start of each streamSimulation
-    # Can be set per custom engine
-    max_buffer_time = 0
-
     # These are retrieved from the geom object
     geometry_input_names = [
         "observer_azimuth",
@@ -99,6 +92,8 @@ class BaseAtmosphere(Reader):
         "observer_altitude_km",
         "surface_elevation_km",
     ]
+
+    coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
 
     @property
     def solar_irr(self) -> np.ndarray:
@@ -152,7 +147,6 @@ class BaseAtmosphere(Reader):
             full_config.forward_model.atmosphere.multipart_transmittance
         )
 
-        self.coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
         self.rt_mode = self.config.rt_mode or "transm"
 
         # Use explicitely passed first
@@ -208,7 +202,6 @@ class BaseAtmosphere(Reader):
         self.lut_names = list(self.lut_grid.keys())
 
         self.n_lut_input_dim = len(self.lut_names)
-        self.keys = Keys
 
         # Wrapper for the create-load logic that depends on the engine
         # create_lut will include the build logic within engines
@@ -314,7 +307,16 @@ class BaseAtmosphere(Reader):
 
         return LUT(ds, self.n_lut_input_dim, indices, interpolators=interpolators)
 
-    def write(self):
+    def write(
+        self,
+        lut_path,
+        wl,
+        lut_grid,
+        rt_mode,
+        fwhm,
+        lut_compression="zlib",
+        lut_complevel=None,
+    ):
         raise NotImplemented(
             "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
         )

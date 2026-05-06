@@ -65,25 +65,24 @@ SIXS_TEMPLATE = """\
 class SixSRT(Writer, BaseAtmosphere):
     """A model of photon transport including the atmosphere."""
 
+    current = os.environ.get("SIXS_DIR")
+    if not current:
+        Logger.debug(f"Setting SIXS_DIR={env.sixs}")
+        os.environ["SIXS_DIR"] = env.sixs
+    elif (current := os.path.abspath(current)) != env.sixs:
+        Logger.warning(
+            "The environment variable $SIXS_DIR does not match the ISOFIT ini. It is recommended to make these match, though not required. The ENV path will be the one used."
+        )
+        Logger.warning(f"ENV: {current}")
+        Logger.warning(f"INI: {env.sixs}")
+        Logger.warning(
+            "Please either set the ENV to that INI value, or update the INI with the ENV via:"
+        )
+        Logger.warning("  isofit --path sixs $SIXS_DIR")
+
     def __init__(self, full_config, wl=[], fwhm=[], modtran_emulation=False, **kwargs):
 
         self.config = full_config.forward_model.atmosphere
-
-        current = os.environ.get("SIXS_DIR")
-        if not current:
-            Logger.debug(f"Setting SIXS_DIR={env.sixs}")
-            os.environ["SIXS_DIR"] = env.sixs
-        elif (current := os.path.abspath(current)) != env.sixs:
-            Logger.warning(
-                "The environment variable $SIXS_DIR does not match the ISOFIT ini. It is recommended to make these match, though not required. The ENV path will be the one used."
-            )
-            Logger.warning(f"ENV: {current}")
-            Logger.warning(f"INI: {env.sixs}")
-            Logger.warning(
-                "Please either set the ENV to that INI value, or update the INI with the ENV via:"
-            )
-            Logger.warning("  isofit --path sixs $SIXS_DIR")
-
         self.modtran_emulation = modtran_emulation
 
         # Overwrite the wavelengths, because we're going to use these no matter what (6S runs at 2.5 nm)

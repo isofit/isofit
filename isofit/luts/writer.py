@@ -13,6 +13,7 @@ import xarray as xr
 from netCDF4 import Dataset
 
 from isofit import __version__, ray
+from isofit.atmosphere.atmosphere import Keys
 from isofit.core.common import Track, combos
 
 Logger = logging.getLogger(__name__)
@@ -20,24 +21,46 @@ Logger = logging.getLogger(__name__)
 
 class Writer:
 
-    def write(self):
+    # Allows engines to outright disable the parallelized
+    # sims if they do nothing
+    _disable_makeSim = False
+
+    """Sleep a random amount of time up to max this value 
+    at the start of each streamSimulation
+    Can be set per custom engine"""
+    max_buffer_time = 0
+
+    def write(
+        self,
+        lut_path,
+        lut_names,
+        lut_grid,
+        rt_mode,
+        wl,
+        fwhm,
+        configure_and_exit=False,
+        lut_compression="zlib",
+        lut_complevel=None,
+    ):
         """Initialize a LUT and run simulations"""
         # Run sims and write lut
-        if not self.configure_and_exit:
-            self.lut = Create(
-                file=self.lut_path,
-                keys=self.keys,
-                wl=self.wl,
-                grid=self.lut_grid,
-                attrs={"RT_mode": self.rt_mode},
-                onedim={"fwhm": self.fwhm},
-                compression=self.config.lut_compression,
-                complevel=self.config.lut_complevel,
+        if not configure_and_exit:
+            lut = Create(
+                file=lut_path,
+                keys=keys,
+                wl=wl,
+                grid=lut_grid,
+                attrs={"RT_mode": rt_mode},
+                onedim={"fwhm": fwhm},
+                compression=lut_compression,
+                complevel=lut_complevel,
             )
 
-        self.runSimulations()
+        self.runSimulations(lut, lut_names, lut_grid, configure_and_exit)
 
-    def runSimulations(self) -> None:
+    def runSimulations(
+        self, lut, lut_names, lut_grid, configure_and_exit=False
+    ) -> None:
         """
         Run all simulations for the LUT grid.
 
@@ -49,22 +72,22 @@ class Writer:
             Logger.info("Saving pre-sim data to index zero of all dimensions except wl")
             Logger.debug(f"pre-sim data contains keys: {pre.keys()}")
 
-            point = {key: 0 for key in self.lut_names}
-            self.lut.writePoint(point, data=pre)
+            point = {key: 0 for key in lut_names}
+            lut.writePoint(point, data=pre)
 
         # Make the LUT calls (in parallel if specified)
         if not self._disable_makeSim:
             Logger.info("Executing parallel simulations")
 
             # Place into shared memory space to avoid spilling
-            lut_names = ray.put(self.lut_names)
+            lut_names = ray.put(lut_names)
             makeSim = ray.put(self.makeSim)
             readSim = ray.put(self.readSim)
-            lut_path = ray.put(self.lut_path)
+            lut_path = ray.put(lut_path)
             buffer_time = ray.put(self.max_buffer_time)
-            configure_and_exit = ray.put(self.config.configure_and_exit)
+            configure_and_exit = ray.put(configure_and_exit)
 
-            points = combos(self.lut_grid.values())
+            points = combos(lut_grid.values())
 
             jobs = [
                 self.streamSimulation.remote(
@@ -72,14 +95,13 @@ class Writer:
                     lut_names,
                     makeSim,
                     readSim,
-                    lut_path,
                     max_buffer_time=buffer_time,
-                    configure_and_exit=self.config.configure_and_exit,
+                    configure_and_exit=configure_and_exit,
                 )
                 for point in points
             ]
 
-            if self.config.configure_and_exit:
+            if configure_and_exit:
                 # Block until all jobs finish
                 ray.get(jobs)
 
@@ -104,16 +126,16 @@ class Writer:
 
                     # If a simulation fails then it will return None
                     if ret:
-                        self.lut.queuePoint(*ret)
+                        lut.queuePoint(*ret)
 
                     if report(len(jobs)):
                         Logger.info("Flushing netCDF to disk")
-                        self.lut.flush()
+                        lut.flush()
 
                 # Shouldn't be hit but just in case
-                if self.lut.hold:
+                if lut.hold:
                     Logger.warning("Not all points were flushed, doing so now")
-                    self.lut.flush()
+                    lut.flush()
 
             del lut_names, makeSim, readSim, lut_path, buffer_time
         else:
@@ -128,8 +150,8 @@ class Writer:
             )
             Logger.debug(f"post-sim data contains keys: {post.keys()}")
 
-            point = {key: 0 for key in self.lut_names}
-            self.lut.writePoint(point, data=post)
+            point = {key: 0 for key in lut_names}
+            lut.writePoint(point, data=post)
 
         self.lut.finalize()
 
@@ -139,7 +161,6 @@ class Writer:
         lut_names: list,
         simmer: Callable,
         reader: Callable,
-        output: str,
         max_buffer_time: float = 0.5,
         configure_and_exit: bool = False,
     ):
@@ -150,7 +171,6 @@ class Writer:
             lut_names (list): Dimension names aka lut_names
             simmer (function): function to run the simulation
             reader (function): function to read the results of the simulation
-            output (str): LUT store to save results to
             max_buffer_time (float, optional): _description_. Defaults to 0.5.
             configure_and_exit (bool, optional): exit early if not executing simulations
         """
