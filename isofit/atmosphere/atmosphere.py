@@ -101,6 +101,10 @@ class BaseAtmosphere(Reader):
     coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
 
     @property
+    def coszen(self) -> np.ndarray:
+        return float(self.lut["coszen"])
+
+    @property
     def solar_irr(self) -> np.ndarray:
         return np.array(self.lut["solar_irr"])
 

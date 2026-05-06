@@ -251,7 +251,7 @@ class Worker(object):
         self.iv = Inversion(self.config, self.fm)
 
         # Define coszen for geom creation
-        self.coszen = float(fm.atmosphere.lut["coszen"].values)
+        self.coszen = fm.atmosphere.coszen
 
         self.rfl_bounds = np.min(fm.bounds, axis=0)[0], np.max(fm.bounds, axis=0)[1]
         logging.debug(

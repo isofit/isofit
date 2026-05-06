@@ -452,7 +452,7 @@ class Worker(object):
         self.num_iter = num_iter
 
         # Define coszen for geom creation
-        self.coszen = float(fm.atmosphere.lut["coszen"].values)
+        self.coszen = fm.atmosphere.coszen
 
         if config.input.radiometry_correction_file is not None:
             self.radiance_correction, wl = load_spectrum(
