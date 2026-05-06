@@ -34,7 +34,8 @@ from isofit.configs import Config
 from isofit.core import common, units
 from isofit.core.common import svd_inv_sqrt
 from isofit.core.geometry import Geometry
-from isofit.luts import LUT, Reader, sub
+from isofit.luts import sub
+from isofit.luts.reader import LUT, Reader
 
 Logger = logging.getLogger(__file__)
 # Logger = logging.getLogger()
@@ -69,6 +70,10 @@ class Keys:
         "dir-dif": 0,
         "dif-dif": 0,
     }
+
+    # Defaults for lut compression
+    lut_compression = "zlib"
+    lut_complevel = None
 
 
 class BaseAtmosphere(Reader):
@@ -237,7 +242,17 @@ class BaseAtmosphere(Reader):
         """
         # Write the LUT if this function is hooked up (In cases with engine).
         if not self.lut_exists:
-            self.write()
+            self.write(
+                self.lut_path,
+                self.lut_names,
+                self.lut_grid,
+                self.rt_mode,
+                self.wl,
+                self.fwhm,
+                self.configure_and_exit,
+                self.lut_compression,
+                self.lut_complevel,
+            )
 
         indices = SimpleNamespace(geom={}, x_RT=[])
 
@@ -309,17 +324,17 @@ class BaseAtmosphere(Reader):
 
     def write(
         self,
-        lut_path,
-        wl,
-        lut_grid,
-        rt_mode,
-        fwhm,
-        lut_compression="zlib",
-        lut_complevel=None,
+        lut_path: str,
+        lut_names: list,
+        lut_grid: dict,
+        rt_mode: str,
+        wl: np.ndarray,
+        fwhm: np.ndarray,
+        configure_and_exit: bool = False,
+        lut_compression: str = "zlib",
+        lut_complevel: int = None,
     ):
-        raise NotImplemented(
-            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
-        )
+        raise NotImplemented("This method must be defined by the subclass engine")
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""

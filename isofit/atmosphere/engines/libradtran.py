@@ -34,7 +34,7 @@ from isofit.core.common import (
 )
 from isofit.core.units import cm_to_mm, transm_to_rdn
 from isofit.data import env
-from isofit.luts import Writer
+from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__name__)
 

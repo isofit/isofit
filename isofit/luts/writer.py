@@ -13,7 +13,7 @@ import xarray as xr
 from netCDF4 import Dataset
 
 from isofit import __version__, ray
-from isofit.atmosphere.atmosphere import Keys
+from isofit.atmosphere import Keys
 from isofit.core.common import Track, combos
 
 Logger = logging.getLogger(__name__)
@@ -32,15 +32,15 @@ class Writer:
 
     def write(
         self,
-        lut_path,
-        lut_names,
-        lut_grid,
-        rt_mode,
-        wl,
-        fwhm,
-        configure_and_exit=False,
-        lut_compression="zlib",
-        lut_complevel=None,
+        lut_path: str,
+        lut_names: list,
+        lut_grid: dict,
+        rt_mode: str,
+        wl: np.ndarray,
+        fwhm: np.ndarray,
+        configure_and_exit: bool = False,
+        lut_compression: str = "zlib",
+        lut_complevel: int = None,
     ):
         """Initialize a LUT and run simulations"""
         # Run sims and write lut

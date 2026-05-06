@@ -31,7 +31,7 @@ from isofit.core import units
 from isofit.core.common import load_esd, resample_spectrum
 from isofit.data import env
 from isofit.data.cli.sixs import get_exe
-from isofit.luts import Writer
+from isofit.luts.writer import Writer
 
 # Logger = logging.getLogger(__file__)
 Logger = logging.getLogger()

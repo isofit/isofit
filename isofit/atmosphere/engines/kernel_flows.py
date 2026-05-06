@@ -27,7 +27,7 @@ import yaml
 
 from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core.common import spectral_response_function
-from isofit.luts import Writer
+from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__file__)
 
