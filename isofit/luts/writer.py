@@ -47,7 +47,7 @@ class Writer:
         if not configure_and_exit:
             lut = Create(
                 file=lut_path,
-                keys=keys,
+                keys=Keys,
                 wl=wl,
                 grid=lut_grid,
                 attrs={"RT_mode": rt_mode},
