@@ -45,7 +45,7 @@ class Writer:
         """Initialize a LUT and run simulations"""
         # Run sims and write lut
         if not configure_and_exit:
-            lut = Create(
+            self.lut = Create(
                 file=lut_path,
                 keys=Keys,
                 wl=wl,
@@ -56,11 +56,9 @@ class Writer:
                 complevel=lut_complevel,
             )
 
-        self.runSimulations(lut, lut_names, lut_grid, configure_and_exit)
+        self.runSimulations(lut_names, lut_grid, configure_and_exit)
 
-    def runSimulations(
-        self, lut, lut_names, lut_grid, configure_and_exit=False
-    ) -> None:
+    def runSimulations(self, lut_names, lut_grid, configure_and_exit=False) -> None:
         """
         Run all simulations for the LUT grid.
 
@@ -73,7 +71,7 @@ class Writer:
             Logger.debug(f"pre-sim data contains keys: {pre.keys()}")
 
             point = {key: 0 for key in lut_names}
-            lut.writePoint(point, data=pre)
+            self.lut.writePoint(point, data=pre)
 
         # Make the LUT calls (in parallel if specified)
         if not self._disable_makeSim:
@@ -126,16 +124,16 @@ class Writer:
 
                     # If a simulation fails then it will return None
                     if ret:
-                        lut.queuePoint(*ret)
+                        self.lut.queuePoint(*ret)
 
                     if report(len(jobs)):
                         Logger.info("Flushing netCDF to disk")
-                        lut.flush()
+                        self.lut.flush()
 
                 # Shouldn't be hit but just in case
-                if lut.hold:
+                if self.lut.hold:
                     Logger.warning("Not all points were flushed, doing so now")
-                    lut.flush()
+                    self.lut.flush()
 
             del lut_names, makeSim, readSim, lut_path, buffer_time
         else:
