@@ -156,7 +156,7 @@ class Writer:
             Logger.debug(f"post-sim data contains keys: {post.keys()}")
 
             point = {key: 0 for key in lut_names}
-            lut.writePoint(point, data=post)
+            self.lut.writePoint(point, data=post)
 
         self.lut.finalize()
 
