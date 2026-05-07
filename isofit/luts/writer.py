@@ -81,7 +81,7 @@ class Writer:
             lut_names = ray.put(lut_names)
             makeSim = ray.put(self.makeSim)
             readSim = ray.put(self.readSim)
-            lut_path = ray.put(lut_path)
+            lut_path = ray.put(self.lut.file)
             buffer_time = ray.put(self.max_buffer_time)
             configure_and_exit = ray.put(configure_and_exit)
 
