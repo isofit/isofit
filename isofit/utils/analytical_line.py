@@ -452,7 +452,7 @@ class Worker(object):
         self.num_iter = num_iter
 
         # Define coszen for geom creation
-        self.coszen = self.fm.atmosphere.coszen or None
+        self.coszen = fm.atmosphere.coszen
 
         if config.input.radiometry_correction_file is not None:
             self.radiance_correction, wl = load_spectrum(
@@ -561,9 +561,7 @@ class Worker(object):
             elif self.initializer == "algebraic":
                 x_surface, _, x_instrument = self.fm.unpack(self.fm.init.copy())
                 rfl_est, coeffs = invert_algebraic(
-                    self.fm.surface,
-                    self.fm.atmosphere,
-                    self.fm.instrument,
+                    self.fm,
                     x_surface,
                     x_atmosphere,
                     x_instrument,
@@ -598,9 +596,7 @@ class Worker(object):
                 geom,
                 np.copy(x0),
                 sub_state,
-                self.num_iter,
-                self.hash_table,
-                self.hash_size,
+                num_iter=self.num_iter,
             )
             state_est = states[-1]
 

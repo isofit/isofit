@@ -27,7 +27,7 @@ import yaml
 
 from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core.common import spectral_response_function
-from isofit.luts import Writer
+from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__file__)
 
@@ -161,9 +161,20 @@ class KernelFlowsRT(Writer, BaseAtmosphere):
         and cross validation (2024). Submitted to Atmospheric Measurement Techniques.
     """
 
-    def __init__(self, full_config: AtmosphereConfig, **kwargs):
-        super().__init__(full_config, **kwargs)
+    # defining some input transformations
+    input_transfs = [
+        np.identity,
+        np.log,
+        lambda x: np.cos(np.deg2rad(x)),
+        lambda x: np.cos(np.deg2rad(90 - x)),
+        lambda x: np.log(180 - x),
+    ]
+    output_transfs = [
+        lambda x: x,
+        lambda x: np.exp(x) - 0.1,
+    ]
 
+    def __init__(self, full_config: AtmosphereConfig, **kwargs):
         # read VSWIREmulator struct from jld2 file into a dictionary
         self.f = self.h5_to_dict(h5py.File(self.config.emulator_file, "r"))
 
@@ -221,23 +232,12 @@ class KernelFlowsRT(Writer, BaseAtmosphere):
         except:
             logging.info("No observer_azimuth default in template")
 
-        # defining some input transformations
-        self.input_transfs = [
-            np.identity,
-            np.log,
-            lambda x: np.cos(np.deg2rad(x)),
-            lambda x: np.cos(np.deg2rad(90 - x)),
-            lambda x: np.log(180 - x),
-        ]
-        self.output_transfs = [
-            lambda x: x,
-            lambda x: np.exp(x) - 0.1,
-        ]
-
         # override default radiative transfer simulation mode
         # as KernelFlowsGP always runs in radiance space
         self.rt_mode = "rdn"
         self.assign_bounds()
+
+        super().__init__(full_config, **kwargs)
 
     def assign_bounds(self):
         try:

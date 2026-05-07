@@ -1,4 +1,4 @@
-from isofit.atmosphere.atmosphere import BaseAtmosphere
+from isofit.atmosphere.atmosphere import BaseAtmosphere, Keys
 from isofit.atmosphere.engines import Engines
 
 

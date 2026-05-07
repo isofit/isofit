@@ -34,7 +34,7 @@ import scipy.stats
 from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core import units
 from isofit.core.common import json_load_ascii, recursive_replace
-from isofit.luts import Writer
+from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__file__)
 
@@ -313,7 +313,7 @@ class ModtranRT(Writer, BaseAtmosphere):
         with open(infilepath, "w") as f:
             f.write(modtran_config_str)
 
-        if self.config.rte_configure_and_exit:
+        if self.config.configure_and_exit:
             return
 
         # Specify location of the proper MODTRAN 6.0 binary for this OS

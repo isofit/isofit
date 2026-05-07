@@ -34,52 +34,50 @@ from isofit.core.common import (
 )
 from isofit.core.units import cm_to_mm, transm_to_rdn
 from isofit.data import env
-from isofit.luts import Writer
+from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__name__)
 
 
 class LibRadTranRT(Writer, BaseAtmosphere):
 
-    def __init__(self, full_config, **kwargs):
-        super().__init__(full_config, **kwargs)
+    # aerosol_default = rural type aerosol in the boundary layer,
+    # background aerosol above 2km, spring-summer conditions, and a visibility of 50km.
+    # NOTE: for radiance quantities libRadtran will always override DISORT to run with at least 16 streams.
+    libradtran_inp_template = (
+        "source solar {path_solar}\n"
+        "wavelength {wl_1} {wl_2}\n"
+        "spline {wl_1} {wl_2} {wl_res_out}\n"
+        "albedo {albedo}\n"
+        "atmosphere_file {libradtran_dir}/data/atmmod/{atmos}.dat\n"
+        "umu {cos_vza}\n"
+        "phi0 {saa_deg}\n"
+        "phi {vaa_deg}\n"
+        "sza {sza_deg}\n"
+        "rte_solver disort\n"
+        "number_of_streams {nstr}\n"
+        "mol_modify O3 {o3_inp} DU\n"
+        "mixing_ratio CO2 {co2_inp}\n"
+        "mol_abs_param reptran {band_model}\n"
+        "mol_modify H2O {h2o_mm} MM\n"
+        "crs_model rayleigh bodhaine\n"
+        "aerosol_default\n"
+        "zout {zout}\n"
+        "altitude {elev}\n"
+        "output_quantity transmittance\n"
+        "output_user lambda uu eglo edir\n"
+    )
 
+    albedos = [0.0, 0.1, 0.5]
+    wl_1 = 340.0
+    wl_2 = 2510.0
+    wl_res_out = 0.5
+
+    sh_template = "#!/bin/bash\n" "cd {lrt_bin_dir}\n" "{uvspecs}\n"
+
+    def __init__(self, full_config, **kwargs):
         # TODO Add check that sim path exists
         self.sim_path = self.config.sim_path
-
-        self.albedos = [0.0, 0.1, 0.5]
-        self.wl_1 = 340.0
-        self.wl_2 = 2510.0
-        self.wl_res_out = 0.5
-
-        # aerosol_default = rural type aerosol in the boundary layer,
-        # background aerosol above 2km, spring-summer conditions, and a visibility of 50km.
-        # NOTE: for radiance quantities libRadtran will always override DISORT to run with at least 16 streams.
-        self.libradtran_inp_template = (
-            "source solar {path_solar}\n"
-            "wavelength {wl_1} {wl_2}\n"
-            "spline {wl_1} {wl_2} {wl_res_out}\n"
-            "albedo {albedo}\n"
-            "atmosphere_file {libradtran_dir}/data/atmmod/{atmos}.dat\n"
-            "umu {cos_vza}\n"
-            "phi0 {saa_deg}\n"
-            "phi {vaa_deg}\n"
-            "sza {sza_deg}\n"
-            "rte_solver disort\n"
-            "number_of_streams {nstr}\n"
-            "mol_modify O3 {o3_inp} DU\n"
-            "mixing_ratio CO2 {co2_inp}\n"
-            "mol_abs_param reptran {band_model}\n"
-            "mol_modify H2O {h2o_mm} MM\n"
-            "crs_model rayleigh bodhaine\n"
-            "aerosol_default\n"
-            "zout {zout}\n"
-            "altitude {elev}\n"
-            "output_quantity transmittance\n"
-            "output_user lambda uu eglo edir\n"
-        )
-
-        self.sh_template = "#!/bin/bash\n" "cd {lrt_bin_dir}\n" "{uvspecs}\n"
 
         # Retrieve the path to libRadtran
         if self.config.engine_base_dir:
@@ -112,6 +110,8 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             raise FileNotFoundError(error)
 
         self.lrt_bin_dir = abspath(join(self.libradtran, "bin"))
+
+        super().__init__(full_config, **kwargs)
 
     def preSim(self):
 

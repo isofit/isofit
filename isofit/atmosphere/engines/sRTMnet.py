@@ -35,7 +35,7 @@ from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.atmosphere.engines import SixSRT
 from isofit.core import units
 from isofit.core.common import calculate_resample_matrix, resample_spectrum
-from isofit.luts import Writer
+from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__file__)
 
@@ -322,6 +322,7 @@ class SimulatedModtranRT(Writer, BaseAtmosphere):
     _disable_makeSim = True
 
     def __init__(self, full_config, **kwargs):
+        # SRTMnet needs the full config because you initialize SixS inside it
         self.full_config = full_config
 
         super().__init__(full_config, **kwargs)
