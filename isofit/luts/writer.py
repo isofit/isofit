@@ -79,23 +79,23 @@ class Writer:
             Logger.info("Executing parallel simulations")
 
             # Place into shared memory space to avoid spilling
-            lut_names = ray.put(lut_names)
+            ray_lut_names = ray.put(lut_names)
             makeSim = ray.put(self.makeSim)
             readSim = ray.put(self.readSim)
-            lut_path = ray.put(self.lut.file)
-            buffer_time = ray.put(self.max_buffer_time)
-            configure_and_exit = ray.put(configure_and_exit)
+            ray_lut_path = ray.put(self.lut.file)
+            ray_buffer_time = ray.put(self.max_buffer_time)
+            ray_configure_and_exit = ray.put(configure_and_exit)
 
             points = combos(lut_grid.values())
 
             jobs = [
                 self.streamSimulation.remote(
                     point,
-                    lut_names,
+                    ray_lut_names,
                     makeSim,
                     readSim,
-                    max_buffer_time=buffer_time,
-                    configure_and_exit=configure_and_exit,
+                    max_buffer_time=ray_buffer_time,
+                    configure_and_exit=ray_configure_and_exit,
                 )
                 for point in points
             ]
@@ -136,7 +136,13 @@ class Writer:
                     Logger.warning("Not all points were flushed, doing so now")
                     self.lut.flush()
 
-            del lut_names, makeSim, readSim, lut_path, buffer_time
+            del (
+                makeSim,
+                readSim,
+                ray_lut_names,
+                ray_lut_path,
+                ray_buffer_time,
+            )
         else:
             Logger.debug("makeSim is disabled for this engine")
 
