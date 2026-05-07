@@ -71,10 +71,6 @@ class Keys:
         "dif-dif": 0,
     }
 
-    # Defaults for lut compression
-    lut_compression = "zlib"
-    lut_complevel = None
-
 
 class BaseAtmosphere(Reader):
     """This class controls the radiative transfer component of the forward
@@ -99,6 +95,10 @@ class BaseAtmosphere(Reader):
     ]
 
     coupling_terms = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
+
+    # Defaults for lut compression
+    lut_compression = "zlib"
+    lut_complevel = None
 
     @property
     def coszen(self) -> np.ndarray:
