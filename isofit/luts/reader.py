@@ -59,12 +59,6 @@ class LUT:
         for i, key in self.indices.geom.items():
             point[i] = getattr(geom, key)
 
-        # convert observer zenith to MODTRAN convention if needed
-        if self.indices.convert_observer_zenith:
-            point[self.indices.convert_observer_zenith] = (
-                180.0 - point[self.indices.convert_observer_zenith]
-            )
-
         return self.interpolate(point)
 
     def interpolate(self, point: np.array) -> dict:

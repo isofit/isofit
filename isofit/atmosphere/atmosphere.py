@@ -277,14 +277,6 @@ class BaseAtmosphere(Reader):
             if key in self.geometry_input_names
         }
 
-        # check if values of observer zenith in LUT are given in MODTRAN convention
-        indices.convert_observer_zenith = None
-        if "observer_zenith" in self.lut_grid.keys():
-            if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
-                indices.convert_observer_zenith = [
-                    i for i in indices.geom if indices.geom[i] == "observer_zenith"
-                ][0]
-
         # If it wasn't a geom key, it's x_RT
         indices.x_RT = list(set(range(self.n_lut_input_dim)) - set(indices.geom))
 
@@ -298,6 +290,20 @@ class BaseAtmosphere(Reader):
         # TODO formalize pathway for pre-built LUT
         ds = self.load(file=self.lut_path, subset=self.config.lut_names)
         ds = self.couple(self.load(file=self.lut_path, subset=self.config.lut_names))
+
+        # For prebuilt MODTRAN, check if values of observer_zenith in LUT are given in MODTRAN's OBSZEN convention [0-180 deg]
+        if "observer_zenith" in self.lut_grid.keys():
+            if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
+                Logger.info(
+                    "Detected observer_zenith greater than 90 deg, applying shift to lut_grid to be 0-90 deg."
+                )
+
+                # Update the array for VectorInterpolator
+                ds.coords["observer_zenith"] = 180.0 - ds.observer_zenith
+                ds = ds.sortby("observer_zenith")
+
+                # And update the lut_grid as well
+                self.lut_grid["observer_zenith"] = ds.observer_zenith.values.tolist()
 
         # Special treatment for PACE OCI
         srf_file = None
