@@ -289,7 +289,10 @@ class BaseAtmosphere(Reader):
         # For prebuilt MODTRAN, check if values of observer_zenith in LUT are given in MODTRAN's OBSZEN convention [0-180 deg]
         if "observer_zenith" in self.lut_grid.keys():
             if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
-                error = "Detected observer_zenith greater than 90 deg, please shift data to be 0-90 deg convention."
+                error = (
+                    f"{np.array(self.lut_grid['observer_zenith'])}\n"
+                    "Detected observer_zenith greater than 90 deg, please shift data to be 0-90 deg convention."
+                )
                 Logger.error(error)
                 raise ValueError(error)
 
