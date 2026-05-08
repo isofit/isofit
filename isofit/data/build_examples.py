@@ -92,7 +92,8 @@ isofit run --level DEBUG {config}\
 """,
 )
 
-OEScript = sns(template="""\
+OEScript = sns(
+    template="""\
 #!/bin/bash
 
 # This is a generated example script to illustrate how to execute this example via the command line
@@ -109,10 +110,12 @@ isofit apply_oe \\
   "$@"\
 
 # The "$@" will capture any additional options passed into the script
-""")
+"""
+)
 
 # Windows PowerShell variant
-OEScriptPS = sns(template="""\
+OEScriptPS = sns(
+    template="""\
 # This is a generated example script to illustrate how to execute this example via the command line
 # Execute via: powershell -File [file].ps1
 
@@ -122,7 +125,8 @@ $env:OMP_NUM_THREADS = "1"
 
 isofit apply_oe `
   {args}\
-""")
+"""
+)
 
 
 class Example:

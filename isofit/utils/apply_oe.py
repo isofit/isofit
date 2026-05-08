@@ -17,10 +17,10 @@ import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
+from isofit.atmosphere.engines.modtran import ModtranRT
 from isofit.core import isofit, units
 from isofit.core.common import envi_header
 from isofit.debug.resource_tracker import FileResources
-from isofit.atmosphere.engines.modtran import ModtranRT
 from isofit.utils import analytical_line as ALAlg
 from isofit.utils import empirical_line as ELAlg
 from isofit.utils import (

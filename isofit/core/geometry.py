@@ -23,8 +23,8 @@ from datetime import datetime
 
 import numpy as np
 
-from isofit.core import units
 from isofit.configs import configs
+from isofit.core import units
 
 
 class Geometry:

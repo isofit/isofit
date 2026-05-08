@@ -49,9 +49,11 @@ def checkNumThreads():
         error = "undetected"
 
     if error:
-        Logger.warning(f"""
+        Logger.warning(
+            f"""
 ******************************************************************************************
 ! Number of threads is {error} (currently: {threads}), this may greatly impact performance
 ! Please set this the environment variables 'MKL_NUM_THREADS' and 'OMP_NUM_THREADS' to '1'
 ******************************************************************************************\
-""")
+"""
+        )

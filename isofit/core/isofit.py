@@ -368,10 +368,12 @@ class Worker(object):
                     self.io.write_spectrum(row, col, states, self.fm, self.iv)
 
                 except ValueError as err:
-                    logging.exception(f"""
+                    logging.exception(
+                        f"""
                     Encountered the following ValueError in (row,col) ({row},{col}).
                     Results for this pixel will be all zeros.
-                    """)
+                    """
+                    )
 
                 if index % 100 == 0:
                     if self.worker_id is not None and self.total_samples is not None:

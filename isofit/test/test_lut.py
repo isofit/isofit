@@ -22,8 +22,8 @@
 
 import pytest
 
-from isofit.configs import configs
 from isofit.atmosphere.engines import ModtranRT
+from isofit.configs import configs
 
 
 @pytest.mark.xfail
