@@ -324,23 +324,13 @@ def wavelength_cal(
     if emulator_base is not None:
         if emulator_base.endswith(".jld2"):
             multipart_transmittance = False
-        else:
-            if emulator_base.endswith(".npz"):
-                emulator_aux_file = emulator_base
-            else:
-                emulator_aux_file = os.path.abspath(
-                    os.path.splitext(emulator_base)[0] + "_aux.npz"
-                )
-            aux = np.load(emulator_aux_file)
-            if (
-                "transm_down_dir"
-                and "transm_down_dif"
-                and "transm_up_dir"
-                and "transm_up_dif" in aux["rt_quantities"]
-            ):
-                multipart_transmittance = True
-            else:
-                multipart_transmittance = False
+
+        elif emulator_base.endswith(".h5"):
+            multipart_transmittance = False
+
+        elif emulator_base.endswith(".6c"):
+            multipart_transmittance = True
+
     else:
         # This is the MODTRAN case. Do we want to enable the 4c mode by default?
         multipart_transmittance = True
@@ -600,44 +590,43 @@ def wavelength_cal(
             output_file=paths.modtran_template_path,
         )
 
-        tmpl.build_main_config(
+        logging.info("Writing main configuration file.")
+        # add aerosol elements from climatology
+        aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
+            tmpl.load_climatology(
+                paths.aerosol_climatology,
+                mean_latitude,
+                mean_longitude,
+                dt,
+                lut_params=lut_params,
+            )
+        )
+
+        tmpl.build_config(
             paths=paths,
-            lut_params=lut_params,
+            n_cores=n_cores,
+            use_superpixels=True,
+            surface_category=surface_category,
+            emulator_base=emulator_base,
+            uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
+            prebuilt_lut_path=prebuilt_lut,
+            inversion_windows=INVERSION_WINDOWS,
+            multipart_transmittance=multipart_transmittance,
+            segmentation_size=n_rows,
+            multiple_restarts=False,
+            pressure_elevation=False,
+            aerosol_model_file=aerosol_model_path,
+            aerosol_lut_grid=aerosol_lut_grid,
+            aerosol_state_vector=aerosol_state_vector,
             h2o_lut_grid=h2o_lut_grid,
-            elevation_lut_grid=(
-                elevation_lut_grid
-                if elevation_lut_grid is not None
-                else [mean_elevation_km]
-            ),
+            elevation_lut_grid= [mean_elevation_km],
             to_sensor_zenith_lut_grid=(
                 to_sensor_zenith_lut_grid
                 if to_sensor_zenith_lut_grid is not None
                 else [mean_to_sensor_zenith]
             ),
-            to_sun_zenith_lut_grid=(
-                to_sun_zenith_lut_grid
-                if to_sun_zenith_lut_grid is not None
-                else [mean_to_sun_zenith]
-            ),
-            relative_azimuth_lut_grid=(
-                relative_azimuth_lut_grid
-                if relative_azimuth_lut_grid is not None
-                else [mean_relative_azimuth]
-            ),
-            mean_latitude=mean_latitude,
-            mean_longitude=mean_longitude,
-            dt=dt,
-            use_superpixels=True,
-            n_cores=n_cores,
-            surface_category=surface_category,
-            emulator_base=emulator_base,
-            uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
-            multiple_restarts=False,
-            segmentation_size=n_rows,
-            pressure_elevation=False,
-            prebuilt_lut_path=prebuilt_lut,
-            inversion_windows=INVERSION_WINDOWS,
-            multipart_transmittance=multipart_transmittance,
+            to_sun_zenith_lut_grid=[mean_to_sun_zenith],
+            relative_azimuth_lut_grid= [mean_relative_azimuth],
         )
 
         add_wavelength_elements(
