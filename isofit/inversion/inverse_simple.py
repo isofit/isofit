@@ -183,7 +183,9 @@ def invert_algebraic(
 
     rho_dif_dif = geom.bg_rfl if isinstance(geom.bg_rfl, np.ndarray) else rho_init
     if isinstance(rho_dif_dif, np.ndarray) and len(rho_dif_dif) != len(RT.wl):
-        rho_dif_dif = interp1d(surface.wl, rho_dif_dif, fill_value="extrapolate", bounds_error=False)(RT.wl)
+        rho_dif_dif = interp1d(
+            surface.wl, rho_dif_dif, fill_value="extrapolate", bounds_error=False
+        )(RT.wl)
 
     # Get all radiance terms
     (

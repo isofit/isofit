@@ -619,14 +619,14 @@ def wavelength_cal(
             aerosol_lut_grid=aerosol_lut_grid,
             aerosol_state_vector=aerosol_state_vector,
             h2o_lut_grid=h2o_lut_grid,
-            elevation_lut_grid= [mean_elevation_km],
+            elevation_lut_grid=[mean_elevation_km],
             to_sensor_zenith_lut_grid=(
                 to_sensor_zenith_lut_grid
                 if to_sensor_zenith_lut_grid is not None
                 else [mean_to_sensor_zenith]
             ),
             to_sun_zenith_lut_grid=[mean_to_sun_zenith],
-            relative_azimuth_lut_grid= [mean_relative_azimuth],
+            relative_azimuth_lut_grid=[mean_relative_azimuth],
         )
 
         add_wavelength_elements(
