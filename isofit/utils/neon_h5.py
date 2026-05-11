@@ -26,7 +26,7 @@ Call graph
     ├── convert_loc                         # write location cube
     │       └── _write_envi_header
     └── convert_obs                         # write geometry cube
-            ├── _to_decimal_hours           # normalise time band
+            ├── _to_decimal_hours           # normalize time band
             └── _write_envi_header
 """
 
@@ -414,7 +414,7 @@ def convert_obs(h5_path: str, out_basename: str) -> tuple[str, str]:
 
     The ten output bands are:
 
-    1. path_length — slant range in metres
+    1. path_length — slant range in meters
     2. sensor_azimuth — degrees clockwise from north
     3. sensor_zenith — degrees from nadir
     4. solar_azimuth — degrees clockwise from north
