@@ -75,6 +75,7 @@ class RadiativeTransferEngine:
         wl: np.array = [],  # Wavelength override
         fwhm: np.array = [],  # fwhm override
         n_cores: int = 1,  # number of cores to use for special activities (not simulations)
+        lut_kwargs: dict = {},
     ):
         if lut_path is None:
             Logger.error(
@@ -143,21 +144,17 @@ class RadiativeTransferEngine:
             self.test_rfls = [0.0, 0.1, 0.5]
 
         # Extract from LUT file if available, otherwise initialize it
+        self.lut_kwargs = lut_kwargs or {}
         if exists:
             Logger.info(f"Prebuilt LUT provided")
             Logger.debug(
                 f"Reading from store: {lut_path}, subset={engine_config.lut_names}"
             )
             self.lut = luts.load(
-                lut_path,
-                subset=engine_config.lut_names,
-                chunks={},
-                check=False,
-                coupling="",
+                lut_path, subset=engine_config.lut_names, **self.lut_kwargs
             )
             self.lut_grid = lut_grid or luts.extractGrid(self.lut)
             self.points = common.combos(self.lut_grid.values())
-            # self.points = luts.extractPoints(self.lut)
             self.lut_names = list(self.lut_grid.keys())
             Logger.info(f"LUT grid loaded from file")
             Logger.debug(f"{self.lut_grid}")
@@ -297,41 +294,41 @@ class RadiativeTransferEngine:
         # For each point index, determine if that point derives from Geometry or x_RT
         self.indices = SimpleNamespace(geom={}, x_RT=[])
 
+        geometry_keys = set(engine_config.statevector_names or self.lut_names)
+
+        matches = common.compare(geometry_keys, self.geometry_input_names)
+        if matches:
+            Logger.warning(
+                "A key in the statevector was detected to be close to keys in the geometry keys list:"
+            )
+            for key, strings in matches.items():
+                Logger.warning(f"  {key!r} should it be one of {strings}?")
+
+        # Hidden assumption: geometry keys come first, then come RTE keys
+        self.geometry_input_names = set(self.geometry_input_names) - geometry_keys
+        self.indices.geom = {
+            i: key
+            for i, key in enumerate(self.lut_names)
+            if key in self.geometry_input_names
+        }
+
+        # check if values of observer zenith in LUT are given in MODTRAN convention
+        self.indices.convert_observer_zenith = None
+        if "observer_zenith" in self.lut_grid.keys():
+            if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
+                self.indices.convert_observer_zenith = [
+                    i
+                    for i in self.indices.geom
+                    if self.indices.geom[i] == "observer_zenith"
+                ][0]
+
+        # If it wasn't a geom key, it's x_RT
+        self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
+
         # Attach interpolators
         if build_interpolators:
             # TODO: Global LUT too large to build interpolators, just perma off for now
-            # self.build_interpolators()
-
-            geometry_keys = set(engine_config.statevector_names or self.lut_names)
-
-            matches = common.compare(geometry_keys, self.geometry_input_names)
-            if matches:
-                Logger.warning(
-                    "A key in the statevector was detected to be close to keys in the geometry keys list:"
-                )
-                for key, strings in matches.items():
-                    Logger.warning(f"  {key!r} should it be one of {strings}?")
-
-            # Hidden assumption: geometry keys come first, then come RTE keys
-            self.geometry_input_names = set(self.geometry_input_names) - geometry_keys
-            self.indices.geom = {
-                i: key
-                for i, key in enumerate(self.lut_names)
-                if key in self.geometry_input_names
-            }
-
-            # check if values of observer zenith in LUT are given in MODTRAN convention
-            self.indices.convert_observer_zenith = None
-            if "observer_zenith" in self.lut_grid.keys():
-                if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
-                    self.indices.convert_observer_zenith = [
-                        i
-                        for i in self.indices.geom
-                        if self.indices.geom[i] == "observer_zenith"
-                    ][0]
-
-            # If it wasn't a geom key, it's x_RT
-            self.indices.x_RT = list(set(range(self.n_point)) - set(self.indices.geom))
+            self.build_interpolators()
             Logger.debug(f"Interpolators built")
 
     def __getitem__(self, key):
@@ -529,15 +526,9 @@ class RadiativeTransferEngine:
                             self.lut.queuePoint(point, data)
 
                     report(len(jobs))
-                    # if report(len(jobs)) and self.lut.hold:
-                    #     Logger.info("Flushing netCDF to disk")
-                    #     self.lut.flush()
 
-                # Shouldn't be hit but just in case
-                if self.lut.hold:
-                    Logger.warning("Not all points were flushed, doing so now")
-                    self.lut.flush()
-
+                Logger.debug("Flushing chunkless data")
+                self.lut.flush()
             else:
                 # Place into shared memory space to avoid spilling
                 lut_names = ray.put(self.lut_names)
@@ -621,8 +612,8 @@ class RadiativeTransferEngine:
         self.lut.finalize()
 
         # Reload the LUT now that it's populated
-        # Logger.debug("Reloading LUT")
-        # self.lut = luts.load(self.lut_path)
+        Logger.debug("Reloading LUT")
+        self.lut = luts.load(self.lut_path, **self.lut_kwargs)
 
     def summarize(self, x_RT, *_):
         """
@@ -820,7 +811,39 @@ def streamSimulation(
 
 @ray.remote(num_cpus=1)
 def shardWriter(lut, shard, coord, points, simmer, reader):
-    """ """
+    """
+    Execute simulations for a set of points and write chunked results to a LUT shard.
+
+    This function is intended to run as a Ray remote task. For each input point,
+    it runs a simulation, reads the resulting data, separates chunked and
+    non-chunked outputs, and queues the chunked data into a shard buffer. After all
+    points are processed, the buffered data is flushed to disk.
+
+    Parameters
+    ----------
+    lut : dict or LUT-like
+        Either a dictionary of arguments used to initialize a LUT via
+        ``luts.create`` or an already-instantiated LUT Create object.
+    shard : int or str
+        Identifier for the shard being processed. Used for logging.
+    coord : tuple of slice or similar
+        Coordinate slices defining the region of the LUT corresponding to
+        this shard.
+    points : iterable
+        Collection of input points to simulate and process. These points are assumed
+        to be in the same shard.
+    simmer : callable
+        Function to run the simulation.
+    reader : callable
+        Function to read the results of the simulation.
+
+    Returns
+    -------
+    tuple
+        A tuple ``(point, chunkless)`` where ``point`` is the last processed
+        point and ``chunkless`` is a dictionary of non-chunked outputs from
+        the last iteration.
+    """
     if isinstance(lut, dict):
         lut = luts.create(**lut, mode="a", init=False, buffered=True)
 

@@ -418,7 +418,14 @@ class CreateNetCDF(Create):
 
 class CreateZarr(Create):
     def __init__(
-        self, file, *args, buffered=False, shards=None, min_shards=1, **kwargs
+        self,
+        file,
+        *args,
+        buffered=False,
+        shards=None,
+        shard_size=None,
+        min_shards=1,
+        **kwargs,
     ):
         """
         Prepare a Zarr v3 LUT store
@@ -450,22 +457,15 @@ class CreateZarr(Create):
         )
 
         # TODO: Integrate into config
-        self.sharding = "4gb"
-        self.sharding = "128gb"  # experimental sRTMnet break the node settings
         self.shards = shards
-
-        # TODO: yep
+        self.shard_size = shard_size
         self.min_shards = min_shards
 
         super().__init__(file, *args, **kwargs)
 
         self.buffer = {}
         if buffered:
-            shape = list(self.sizes.values())
-            self.buffer = {
-                key: np.full(self.shards, vals, "float64")
-                for key, vals in self.alldim.items()
-            }
+            self.reset_buffer(buffered)
 
         self.data = self.buffer or self.z
 
@@ -513,12 +513,12 @@ class CreateZarr(Create):
         None | xr.Dataset
             The initialized dataset
         """
-        if self.sharding:
+        if self.shard_size:
             self.shards, self.groups, self.coords = calc_shards(
                 self.grid,
                 self.wl,
                 self.chunks,
-                storage=self.sharding,
+                storage=self.shard_size,
                 min_shards=self.min_shards,
                 scale=len(self.alldim),
             )
@@ -601,10 +601,10 @@ class CreateZarr(Create):
                     continue
 
                 if key in self.consts:
-                    self.data[key][...] = vals
+                    self.z[key][...] = vals
 
                 elif key in self.onedim:
-                    self.data[key][:] = vals
+                    self.z[key][:] = vals
 
                 elif key in self.alldim:
                     index = self.pointIndices(point)
@@ -628,6 +628,19 @@ class CreateZarr(Create):
 
         for key, vals in self.buffer.items():
             self.z[key][slices] = vals
+
+    def reset_buffer(self, buffered):
+        """
+        Resets the buffered data to ensure
+        """
+        if self.buffer:
+            for key, vals in self.alldim.items():
+                self.buffer[key][:] = vals
+        else:
+            self.buffer = {
+                key: np.full(self.shards, vals, "float64")
+                for key, vals in self.alldim.items()
+            }
 
     def queuePoint(self, *args, **kwargs):
         """
@@ -1117,8 +1130,8 @@ def load(
     >>> load(file, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
-    # if coupling not in ("before", "before-save", "after", "after-save"):
-    #     raise AttributeError("Coupling must be set to either 'before' or 'after'")
+    if coupling not in ("before", "before-save", "after", "after-save", None):
+        raise AttributeError("Coupling must be set to either 'before' or 'after'")
 
     if file.endswith(".zarr"):
         if dask:
@@ -1153,7 +1166,7 @@ def load(
     )
 
     # Calculate coupling before subsetting
-    if "before" in coupling:
+    if coupling and "before" in coupling:
         couple(ds)
 
         # Save back to the original file, only the coupled terms
@@ -1213,7 +1226,7 @@ def load(
         )
 
     # Calculate coupling after subsetting
-    if "after" in coupling:
+    if coupling and "after" in coupling:
         couple(ds)
 
         if "save" in coupling:

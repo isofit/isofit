@@ -28,12 +28,13 @@ from pathlib import Path
 import dask.array as da
 import h5py
 import numpy as np
+import psutil
 import torch
 import yaml
 from scipy.interpolate import interp1d
 
 from isofit.core import units
-from isofit.core.common import calculate_resample_matrix, resample_spectrum
+from isofit.core.common import Track, calculate_resample_matrix, resample_spectrum
 from isofit.radiative_transfer import luts
 from isofit.radiative_transfer.engines import SixSRT
 from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
@@ -322,6 +323,27 @@ class SimulatedModtranRT(RadiativeTransferEngine):
     }
     _disable_makeSim = True
 
+    def __init__(self, *args, **kwargs):
+        # Experimental sRTMnet sharding size
+        # Shards may use up to 2x their size of memory, plus some extra
+        # so divide by 2.5 for safety
+        mem = psutil.virtual_memory()
+        size = f"{int(mem.total / 2**30 / 2.5)}gb"
+        Logger.debug(f"Attempting to use shard size: {size}")
+
+        lut = {
+            "chunks": {},
+            "check": False,
+            "coupling": "",
+            "shard_size": size,
+        }
+
+        super().__init__(
+            *args,
+            **kwargs,
+            lut_kwargs=lut,
+        )
+
     def preSim(self):
         """
         sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins
@@ -392,6 +414,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             modtran_emulation=True,
             build_interpolators=False,
             n_cores=self.n_cores,
+            lut_kwargs=self.lut_kwargs,
         )
 
         if self.engine_config.rte_configure_and_exit:
@@ -419,28 +442,8 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         self.sim_coszen = sim["coszen"]
 
         sixs = sim.lut[aux_rt_quantities]
-        if groups := getattr(self.lut, "groups", None):
-            dims = sim.lut.attrs["shard order"]
-            order = list(self.lut_grid)
-            sixs = sixs.unstack().transpose("wl", *order)
-            outshape = tuple(self.lut.shards)
-
-            from isofit.core.common import Track
-
-            report = Track(
-                groups, step=1, message="shards processed", print=Logger.info
-            )
-            for i, group in enumerate(groups):
-                Logger.info(f"Processing shard {i+1}/{len(groups)}")
-                slices = self.lut.coords[group]
-                todict = dict(zip(dims, slices))
-                shard = sixs[todict].load()
-                shard = shard.stack(point=dims[1:]).transpose("point", "wl")
-                Logger.debug(shard)
-                data = self.process(shard, outshape)
-                self.lut.flush_buffer(slices)
-                del shard
-                report(i + 1)
+        if getattr(self.lut, "groups", None):
+            self.sharded(sim, sixs)
         else:
             outshape = (len(self.wl),) + tuple(
                 len(self.lut_grid[n]) for n in self.lut_grid
@@ -455,6 +458,53 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 self.sim_sol_irr, self.emu_wl, self.wl, self.fwhm
             ),
         }
+
+    def sharded(self, sim, sixs):
+        """
+        Process sRTMnet in Zarr shard groups. This enables processing of
+        larger-than-memory LUTs.
+
+        Parameters
+        ----------
+        sim : isofit.radiative_transfer.engines.sixs_s.SixSRT
+            The 6S engine
+        sixs : xarray.Dataset
+            The 6S LUT of only the aux_rt_quantities
+        """
+        groups = self.lut.groups
+
+        # Retrieve the dimensional ordering of the shards
+        dims = sim.lut.attrs["shard order"]
+
+        # Ensure the 6S LUT is in the same dimensional ordering as the sRTMnet LUT
+        # have to unstack so that shard slicing works as expected
+        order = list(self.lut_grid)
+        sixs = sixs.unstack().transpose("wl", *order)
+
+        outshape = tuple(self.lut.shards)
+
+        report = Track(groups, step=1, message="shards processed", print=Logger.info)
+        for i, group in enumerate(groups):
+            # Get the index slicing for this shard and format it for xarray slicing
+            # xarray: dict[dim, slice]
+            # numpy: tuple[slice, slice, ...]
+            slices = self.lut.coords[group]
+            todict = dict(zip(dims, slices))
+
+            # Load the shard into memory and re-stack the point dim (sRTMnet expects)
+            shard = sixs[todict].load()
+            shard = shard.stack(point=dims[1:]).transpose("point", "wl")
+
+            # Process the shard through sRTMnet
+            data = self.process(shard, outshape)
+
+            # Flush the shard to disk and reset
+            self.lut.flush_buffer(slices)
+            self.lut.reset_buffer()
+
+            # Make sure to recover the memory before loading a new shard
+            del shard
+            report(i + 1)
 
     def process(self, sim, outshape):
         """ """
