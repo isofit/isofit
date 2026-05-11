@@ -404,6 +404,10 @@ def convert_loc(h5_path: str, out_basename: str) -> tuple[str, str]:
     return loc_path, hdr_path
 
 
+# --------------------------------
+# Called by: convert_neon_h5
+# Calls:     _to_decimal_hours, _write_envi_header
+# --------------------------------
 def convert_obs(h5_path: str, out_basename: str) -> tuple[str, str]:
     """
     Export NEON OBS_Data (observation geometry) to an ENVI BIP ``.obs`` file.
@@ -467,6 +471,10 @@ def convert_obs(h5_path: str, out_basename: str) -> tuple[str, str]:
     return obs_path, hdr_path
 
 
+# --------------------------------
+# Called by: (user / external callers)
+# Calls:     convert_rad, convert_loc, convert_obs
+# --------------------------------
 def convert_neon_h5(
     h5_path: str, out_root: str, *, subdir: bool = True
 ) -> dict[str, str]:
