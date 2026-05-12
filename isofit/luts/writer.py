@@ -1,63 +1,53 @@
+"""
+Manages the generation of new look-up tables (LUTs)
+"""
+
 from __future__ import annotations
 
-import atexit
-import gc
 import logging
-import os
 import sys
 import time
-from pathlib import Path
-from typing import Any, List, Union
 
 import numpy as np
-import xarray as xr
-from netCDF4 import Dataset
 
-from isofit import __version__, ray
-from isofit.atmosphere import Keys
+from isofit import ray
 from isofit.core.common import Track, combos
 
 Logger = logging.getLogger(__name__)
 
 
 class Writer:
+    """
+    Handles writing RTE engine simulation data to an ISOFIT-compatible LUT store
+    """
 
-    # Allows engines to outright disable the parallelized
-    # sims if they do nothing
+    # Allows engines to outright disable the parallelized sims if they do nothing
     _disable_makeSim = False
 
-    """Sleep a random amount of time up to max this value 
+    """Sleep a random amount of time up to max this value
     at the start of each streamSimulation
     Can be set per custom engine"""
     max_buffer_time = 0
 
-    def write(
-        self,
-        lut_path: str,
-        lut_names: list,
-        lut_grid: dict,
-        rt_mode: str,
-        wl: np.ndarray,
-        fwhm: np.ndarray,
-        configure_and_exit: bool = False,
-        lut_compression: str = "zlib",
-        lut_complevel: int = None,
-    ):
-        """Initialize a LUT and run simulations"""
-        # Run sims and write lut
+    def write(self):
+        """
+        Initialize a LUT and run simulations
+        """
+        for attr in ("lut_path", "lut_names", "lut_grid", "wl", "keys"):
+            if getattr(self, attr) is None:
+                raise AttributeError(
+                    f"Missing required attribute to write the LUT: {attr}"
+                )
+
         if not configure_and_exit:
             self.lut = Create(
-                file=lut_path,
-                keys=Keys,
-                wl=wl,
-                grid=lut_grid,
-                attrs={"RT_mode": rt_mode},
-                onedim={"fwhm": fwhm},
-                compression=lut_compression,
-                complevel=lut_complevel,
+                file=self.lut_path,
+                keys=self.keys,
+                wl=self.wl,
+                grid=self.lut_grid,
+                onedim=self.onedim,
             )
-
-        self.runSimulations(lut_names, lut_grid, configure_and_exit)
+            self.runSimulations()
 
     def runSimulations(self, lut_names, lut_grid, configure_and_exit=False) -> None:
         """
@@ -256,295 +246,3 @@ class Writer:
             ["%s-%6.4f" % (n, x) for n, x in zip(self.lut_names, point)]
         )
         return filename
-
-
-class Create:
-    def __init__(
-        self,
-        file: str,
-        keys: Keys,
-        wl: np.ndarray,
-        grid: dict,
-        attrs: dict = {},
-        consts: dict = {},
-        onedim: dict = {},
-        alldim: dict = {},
-        zeros: List[str] = [],
-        compression: str = "zlib",
-        complevel: int = None,
-    ):
-        """
-        Prepare a LUT netCDF
-
-        Parameters
-        ----------
-        file : str
-            NetCDF filepath for the LUT.
-        wl : np.ndarray
-            The wavelength array.
-        grid : dict
-            The LUT grid, formatted as {str: Iterable}.
-        attrs: dict, defaults={}
-            Dict of dataset attributes, ie. {"RT_mode": "transm"}
-        consts : dict, optional, default={}
-            Dictionary of constant values. Appends/replaces current Create.consts list.
-        onedim : dict, optional, default={}
-            Dictionary of one-dimensional data. Appends/replaces to the current Create.onedim list.
-        alldim : dict, optional, default={}
-            Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
-        zeros : List[str], optional, default=[]
-            List of zero values. Appends to the current Create.zeros list.
-        compression : str, default="zlib"
-            Compression method to use to the NetCDF. Check https://unidata.github.io/netcdf4-python/
-            for available options. Currently, must use h5py <= 3.14.0
-        complevel : int, default=None
-            Compression to use. Impact and levels vary per method.
-        """
-        # Track the ISOFIT version that created this LUT
-        attrs["ISOFIT version"] = __version__
-        attrs["ISOFIT status"] = "<incomplete>"
-
-        self.file = file
-        self.wl = wl
-        self.grid = grid
-        self.hold = []
-
-        self.sizes = {key: len(val) for key, val in grid.items()}
-        self.attrs = attrs
-
-        self.consts = {**keys.consts, **consts}
-        self.onedim = {**keys.onedim, **onedim}
-        self.alldim = {**keys.alldim, **alldim}
-
-        self.compression = compression
-        self.complevel = complevel
-
-        # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
-        self.initialize()
-
-        atexit.register(cleanup, file)
-
-    def initialize(self) -> None:
-        """
-        Initializes the LUT netCDF by prepopulating it with filler values.
-        """
-
-        def createVariable(key, vals, dims=(), fill_value=np.nan, chunksizes=None):
-            """
-            Reusable createVariable for the Dataset object
-            """
-            var = ds.createVariable(
-                varname=key,
-                datatype="f8",
-                dimensions=dims,
-                fill_value=fill_value,
-                chunksizes=chunksizes,
-                compression=self.compression,
-                complevel=self.complevel,
-            )
-            var[:] = vals
-
-        with Dataset(self.file, "w", format="NETCDF4") as ds:
-            # Dimensions
-            ds.createDimension("wl", len(self.wl))
-            createVariable("wl", self.wl, ("wl",))
-
-            chunks = [len(self.wl)]
-            for key, vals in self.grid.items():
-                ds.createDimension(key, len(vals))
-                createVariable(key, vals, (key,))
-                chunks.append(1)
-
-            # Constants
-            dims = ()
-            for key, vals in self.consts.items():
-                createVariable(key, vals, dims)
-
-            # One dimensional arrays
-            dims = ("wl",)
-            for key, vals in self.onedim.items():
-                createVariable(key, vals, dims)
-
-            # Multi dimensional arrays
-            dims += tuple(self.grid)
-            for key, vals in self.alldim.items():
-                createVariable(key, vals, dims, chunksizes=chunks)
-
-            # Add custom attributes onto the Dataset
-            for key, value in self.attrs.items():
-                ds.setncattr(key, value)
-
-            ds.sync()
-        gc.collect()
-
-    def pointIndices(self, point: np.ndarray) -> List[int]:
-        """
-        Get the indices of the point in the grid.
-
-        Parameters
-        ----------
-        point : np.ndarray
-            The coordinates of the point in the grid.
-
-        Returns
-        -------
-        List[int]
-            Mapped point values to index positions.
-        """
-        return [
-            np.where(self.grid[dim] == val)[0][0] for dim, val in zip(self.grid, point)
-        ]
-
-    def queuePoint(self, point: np.ndarray, data: dict) -> None:
-        """
-        Queues a point and its data to the internal hold list which is used by the
-        flush function to write these points to disk.
-
-        Parameters
-        ----------
-        point : np.ndarray
-            The coordinates of the point in the grid.
-        data : dict
-            Data for this point to write.
-        """
-        self.hold.append((point, data))
-
-    def flush(self, finalize: bool = False) -> None:
-        """
-        Flushes the (point, data) pairs held in the hold list to the LUT netCDF.
-
-        Parameters
-        ----------
-        finalize : bool, default=False
-            Calls the `finalize` function
-        """
-        unknowns = set()
-        with Dataset(self.file, "a") as ds:
-            for point, data in self.hold:
-                for key, vals in data.items():
-                    if key in self.consts:
-                        ds[key].assignValue(vals)
-                    elif key in self.onedim:
-                        ds[key][:] = vals
-                    elif key in self.alldim:
-                        index = [slice(None)] + list(self.pointIndices(point))
-                        ds[key][index] = vals
-                    else:
-                        unknowns.update([key])
-            ds.sync()
-
-        self.hold = []
-        gc.collect()
-
-        # Reduce the number of warnings produced per flush
-        for key in unknowns:
-            Logger.warning(
-                f"Attempted to assign a key that is not recognized, skipping: {key}"
-            )
-
-        if finalize:
-            self.finalize()
-
-    def writePoint(self, point: np.ndarray, data: dict) -> None:
-        """
-        Queues a point and immediately flushes to disk.
-
-        Parameters
-        ----------
-        point : np.ndarray
-            The coordinates of the point in the grid.
-        data : dict
-            Data for this point to write.
-        """
-        self.queuePoint(point, data)
-        self.flush()
-
-    def setAttr(self, key: str, value: Any) -> None:
-        """
-        Sets an attribute in the netCDF
-
-        Parameters
-        ----------
-        key : str
-            Key to set
-        value : any
-            Value to set
-        """
-        self.attrs[key] = value
-        with Dataset(self.file, "a") as ds:
-            ds.setncattr(key, value)
-
-    def getAttr(self, key: str) -> Any:
-        """
-        Gets an attribute from the netCDF
-
-        Parameters
-        ----------
-        key : str
-            Key to get
-
-        Returns
-        -------
-        any | None
-            Retrieved attribute from netCDF, if it exists
-        """
-        with Dataset(self.file, "r") as ds:
-            return ds.getncattr(key)
-
-    def finalize(self):
-        """
-        Finalizes the netCDF by writing any remaining attributes to disk
-        """
-        self.setAttr("ISOFIT status", "success")
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        """
-        Sets a variable in the netCDF.
-
-        Parameters
-        ----------
-        key : str
-            Key to set
-        value : any
-            Value to set
-        """
-        with Dataset(self.file, "a") as ds:
-            ds[key][:] = value
-
-    def __getitem__(self, key: str) -> Any:
-        """
-        Passthrough to __getitem__ on the underlying 'ds' attribute.
-
-        Parameters
-        ----------
-        key : str
-            The name of the item to retrieve.
-
-        Returns
-        -------
-        Any
-            The value of the item retrieved from the 'ds' attribute.
-        """
-        return self.ds[key]
-
-    def __repr__(self) -> str:
-        return f"LUT Writer(wl={self.wl.size}, grid={self.sizes})"
-
-
-def cleanup(file):
-    """
-    Checks the ``ISOFIT status`` attribute on a LUT and removes the file if it is
-    incomplete.
-
-    Parameters
-    ----------
-    file : str
-        Path to the file to check
-    """
-    if os.path.exists(file):
-        with Dataset(file, "r") as ds:
-            if ds.getncattr("ISOFIT status") == "<incomplete>":
-                Logger.error(
-                    f"The LUT status was determined to be incomplete, auto-removing: {file}"
-                )
-                os.remove(file)

@@ -136,20 +136,23 @@ class BaseAtmosphere(Reader):
         self.sim_path = self.config.sim_path
         self.multipart_transmittance = self.config.multipart_transmittance
 
-        self.lut_exists = self.lut_path is not None and os.path.isfile(self.lut_path)
-        if self.lut_exists:
-            Logger.info("Prebuilt LUT provided")
-
-        elif not self.lut_exists and self.lut_grid is None:
+        if not self.lut_path:
             raise AttributeError(
-                "Must provide either a prebuilt LUT file or a LUT grid"
+                "Must provide a lut_path either by parameter or config"
             )
+        # self.lut_exists = self.lut_path is not None and os.path.exists(self.lut_path)
+        # if self.lut_exists:
+        #     Logger.info("Prebuilt LUT provided")
+        #
+        # elif not self.lut_exists and self.lut_grid is None:
+        #     raise AttributeError(
+        #         "Must provide either a prebuilt LUT file or a LUT grid"
+        #     )
 
         # TODO: overwrite_interpolator not hooked up. Check if we even want this override
         self.interpolator_style = (
             self.config.interpolator_style
-            if self.config.interpolator_style
-            else full_config.forward_model.instrument.get("interpolator_style")
+            or full_config.forward_model.instrument.get("interpolator_style")
         )
 
         self.multipart_transmittance = (
@@ -212,10 +215,13 @@ class BaseAtmosphere(Reader):
 
         self.n_lut_input_dim = len(self.lut_names)
 
+        # Initialize the LUT
+        super().__init__()
+
         # Wrapper for the create-load logic that depends on the engine
         # create_lut will include the build logic within engines
-        self.lut = self._lut(build_interpolators=build_interpolators)
-        Logger.info("LUT grid loaded from file")
+        # self.lut = self._lut(build_interpolators=build_interpolators)
+        # Logger.info("LUT grid loaded from file")
 
         # remove 'point' if added to lut_names after subsetting
         if "point" in self.lut_names:
