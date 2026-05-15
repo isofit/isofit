@@ -211,8 +211,8 @@ class BaseAtmosphere(Reader):
         self.bval = np.array([x for x in self.config.unknowns.get_elements()[0]])
 
         # Initialize the LUT
-
         super().__init__(build_interpolators)
+        self.get_indices()
         if lut_postprocess:
             self.lut_postprocess()
 
@@ -330,7 +330,7 @@ class BaseAtmosphere(Reader):
         Returns:
             interpolated modeled atmospheric path radiance
         """
-        r = self.interpolate(x_RT, geom)
+        r = self.get(x_RT, geom)
         if self.rt_mode == "rdn":
             L_atm = r["rhoatm"]
         else:
