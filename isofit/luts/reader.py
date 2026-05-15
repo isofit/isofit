@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import io
 import logging
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -264,7 +265,6 @@ def check_nans(ds):
 
 
 def load(
-    self,
     path: str,
     subset: dict = None,
     mf: bool = False,
@@ -519,7 +519,7 @@ class Reader:
             Logger.info("No LUT provided, attempting to build it")
             self.write()
 
-        self.lut = load(self.lut_path, **self.lut_kwargs)
+        self.lut = load(path=self.lut_path, mode="r")
         self.rt_mode = self.lut.attrs.get("RT_mode", "transm")
 
         # Write the NetCDF information to the log file so devs have that info during debugging
@@ -550,7 +550,7 @@ class Reader:
         TODO: optional load from/write to disk
         """
         if keys is None:
-            self.lut_keys.alldim
+            keys = self.lut_keys.alldim
 
         self.cached = SimpleNamespace(point=np.array([]))
         self.interpolators = {}
@@ -604,6 +604,7 @@ class Reader:
             OCI srf_file
         """
         ds = self.lut
+        ds.load()
 
         # Discover variables along the wl dim
         keys = {key for key in ds if "wl" in ds[key].dims} - {"fwhm"}

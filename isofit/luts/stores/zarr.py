@@ -174,7 +174,6 @@ class CreateZARR(Create):
         file,
         *args,
         buffered=False,
-        shards=None,
         shard_size=None,
         min_shards=1,
         **kwargs,
@@ -184,6 +183,7 @@ class CreateZARR(Create):
 
         Parameters
         ----------
+        shards :
         file : str
             Filepath for the LUT.
         mode : str, default="w"
@@ -209,7 +209,7 @@ class CreateZARR(Create):
         )
 
         # TODO: Integrate into config
-        self.shards = shards
+        self.shards = None
         self.shard_size = shard_size
         self.min_shards = min_shards
 

@@ -135,6 +135,9 @@ class Writer:
     # Optional flag to exit simulations early
     configure_and_exit = False
 
+    # Zarr sharding
+    shard_size = None
+
     def write(self):
         """
         Initialize a LUT and run simulations
@@ -155,6 +158,8 @@ class Writer:
                 consts=self.consts,
                 onedim=self.onedim,
                 alldim=self.alldim,
+                shard_size=self.shard_size,
+                min_shards=self.n_cores,
             )
 
         self.runSimulations()

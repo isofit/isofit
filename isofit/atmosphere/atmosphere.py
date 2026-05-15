@@ -115,6 +115,7 @@ class BaseAtmosphere(Reader):
         fwhm: np.array = [],  # fwhm override
         n_cores: int = None,  # n_core override
         build_interpolators: bool = True,
+        lut_postprocess: bool = True,
     ):
         self.config = full_config.forward_model.atmosphere
 
@@ -212,7 +213,8 @@ class BaseAtmosphere(Reader):
         # Initialize the LUT
 
         super().__init__(build_interpolators)
-        self.lut_postprocess()
+        if lut_postprocess:
+            self.lut_postprocess()
 
     def lut_postprocess(self):
         """
