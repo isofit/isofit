@@ -270,23 +270,26 @@ def load(
     mf: bool = False,
     check: bool = False,
     stack: bool = True,
+    load: bool = True,
     chunks: dict = {},
     **kwargs,
 ):
     """
     Parameters
     ----------
-    path: str
+    path : str
         Path to LUT store to load
-    subset: dict, default={}
+    subset : dict, default={}
         Subset each dimension with a given strategy. Each dimension in the LUT file
         must be specified.
         See examples for more information
-    mf: bool, default=False
+    mf : bool, default=False
         Uses xr.open_mfdataset instead which enables multi-file support
-    check: bool, default=True
+    check : bool, default=True
         Checks the dataset for NaNs and replaces them with 0s if the array is not
         entirely NaN
+    load : bool, default=True
+        Loads the final dataset into memory
     chunks : dict, default={}
         Chunks parameter for open_dataset, isofit generally wants to have the dataset
         be chunked by the file's chunks
@@ -494,6 +497,9 @@ def load(
     if check:
         check_nans(ds)
 
+    if load:
+        ds = ds.load()
+
     return ds
 
 
@@ -502,7 +508,9 @@ class Reader:
     LUT reader class to manage the reading and manipulation of LUT stores
     """
 
-    def __init__(self, build_interpolators=False):
+    def __init__(
+        self, build_interpolators=False, lut_subset={}, mode="r", load_kwargs={}, **_
+    ):
         """
         Parameters
         ----------
@@ -525,7 +533,7 @@ class Reader:
 
             self.write()
 
-        self.lut = load(path=self.lut_path, mode="r")
+        self.lut = load(path=self.lut_path, mode=mode, subset=lut_subset, **load_kwargs)
         self.rt_mode = self.lut.attrs.get("RT_mode", "transm")
 
         # Write the NetCDF information to the log file so devs have that info during debugging

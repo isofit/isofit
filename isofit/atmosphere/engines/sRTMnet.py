@@ -404,6 +404,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             build_interpolators=False,
             lut_postprocess=False,
             shard_size=self.shard_size,
+            load_kwargs={"load": False},
         )
 
         if self.configure_and_exit:

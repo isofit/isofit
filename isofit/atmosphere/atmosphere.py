@@ -118,10 +118,6 @@ class BaseAtmosphere(Reader):
         lut_postprocess: bool = True,
         **kwargs,
     ):
-        # These keys may influence LUT reading/writing
-        for key, val in kwargs.items():
-            setattr(self, key, val)
-
         self.full_config = full_config
         self.config = full_config.forward_model.atmosphere
 
@@ -220,7 +216,11 @@ class BaseAtmosphere(Reader):
         self.consts = {}
         self.onedim = {"fwhm": fwhm}
         self.alldim = {}
-        super().__init__(build_interpolators)
+        super().__init__(
+            build_interpolators=build_interpolators,
+            lut_subset=self.config.lut_names,
+            **kwargs,
+        )
         self.get_indices()
         if lut_postprocess:
             self.lut_postprocess()

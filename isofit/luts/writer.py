@@ -133,8 +133,14 @@ class Writer:
     # Optional flag to exit simulations early
     configure_and_exit = False
 
-    # Zarr sharding
-    shard_size = None
+    def __init__(self, shard_size=None, **_):
+        """
+        Parameters
+        ----------
+        shard_size : str, default=None
+            Limit the total size of a single shard eg. "4gb"
+        """
+        self.shard_size = shard_size
 
     def write(self):
         """
