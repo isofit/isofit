@@ -338,18 +338,14 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins
         simulations itself
         """
-        Logger.info("Creating a simulator configuration")
-        # Create a copy of the engine_config and populate it with 6S parameters
-        config = build_sixs_config(self.engine_config)
-
         # Track the sRTMnet file used in the LUT attributes
-        self.lut.setAttr("sRTMnet", str(config.emulator_file))
+        self.lut.setAttr("sRTMnet", str(self.config.emulator_file))
 
         # Get the component mode up front
-        if self.engine_config.emulator_file.endswith(".h5"):
+        if self.config.emulator_file.endswith(".h5"):
             self.component_mode = "3c"
 
-        elif self.engine_config.emulator_file.endswith(".6c"):
+        elif self.config.emulator_file.endswith(".6c"):
             self.component_mode = "6c"
 
         else:
@@ -360,7 +356,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         # Pack the emulator Aux the same regardless of input file type.
         # Enforce types
         if self.component_mode == "3c":
-            aux = dict(np.load(config.emulator_aux_file, allow_pickle=True))
+            aux = dict(np.load(self.config.emulator_aux_file, allow_pickle=True))
             aux_dict = {}
             for key, value in self.aux_quantities.items():
                 if len(aux.get(key, [])):
@@ -370,7 +366,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         else:
             aux = {}
-            with h5py.File(config.emulator_file, "r") as model:
+            with h5py.File(self.config.emulator_file, "r") as model:
                 for key, value in self.aux_quantities.items():
                     if value == dict:
                         aux[key] = {
@@ -391,6 +387,9 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         # Simulation wavelengths overrides, always fixed size
         self.sim_wl = np.arange(350, 2500 + 2.5, 2.5)
         self.sim_fwhm = np.full(self.sim_wl.size, 2.0)
+
+        # Create a copy of the engine_config and populate it with 6S parameters
+        config = build_sixs_config(self.full_config)
 
         # Build the 6S simulations
         Logger.info("Building simulator and executing (6S)")
@@ -542,14 +541,14 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             response_offset = self.aux.get("response_offset", 0.0)
 
             emulator = SRTMnetModel(
-                input_file=self.engine_config.emulator_file,
+                input_file=self.config.emulator_file,
                 key="3c",
                 n_cores=self.n_cores,
             )
             lp = emulator.predict(
                 [data.values],  # surrogate data (6S)
                 [resample.values],  #  stacked 3c data interpolated to emulator wl
-                batch_size=self.engine_config.emulator_batch_size,
+                batch_size=self.config.emulator_batch_size,
                 response_scaler=[response_scaler],
                 response_offset=[response_offset],
                 resample_dict=resample_dict,
@@ -569,7 +568,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             add_vector = None
             if len(feature_point_names) > 0 and feature_point_names[0] != "None":
                 # Populate the 6S parameter values from a modtran template file
-                with open(self.engine_config.template_file, "r") as file:
+                with open(self.config.template_file, "r") as file:
                     data = yaml.safe_load(file)["MODTRAN"][0]["MODTRANINPUT"]
 
                 add_vector = np.zeros((self.points.shape[0], len(feature_point_names)))
@@ -607,7 +606,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
                 Logger.debug(f"Loading emulator {key}")
 
                 emulator = SRTMnetModel(
-                    input_file=self.engine_config.emulator_file,
+                    input_file=self.config.emulator_file,
                     key=key,
                     n_cores=self.n_cores,
                 )
@@ -621,7 +620,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
                     [
                         resample[x].values for x in mapping[key]
                     ],  #  6S data interpolated to emulator wl
-                    batch_size=self.engine_config.emulator_batch_size,
+                    batch_size=self.config.emulator_batch_size,
                     response_scaler=response_scaler,
                     response_offset=response_offset,
                     resample_dict=resample_dict,

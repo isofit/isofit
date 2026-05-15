@@ -117,6 +117,7 @@ class BaseAtmosphere(Reader):
         build_interpolators: bool = True,
         lut_postprocess: bool = True,
     ):
+        self.full_config = full_config
         self.config = full_config.forward_model.atmosphere
 
         self.n_cores = (
