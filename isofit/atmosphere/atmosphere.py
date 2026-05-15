@@ -33,11 +33,9 @@ from isofit.configs import Config
 from isofit.core import common, units
 from isofit.core.common import svd_inv_sqrt
 from isofit.core.geometry import Geometry
-from isofit.luts import sub
-from isofit.luts.reader import LUT, Reader
+from isofit.luts.reader import Reader
 
-Logger = logging.getLogger(__file__)
-# Logger = logging.getLogger()
+Logger = logging.getLogger(__name__)
 
 
 class Keys:
