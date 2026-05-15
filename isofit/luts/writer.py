@@ -100,14 +100,15 @@ def shardWriter(lut, shard, coord, points, simmer, reader):
         lut = create(**lut, mode="a", init=False, buffered=True)
 
     Logger.info(f"Starting shard {shard}")
+    keys = luts["keys"]
 
     for point in points:
         simmer(point)  # Execute the simulation
         data = reader(point)  # Read the simulation results
 
         # Remove non-chunk data
-        chunkless = {k: v for k, v in data.items() if k not in luts.Keys.alldim}
-        data = {k: v for k, v in data.items() if k in luts.Keys.alldim}
+        chunkless = {k: v for k, v in data.items() if k not in keys.alldim}
+        data = {k: v for k, v in data.items() if k in keys.alldim}
         if data:
             lut.queuePoint(point, data)
 
@@ -208,6 +209,7 @@ class Writer:
         kwargs = ray.put(
             {
                 "file": self.lut.file,
+                "keys": self.lut_keys,
                 "wl": self.lut.wl,
                 "grid": self.lut.grid,
                 "shards": self.lut.shards,

@@ -53,7 +53,7 @@ class Create:
     def __init__(
         self,
         path: str,
-        keys: dict,
+        keys: object,
         wl: np.ndarray,
         grid: dict,
         mode: str = "w",
@@ -73,7 +73,7 @@ class Create:
         ----------
         path : str
             Path for the LUT.
-        keys : dict
+        keys : object
             Default keys to set. This is needed to pre-initilize the LUT store to
             optimize the flushing of data to disk.
         wl : np.ndarray
@@ -104,6 +104,7 @@ class Create:
         attrs["ISOFIT status"] = "<incomplete>"
 
         self.path = path
+        self.keys = keys
         self.wl = wl
         self.grid = {key: np.array(vals) for key, vals in grid.items()}
         self.hold = []
