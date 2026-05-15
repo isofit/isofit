@@ -116,7 +116,12 @@ class BaseAtmosphere(Reader):
         n_cores: int = None,  # n_core override
         build_interpolators: bool = True,
         lut_postprocess: bool = True,
+        **kwargs,
     ):
+        # These keys may influence LUT reading/writing
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+
         self.full_config = full_config
         self.config = full_config.forward_model.atmosphere
 
