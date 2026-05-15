@@ -292,7 +292,7 @@ class SRTMnetModel(torch.nn.Module):
         return outdict
 
 
-class SimulatedModtranRT(Writer, BaseAtmosphere):
+class SimulatedModtranRT(BaseAtmosphere, Writer):
     """
     A hybrid surrogate-model and emulator of MODTRAN-like results.  A description of
     the model can be found in:

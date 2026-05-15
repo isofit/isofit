@@ -8,9 +8,10 @@ Be sure to edit engines/__init__.py to import your custom engine and set its nam
 """
 
 from isofit.atmosphere import BaseAtmosphere
+from isofit.luts.writer import Writer
 
 
-class CustomAtmosphere(BaseAtmosphere):
+class CustomAtmosphere(BaseAtmosphere, Writer):
     """
     This is the minimal version that must be defined. Refer to the full template for
     detailed descriptions.

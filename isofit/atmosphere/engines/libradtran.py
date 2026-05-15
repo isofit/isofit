@@ -39,7 +39,7 @@ from isofit.luts.writer import Writer
 Logger = logging.getLogger(__name__)
 
 
-class LibRadTranRT(Writer, BaseAtmosphere):
+class LibRadTranRT(BaseAtmosphere, Writer):
 
     # aerosol_default = rural type aerosol in the boundary layer,
     # background aerosol above 2km, spring-summer conditions, and a visibility of 50km.

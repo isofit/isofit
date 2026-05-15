@@ -62,7 +62,7 @@ SIXS_TEMPLATE = """\
 """
 
 
-class SixSRT(Writer, BaseAtmosphere):
+class SixSRT(BaseAtmosphere, Writer):
     """A model of photon transport including the atmosphere."""
 
     current = os.environ.get("SIXS_DIR")

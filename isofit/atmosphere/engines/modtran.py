@@ -41,7 +41,7 @@ Logger = logging.getLogger(__file__)
 TROPOPAUSE_ALTITUDE_KM = 17.0
 
 
-class ModtranRT(Writer, BaseAtmosphere):
+class ModtranRT(BaseAtmosphere, Writer):
 
     max_buffer_time = 0.5
     albedos = [0.0, 0.1, 0.5]

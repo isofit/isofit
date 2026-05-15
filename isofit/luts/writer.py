@@ -12,8 +12,110 @@ import numpy as np
 
 from isofit import ray
 from isofit.core.common import Track, combos
+from isofit.luts.stores import create
 
 Logger = logging.getLogger(__name__)
+
+
+@ray.remote(num_cpus=1)
+def streamSimulation(
+    point: np.array,
+    lut_names: list,
+    simmer: Callable,
+    reader: Callable,
+    output: str,
+    max_buffer_time: float = 0.5,
+    rte_configure_and_exit: bool = False,
+):
+    """Run a simulation for a single point and stream the results to a saved lut file.
+
+    Args:
+        point (np.array): conditions to alter in simulation
+        lut_names (list): Dimension names aka lut_names
+        simmer (function): function to run the simulation
+        reader (function): function to read the results of the simulation
+        output (str): LUT store to save results to
+        max_buffer_time (float, optional): _description_. Defaults to 0.5.
+        rte_configure_and_exit (bool, optional): exit early if not executing simulations
+    """
+    # Logger.debug(f"Simulating(point={point})")
+
+    # Slight delay to prevent all subprocesses from starting simultaneously
+    time.sleep(np.random.rand() * max_buffer_time)
+
+    # Execute the simulation
+    simmer(point)
+
+    # No data will be produced, just configuration files
+    if rte_configure_and_exit:
+        return
+
+    # Read the simulation results
+    data = reader(point)
+
+    # Save the results to our LUT format
+    if data:
+        # Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
+        return point, data
+    else:
+        Logger.warning(f"No data was returned for point {point}")
+
+
+@ray.remote(num_cpus=1)
+def shardWriter(lut, shard, coord, points, simmer, reader):
+    """
+    Execute simulations for a set of points and write chunked results to a LUT shard.
+
+    This function is intended to run as a Ray remote task. For each input point,
+    it runs a simulation, reads the resulting data, separates chunked and
+    non-chunked outputs, and queues the chunked data into a shard buffer. After all
+    points are processed, the buffered data is flushed to disk.
+
+    Parameters
+    ----------
+    lut : dict or LUT-like
+        Either a dictionary of arguments used to initialize a LUT via
+        ``luts.create`` or an already-instantiated LUT Create object.
+    shard : int or str
+        Identifier for the shard being processed. Used for logging.
+    coord : tuple of slice or similar
+        Coordinate slices defining the region of the LUT corresponding to
+        this shard.
+    points : iterable
+        Collection of input points to simulate and process. These points are assumed
+        to be in the same shard.
+    simmer : callable
+        Function to run the simulation.
+    reader : callable
+        Function to read the results of the simulation.
+
+    Returns
+    -------
+    tuple
+        A tuple ``(point, chunkless)`` where ``point`` is the last processed
+        point and ``chunkless`` is a dictionary of non-chunked outputs from
+        the last iteration.
+    """
+    if isinstance(lut, dict):
+        lut = create(**lut, mode="a", init=False, buffered=True)
+
+    Logger.info(f"Starting shard {shard}")
+
+    for point in points:
+        simmer(point)  # Execute the simulation
+        data = reader(point)  # Read the simulation results
+
+        # Remove non-chunk data
+        chunkless = {k: v for k, v in data.items() if k not in luts.Keys.alldim}
+        data = {k: v for k, v in data.items() if k in luts.Keys.alldim}
+        if data:
+            lut.queuePoint(point, data)
+
+    Logger.info(f"Finished points {shard}, flushing to disk")
+    lut.flush_buffer(slices=coord)
+
+    Logger.info(f"Finished shard {shard}")
+    return point, chunkless
 
 
 class Writer:
@@ -29,6 +131,9 @@ class Writer:
     Can be set per custom engine"""
     max_buffer_time = 0
 
+    # Optional flag to exit simulations early
+    configure_and_exit = False
+
     def write(self):
         """
         Initialize a LUT and run simulations
@@ -39,160 +144,164 @@ class Writer:
                     f"Missing required attribute to write the LUT: {attr}"
                 )
 
-        if not configure_and_exit:
+        self.lut = None
+        if not self.configure_and_exit:
             self.lut = Create(
                 file=self.lut_path,
-                keys=self.keys,
+                keys=self.lut_keys,
                 wl=self.wl,
                 grid=self.lut_grid,
+                consts=self.consts,
                 onedim=self.onedim,
+                alldim=self.alldim,
             )
-            self.runSimulations()
 
-    def runSimulations(self, lut_names, lut_grid, configure_and_exit=False) -> None:
+        self.runSimulations()
+
+    def runSimulations(self):
         """
-        Run all simulations for the LUT grid.
-
+        Executes an engine object to process simulations using the preSim, makeSim, and
+        postSim functions
         """
         Logger.info(f"Running any pre-sim functions")
-        pre = self.preSim()
-
-        if pre:
+        if pre := self.preSim():
             Logger.info("Saving pre-sim data to index zero of all dimensions except wl")
             Logger.debug(f"pre-sim data contains keys: {pre.keys()}")
 
-            point = {key: 0 for key in lut_names}
+            point = {key: 0 for key in self.lut_names}
             self.lut.writePoint(point, data=pre)
 
-        # Make the LUT calls (in parallel if specified)
         if not self._disable_makeSim:
-            Logger.info("Executing parallel simulations")
-
-            # Place into shared memory space to avoid spilling
-            ray_lut_names = ray.put(lut_names)
-            makeSim = ray.put(self.makeSim)
-            readSim = ray.put(self.readSim)
-            ray_lut_path = ray.put(self.lut.file)
-            ray_buffer_time = ray.put(self.max_buffer_time)
-            ray_configure_and_exit = ray.put(configure_and_exit)
-
-            points = combos(lut_grid.values())
-
-            jobs = [
-                self.streamSimulation.remote(
-                    point,
-                    ray_lut_names,
-                    makeSim,
-                    readSim,
-                    max_buffer_time=ray_buffer_time,
-                    configure_and_exit=ray_configure_and_exit,
-                )
-                for point in points
-            ]
-
-            if configure_and_exit:
-                # Block until all jobs finish
-                ray.get(jobs)
-
-                Logger.warning("Exiting early due to configure_and_exit")
-                sys.exit(0)
+            if hasattr(self.lut, "groups"):
+                Logger.info("Executing parallel simulations by shards")
+                self.parallelize_shards()
             else:
-                # Report a percentage complete every 10% and flush to disk at those intervals
-                report = Track(
-                    jobs,
-                    step=10,
-                    reverse=True,
-                    print=Logger.info,
-                    message="simulations complete",
-                )
-
-                # Update the lut as point simulations stream in
-                while jobs:
-                    [done], jobs = ray.wait(jobs, num_returns=1)
-
-                    # Retrieve the return of the finished job
-                    ret = ray.get(done)
-
-                    # If a simulation fails then it will return None
-                    if ret:
-                        self.lut.queuePoint(*ret)
-
-                    if report(len(jobs)):
-                        Logger.info("Flushing netCDF to disk")
-                        self.lut.flush()
-
-                # Shouldn't be hit but just in case
-                if self.lut.hold:
-                    Logger.warning("Not all points were flushed, doing so now")
-                    self.lut.flush()
-
-            del (
-                makeSim,
-                readSim,
-                ray_lut_names,
-                ray_lut_path,
-                ray_buffer_time,
-            )
+                Logger.info("Executing parallel simulations by points")
+                self.parallelize_points()
         else:
             Logger.debug("makeSim is disabled for this engine")
 
         Logger.info(f"Running any post-sim functions")
-        post = self.postSim()
-
-        if post:
+        if post := self.postSim():
             Logger.info(
                 "Saving post-sim data to index zero of all dimensions except wl"
             )
             Logger.debug(f"post-sim data contains keys: {post.keys()}")
 
-            point = {key: 0 for key in lut_names}
+            point = {key: 0 for key in self.lut_names}
             self.lut.writePoint(point, data=post)
 
         self.lut.finalize()
 
-    @ray.remote(num_cpus=1)
-    def streamSimulation(
-        point: np.array,
-        lut_names: list,
-        simmer: Callable,
-        reader: Callable,
-        max_buffer_time: float = 0.5,
-        configure_and_exit: bool = False,
-    ):
-        """Run a simulation for a single point and stream the results to a saved lut file.
+        # Reload the LUT now that it's populated
+        Logger.debug("Reloading LUT")
+        self.load()
 
-        Args:
-            point (np.array): conditions to alter in simulation
-            lut_names (list): Dimension names aka lut_names
-            simmer (function): function to run the simulation
-            reader (function): function to read the results of the simulation
-            max_buffer_time (float, optional): _description_. Defaults to 0.5.
-            configure_and_exit (bool, optional): exit early if not executing simulations
+    def parallelize_shards(self):
         """
-        Logger.debug(f"Simulating(point={point})")
+        Parallelizes simulations into shard groups to handle very large LUTs: VLLUTS
+        """
+        groups = self.lut.groups
+        coords = self.lut.coords
+        simmer = ray.put(self.makeSim)
+        reader = ray.put(self.readSim)
+        kwargs = ray.put(
+            {
+                "file": self.lut.file,
+                "wl": self.lut.wl,
+                "grid": self.lut.grid,
+                "shards": self.lut.shards,
+                "min_shards": self.n_cores,
+            }
+        )
 
-        # Slight delay to prevent all subprocesses from starting simultaneously
-        time.sleep(np.random.rand() * max_buffer_time)
+        jobs = [
+            shardWriter.remote(kwargs, shard, coords[shard], points, simmer, reader)
+            for shard, points in groups.items()
+        ]
+        report = Track(
+            jobs,
+            step=1,
+            reverse=True,
+            print=Logger.info,
+            message="shards complete",
+        )
 
-        # Execute the simulation
-        simmer(point)
+        # Update the lut as point simulations stream in
+        saved = set()
+        while jobs:
+            [done], jobs = ray.wait(jobs, num_returns=1)
 
-        # No data will be produced, just configuration files
-        if configure_and_exit:
-            return
+            # Retrieve the return of the finished job
+            ret = ray.get(done)
 
-        # Read the simulation results
-        data = reader(point)
+            # If a simulation fails then it will return None
+            if ret:
+                point, data = ret
+                data = {k: v for k, v in data.items() if k not in saved}
+                saved.update(data)
+                if data:
+                    Logger.info(f"Saved chunkless: {saved}")
+                    self.lut.queuePoint(point, data)
 
-        # Save the results to our LUT format
-        if data:
-            Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
+            report(len(jobs))
 
-            return point, data
-        else:
-            Logger.warning(f"No data was returned for point {point}")
+        Logger.debug("Flushing chunkless data")
+        self.lut.flush()
 
-        return
+    def parallelize_points(self):
+        """
+        Parallelizes simulations point-wise to stream finished data into the LUT at set
+        completion percentages
+        """
+        # Place into shared memory space to avoid spilling
+        kwargs = dict(
+            lut_names=self.lut_names,
+            makeSim=self.makeSim,
+            readSim=self.readSim,
+            lut_path=self.lut_path,
+            buffer_time=self.max_buffer_time,
+            rte_configure_and_exit=self.configure_and_exit,
+        )
+        kwargs = {k: ray.put(v) for k, v in kwargs.items()}
+
+        jobs = [streamSimulation.remote(point, **kwargs) for point in self.points]
+
+        if self.configure_and_exit:
+            # Block until all jobs finish
+            ray.get(jobs)
+
+            Logger.warning("Exiting early due to rte_configure_and_exit")
+            sys.exit(0)
+
+        # Report a percentage complete every 10% and flush to disk at those intervals
+        report = common.Track(
+            jobs,
+            step=10,
+            reverse=True,
+            print=Logger.info,
+            message="simulations complete",
+        )
+
+        # Update the lut as point simulations stream in
+        while jobs:
+            [done], jobs = ray.wait(jobs, num_returns=1)
+
+            # Retrieve the return of the finished job
+            ret = ray.get(done)
+
+            # If a simulation fails then it will return None
+            if ret:
+                self.lut.queuePoint(*ret)
+
+            if report(len(jobs)) and self.lut.hold:
+                Logger.info("Flushing netCDF to disk")
+                self.lut.flush()
+
+        # Shouldn't be hit but just in case
+        if self.lut.hold:
+            Logger.warning("Not all points were flushed, doing so now")
+            self.lut.flush()
 
     def preSim(self):
         """
@@ -210,9 +319,7 @@ class Writer:
             point (np.array): conditions to alter in simulation
             template_only (bool): only write template file and then stop
         """
-        raise NotImplemented(
-            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
-        )
+        raise NotImplemented("This method must be defined by the subclass")
 
     def readSim(self, point: np.array):
         """

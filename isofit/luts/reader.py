@@ -4,6 +4,7 @@ Manages the reading and subsetting of look-up tables (LUTs)
 
 from __future__ import annotations
 
+import io
 import logging
 from types import SimpleNamespace
 
@@ -237,7 +238,7 @@ def subsetting(ds, subset):
         ds = optimizedInterp(ds, interp)
 
     # Save this subsetting strategy to the attributes for future reference
-    ds.attrs["subset"] = str(subset)
+    ds.attrs["lut_subset"] = str(subset)
 
     return ds
 
@@ -268,14 +269,29 @@ def load(
     subset: dict = None,
     mf: bool = False,
     check: bool = False,
+    stack: bool = True,
+    chunks: dict = {},
     **kwargs,
 ):
     """
-    Loads a LUT NetCDF
-    Assumes to be a regular grid at this time (auto creates the point dim)
-
     Parameters
     ----------
+    path: str
+        Path to LUT store to load
+    subset: dict, default={}
+        Subset each dimension with a given strategy. Each dimension in the LUT file
+        must be specified.
+        See examples for more information
+    mf: bool, default=False
+        Uses xr.open_mfdataset instead which enables multi-file support
+    check: bool, default=True
+        Checks the dataset for NaNs and replaces them with 0s if the array is not
+        entirely NaN
+    chunks : dict, default={}
+        Chunks parameter for open_dataset, isofit generally wants to have the dataset
+        be chunked by the file's chunks
+    **kwargs
+        Additional parameters to pass to open_dataset/open_mfdataset
 
 
     Examples
@@ -434,7 +450,7 @@ def load(
     if mf:
         xropen = xr.mfopen_dataset
 
-    ds = xropen(path, **kwargs)
+    ds = xropen(path, chunks=chunks, **kwargs)
 
     status = ds.attrs.get("ISOFIT status", "<not set>")
     if status != "success":
@@ -472,7 +488,8 @@ def load(
     ds.attrs["lut_grid"] = {dim: ds[dim].data for dim in dims}
 
     # Create the point dimension -> Coords now len(points)
-    ds = ds.stack(point=dims).transpose("point", "wl")
+    if stack:
+        ds = ds.stack(point=dims).transpose("point", "wl")
 
     if check:
         check_nans(ds)
@@ -480,74 +497,82 @@ def load(
     return ds
 
 
-# %%
-import xarray as xr
+class Reader:
+    """
+    LUT reader class to manage the reading and manipulation of LUT stores
+    """
 
-ds = xr.open_dataset(
-    "/Users/jamesmo/projects/isofit/extras/examples/LakeMary/lut_full/lut.nc"
-)
-
-(ds.coords)
-ds.coords.to_dataset().to_dict()["coords"]
-
-grid = {key: vals.data for key, vals in ds.coords.items() if key != "wl"}
-grid
-
-ds
-
-
-# %%
-class LUT:
-    def __init__(
-        self,
-        ds,
-        n_lut_input_dim: int,
-        indices: SimpleNamespace,
-        interpolators: dict = {},
-    ):
-        self.n_lut_input_dim = n_lut_input_dim
-        self.indices = indices
-        self.ds = ds
-        self.wl = ds.wl
-        self.wl = ds.fwhm
-        self.rt_mode = ds.attrs.get("RT_mode", "transm")
-        self.interpolators = interpolators
-        self.cached = SimpleNamespace(point=np.array([]))
-
-    def __call__(self, x_RT: np.array, geom: Geometry):
+    def __init__(self, build_interpolators=False):
         """
-        Retrieves the interpolation values for a given point
-
         Parameters
         ----------
-        x_RT: np.array
-            Radiative-transfer portion of the statevector
-        geom: Geometry
-            Local geometry conditions for lookup
-
-        Returns
-        -------
-        self.interpolate(point): dict
-            ...
+        build_interpolators : bool, default=False
+            Call self.build_interpolators() after initialization
         """
-        point = np.zeros(self.n_lut_input_dim)
+        if not hasattr(self, "lut_path"):
+            raise AttributeError("Inheritor class must define 'lut_path'")
 
-        point[self.indices.x_RT] = x_RT
-        for i, key in self.indices.geom.items():
-            point[i] = getattr(geom, key)
+        self.lut_path = Path(self.lut_path)
+        if self.lut_path.exists():
+            Logger.info("Prebuilt LUT provided")
+        else:
+            Logger.info("No LUT provided, attempting to build it")
+            self.write()
 
-        # convert observer zenith to MODTRAN convention if needed
-        if self.indices.convert_observer_zenith:
-            point[self.indices.convert_observer_zenith] = (
-                180.0 - point[self.indices.convert_observer_zenith]
+        self.lut = load(self.lut_path, **self.lut_kwargs)
+        self.rt_mode = self.lut.attrs.get("RT_mode", "transm")
+
+        # Write the NetCDF information to the log file so devs have that info during debugging
+        # Have to create a fileobj to capture the text because it doesn't return (prints straight to stdout by default)
+        info = io.StringIO()
+        self.lut.info(info)
+        Logger.debug(f"LUT information:\n{info.getvalue()}")
+
+        if not hasattr(self, "lut_grid"):
+            self.lut_grid = self.lut.attrs["lut_grid"]
+
+        if not hasattr(self, "lut_names"):
+            self.lut_names = list(self.lut_grid)
+
+        # REVIEW: Is this still necessary?
+        # remove 'point' if added to lut_names after subsetting
+        # if "point" in self.lut_names:
+        #     remove = np.where(self.lut_names == "point")
+        #     self.lut_names = np.delete(self.lut_names, remove)
+
+        if build_interpolators:
+            self.build_interpolators()
+
+    def build_interpolators(self, keys=None, interpolator_style="mlg_numba"):
+        """
+        Builds the interpolators using the LUT store
+
+        TODO: optional load from/write to disk
+        """
+        if keys is None:
+            self.lut_keys.alldim
+
+        self.cached = SimpleNamespace(point=np.array([]))
+        self.interpolators = {}
+
+        ds = self.lut.unstack("point")
+
+        # Make sure its in expected order, wl at the end
+        lut_names = list(self.lut_names)
+        ds = ds.transpose(*list(lut_names), "wl")
+
+        grid = [ds[key].data for key in lut_names]
+        for key in keys:
+            self.interpolators[key] = common.VectorInterpolator(
+                grid_input=grid,
+                data_input=ds[key].load().data,
+                version=interpolator_style,
             )
 
-        return self.interpolate(point)
+        return self.interpolators
 
-    def interpolate(self, point: np.array) -> dict:
-        """
-        Compiles the results of the interpolators for a given point
-        """
+    def interpolate(self, point=None):
+        """ """
         if self.cached.point.size and (point == self.cached.point).all():
             return self.cached.value
 
@@ -560,164 +585,34 @@ class LUT:
 
         return value
 
-    def __getitem__(self, key: str) -> Any:
-        """
-        Passthrough to __getitem__ on the underlying 'ds' attribute.
-
-        Parameters
-        ----------
-        key : str
-            The name of the item to retrieve.
-
-        Returns
-        -------
-        Any
-            The value of the item retrieved from the 'ds' attribute.
-        """
-        return self.ds[key]
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        """
-        Sets a variable in the netCDF.
-
-        Parameters
-        ----------
-        key : str
-            Key to set
-        value : any
-            Value to set
-        """
-        with Dataset(self.file, "a") as ds:
-            ds[key][:] = value
-
-    def __repr__(self):
-        lut_dict = {
-            coord: np.unique(self.ds.coords[coord].values)
-            for coord in self.ds.coords
-            if coord not in ["wl", "point"]
-        }
-
-        header = f"<LUT>"
-        lines = [header]
-
-        for name, values in lut_dict.items():
-            n_points = len(values)
-            v_min, v_max = values.min(), values.max()
-
-            line = f"{name:<8} - ({n_points} pts): [{v_min}...{v_max}]"
-            lines.append(line)
-
-        return "\n".join(lines)
-
-
-class Reader:
-    def __init__(self):
-        if not hasattr(self, "lut_path"):
-            raise AttributeError("Inheritor class must define 'lut_path'")
-
-        self.lut_path = Path(self.lut_path)
-        if self.lut_path.exists():
-            Logger.info("Prebuilt LUT provided")
-        else:
-            Logger.info("No LUT provided, attempting to build it")
-            self.write()
-
-        self.lut = load(self.lut_path)
-
-        if build_interpolators:
-            self.build_interpolators()
-
     def write(self):
         raise NotImplemented(
             "This object did not inherit the LUT Writer class and therefore cannot write a LUT, please use a defined engine instead"
         )
 
-    def build_interpolators(self, ds, keys, interpolator_style="mlg_numba"):
+    def resample_wl(self, wl, fwhm, **kwargs):
         """
-        Builds the interpolators using the LUT store
-
-        TODO: optional load from/write to disk
-        """
-        luts = {}
-
-        ds = ds.unstack("point")
-
-        # Make sure its in expected order, wl at the end
-        lut_names = list(self.extractGrid(ds).keys())
-        ds = ds.transpose(*lut_names, "wl")
-
-        grid = [ds[key].data for key in lut_names]
-        # Create the unique
-        for key in keys.alldim:
-            luts[key] = common.VectorInterpolator(
-                grid_input=grid,
-                data_input=ds[key].load().data,
-                version=interpolator_style,
-            )
-
-        return luts
-
-    @staticmethod
-    def extractGrid(ds: xr.Dataset) -> dict:
-        """
-        Extracts the LUT grid from a Dataset
+        Resamples the LUT wavelengths to a new given wavelengths
 
         Parameters
         ----------
-        ds: xr.Dataset
-            LUT Dataset object. Carried stacked: Dimensions wl, points
-
+        wl : array
+            Wavelengths to resample to
+        fwhm : array
+            fwhm for common.resample_spectrum
+        srf_file : str, default=None
+            OCI srf_file
         """
-        grid = {}
-        for dim, vals in ds.coords.items():
-            if dim in {"wl", "point"}:
-                continue
-            if len(vals.data.shape) > 0 and vals.data.shape[0] > 1:
-                # Unique call sorts and filters. Faster than unstacking ds.
-                grid[dim] = np.unique(vals.data)
-        return grid
-
-    @staticmethod
-    def extractPoints(ds: xr.Dataset, names: bool = False) -> np.array:
-        """
-        Extracts the points and point name arrays
-
-        Parameters
-        ----------
-        ds: xr.Dataset
-            LUT Dataset object
-        names: bool, default=False
-            Return the names of the point coords as well
-
-        Returns
-        -------
-        points or (points, names)
-            Extracted points, plus names if requested
-        """
-        points = np.array([*ds.point.data])
-
-        if names:
-            names = np.array([name for name in ds.point.coords])[1:]
-            return (points, names)
-
-        return points
-
-    @staticmethod
-    def resample_xarray(ds, wl, fwhm, srf_file=""):
-        """To support OCI resampling"""
+        ds = self.lut
 
         # Discover variables along the wl dim
         keys = {key for key in ds if "wl" in ds[key].dims} - {"fwhm"}
 
-        # Apply resampling to these keys
-        # Use srf_file if OCI
-        kwargs = {
+        kwargs |= {
             "wl": ds.wl,
             "wl2": wl,
             "fwhm2": fwhm,
         }
-        if srf_file:
-            kwargs["srf_file"] = srf_file
 
         conv_ds = xr.apply_ufunc(
             common.resample_spectrum,
@@ -736,4 +631,17 @@ class Reader:
         # Override the fwhm
         conv_ds["fwhm"] = ("wl", fwhm)
 
-        return conv_ds
+        self.lut = conv_ds
+
+    def subset_wl(self, rng):
+        """
+        Subsets along the wavelength dimension
+
+        Parameters
+        ----------
+        rng : tuple[float, float]
+            Subselects using <= rng[1] >= rng[0]
+            Subselects using rng[0] <= wl <= rng[1]
+        """
+        Logger.info(f"Subsetting wavelengths to range: {rng}")
+        self.lut = sub(self.lut, "wl", dict(zip(["gte", "lte"], rng)))

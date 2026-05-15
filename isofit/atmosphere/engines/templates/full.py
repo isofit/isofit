@@ -10,9 +10,12 @@ Be sure to edit engines/__init__.py to import your custom engine and set its nam
 from __future__ import annotations
 
 from isofit.atmosphere import BaseAtmosphere
+from isofit.luts.writer import Writer
 
 
-class CustomAtmosphere(BaseAtmosphere):
+# Class inheritance order matters! The base class should initialize before the writer
+# so that config attributes are available
+class CustomAtmosphere(BaseAtmosphere, Writer):
     """
     This contains all of the possible pieces that can be defined.
     """

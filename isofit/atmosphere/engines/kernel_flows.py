@@ -151,7 +151,7 @@ def reduce_points(points, Xproj_vectors, Xproj_values, Xmu, Xsigma):
     return Z @ H
 
 
-class KernelFlowsRT(Writer, BaseAtmosphere):
+class KernelFlowsRT(BaseAtmosphere, Writer):
     """
     Radiative transfer emulation based on KernelFlows.jl and VSWIREmulator.jl. A description of
     the model can be found in:
