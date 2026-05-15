@@ -8,6 +8,7 @@ from __future__ import annotations
 import gc
 import importlib
 import logging
+from pathlib import Path
 
 import numpy as np
 from packaging.version import Version
@@ -35,7 +36,8 @@ def create(path: str, *args, **kwargs):
     obj
         Create subclass object
     """
-    ext = Path(path).suffix
+    path = Path(path)
+    ext = path.suffix
 
     if ext == ".nc":
         from .netcdf import CreateNetCDF as cls
@@ -46,7 +48,8 @@ def create(path: str, *args, **kwargs):
             "The LUT path extension must be one of the supported stores"
         )
 
-    return cls(*args, **kwargs)
+    path.parent.mkdir(exist_ok=True, parents=True)
+    return cls(*args, path=path, **kwargs)
 
 
 class Create:
@@ -107,6 +110,7 @@ class Create:
         self.keys = keys
         self.wl = wl
         self.grid = {key: np.array(vals) for key, vals in grid.items()}
+        self.mode = mode
         self.hold = []
 
         self.sizes = {"wl": len(self.wl)} | {key: len(val) for key, val in grid.items()}

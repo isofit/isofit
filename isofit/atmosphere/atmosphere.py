@@ -211,6 +211,9 @@ class BaseAtmosphere(Reader):
         self.bval = np.array([x for x in self.config.unknowns.get_elements()[0]])
 
         # Initialize the LUT
+        self.consts = {}
+        self.onedim = {"fwhm": fwhm}
+        self.alldim = {}
         super().__init__(build_interpolators)
         self.get_indices()
         if lut_postprocess:

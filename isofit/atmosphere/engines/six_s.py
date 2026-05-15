@@ -62,9 +62,10 @@ SIXS_TEMPLATE = """\
 """
 
 
-class SixSRT(BaseAtmosphere, Writer):
-    """A model of photon transport including the atmosphere."""
-
+def set_env():
+    """
+    Checks the current env SIXS_DIR against the ini sixs key
+    """
     current = os.environ.get("SIXS_DIR")
     if not current:
         Logger.debug(f"Setting SIXS_DIR={env.sixs}")
@@ -80,7 +81,12 @@ class SixSRT(BaseAtmosphere, Writer):
         )
         Logger.warning("  isofit --path sixs $SIXS_DIR")
 
+
+class SixSRT(BaseAtmosphere, Writer):
+    """A model of photon transport including the atmosphere."""
+
     def __init__(self, full_config, wl=[], fwhm=[], modtran_emulation=False, **kwargs):
+        set_env()
 
         self.config = full_config.forward_model.atmosphere
         self.modtran_emulation = modtran_emulation

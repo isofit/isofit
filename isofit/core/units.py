@@ -18,6 +18,7 @@
 # Authors: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 #          Niklas Bohn, urs.n.bohn@jpl.nasa.gov
 #          Evan Greenberg, evan.greenberg@jpl.nasa.gov
+import re
 
 import numpy as np
 
@@ -370,3 +371,25 @@ def ext550_to_vis(ext550):
     (see MODTRAN6 manual, p. 50).
     """
     return np.log(50.0) / (ext550 + 0.01159)
+
+
+def byte_string_to_float(string):
+    """
+    Parses a byte string to a byte float, such as "8gb" -> 8589934592.0
+    Supports gb, mb, and kb.
+
+    Parameters
+    ----------
+    string : str
+        String to convert
+
+    Returns
+    -------
+    float
+        Converted string to float
+    """
+    units = {"b": 0, "k": 1, "m": 2, "g": 3}
+    parse = re.compile(r"(\d+(?:\.\d+)?)\s*([a-zA-Z])")
+
+    num, unit = parse.match(string).groups()
+    return float(num) * 1024 ** units[unit.lower()]

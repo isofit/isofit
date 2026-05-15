@@ -23,7 +23,6 @@ def streamSimulation(
     lut_names: list,
     simmer: Callable,
     reader: Callable,
-    output: str,
     max_buffer_time: float = 0.5,
     rte_configure_and_exit: bool = False,
 ):
@@ -34,7 +33,6 @@ def streamSimulation(
         lut_names (list): Dimension names aka lut_names
         simmer (function): function to run the simulation
         reader (function): function to read the results of the simulation
-        output (str): LUT store to save results to
         max_buffer_time (float, optional): _description_. Defaults to 0.5.
         rte_configure_and_exit (bool, optional): exit early if not executing simulations
     """
@@ -142,7 +140,7 @@ class Writer:
         """
         Initialize a LUT and run simulations
         """
-        for attr in ("lut_path", "lut_names", "lut_grid", "wl", "keys"):
+        for attr in ("lut_path", "lut_names", "lut_grid", "wl", "lut_keys"):
             if getattr(self, attr) is None:
                 raise AttributeError(
                     f"Missing required attribute to write the LUT: {attr}"
@@ -150,8 +148,8 @@ class Writer:
 
         self.lut = None
         if not self.configure_and_exit:
-            self.lut = Create(
-                file=self.lut_path,
+            self.lut = create(
+                path=self.lut_path,
                 keys=self.lut_keys,
                 wl=self.wl,
                 grid=self.lut_grid,
@@ -198,10 +196,6 @@ class Writer:
             self.lut.writePoint(point, data=post)
 
         self.lut.finalize()
-
-        # Reload the LUT now that it's populated
-        Logger.debug("Reloading LUT")
-        self.load()
 
     def parallelize_shards(self):
         """
@@ -264,15 +258,15 @@ class Writer:
         # Place into shared memory space to avoid spilling
         kwargs = dict(
             lut_names=self.lut_names,
-            makeSim=self.makeSim,
-            readSim=self.readSim,
-            lut_path=self.lut_path,
-            buffer_time=self.max_buffer_time,
+            simmer=self.makeSim,
+            reader=self.readSim,
+            max_buffer_time=self.max_buffer_time,
             rte_configure_and_exit=self.configure_and_exit,
         )
         kwargs = {k: ray.put(v) for k, v in kwargs.items()}
 
-        jobs = [streamSimulation.remote(point, **kwargs) for point in self.points]
+        points = combos(self.lut_grid.values())
+        jobs = [streamSimulation.remote(point, **kwargs) for point in points]
 
         if self.configure_and_exit:
             # Block until all jobs finish
@@ -282,7 +276,7 @@ class Writer:
             sys.exit(0)
 
         # Report a percentage complete every 10% and flush to disk at those intervals
-        report = common.Track(
+        report = Track(
             jobs,
             step=10,
             reverse=True,

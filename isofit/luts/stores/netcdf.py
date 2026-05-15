@@ -5,6 +5,7 @@ NetCDF implementation for LUTs
 from __future__ import annotations
 
 import atexit
+import gc
 import logging
 import os
 from pathlib import Path
@@ -17,7 +18,7 @@ from isofit.luts.stores import Create
 Logger = logging.getLogger(__name__)
 
 
-def cleanup(file):
+def cleanup(path):
     """
     Checks the ``ISOFIT status`` attribute on a LUT and removes the file if it is
     incomplete.
@@ -98,7 +99,7 @@ class CreateNetCDF(Create):
         Any
             The value of the item retrieved from the NetCDF store
         """
-        with Dataset(self.file, "r") as ds:
+        with Dataset(self.path, "r") as ds:
             return ds[key]
 
         atexit.register(cleanup, file)
@@ -114,7 +115,7 @@ class CreateNetCDF(Create):
         value : any
             Value to set
         """
-        with Dataset(self.file, "a") as ds:
+        with Dataset(self.path, "a") as ds:
             ds[key][:] = value
 
     def initialize(self) -> None:
@@ -137,7 +138,7 @@ class CreateNetCDF(Create):
             )
             var[:] = vals
 
-        with Dataset(self.file, self.mode, format="NETCDF4") as ds:
+        with Dataset(self.path, self.mode, format="NETCDF4") as ds:
             # Dimensions
             ds.createDimension("wl", len(self.wl))
             createVariable("wl", self.wl, ("wl",))
@@ -178,7 +179,7 @@ class CreateNetCDF(Create):
             Set of unknown keys
         """
         unknowns = set()
-        with Dataset(self.file, "a") as ds:
+        with Dataset(self.path, "a") as ds:
             for point, data in self.hold:
                 for key, vals in data.items():
                     if key in self.consts:
@@ -208,7 +209,7 @@ class CreateNetCDF(Create):
         any | None
             Retrieved attribute from netCDF, if it exists
         """
-        with Dataset(self.file, "r") as ds:
+        with Dataset(self.path, "r") as ds:
             return ds.getncattr(key)
 
     def setAttr(self, key: str, value: Any) -> None:
@@ -223,5 +224,5 @@ class CreateNetCDF(Create):
             Value to set
         """
         self.attrs[key] = value
-        with Dataset(self.file, "a") as ds:
+        with Dataset(self.path, "a") as ds:
             ds.setncattr(key, value)

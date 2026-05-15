@@ -517,6 +517,12 @@ class Reader:
             Logger.info("Prebuilt LUT provided")
         else:
             Logger.info("No LUT provided, attempting to build it")
+
+            if not hasattr(self, "write"):
+                raise NotImplemented(
+                    "This object did not inherit the LUT Writer class and therefore cannot write a LUT, please use a defined engine instead"
+                )
+
             self.write()
 
         self.lut = load(path=self.lut_path, mode="r")
@@ -584,11 +590,6 @@ class Reader:
         self.cached.value = value
 
         return value
-
-    def write(self):
-        raise NotImplemented(
-            "This object did not inherit the LUT Writer class and therefore cannot write a LUT, please use a defined engine instead"
-        )
 
     def resample_wl(self, wl, fwhm, **kwargs):
         """

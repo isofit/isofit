@@ -108,12 +108,12 @@ class ForwardModel:
         self.bvec = np.array(bvec)
         self.nbvec = len(self.bvec)
 
-        """Set up state vector indices - 
+        """Set up state vector indices -
         MUST MATCH ORDER FROM ABOVE ASSIGNMENT
 
         Sometimes, it's convenient to have the index of the entire surface
         as one variable, and sometimes you want the sub-components
-        
+
         Split surface state vector indices to cover cases where we retrieve
         additional non-reflectance surface parameters
         """

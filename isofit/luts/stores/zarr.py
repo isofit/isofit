@@ -204,9 +204,7 @@ class CreateZARR(Create):
             List of zero values. Appends to the current Create.zeros list.
         """
         self.store = zarr.storage.LocalStore(file)
-        self.z = zarr.open_group(
-            store=self.store, mode=kwargs.get("mode", "w"), zarr_format=3
-        )
+        self.z = zarr.open_group(store=self.store, mode=self.mode, zarr_format=3)
 
         # TODO: Integrate into config
         self.shards = None
