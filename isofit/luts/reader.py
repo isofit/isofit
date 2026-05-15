@@ -549,6 +549,13 @@ class Reader:
         if build_interpolators:
             self.build_interpolators()
 
+    def __getitem__(self, key):
+        """
+        Enables key indexing for easier access to the numpy object store in
+        self.lut[key]
+        """
+        return self.lut[key].load().data
+
     def build_interpolators(self, keys=None, interpolator_style="mlg_numba"):
         """
         Builds the interpolators using the LUT store

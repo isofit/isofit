@@ -414,10 +414,10 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         # Convert our irradiance to date 0 then back to current date
         # sc - If statement to make sure tsis solar model is used if supplied
-        if os.path.basename(config.irradiance_file) == "tsis_f0_0p1.txt":
+        if os.path.basename(self.config.irradiance_file) == "tsis_f0_0p1.txt":
             # Load coarser TSIS model to match emulator expectations
             _, sol_irr = np.loadtxt(
-                os.path.split(config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
+                os.path.split(self.config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
             ).T
             sol_irr = sol_irr / 10  # Convert to uW cm-2 sr-1 nm-1
         else:
@@ -495,7 +495,16 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             report(i + 1)
 
     def process(self, sim, outshape):
-        """ """
+        """
+        Process sRTMnet
+
+        Parameters
+        ----------
+        sim : xarray.Dataset
+            The 6S LUT of only the aux_rt_quantities
+        outshape : tuple of ints
+            The output shape of the array
+        """
         ## Prepare the sim results for the emulator
         # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
         # Safe to replace here
@@ -535,7 +544,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             ## Reduce from 3D to 2D by stacking along the wavelength
             # dim for each quantity. Convert to DataArray to stack
             # the variables along a new `quantity` dimension
-            data = sixs.to_array("quantity").stack(stack=["quantity", "wl"])
+            data = sim.to_array("quantity").stack(stack=["quantity", "wl"])
             response_scaler = self.aux.get("response_scaler", 100.0)
             response_offset = self.aux.get("response_offset", 0.0)
 
@@ -551,9 +560,6 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
                 response_scaler=[response_scaler],
                 response_offset=[response_offset],
                 resample_dict=resample_dict,
-            )
-            outshape = (len(self.wl),) + tuple(
-                len(self.lut_grid[n]) for n in self.lut_grid
             )
             for outkey in lp.keys():
                 self.lut[outkey] = lp[outkey].T.reshape(outshape)
