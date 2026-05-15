@@ -509,7 +509,12 @@ class Reader:
     """
 
     def __init__(
-        self, build_interpolators=False, lut_subset={}, mode="r", load_kwargs={}, **_
+        self,
+        build_interpolators=False,
+        lut_subset={},
+        mode="r",
+        load_kwargs={},
+        **write_kwargs,
     ):
         """
         Parameters
@@ -531,7 +536,7 @@ class Reader:
                     "This object did not inherit the LUT Writer class and therefore cannot write a LUT, please use a defined engine instead"
                 )
 
-            self.write()
+            self.write(**write_kwargs)
 
         self.lut = load(path=self.lut_path, mode=mode, subset=lut_subset, **load_kwargs)
         self.rt_mode = self.lut.attrs.get("RT_mode", "transm")

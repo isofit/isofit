@@ -142,9 +142,17 @@ class Writer:
         """
         self.shard_size = shard_size
 
-    def write(self):
+    def write(self, **kwargs):
         """
         Initialize a LUT and run simulations
+
+        Parameters
+        ----------
+        shard_size : str, default=None
+            Limit the total size of a single shard eg. "4gb"
+        min_shards : int, default=self.n_cores
+            Minimum number of shards in order to maximize system resources with
+            parallelization
         """
         for attr in ("lut_path", "lut_names", "lut_grid", "wl", "lut_keys"):
             if getattr(self, attr) is None:
@@ -162,8 +170,8 @@ class Writer:
                 consts=self.consts,
                 onedim=self.onedim,
                 alldim=self.alldim,
-                shard_size=self.shard_size,
-                min_shards=self.n_cores,
+                shard_size=kwargs.get("shard_size"),
+                min_shards=kwargs.get("min_shards", self.n_cores),
             )
 
         self.runSimulations()
