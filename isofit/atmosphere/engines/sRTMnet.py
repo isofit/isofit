@@ -395,10 +395,10 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         Logger.info("Building simulator and executing (6S)")
         sim = SixSRT(
             config,
-            wl=self.sim_wl,
-            fwhm=self.sim_fwhm,
-            lut_path=config.lut_path,
-            lut_grid=self.lut_grid,
+            # wl=self.sim_wl,
+            # fwhm=self.sim_fwhm,
+            # lut_path=self.sim_lut_path,
+            # lut_grid=self.lut_grid,
             n_cores=self.n_cores,
             modtran_emulation=True,
             build_interpolators=False,
@@ -411,7 +411,6 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         # Extract useful information from the sim
         self.esd = sim.esd
-        self.sim_lut_path = config.lut_path
 
         # Convert our irradiance to date 0 then back to current date
         # sc - If statement to make sure tsis solar model is used if supplied
