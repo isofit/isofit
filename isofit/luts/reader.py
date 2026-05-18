@@ -514,6 +514,7 @@ class Reader:
         lut_subset={},
         mode="r",
         load_kwargs={},
+        postprocess=True,
         **write_kwargs,
     ):
         """
@@ -559,6 +560,9 @@ class Reader:
         #     remove = np.where(self.lut_names == "point")
         #     self.lut_names = np.delete(self.lut_names, remove)
 
+        if postprocess:
+            self.lut_postprocess()
+
         if build_interpolators:
             self.build_interpolators()
 
@@ -568,6 +572,13 @@ class Reader:
         self.lut[key]
         """
         return self.lut[key].load().data
+
+    def lut_postprocess(self):
+        """
+        Any additional post processing that may need to be applied to the LUT before
+        building interpolators
+        """
+        pass
 
     def build_interpolators(self, keys=None, interpolator_style="mlg_numba"):
         """

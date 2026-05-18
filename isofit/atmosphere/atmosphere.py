@@ -221,9 +221,8 @@ class BaseAtmosphere(Reader):
             lut_subset=self.config.lut_names,
             **kwargs,
         )
+
         self.get_indices()
-        if lut_postprocess:
-            self.lut_postprocess()
 
     def lut_postprocess(self):
         """
