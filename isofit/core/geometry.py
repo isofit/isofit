@@ -23,8 +23,8 @@ from datetime import datetime
 
 import numpy as np
 
-from isofit.core import units
 from isofit.configs import configs
+from isofit.core import units
 
 
 class Geometry:
@@ -157,7 +157,7 @@ class Geometry:
                 )
 
         if self.use_universal_coszen:
-            logging.info(f"The coszen will be universal:   coszen={coszen}")
+            logging.debug(f"The coszen will be universal:   coszen={coszen}")
         else:
             logging.info(
                 f"The coszen is pixel dependent and will based on the OBS data"
