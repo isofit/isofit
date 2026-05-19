@@ -34,19 +34,19 @@ CMD = """\
 @ray.remote
 class TempDirPool:
     """
-    Ray actor managing a pool of temporary directories.
+    VLIDORT is hardcoded to write to the output file fort.40
+    This tricks it into writing to different locations by using softlinks since
+    VLIDORT uses relative pathing. By doing so, we can enable parallelism.
 
     Parameters
     ----------
     n : int
         Number of temp directories to create.
-    dir : str | None
+    dir : str
         Directory of VLIDORT to symlink to
     """
 
-    def __init__(self, n: int, dir: str | None = None):
-        self.n = n
-
+    def __init__(self, n: int, dir: str):
         # Root temp directory
         self.root = Path(
             tempfile.mkdtemp(
@@ -76,18 +76,18 @@ class TempDirPool:
 
             self.tmps.append(path)
 
-    def get(self) -> str | None:
+    def get(self) -> Path:
         """
         Get an available temp directory
 
         Returns
         -------
-        str | None
+        pathlib.Path
             Path to temp dir
         """
         return self.tmps.pop()
 
-    def free(self, path: str) -> None:
+    def free(self, path: Path) -> None:
         """
         Release a temp directory back to the pool
         """
@@ -95,23 +95,18 @@ class TempDirPool:
 
     def cleanup(self) -> None:
         """
-        Remove entire temp pool.
+        Remove entire temp pool
         """
         shutil.rmtree(self.root, ignore_errors=True)
         self.tmps.clear()
 
 
 class VLIDORT(BaseAtmosphere, Writer):
-    """
-    This is the minimal version that must be defined. Refer to the full template for
-    detailed descriptions.
-    """
-
     required = {
         "solar_zenith",
         "observer_zenith",
         "relative_azimuth",
-        "H20STR",
+        "H2OSTR",
         "AOT550",
         "surface_elevation_km",
         "CO2",
@@ -137,7 +132,7 @@ class VLIDORT(BaseAtmosphere, Writer):
             "sza": dims["solar_zenith"],
             "vza": dims["observer_zenith"],
             "rza": dims["relative_azimuth"],
-            "pwv": dims["H20STR"],
+            "pwv": dims["H2OSTR"],
             "aod": dims["AOT550"],
             "vel": 58.0,  # Required to be 58.0 per Vijay
             "sel": dims["surface_elevation_km"],
