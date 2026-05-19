@@ -120,7 +120,7 @@ class VLIDORT(BaseAtmosphere, Writer):
 
         spacing = np.unique(np.diff(self.wl))
         if spacing.size > 1:
-            raise ValueError("")
+            raise ValueError(f"Inconsistent wavelength spacing: {spacing}")
         (self.wl_spacing,) = spacing
 
     def makeSim(self, point, **kwargs):
