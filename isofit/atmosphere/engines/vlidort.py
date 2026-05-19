@@ -107,8 +107,21 @@ class VLIDORT(BaseAtmosphere, Writer):
     detailed descriptions.
     """
 
+    required = {
+        "solar_zenith",
+        "observer_zenith",
+        "relative_azimuth",
+        "H20STR",
+        "AOT550",
+        "surface_elevation_km",
+        "CO2",
+    }
+
     def preSim(self):
-        self.queue = TempDirPool.remote(n=self.n_cores, dir=env.vlidort)
+        if missing := self.required - set(self.lut_names):
+            raise AttributeError(f"Missing required LUT dimensions: {missing}")
+
+        self.queue = TempDirPool.remote(n=self.n_cores, dir=self.config.engine_base_dir)
 
         spacing = np.unique(np.diff(self.wl))
         if spacing.size > 1:
