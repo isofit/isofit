@@ -21,7 +21,6 @@
 #
 from __future__ import annotations
 
-import io
 import logging
 import multiprocessing
 import os
@@ -34,11 +33,9 @@ from isofit.configs import Config
 from isofit.core import common, units
 from isofit.core.common import svd_inv_sqrt
 from isofit.core.geometry import Geometry
-from isofit.luts import sub
-from isofit.luts.reader import LUT, Reader
+from isofit.luts.reader import Reader
 
-Logger = logging.getLogger(__file__)
-# Logger = logging.getLogger()
+Logger = logging.getLogger(__name__)
 
 
 class Keys:
@@ -83,6 +80,8 @@ class BaseAtmosphere(Reader):
     TIR. This class maintains the master list of statevectors.
     """
 
+    lut_keys = Keys
+
     # These are retrieved from the geom object
     geometry_input_names = [
         "observer_azimuth",
@@ -116,17 +115,20 @@ class BaseAtmosphere(Reader):
         fwhm: np.array = [],  # fwhm override
         n_cores: int = None,  # n_core override
         build_interpolators: bool = True,
+        lut_postprocess: bool = True,
+        **kwargs,
     ):
+        self.full_config = full_config
         self.config = full_config.forward_model.atmosphere
 
-        self.n_cores = n_cores or full_config.implementation.n_cores
-        # Check to see if this check is necessary
-        if self.n_cores is None:
-            self.n_cores = multiprocessing.cpu_count()
+        self.n_cores = (
+            n_cores or full_config.implementation.n_cores or multiprocessing.cpu_count()
+        )
 
         # Initially pull lut information from config
         self.lut_path = lut_path or self.config.lut_path
         self.lut_grid = self.config.lut_grid
+        self.lut_names = list(self.lut_grid)
         self.statevec_names = self.config.statevector.get_element_names()
 
         # Configure and exit flag
@@ -136,20 +138,23 @@ class BaseAtmosphere(Reader):
         self.sim_path = self.config.sim_path
         self.multipart_transmittance = self.config.multipart_transmittance
 
-        self.lut_exists = self.lut_path is not None and os.path.isfile(self.lut_path)
-        if self.lut_exists:
-            Logger.info("Prebuilt LUT provided")
-
-        elif not self.lut_exists and self.lut_grid is None:
+        if not self.lut_path:
             raise AttributeError(
-                "Must provide either a prebuilt LUT file or a LUT grid"
+                "Must provide a lut_path either by parameter or config"
             )
+        # self.lut_exists = self.lut_path is not None and os.path.exists(self.lut_path)
+        # if self.lut_exists:
+        #     Logger.info("Prebuilt LUT provided")
+        #
+        # elif not self.lut_exists and self.lut_grid is None:
+        #     raise AttributeError(
+        #         "Must provide either a prebuilt LUT file or a LUT grid"
+        #     )
 
         # TODO: overwrite_interpolator not hooked up. Check if we even want this override
         self.interpolator_style = (
             self.config.interpolator_style
-            if self.config.interpolator_style
-            else full_config.forward_model.instrument.get("interpolator_style")
+            or full_config.forward_model.instrument.get("interpolator_style")
         )
 
         self.multipart_transmittance = (
@@ -206,60 +211,51 @@ class BaseAtmosphere(Reader):
         # Uncertainty
         self.bvec = self.config.unknowns.get_element_names()
         self.bval = np.array([x for x in self.config.unknowns.get_elements()[0]])
-        # Create LUT (for generic this will be fake executed
 
-        self.lut_names = list(self.lut_grid.keys())
+        # Initialize the LUT
+        self.consts = {}
+        self.onedim = {"fwhm": fwhm}
+        self.alldim = {}
+        super().__init__(
+            build_interpolators=build_interpolators,
+            lut_subset=self.config.lut_names,
+            **kwargs,
+        )
 
-        self.n_lut_input_dim = len(self.lut_names)
+        self.get_indices()
 
-        # Wrapper for the create-load logic that depends on the engine
-        # create_lut will include the build logic within engines
-        self.lut = self._lut(build_interpolators=build_interpolators)
-        Logger.info("LUT grid loaded from file")
-
-        # remove 'point' if added to lut_names after subsetting
-        if "point" in self.lut_names:
-            remove = np.where(self.lut_names == "point")
-            self.lut_names = np.delete(self.lut_names, remove)
-
-        # TODO Could abstract unit conversion
-        self.rt_mode = self.lut.rt_mode
-        if self.rt_mode not in ["transm", "rdn"]:
-            Logger.error(
-                "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
-            )
-            raise ValueError(
-                "Unknown RT mode provided in LUT file. Please use either 'transm' or 'rdn'."
-            )
-
-        # Write the NetCDF information to the log file so devs have that info during debugging
-        # Have to create a fileobj to capture the text because it doesn't return (prints straight to stdout by default)
-        info = io.StringIO()
-        self.lut.ds.info(info)
-        Logger.debug(f"LUT information:\n{info.getvalue()}")
-
-    def _lut(self, build_interpolators: int = True):
-        """Generic LUT load from pre-built LUT. Will be superseded by
-        inheriting writer classes
-
-        TODO: Make sure that loaded LUT matches config LUT
+    def lut_postprocess(self):
         """
-        # Write the LUT if this function is hooked up (In cases with engine).
-        if not self.lut_exists:
-            self.write(
-                self.lut_path,
-                self.lut_names,
-                self.lut_grid,
-                self.rt_mode,
-                self.wl,
-                self.fwhm,
-                self.configure_and_exit,
-                self.lut_compression,
-                self.lut_complevel,
-            )
+        Checks for additional postprocessing that may need to be applied to the loaded
+        LUT
+        """
+        self.lut = self.couple(self.lut)
 
-        indices = SimpleNamespace(geom={}, x_RT=[])
+        # Special treatment for PACE OCI
+        srf_file = None
+        irr_file = Path(self.config.irradiance_file)
+        if irr_file.stem == "tsis_f0_0p1":
+            srf_file = irr_file.parent / "pace_oci_rsr.nc"
 
+        if (
+            not len(self.wl) == len(self.lut.wl)
+            or srf_file is not None
+            or not all(self.wl == self.lut.wl)
+        ):
+            self.resample_wl(wl=self.wl, fwhm=self.fwhm, srf_file=srf_file)
+
+        # Limit the wavelength per the config, does not affect data on disk
+        if self.config.wavelength_range is not None:
+            self.subset_wl(rng=self.config.wavelength_range)
+
+    def get_indices(self):
+        """
+        Retrieves the point indices for keys that source from different locations, such
+        as statevector or geom
+        """
+        self.indices = SimpleNamespace(geom={}, x_RT=[])
+
+        # Check if an input statevector key is a typo for a geom key
         geometry_keys = set(self.config.statevector_names or self.lut_names)
         matches = common.compare(geometry_keys, self.geometry_input_names)
         if matches:
@@ -271,74 +267,30 @@ class BaseAtmosphere(Reader):
 
         # Hidden assumption: geometry keys come first, then come RTE keys
         self.geometry_input_names = set(self.geometry_input_names) - geometry_keys
-        indices.geom = {
+        self.indices.geom = {
             i: key
             for i, key in enumerate(self.lut_names)
             if key in self.geometry_input_names
         }
 
         # check if values of observer zenith in LUT are given in MODTRAN convention
-        indices.convert_observer_zenith = None
-        if "observer_zenith" in self.lut_grid.keys():
+        self.indices.convert_observer_zenith = None
+        if "observer_zenith" in self.lut_grid:
             if any(np.array(self.lut_grid["observer_zenith"]) > 90.0):
-                indices.convert_observer_zenith = [
-                    i for i in indices.geom if indices.geom[i] == "observer_zenith"
-                ][0]
+                self.indices.convert_observer_zenith = {
+                    key: index for key, index in self.indices.geom()
+                }["observer_zenith"]
 
         # If it wasn't a geom key, it's x_RT
-        indices.x_RT = list(set(range(self.n_lut_input_dim)) - set(indices.geom))
+        self.indices.x_RT = list(
+            set(range(len(self.lut_names))) - set(self.indices.geom)
+        )
 
         # Make sure the length of the config statevectores match the engine's assumed statevectors
-        if (expected := len(self.statevec_names)) != (got := len(indices.x_RT)):
+        if (expected := len(self.statevec_names)) != (got := len(self.indices.x_RT)):
             error = f"Mismatch between the number of elements for the config and LUT grid: {expected=}, {got=}"
             Logger.error(error)
             raise AttributeError(error)
-
-        # Load LUT and run coupling function in one go
-        # TODO formalize pathway for pre-built LUT
-        ds = self.load(file=self.lut_path, subset=self.config.lut_names)
-        ds = self.couple(self.load(file=self.lut_path, subset=self.config.lut_names))
-
-        # Special treatment for PACE OCI
-        srf_file = None
-        irr_file = Path(self.config.irradiance_file)
-        if irr_file.stem == "tsis_f0_0p1":
-            srf_file = irr_file.parent / "pace_oci_rsr.nc"
-
-        if (
-            not len(self.wl) == len(ds.wl)
-            or not all(self.wl == ds.wl)
-            or (srf_file is not None)
-        ):
-            ds = self.resample_xarray(ds, self.wl, self.fwhm, srf_file)
-
-        # Limit the wavelength per the config, does not affect data on disk
-        if self.config.wavelength_range is not None:
-            Logger.info(
-                f"Subsetting wavelengths to range: {self.config.wavelength_range}"
-            )
-            ds = sub(ds, "wl", dict(zip(["gte", "lte"], self.config.wavelength_range)))
-
-        interpolators = self.build_interpolators(
-            ds, Keys, interpolator_style=self.interpolator_style
-        )
-        Logger.debug(f"Interpolators built")
-
-        return LUT(ds, self.n_lut_input_dim, indices, interpolators=interpolators)
-
-    def write(
-        self,
-        lut_path: str,
-        lut_names: list,
-        lut_grid: dict,
-        rt_mode: str,
-        wl: np.ndarray,
-        fwhm: np.ndarray,
-        configure_and_exit: bool = False,
-        lut_compression: str = "zlib",
-        lut_complevel: int = None,
-    ):
-        raise NotImplemented("This method must be defined by the subclass engine")
 
     def xa(self):
         """Pull the priors from each of the individual RTs."""
@@ -362,7 +314,19 @@ class BaseAtmosphere(Reader):
         Returns:
             dict of interpolated LUT quantities
         """
-        return self.lut(x_RT, geom)
+        point = np.zeros(len(self.lut_names))
+
+        point[self.indices.x_RT] = x_RT
+        for i, key in self.indices.geom.items():
+            point[i] = getattr(geom, key)
+
+        # convert observer zenith to MODTRAN convention if needed
+        if self.indices.convert_observer_zenith:
+            point[self.indices.convert_observer_zenith] = (
+                180.0 - point[self.indices.convert_observer_zenith]
+            )
+
+        return self.interpolate(point)
 
     def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
         """Get the interpolated modeled atmospheric path radiance.
@@ -374,8 +338,7 @@ class BaseAtmosphere(Reader):
         Returns:
             interpolated modeled atmospheric path radiance
         """
-
-        r = self.lut(x_RT, geom)
+        r = self.get(x_RT, geom)
         if self.rt_mode == "rdn":
             L_atm = r["rhoatm"]
         else:

@@ -1,5 +1,9 @@
+import logging
+
 from isofit.atmosphere.atmosphere import BaseAtmosphere, Keys
 from isofit.atmosphere.engines import Engines
+
+Logger = logging.getLogger(__name__)
 
 
 class Atmosphere:
@@ -10,4 +14,5 @@ class Atmosphere:
         # Always default to base atmosphere
         engine = engine or BaseAtmosphere
 
+        Logger.debug(f"Using atmosphere class: {engine.__name__}")
         return engine(full_config)

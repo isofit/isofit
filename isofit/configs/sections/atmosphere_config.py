@@ -360,8 +360,8 @@ class AtmosphereConfig(BaseConfigSection):
             if self.engine_name == "sRTMnet":
                 if self.emulator_file is None:
                     # Fallback to the path specified by the isofit.ini
-                    self.emulator_file = env.path("srtmnet", env["srtmnet.file"])
-                    if not self.emulator_file.exists():
+                    self.emulator_file = str(env.path("srtmnet", env["srtmnet.file"]))
+                    if not os.path.exists(self.emulator_file):
                         errors.append(
                             "The sRTMnet requires an emulator_file to be specified."
                         )

@@ -1,208 +1,322 @@
+"""
+Manages the generation of new look-up tables (LUTs)
+"""
+
 from __future__ import annotations
 
-import atexit
-import gc
 import logging
-import os
 import sys
 import time
-from pathlib import Path
-from typing import Any, List, Union
 
 import numpy as np
-import xarray as xr
-from netCDF4 import Dataset
 
-from isofit import __version__, ray
-from isofit.atmosphere import Keys
+from isofit import ray
 from isofit.core.common import Track, combos
+from isofit.luts.stores import create
 
 Logger = logging.getLogger(__name__)
 
 
-class Writer:
+@ray.remote(num_cpus=1)
+def streamSimulation(
+    point: np.array,
+    lut_names: list,
+    simmer: Callable,
+    reader: Callable,
+    max_buffer_time: float = 0.5,
+    rte_configure_and_exit: bool = False,
+):
+    """Run a simulation for a single point and stream the results to a saved lut file.
 
-    # Allows engines to outright disable the parallelized
-    # sims if they do nothing
+    Args:
+        point (np.array): conditions to alter in simulation
+        lut_names (list): Dimension names aka lut_names
+        simmer (function): function to run the simulation
+        reader (function): function to read the results of the simulation
+        max_buffer_time (float, optional): _description_. Defaults to 0.5.
+        rte_configure_and_exit (bool, optional): exit early if not executing simulations
+    """
+    # Logger.debug(f"Simulating(point={point})")
+
+    # Slight delay to prevent all subprocesses from starting simultaneously
+    time.sleep(np.random.rand() * max_buffer_time)
+
+    # Execute the simulation
+    simmer(point)
+
+    # No data will be produced, just configuration files
+    if rte_configure_and_exit:
+        return
+
+    # Read the simulation results
+    data = reader(point)
+
+    # Save the results to our LUT format
+    if data:
+        # Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
+        return point, data
+    else:
+        Logger.warning(f"No data was returned for point {point}")
+
+
+@ray.remote(num_cpus=1)
+def shardWriter(lut, shard, coord, points, simmer, reader):
+    """
+    Execute simulations for a set of points and write chunked results to a LUT shard.
+
+    This function is intended to run as a Ray remote task. For each input point,
+    it runs a simulation, reads the resulting data, separates chunked and
+    non-chunked outputs, and queues the chunked data into a shard buffer. After all
+    points are processed, the buffered data is flushed to disk.
+
+    Parameters
+    ----------
+    lut : dict or LUT-like
+        Either a dictionary of arguments used to initialize a LUT via
+        ``luts.create`` or an already-instantiated LUT Create object.
+    shard : int or str
+        Identifier for the shard being processed. Used for logging.
+    coord : tuple of slice or similar
+        Coordinate slices defining the region of the LUT corresponding to
+        this shard.
+    points : iterable
+        Collection of input points to simulate and process. These points are assumed
+        to be in the same shard.
+    simmer : callable
+        Function to run the simulation.
+    reader : callable
+        Function to read the results of the simulation.
+
+    Returns
+    -------
+    tuple
+        A tuple ``(point, chunkless)`` where ``point`` is the last processed
+        point and ``chunkless`` is a dictionary of non-chunked outputs from
+        the last iteration.
+    """
+    if isinstance(lut, dict):
+        lut = create(**lut, mode="a", init=False, buffered=True)
+
+    Logger.info(f"Starting shard {shard}")
+    keys = luts["keys"]
+
+    for point in points:
+        simmer(point)  # Execute the simulation
+        data = reader(point)  # Read the simulation results
+
+        # Remove non-chunk data
+        chunkless = {k: v for k, v in data.items() if k not in keys.alldim}
+        data = {k: v for k, v in data.items() if k in keys.alldim}
+        if data:
+            lut.queuePoint(point, data)
+
+    Logger.info(f"Finished points {shard}, flushing to disk")
+    lut.flush_buffer(slices=coord)
+
+    Logger.info(f"Finished shard {shard}")
+    return point, chunkless
+
+
+class Writer:
+    """
+    Handles writing RTE engine simulation data to an ISOFIT-compatible LUT store
+    """
+
+    # Allows engines to outright disable the parallelized sims if they do nothing
     _disable_makeSim = False
 
-    """Sleep a random amount of time up to max this value 
+    """Sleep a random amount of time up to max this value
     at the start of each streamSimulation
     Can be set per custom engine"""
     max_buffer_time = 0
 
-    def write(
-        self,
-        lut_path: str,
-        lut_names: list,
-        lut_grid: dict,
-        rt_mode: str,
-        wl: np.ndarray,
-        fwhm: np.ndarray,
-        configure_and_exit: bool = False,
-        lut_compression: str = "zlib",
-        lut_complevel: int = None,
-    ):
-        """Initialize a LUT and run simulations"""
-        # Run sims and write lut
-        if not configure_and_exit:
-            self.lut = Create(
-                file=lut_path,
-                keys=Keys,
-                wl=wl,
-                grid=lut_grid,
-                attrs={"RT_mode": rt_mode},
-                onedim={"fwhm": fwhm},
-                compression=lut_compression,
-                complevel=lut_complevel,
+    # Optional flag to exit simulations early
+    configure_and_exit = False
+
+    def __init__(self, shard_size=None, **_):
+        """
+        Parameters
+        ----------
+        shard_size : str, default=None
+            Limit the total size of a single shard eg. "4gb"
+        """
+        self.shard_size = shard_size
+
+    def write(self, **kwargs):
+        """
+        Initialize a LUT and run simulations
+
+        Parameters
+        ----------
+        shard_size : str, default=None
+            Limit the total size of a single shard eg. "4gb"
+        min_shards : int, default=self.n_cores
+            Minimum number of shards in order to maximize system resources with
+            parallelization
+        """
+        for attr in ("lut_path", "lut_names", "lut_grid", "wl", "lut_keys"):
+            if getattr(self, attr) is None:
+                raise AttributeError(
+                    f"Missing required attribute to write the LUT: {attr}"
+                )
+
+        self.lut = None
+        if not self.configure_and_exit:
+            self.lut = create(
+                path=self.lut_path,
+                keys=self.lut_keys,
+                wl=self.wl,
+                grid=self.lut_grid,
+                consts=self.consts,
+                onedim=self.onedim,
+                alldim=self.alldim,
+                shard_size=kwargs.get("shard_size"),
+                min_shards=kwargs.get("min_shards", self.n_cores),
             )
 
-        self.runSimulations(lut_names, lut_grid, configure_and_exit)
+        self.runSimulations()
 
-    def runSimulations(self, lut_names, lut_grid, configure_and_exit=False) -> None:
+    def runSimulations(self):
         """
-        Run all simulations for the LUT grid.
-
+        Executes an engine object to process simulations using the preSim, makeSim, and
+        postSim functions
         """
         Logger.info(f"Running any pre-sim functions")
-        pre = self.preSim()
-
-        if pre:
+        if pre := self.preSim():
             Logger.info("Saving pre-sim data to index zero of all dimensions except wl")
             Logger.debug(f"pre-sim data contains keys: {pre.keys()}")
 
-            point = {key: 0 for key in lut_names}
+            point = {key: 0 for key in self.lut_names}
             self.lut.writePoint(point, data=pre)
 
-        # Make the LUT calls (in parallel if specified)
         if not self._disable_makeSim:
-            Logger.info("Executing parallel simulations")
-
-            # Place into shared memory space to avoid spilling
-            ray_lut_names = ray.put(lut_names)
-            makeSim = ray.put(self.makeSim)
-            readSim = ray.put(self.readSim)
-            ray_lut_path = ray.put(self.lut.file)
-            ray_buffer_time = ray.put(self.max_buffer_time)
-            ray_configure_and_exit = ray.put(configure_and_exit)
-
-            points = combos(lut_grid.values())
-
-            jobs = [
-                self.streamSimulation.remote(
-                    point,
-                    ray_lut_names,
-                    makeSim,
-                    readSim,
-                    max_buffer_time=ray_buffer_time,
-                    configure_and_exit=ray_configure_and_exit,
-                )
-                for point in points
-            ]
-
-            if configure_and_exit:
-                # Block until all jobs finish
-                ray.get(jobs)
-
-                Logger.warning("Exiting early due to configure_and_exit")
-                sys.exit(0)
+            if hasattr(self.lut, "groups"):
+                Logger.info("Executing parallel simulations by shards")
+                self.parallelize_shards()
             else:
-                # Report a percentage complete every 10% and flush to disk at those intervals
-                report = Track(
-                    jobs,
-                    step=10,
-                    reverse=True,
-                    print=Logger.info,
-                    message="simulations complete",
-                )
-
-                # Update the lut as point simulations stream in
-                while jobs:
-                    [done], jobs = ray.wait(jobs, num_returns=1)
-
-                    # Retrieve the return of the finished job
-                    ret = ray.get(done)
-
-                    # If a simulation fails then it will return None
-                    if ret:
-                        self.lut.queuePoint(*ret)
-
-                    if report(len(jobs)):
-                        Logger.info("Flushing netCDF to disk")
-                        self.lut.flush()
-
-                # Shouldn't be hit but just in case
-                if self.lut.hold:
-                    Logger.warning("Not all points were flushed, doing so now")
-                    self.lut.flush()
-
-            del (
-                makeSim,
-                readSim,
-                ray_lut_names,
-                ray_lut_path,
-                ray_buffer_time,
-            )
+                Logger.info("Executing parallel simulations by points")
+                self.parallelize_points()
         else:
             Logger.debug("makeSim is disabled for this engine")
 
         Logger.info(f"Running any post-sim functions")
-        post = self.postSim()
-
-        if post:
+        if post := self.postSim():
             Logger.info(
                 "Saving post-sim data to index zero of all dimensions except wl"
             )
             Logger.debug(f"post-sim data contains keys: {post.keys()}")
 
-            point = {key: 0 for key in lut_names}
+            point = {key: 0 for key in self.lut_names}
             self.lut.writePoint(point, data=post)
 
         self.lut.finalize()
 
-    @ray.remote(num_cpus=1)
-    def streamSimulation(
-        point: np.array,
-        lut_names: list,
-        simmer: Callable,
-        reader: Callable,
-        max_buffer_time: float = 0.5,
-        configure_and_exit: bool = False,
-    ):
-        """Run a simulation for a single point and stream the results to a saved lut file.
-
-        Args:
-            point (np.array): conditions to alter in simulation
-            lut_names (list): Dimension names aka lut_names
-            simmer (function): function to run the simulation
-            reader (function): function to read the results of the simulation
-            max_buffer_time (float, optional): _description_. Defaults to 0.5.
-            configure_and_exit (bool, optional): exit early if not executing simulations
+    def parallelize_shards(self):
         """
-        Logger.debug(f"Simulating(point={point})")
+        Parallelizes simulations into shard groups to handle very large LUTs: VLLUTS
+        """
+        groups = self.lut.groups
+        coords = self.lut.coords
+        simmer = ray.put(self.makeSim)
+        reader = ray.put(self.readSim)
+        kwargs = ray.put(
+            {
+                "file": self.lut.file,
+                "keys": self.lut_keys,
+                "wl": self.lut.wl,
+                "grid": self.lut.grid,
+                "shards": self.lut.shards,
+                "min_shards": self.n_cores,
+            }
+        )
 
-        # Slight delay to prevent all subprocesses from starting simultaneously
-        time.sleep(np.random.rand() * max_buffer_time)
+        jobs = [
+            shardWriter.remote(kwargs, shard, coords[shard], points, simmer, reader)
+            for shard, points in groups.items()
+        ]
+        report = Track(
+            jobs,
+            step=1,
+            reverse=True,
+            print=Logger.info,
+            message="shards complete",
+        )
 
-        # Execute the simulation
-        simmer(point)
+        # Update the lut as point simulations stream in
+        saved = set()
+        while jobs:
+            [done], jobs = ray.wait(jobs, num_returns=1)
 
-        # No data will be produced, just configuration files
-        if configure_and_exit:
-            return
+            # Retrieve the return of the finished job
+            ret = ray.get(done)
 
-        # Read the simulation results
-        data = reader(point)
+            # If a simulation fails then it will return None
+            if ret:
+                point, data = ret
+                data = {k: v for k, v in data.items() if k not in saved}
+                saved.update(data)
+                if data:
+                    Logger.info(f"Saved chunkless: {saved}")
+                    self.lut.queuePoint(point, data)
 
-        # Save the results to our LUT format
-        if data:
-            Logger.debug(f"Updating data point {point} for keys: {data.keys()}")
+            report(len(jobs))
 
-            return point, data
-        else:
-            Logger.warning(f"No data was returned for point {point}")
+        Logger.debug("Flushing chunkless data")
+        self.lut.flush()
 
-        return
+    def parallelize_points(self):
+        """
+        Parallelizes simulations point-wise to stream finished data into the LUT at set
+        completion percentages
+        """
+        # Place into shared memory space to avoid spilling
+        kwargs = dict(
+            lut_names=self.lut_names,
+            simmer=self.makeSim,
+            reader=self.readSim,
+            max_buffer_time=self.max_buffer_time,
+            rte_configure_and_exit=self.configure_and_exit,
+        )
+        kwargs = {k: ray.put(v) for k, v in kwargs.items()}
+
+        points = combos(self.lut_grid.values())
+        jobs = [streamSimulation.remote(point, **kwargs) for point in points]
+
+        if self.configure_and_exit:
+            # Block until all jobs finish
+            ray.get(jobs)
+
+            Logger.warning("Exiting early due to rte_configure_and_exit")
+            sys.exit(0)
+
+        # Report a percentage complete every 10% and flush to disk at those intervals
+        report = Track(
+            jobs,
+            step=10,
+            reverse=True,
+            print=Logger.info,
+            message="simulations complete",
+        )
+
+        # Update the lut as point simulations stream in
+        while jobs:
+            [done], jobs = ray.wait(jobs, num_returns=1)
+
+            # Retrieve the return of the finished job
+            ret = ray.get(done)
+
+            # If a simulation fails then it will return None
+            if ret:
+                self.lut.queuePoint(*ret)
+
+            if report(len(jobs)) and self.lut.hold:
+                Logger.info("Flushing netCDF to disk")
+                self.lut.flush()
+
+        # Shouldn't be hit but just in case
+        if self.lut.hold:
+            Logger.warning("Not all points were flushed, doing so now")
+            self.lut.flush()
 
     def preSim(self):
         """
@@ -220,9 +334,7 @@ class Writer:
             point (np.array): conditions to alter in simulation
             template_only (bool): only write template file and then stop
         """
-        raise NotImplemented(
-            "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
-        )
+        raise NotImplemented("This method must be defined by the subclass")
 
     def readSim(self, point: np.array):
         """
@@ -256,295 +368,3 @@ class Writer:
             ["%s-%6.4f" % (n, x) for n, x in zip(self.lut_names, point)]
         )
         return filename
-
-
-class Create:
-    def __init__(
-        self,
-        file: str,
-        keys: Keys,
-        wl: np.ndarray,
-        grid: dict,
-        attrs: dict = {},
-        consts: dict = {},
-        onedim: dict = {},
-        alldim: dict = {},
-        zeros: List[str] = [],
-        compression: str = "zlib",
-        complevel: int = None,
-    ):
-        """
-        Prepare a LUT netCDF
-
-        Parameters
-        ----------
-        file : str
-            NetCDF filepath for the LUT.
-        wl : np.ndarray
-            The wavelength array.
-        grid : dict
-            The LUT grid, formatted as {str: Iterable}.
-        attrs: dict, defaults={}
-            Dict of dataset attributes, ie. {"RT_mode": "transm"}
-        consts : dict, optional, default={}
-            Dictionary of constant values. Appends/replaces current Create.consts list.
-        onedim : dict, optional, default={}
-            Dictionary of one-dimensional data. Appends/replaces to the current Create.onedim list.
-        alldim : dict, optional, default={}
-            Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.
-        zeros : List[str], optional, default=[]
-            List of zero values. Appends to the current Create.zeros list.
-        compression : str, default="zlib"
-            Compression method to use to the NetCDF. Check https://unidata.github.io/netcdf4-python/
-            for available options. Currently, must use h5py <= 3.14.0
-        complevel : int, default=None
-            Compression to use. Impact and levels vary per method.
-        """
-        # Track the ISOFIT version that created this LUT
-        attrs["ISOFIT version"] = __version__
-        attrs["ISOFIT status"] = "<incomplete>"
-
-        self.file = file
-        self.wl = wl
-        self.grid = grid
-        self.hold = []
-
-        self.sizes = {key: len(val) for key, val in grid.items()}
-        self.attrs = attrs
-
-        self.consts = {**keys.consts, **consts}
-        self.onedim = {**keys.onedim, **onedim}
-        self.alldim = {**keys.alldim, **alldim}
-
-        self.compression = compression
-        self.complevel = complevel
-
-        # Save ds for backwards compatibility (to work with extractGrid, extractPoints)
-        self.initialize()
-
-        atexit.register(cleanup, file)
-
-    def initialize(self) -> None:
-        """
-        Initializes the LUT netCDF by prepopulating it with filler values.
-        """
-
-        def createVariable(key, vals, dims=(), fill_value=np.nan, chunksizes=None):
-            """
-            Reusable createVariable for the Dataset object
-            """
-            var = ds.createVariable(
-                varname=key,
-                datatype="f8",
-                dimensions=dims,
-                fill_value=fill_value,
-                chunksizes=chunksizes,
-                compression=self.compression,
-                complevel=self.complevel,
-            )
-            var[:] = vals
-
-        with Dataset(self.file, "w", format="NETCDF4") as ds:
-            # Dimensions
-            ds.createDimension("wl", len(self.wl))
-            createVariable("wl", self.wl, ("wl",))
-
-            chunks = [len(self.wl)]
-            for key, vals in self.grid.items():
-                ds.createDimension(key, len(vals))
-                createVariable(key, vals, (key,))
-                chunks.append(1)
-
-            # Constants
-            dims = ()
-            for key, vals in self.consts.items():
-                createVariable(key, vals, dims)
-
-            # One dimensional arrays
-            dims = ("wl",)
-            for key, vals in self.onedim.items():
-                createVariable(key, vals, dims)
-
-            # Multi dimensional arrays
-            dims += tuple(self.grid)
-            for key, vals in self.alldim.items():
-                createVariable(key, vals, dims, chunksizes=chunks)
-
-            # Add custom attributes onto the Dataset
-            for key, value in self.attrs.items():
-                ds.setncattr(key, value)
-
-            ds.sync()
-        gc.collect()
-
-    def pointIndices(self, point: np.ndarray) -> List[int]:
-        """
-        Get the indices of the point in the grid.
-
-        Parameters
-        ----------
-        point : np.ndarray
-            The coordinates of the point in the grid.
-
-        Returns
-        -------
-        List[int]
-            Mapped point values to index positions.
-        """
-        return [
-            np.where(self.grid[dim] == val)[0][0] for dim, val in zip(self.grid, point)
-        ]
-
-    def queuePoint(self, point: np.ndarray, data: dict) -> None:
-        """
-        Queues a point and its data to the internal hold list which is used by the
-        flush function to write these points to disk.
-
-        Parameters
-        ----------
-        point : np.ndarray
-            The coordinates of the point in the grid.
-        data : dict
-            Data for this point to write.
-        """
-        self.hold.append((point, data))
-
-    def flush(self, finalize: bool = False) -> None:
-        """
-        Flushes the (point, data) pairs held in the hold list to the LUT netCDF.
-
-        Parameters
-        ----------
-        finalize : bool, default=False
-            Calls the `finalize` function
-        """
-        unknowns = set()
-        with Dataset(self.file, "a") as ds:
-            for point, data in self.hold:
-                for key, vals in data.items():
-                    if key in self.consts:
-                        ds[key].assignValue(vals)
-                    elif key in self.onedim:
-                        ds[key][:] = vals
-                    elif key in self.alldim:
-                        index = [slice(None)] + list(self.pointIndices(point))
-                        ds[key][index] = vals
-                    else:
-                        unknowns.update([key])
-            ds.sync()
-
-        self.hold = []
-        gc.collect()
-
-        # Reduce the number of warnings produced per flush
-        for key in unknowns:
-            Logger.warning(
-                f"Attempted to assign a key that is not recognized, skipping: {key}"
-            )
-
-        if finalize:
-            self.finalize()
-
-    def writePoint(self, point: np.ndarray, data: dict) -> None:
-        """
-        Queues a point and immediately flushes to disk.
-
-        Parameters
-        ----------
-        point : np.ndarray
-            The coordinates of the point in the grid.
-        data : dict
-            Data for this point to write.
-        """
-        self.queuePoint(point, data)
-        self.flush()
-
-    def setAttr(self, key: str, value: Any) -> None:
-        """
-        Sets an attribute in the netCDF
-
-        Parameters
-        ----------
-        key : str
-            Key to set
-        value : any
-            Value to set
-        """
-        self.attrs[key] = value
-        with Dataset(self.file, "a") as ds:
-            ds.setncattr(key, value)
-
-    def getAttr(self, key: str) -> Any:
-        """
-        Gets an attribute from the netCDF
-
-        Parameters
-        ----------
-        key : str
-            Key to get
-
-        Returns
-        -------
-        any | None
-            Retrieved attribute from netCDF, if it exists
-        """
-        with Dataset(self.file, "r") as ds:
-            return ds.getncattr(key)
-
-    def finalize(self):
-        """
-        Finalizes the netCDF by writing any remaining attributes to disk
-        """
-        self.setAttr("ISOFIT status", "success")
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        """
-        Sets a variable in the netCDF.
-
-        Parameters
-        ----------
-        key : str
-            Key to set
-        value : any
-            Value to set
-        """
-        with Dataset(self.file, "a") as ds:
-            ds[key][:] = value
-
-    def __getitem__(self, key: str) -> Any:
-        """
-        Passthrough to __getitem__ on the underlying 'ds' attribute.
-
-        Parameters
-        ----------
-        key : str
-            The name of the item to retrieve.
-
-        Returns
-        -------
-        Any
-            The value of the item retrieved from the 'ds' attribute.
-        """
-        return self.ds[key]
-
-    def __repr__(self) -> str:
-        return f"LUT Writer(wl={self.wl.size}, grid={self.sizes})"
-
-
-def cleanup(file):
-    """
-    Checks the ``ISOFIT status`` attribute on a LUT and removes the file if it is
-    incomplete.
-
-    Parameters
-    ----------
-    file : str
-        Path to the file to check
-    """
-    if os.path.exists(file):
-        with Dataset(file, "r") as ds:
-            if ds.getncattr("ISOFIT status") == "<incomplete>":
-                Logger.error(
-                    f"The LUT status was determined to be incomplete, auto-removing: {file}"
-                )
-                os.remove(file)
