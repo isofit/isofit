@@ -43,7 +43,7 @@ def streamSimulation(
     time.sleep(np.random.rand() * max_buffer_time)
 
     # Execute the simulation
-    kwargs = simmer(point)
+    kwargs = simmer(point) or {}
 
     # No data will be produced, just configuration files
     if rte_configure_and_exit:
@@ -102,7 +102,7 @@ def shardWriter(lut, shard, coord, points, simmer, reader):
     keys = luts["keys"]
 
     for point in points:
-        kwargs = simmer(point)  # Execute the simulation
+        kwargs = simmer(point) or {}  # Execute the simulation
         data = reader(point, **kwargs)  # Read the simulation results
 
         # Remove non-chunk data
