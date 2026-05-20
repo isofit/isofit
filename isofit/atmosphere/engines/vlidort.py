@@ -60,7 +60,7 @@ class VLIDORT(BaseAtmosphere, Writer):
         temp = self.queue.get()
         os.chdir(temp)
 
-        dims = zip(self.lut_names, point)
+        dims = dict(zip(self.lut_names, point))
         vals = {
             "sza": dims["solar_zenith"],
             "vza": dims["observer_zenith"],
