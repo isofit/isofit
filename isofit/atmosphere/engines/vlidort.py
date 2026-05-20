@@ -102,7 +102,7 @@ class VLIDORT(BaseAtmosphere, Writer):
 
         if self.save_sim:
             data = temp / "fort.40"
-            data.rename(file)
+            shutil.move(data, file)
 
             return {"file": file}
 
