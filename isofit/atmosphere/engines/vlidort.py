@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -45,6 +46,10 @@ class VLIDORT(BaseAtmosphere, Writer):
         "CO2",
     }
 
+    def __init__(self, *args, save_sim=True, **kwargs):
+        self.save_sim = save_sim
+        super().__init__(*args, **kwargs)
+
     def preSim(self):
         if missing := self.required - set(self.lut_names):
             raise AttributeError(f"Missing required LUT dimensions: {missing}")
@@ -56,9 +61,19 @@ class VLIDORT(BaseAtmosphere, Writer):
         (self.wl_spacing,) = spacing
         Logger.debug(f"Detected wavelength spacing: {self.wl_spacing}")
 
+        self.sims = Path(self.config.sim_path)
+
         self.queue = self.spoof()
 
     def makeSim(self, point, **_):
+        name = self.point_to_filename(point)
+        file = self.sims / name
+        if file.exists():
+            Logger.debug(
+                f"Sim data file for this point already exists, skipping. Point = {name}"
+            )
+            return {"file": file}
+
         temp = self.queue.get()
         os.chdir(temp)
 
@@ -84,10 +99,19 @@ class VLIDORT(BaseAtmosphere, Writer):
             check=True,
         )
 
+        if self.save_sim:
+            file = temp / "fort.40"
+            file.rename(sims / name)
+
+            return {"file": file}
+
         return {"temp": temp}
 
-    def readSim(self, point, temp):
-        lines = (temp / "fort.40").read_text().splitlines()
+    def readSim(self, point, temp=None, file=None):
+        if not file:
+            file = temp / "fort.40"
+
+        lines = file.read_text().splitlines()
         parse = []
         for line in lines:
             data = re.findall(r"(\S+)", line)
@@ -108,7 +132,8 @@ class VLIDORT(BaseAtmosphere, Writer):
         ]
         data = dict(zip(cols, data.T))
 
-        self.queue.put(temp)
+        if temp:
+            self.queue.put(temp)
 
         return data
 
