@@ -47,7 +47,7 @@ class VLIDORT(BaseAtmosphere, Writer):
         if missing := self.required - set(self.lut_names):
             raise AttributeError(f"Missing required LUT dimensions: {missing}")
 
-        spacing = np.unique(np.diff(self.wl))
+        spacing = np.unique(np.round(np.diff(self.wl), decimals=6))
         if spacing.size > 1:
             raise ValueError(f"Inconsistent wavelength spacing: {spacing}")
         (self.wl_spacing,) = spacing
@@ -110,7 +110,7 @@ class VLIDORT(BaseAtmosphere, Writer):
     def postSim(self):
         shutil.rmtree(self.root, ignore_errors=True)
 
-    def spoof(self, n):
+    def spoof(self):
         """
         VLIDORT is hardcoded to write to the output file fort.40
         This tricks it into writing to different locations by using softlinks since
