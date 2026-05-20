@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 
 import numpy as np
+from ray.util.queue import Queue
 
-from isofit import ray
 from isofit.atmosphere import BaseAtmosphere
 from isofit.data import env
 from isofit.luts.writer import Writer
@@ -31,76 +32,6 @@ CMD = """\
 """
 
 
-@ray.remote
-class TempDirPool:
-    """
-    VLIDORT is hardcoded to write to the output file fort.40
-    This tricks it into writing to different locations by using softlinks since
-    VLIDORT uses relative pathing. By doing so, we can enable parallelism.
-
-    Parameters
-    ----------
-    n : int
-        Number of temp directories to create.
-    dir : str
-        Directory of VLIDORT to symlink to
-    """
-
-    def __init__(self, n: int, dir: str):
-        # Root temp directory
-        self.root = Path(
-            tempfile.mkdtemp(
-                prefix="vlidort_",
-            )
-        )
-
-        self.tmps = []
-        data = Path(dir)
-        full = list(data.glob("*"))
-        part = list((data / "MASTERS").glob("*"))
-
-        # Create pool dirs
-        for i in range(n):
-            path = self.root / f"tmp_{i}"
-
-            path.mkdir(parents=True, exist_ok=True)
-            for obj in full:
-                if obj.name == "MASTERS":
-                    continue
-                (path / obj.name).symlink_to(obj)
-
-            path /= "MASTERS"
-            path.mkdir(parents=True, exist_ok=True)
-            for obj in part:
-                (path / obj.name).symlink_to(obj)
-
-            self.tmps.append(path)
-
-    def get(self) -> Path:
-        """
-        Get an available temp directory
-
-        Returns
-        -------
-        pathlib.Path
-            Path to temp dir
-        """
-        return self.tmps.pop()
-
-    def free(self, path: Path) -> None:
-        """
-        Release a temp directory back to the pool
-        """
-        self.tmps.append(path)
-
-    def cleanup(self) -> None:
-        """
-        Remove entire temp pool
-        """
-        shutil.rmtree(self.root, ignore_errors=True)
-        self.tmps.clear()
-
-
 class VLIDORT(BaseAtmosphere, Writer):
     required = {
         "solar_zenith",
@@ -116,15 +47,15 @@ class VLIDORT(BaseAtmosphere, Writer):
         if missing := self.required - set(self.lut_names):
             raise AttributeError(f"Missing required LUT dimensions: {missing}")
 
-        self.queue = TempDirPool.remote(n=self.n_cores, dir=self.config.engine_base_dir)
-
         spacing = np.unique(np.diff(self.wl))
         if spacing.size > 1:
             raise ValueError(f"Inconsistent wavelength spacing: {spacing}")
         (self.wl_spacing,) = spacing
 
+        self.queue = self.spoof()
+
     def makeSim(self, point, **kwargs):
-        temp = self.queue.get.remote()
+        temp = self.queue.get()
         os.chdir(temp)
 
         dims = zip(self.lut_names, point)
@@ -172,9 +103,52 @@ class VLIDORT(BaseAtmosphere, Writer):
         ]
         data = dict(zip(cols, data.T))
 
-        self.queue.free.remote(temp)
+        self.queue.put(temp)
 
         return data
 
     def postSim(self):
-        self.queue.cleanup.remote()
+        shutil.rmtree(self.root, ignore_errors=True)
+
+    def spoof(self, n):
+        """
+        VLIDORT is hardcoded to write to the output file fort.40
+        This tricks it into writing to different locations by using softlinks since
+        VLIDORT uses relative pathing. By doing so, we can enable parallelism.
+
+        Parameters
+        ----------
+        n : int
+            Number of temp directories to create.
+        dir : str
+            Directory of VLIDORT to symlink to
+        """
+        # Root temp directory
+        self.root = Path(
+            tempfile.mkdtemp(
+                prefix="vlidort_",
+            )
+        )
+
+        self.queue = Queue()
+
+        base = Path(self.config.engine_base_dir)
+        full = list(base.glob("*"))
+        part = list((base / "MASTERS").glob("*"))
+
+        # Create pool dirs
+        for i in range(self.n_cores):
+            path = self.root / f"tmp_{i}"
+
+            path.mkdir(parents=True, exist_ok=True)
+            for obj in full:
+                if obj.name == "MASTERS":
+                    continue
+                (path / obj.name).symlink_to(obj)
+
+            path /= "MASTERS"
+            path.mkdir(parents=True, exist_ok=True)
+            for obj in part:
+                (path / obj.name).symlink_to(obj)
+
+            self.queue.put(path)
