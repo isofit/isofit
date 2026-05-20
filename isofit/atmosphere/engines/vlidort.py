@@ -50,11 +50,13 @@ class VLIDORT(BaseAtmosphere, Writer):
         spacing = np.unique(np.round(np.diff(self.wl), decimals=6))
         if spacing.size > 1:
             raise ValueError(f"Inconsistent wavelength spacing: {spacing}")
+
         (self.wl_spacing,) = spacing
+        Logger.debug(f"Detected wavelength spacing: {self.wl_spacing}")
 
         self.queue = self.spoof()
 
-    def makeSim(self, point, **kwargs):
+    def makeSim(self, point, **_):
         temp = self.queue.get()
         os.chdir(temp)
 
@@ -130,8 +132,7 @@ class VLIDORT(BaseAtmosphere, Writer):
             )
         )
 
-        self.queue = Queue()
-
+        tmps = Queue()
         base = Path(self.config.engine_base_dir)
         full = list(base.glob("*"))
         part = list((base / "MASTERS").glob("*"))
@@ -151,4 +152,6 @@ class VLIDORT(BaseAtmosphere, Writer):
             for obj in part:
                 (path / obj.name).symlink_to(obj)
 
-            self.queue.put(path)
+            tmps.put(path)
+
+        return tmps
