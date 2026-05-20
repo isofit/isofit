@@ -16,17 +16,19 @@ from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__name__)
 
-# arg1 = solar zenith angle (degrees)
-# arg2 = viewing zenith angle (degrees)
-# arg3 = relative azimuth angle (degrees)
-# arg4 = precipitable water vapor (cm)
-# arg5 = AOD at 550 nm
-# arg6 = viewing elevation (TOA = 58 km); current set up needs this to be 58.0
-# arg7 = surface elevation (km)
-# arg8 = wavelength grid spacing (nm)
-# arg9 = xco2 (ppm)
-# arg10 = xch4 (ppm)
+# {sza} = arg1  = solar zenith angle (degrees)
+# {vza} = arg2  = viewing zenith angle (degrees)
+# {rza} = arg3  = relative azimuth angle (degrees)
+# {pwv} = arg4  = precipitable water vapor (cm)
+# {aod} = arg5  = AOD at 550 nm
+# {vel} = arg6  = viewing elevation (TOA = 58 km); current set up needs this to be 58.0
+# {sel} = arg7  = surface elevation (km)
+# {wgs} = arg8  = wavelength grid spacing (nm)
+# {co2} = arg9  = xco2 (ppm)
+# {ch4} = arg10 = xch4 (ppm)
 # Example: ./emit.exe 35 0 0 2.0 0.1 58.0 0.0 0.1 400.0 1.9
+# {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4}
+#   35     0     0   2.0   0.1  58.0   0.0   0.1  400.0  1.9
 CMD = """\
 ./emit.exe {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4}\
 """
@@ -68,7 +70,8 @@ class VLIDORT(BaseAtmosphere, Writer):
             "pwv": dims["H2OSTR"],
             "aod": dims["AOT550"],
             "vel": 58.0,  # Required to be 58.0 per Vijay
-            "sel": dims["surface_elevation_km"],
+            # "sel": dims["surface_elevation_km"], # This doesn't work with any nonzero value?
+            "sel": 0.0,
             "wgs": self.wl_spacing,
             "co2": dims["CO2"],
             "ch4": 0.0,  # REVIEW
