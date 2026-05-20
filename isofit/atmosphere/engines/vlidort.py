@@ -62,6 +62,7 @@ class VLIDORT(BaseAtmosphere, Writer):
         Logger.debug(f"Detected wavelength spacing: {self.wl_spacing}")
 
         self.sims = Path(self.config.sim_path)
+        self.sims.mkdir(parents=True, exist_ok=True)
 
         self.queue = self.spoof()
 
@@ -100,8 +101,8 @@ class VLIDORT(BaseAtmosphere, Writer):
         )
 
         if self.save_sim:
-            file = temp / "fort.40"
-            file.rename(sims / name)
+            data = temp / "fort.40"
+            data.rename(file)
 
             return {"file": file}
 
