@@ -78,7 +78,7 @@ class MultiComponentSurface(Surface):
         # Variables retrieved: each channel maps to a reflectance model parameter
         rmin, rmax = -0.05, 2.0
         self.statevec_names = [
-            "RFL_%04i_%f" % (float(w), float(str(v % 1).lstrip("0")))
+            "RFL_%04i_%.3f" % (float(w), float(str(v % 1)))
             for w, v in zip(self.wl, self.wl)
         ]
 
