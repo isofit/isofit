@@ -1,4 +1,6 @@
 import os
+import shutil
+from pathlib import Path
 from unittest import mock
 
 import numpy as np
@@ -76,32 +78,58 @@ def test_pasadena_topoflux(monkeypatch):
 
 @pytest.mark.examples
 @pytest.mark.parametrize(
-    "args",
+    "args, kwargs",
     [
-        ("--level", "DEBUG", "configs/AV320250308t200738_wltest_isofit.json"),
         (
-            "--level",
-            "DEBUG",
-            "configs/AV320250308t200738_wltest_isofit_swir_shift.json",
+            (
+                "remote/AV320250308t200738_rdn.img",
+                "remote/AV320250308t200738_loc.img",
+                "remote/AV320250308t200738_obs.img",
+                ".",
+                "av3",
+            ),
+            {
+                "surface_path": "surface/surface_swir_shift.mat",
+                "lut_config_file": "remote/lut_config.json",
+            },
         ),
         (
-            "--level",
-            "DEBUG",
-            "configs/AV320250308t200738_wltest_isofit_swir_spline.json",
+            (
+                "remote/AV320250308t200738_rdn.img",
+                "remote/AV320250308t200738_loc.img",
+                "remote/AV320250308t200738_obs.img",
+                ".",
+                "av3",
+            ),
+            {
+                "surface_path": "surface/surface_swir_shift.mat",
+                "lut_config_file": "remote/lut_config.json",
+                "spline_indices": 10,
+                "spline_indices": 50,
+                "spline_indices": 100,
+            },
         ),
     ],
 )
-# fmt: on
-def test_av3_calibration(args, monkeypatch):
-    """Run the calibration test dataset."""
-
+def test_wavelength_cal(args, kwargs, monkeypatch):
+    """Test the wavelength calibration utility"""
     monkeypatch.chdir(env.path("examples", "20250308_AV3Cal_wltest/"))
     os.makedirs("output", exist_ok=True)
-
+    shutil.rmtree("output")
+    os.makedirs("output")
     runner = CliRunner()
-    result = runner.invoke(cli, ["run"] + list(args), catch_exceptions=False)
 
+    kwargs_flat = [item for k, v in kwargs.items() for item in (f"--{k}", v)]
+    kwargs_flat += ["--emulator_base", str(Path(env.srtmnet) / env["srtmnet.file"])]
+    result = runner.invoke(
+        cli, ["wavelength_cal"] + list(args) + kwargs_flat, catch_exceptions=False
+    )
     assert result.exit_code == 0
+
+    shutil.rmtree("output")
+    shutil.rmtree("data")
+    shutil.rmtree("config")
+    shutil.rmtree("input")
 
 
 @pytest.mark.examples
@@ -200,7 +228,8 @@ def test_multisurface_inversions(args, monkeypatch):
     assert np.isclose(val, args[5][1], atol=0.01)
 
 
-@pytest.mark.skip(reason="Thermal-IR implementation needs to be updated")
+@pytest.mark.xfail
+@pytest.mark.examples
 def test_modtran_one(monkeypatch):
     """Run MODTRAN example dataset."""
 
