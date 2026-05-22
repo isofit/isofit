@@ -13,7 +13,7 @@ D. R. Thompson, K.N. Babu, A. Braverman, M. Eastwood, R.O. Green, J. Hobbs, J.B.
 
 D. R. Thompson, K. Cawse-Nicholson, Z. Erickson, C. Fichot, C. Frankenberg, B-C. Gao, M. M. Gierach, R. O. Green, D. Jensen, V. Natraj, A. Thompson. [A unified approach to estimate land and water reflectances with uncertainties for coastal imaging spectroscopy](https://doi.org/10.1016/j.rse.2019.05.017). *Remote Sensing of Environment*, 231, 111198, 2019.
 
-N. Bohn, E. Greenberg, P. G. Brodrick, J. Chapman, R. Eckert, M. Gierach, R. O. Green, M. König, J. Kravitz, K. Luis, J. Susiluoto, and D. R. Thompson. [Simultaneous modeling of water-leaving reflectance and sun and sky glint contributions from imaging spectroscopy measurements](https://doi.org/10.1364/AO.569763) *Applied Optics*, 64, 30, 2019.
+N. Bohn, E. Greenberg, P. G. Brodrick, J. Chapman, R. Eckert, M. Gierach, R. O. Green, M. König, J. Kravitz, K. Luis, J. Susiluoto, and D. R. Thompson. [Simultaneous modeling of water-leaving reflectance and sun and sky glint contributions from imaging spectroscopy measurements](https://doi.org/10.1364/AO.569763) *Applied Optics*, 64, 30, 2025.
 
 ## Uncertainty Quantification
 

@@ -36,9 +36,9 @@ ISOFIT combines surface models, atmospheric radiative transfer, and instrument c
                            |
                            | produces
                            v
-   +------------------------------------------------+
-   |    Joint Surface & Atmospheric State Vector    |
-   +------------------------------------------------+
+   +-------------------------------------------------------------+
+   |    Joint Surface, Instrument, & Atmospheric State Vector    |
+   +-------------------------------------------------------------+
 ```
 
 ---
@@ -49,7 +49,7 @@ ISOFIT combines surface models, atmospheric radiative transfer, and instrument c
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Examples](#examples)
-- [Radiative Transfer Models](#radiative-transfer-models)
+- [Atmospheric Radiative Transfer Models](#atmospheric-radiative-transfer-models)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [Citation](#citation)
@@ -136,6 +136,7 @@ ISOFIT supports several atmospheric RTM backends.  The recommended starting poin
 - **[MODTRAN quickstart](https://isofit.github.io/isofit/latest/getting_started/quickstarts/modtran/)** — requires a MODTRAN 6 licence
 - **6S** — Second Simulation of a Satellite Signal in the Solar Spectrum vector code.  Automatic download and build with `isofit download`.
 - **libRadtran** — library for radiative transfer.  Automatic download and build with `isofit download`.
+- **Bring Your Own** — isofit can run with any LUT that complies with the luts/reader.py standards.  Adding a new radiative transfer model is also straightforward by extending the base [BaseAtmosphere](isofit/atmosphere/atmosphere.py) class.
 
 
 ## Contributing
