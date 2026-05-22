@@ -20,7 +20,7 @@ name: Build
 
 on:
   pull_request:
-    branches: ["dev"]
+    branches: ["dev", "dev_3x"]
     paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/**"]
 
 concurrency:

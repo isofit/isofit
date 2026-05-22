@@ -97,13 +97,16 @@ class RadiativeTransfer:
             rte = Engines[confRT.engine_name](**params)
             self.rt_engines.append(rte)
 
-            # Make sure the length of the config statevectores match the engine's assumed statevectors
-            if (expected := len(config.statevector.get_element_names())) != (
-                got := len(rte.indices.x_RT)
-            ):
-                error = f"Mismatch between the number of elements for the config statevector and LUT.indices.x_RT: {expected=}, {got=}"
-                Logger.error(error)
-                raise AttributeError(error)
+            # Make sure the length of the config statevectors match the engine's assumed statevectors
+            # Note: rte.indices.x_RT is only populated after build_interpolators() is called,
+            # so compare against confRT.statevector_names which is set from the config directly.
+            if confRT.statevector_names is not None:
+                if (expected := len(config.statevector.get_element_names())) != (
+                    got := len(confRT.statevector_names)
+                ):
+                    error = f"Mismatch between the number of elements for the config statevector and engine statevector_names: {expected=}, {got=}"
+                    Logger.error(error)
+                    raise AttributeError(error)
 
         # The rest of the code relies on sorted order of the individual RT engines which cannot
         # be guaranteed by the dict JSON or YAML input
