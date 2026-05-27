@@ -121,15 +121,15 @@ class VLIDORT(BaseAtmosphere, Writer):
 
         data = np.vstack(parse)
 
-        # REVIEW: Are these correct?
+        # wl, PATH, TDIFFDN, TDIRDN, TDIFFUP, TDIRUP, SPHER
         cols = [
             "wl",
             "rhoatm",
-            "sphalb",
-            "transm_up_dif",
-            "transm_up_dir",
             "transm_down_dif",
             "transm_down_dir",
+            "transm_up_dif",
+            "transm_up_dir",
+            "sphalb",
         ]
         data = dict(zip(cols, data.T))
 
