@@ -40,5 +40,6 @@ def main():
 
     np.savetxt(output_path, np.array(wl_arr, dtype=np.float32))
 
+
 if __name__ == "__main__":
     main()
