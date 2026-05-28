@@ -420,9 +420,11 @@ class ForwardModel:
         # If no rho_dif_dif passed eq_11_term -> 1
         eq_11_term = 1 - (r["sphalb"] * rho_dif_dif)
 
+        # This seems like it's out of order, but it's not.  calc_rdn needs L_tot to *not* have
+        # the eq_11_term adjustment in play to avoid double counting
+        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
         L_dif_dir /= eq_11_term
         L_dif_dif /= eq_11_term
-        L_tot = L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif
 
         return L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
 
