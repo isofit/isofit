@@ -402,18 +402,19 @@ class ForwardModel:
         # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.
         # Downward diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
         L_dir_dir = L_coupled[0] / geom.coszen * geom.cos_i * b
-        L_dif_dir = L_coupled[1]
         L_dir_dif = L_coupled[2] / geom.coszen * cos_i_bg
-        L_dif_dif = L_coupled[3]
 
-        # Note - we should really be doing the multiplication upstream before convolution - this is an approximation
+        # Note - we should really be doing the multiplication upstream before convolution - L_dif_dir and L_dif_dif terms are
+        # therefor an approximation
         # Correct downward diffuse term for topographic assuming Hay's model (Hay 1979; Richter 1998; Guanter et al., 2009)
         t_down_dir = r["transm_down_dir"]
-        L_dif_dir *= (b * t_down_dir * (geom.cos_i / geom.coszen)) + (
-            (1 - b * t_down_dir) * geom.skyview_factor
+        L_dif_dir = L_coupled[1] * (
+            (b * t_down_dir * (geom.cos_i / geom.coszen))
+            + ((1 - b * t_down_dir) * geom.skyview_factor)
         )
-        L_dif_dif *= (t_down_dir * (cos_i_bg / geom.coszen)) + (
-            (1 - t_down_dir) * skyview_factor_bg
+        L_dif_dif = L_coupled[3] * (
+            (t_down_dir * (cos_i_bg / geom.coszen))
+            + ((1 - t_down_dir) * skyview_factor_bg)
         )
 
         # Apply equation 11
