@@ -5879,7 +5879,10 @@
 <span class="normal">908</span>
 <span class="normal">909</span>
 <span class="normal">910</span>
-<span class="normal">911</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">911</span>
+<span class="normal">912</span>
+<span class="normal">913</span>
+<span class="normal">914</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6283,27 +6286,30 @@
         <span class="c1"># Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.</span>
         <span class="c1"># Downward diffuse components are scaled by viewable sky fraction (i.e., &quot;ungula&quot; of viewable sky in solid geometry terms).</span>
         <span class="n">L_dir_dir</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span> <span class="o">*</span> <span class="n">geom</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">*</span> <span class="n">b</span>
-        <span class="n">L_dif_dir</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">L_dir_dif</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span> <span class="o">*</span> <span class="n">cos_i_bg</span>
-        <span class="n">L_dif_dif</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
 
-        <span class="c1"># Note - we should really be doing the multiplication upstream before convolution - this is an approximation</span>
+        <span class="c1"># Note - we should really be doing the multiplication upstream before convolution - L_dif_dir and L_dif_dif terms are</span>
+        <span class="c1"># therefor an approximation</span>
         <span class="c1"># Correct downward diffuse term for topographic assuming Hay&#39;s model (Hay 1979; Richter 1998; Guanter et al., 2009)</span>
         <span class="n">t_down_dir</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;transm_down_dir&quot;</span><span class="p">]</span>
-        <span class="n">L_dif_dir</span> <span class="o">*=</span> <span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">t_down_dir</span> <span class="o">*</span> <span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">/</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span>
-            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">b</span> <span class="o">*</span> <span class="n">t_down_dir</span><span class="p">)</span> <span class="o">*</span> <span class="n">geom</span><span class="o">.</span><span class="n">skyview_factor</span>
+        <span class="n">L_dif_dir</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">t_down_dir</span> <span class="o">*</span> <span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">/</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span><span class="p">))</span>
+            <span class="o">+</span> <span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">b</span> <span class="o">*</span> <span class="n">t_down_dir</span><span class="p">)</span> <span class="o">*</span> <span class="n">geom</span><span class="o">.</span><span class="n">skyview_factor</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="n">L_dif_dif</span> <span class="o">*=</span> <span class="p">(</span><span class="n">t_down_dir</span> <span class="o">*</span> <span class="p">(</span><span class="n">cos_i_bg</span> <span class="o">/</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span>
-            <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">t_down_dir</span><span class="p">)</span> <span class="o">*</span> <span class="n">skyview_factor_bg</span>
+        <span class="n">L_dif_dif</span> <span class="o">=</span> <span class="n">L_coupled</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">t_down_dir</span> <span class="o">*</span> <span class="p">(</span><span class="n">cos_i_bg</span> <span class="o">/</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span><span class="p">))</span>
+            <span class="o">+</span> <span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">t_down_dir</span><span class="p">)</span> <span class="o">*</span> <span class="n">skyview_factor_bg</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="c1"># Apply equation 11</span>
         <span class="c1"># If no rho_dif_dif passed eq_11_term -&gt; 1</span>
         <span class="n">eq_11_term</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">rho_dif_dif</span><span class="p">)</span>
 
+        <span class="c1"># This seems like it&#39;s out of order, but it&#39;s not.  calc_rdn needs L_tot to *not* have</span>
+        <span class="c1"># the eq_11_term adjustment in play to avoid double counting</span>
+        <span class="n">L_tot</span> <span class="o">=</span> <span class="n">L_dir_dir</span> <span class="o">+</span> <span class="n">L_dif_dir</span> <span class="o">+</span> <span class="n">L_dir_dif</span> <span class="o">+</span> <span class="n">L_dif_dif</span>
         <span class="n">L_dif_dir</span> <span class="o">/=</span> <span class="n">eq_11_term</span>
         <span class="n">L_dif_dif</span> <span class="o">/=</span> <span class="n">eq_11_term</span>
-        <span class="n">L_tot</span> <span class="o">=</span> <span class="n">L_dir_dir</span> <span class="o">+</span> <span class="n">L_dif_dir</span> <span class="o">+</span> <span class="n">L_dir_dif</span> <span class="o">+</span> <span class="n">L_dif_dif</span>
 
         <span class="k">return</span> <span class="n">L_tot</span><span class="p">,</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dif</span>
 
