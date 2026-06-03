@@ -454,13 +454,11 @@ def load(
         xropen = xr.mfopen_dataset
 
     # Special case that doesn't require defining the entire grid subsetting strategy
-    if subset is None:
-        Logger.debug("Subset was None, using entire store")
-        if load:
-            Logger.debug(
-                "With loading enabled, disabled file-defined chunking for performance"
-            )
-            chunks = None
+    if subset is None and load:
+        Logger.debug(
+            "With no subset defined and load enabled, disabling default chunking for performance"
+        )
+        chunks = None
 
     ds = xropen(path, chunks=chunks, **kwargs)
 
@@ -480,7 +478,7 @@ def load(
 
     # Special case that doesn't require defining the entire grid subsetting strategy
     if subset is None:
-        pass
+        Logger.debug("Subset was None, using entire store")
 
     elif isinstance(subset, dict):
         Logger.debug(f"Subsetting with: {subset}")
