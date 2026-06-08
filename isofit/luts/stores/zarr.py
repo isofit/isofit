@@ -171,7 +171,7 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
 class CreateZarr(Create):
     def __init__(
         self,
-        file,
+        path,
         *args,
         buffered=False,
         shard_size=None,
@@ -183,9 +183,8 @@ class CreateZarr(Create):
 
         Parameters
         ----------
-        shards :
-        file : str
-            Filepath for the LUT.
+        path : str
+            Path for the LUT.
         mode : str, default="w"
             File mode to open with
         wl : np.ndarray
@@ -203,7 +202,7 @@ class CreateZarr(Create):
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
         """
-        self.store = zarr.storage.LocalStore(file)
+        self.store = zarr.storage.LocalStore(path)
         self.z = zarr.open_group(store=self.store, mode=self.mode, zarr_format=3)
 
         # TODO: Integrate into config
@@ -211,7 +210,7 @@ class CreateZarr(Create):
         self.shard_size = shard_size
         self.min_shards = min_shards
 
-        super().__init__(file, *args, **kwargs)
+        super().__init__(path, *args, **kwargs)
 
         self.buffer = {}
         if buffered:
