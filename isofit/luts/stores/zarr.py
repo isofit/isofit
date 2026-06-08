@@ -168,7 +168,7 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
     return best, groups, coords
 
 
-class CreateZARR(Create):
+class CreateZarr(Create):
     def __init__(
         self,
         file,
