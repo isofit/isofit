@@ -1,0 +1,55 @@
+name: Test Package Distributions
+
+on:
+  schedule:
+    - cron: "0 14 * * *" # daily at 14:00 UTC / 06:00 PST
+  workflow_dispatch:
+
+jobs:
+  pypi:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install from PyPI
+        run: |
+          pip install my-package
+
+      - name: Verify install
+        run: |
+          isofit --help
+
+  conda:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+    steps:
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          activate-environment: isofit
+          python-version: ${{ matrix.python-version }}
+          channels: conda-forge
+
+      - name: Install from conda-forge
+        shell: bash -l {0}
+        run: |
+          conda install -y isofit
+
+      - name: Verify install
+        shell: bash -l {0}
+        run: |
+          isofit --help
