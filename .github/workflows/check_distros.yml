@@ -22,7 +22,7 @@ jobs:
 
       - name: Install from PyPI
         run: |
-          pip install my-package
+          pip install isofit
 
       - name: Verify install
         run: |
