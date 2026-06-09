@@ -173,6 +173,7 @@ class CreateZarr(Create):
         self,
         path,
         *args,
+        mode="w",
         buffered=False,
         shard_size=None,
         min_shards=1,
@@ -203,7 +204,7 @@ class CreateZarr(Create):
             List of zero values. Appends to the current Create.zeros list.
         """
         self.store = zarr.storage.LocalStore(path)
-        self.z = zarr.open_group(store=self.store, mode=self.mode, zarr_format=3)
+        self.z = zarr.open_group(store=self.store, mode=mode, zarr_format=3)
 
         # TODO: Integrate into config
         self.shards = None
@@ -218,7 +219,7 @@ class CreateZarr(Create):
 
         self.data = self.buffer or self.z
 
-        atexit.register(cleanup, self.path)
+        atexit.register(cleanup, self.path, mode=mode)
 
     def __getitem__(self, key: str) -> Any:
         """
