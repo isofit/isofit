@@ -11,6 +11,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 import numpy as np
+import ray
 import xarray as xr
 import zarr
 
@@ -18,6 +19,19 @@ from isofit.core import common
 from isofit.luts.stores import Create
 
 Logger = logging.getLogger(__name__)
+
+
+def is_ray_task():
+    """
+    Utility to check if this environment is a ray task
+    """
+    if not ray.is_initialized():
+        return False
+    try:
+        context = ray.get_runtime_context()
+        return not context.get_task_id()
+    except Exception:
+        return False
 
 
 def cleanup(path):
@@ -175,6 +189,7 @@ class CreateZarr(Create):
         path,
         *args,
         mode="w",
+        shards=None,
         buffered=False,
         shard_size=None,
         min_shards=1,
@@ -189,6 +204,17 @@ class CreateZarr(Create):
             Path for the LUT.
         mode : str, default="w"
             File mode to open with
+        shards : np.array, optional, default=None
+            Sharding strategy to use
+        buffered : bool, optional, default=False
+            Create intermediate buffer arrays to store data before flushing
+        shard_size : str | float, optional, default=None
+            Target size for each shard. May be either a string like "4gb" or a float
+            representing number of bytes. If this parameter is given, the shards array
+            will be calculated
+        min_shards : int, optional, default=1
+            Minimum number of shards to create. Useful for ensuring paralleization
+            fully utilizes the available machine
         wl : np.ndarray
             The wavelength array.
         grid : dict
@@ -208,19 +234,24 @@ class CreateZarr(Create):
         self.z = zarr.open_group(store=self.store, mode=mode, zarr_format=3)
 
         # TODO: Integrate into config
-        self.shards = None
+        self.shards = shards
         self.shard_size = shard_size
         self.min_shards = min_shards
 
         super().__init__(path, *args, mode=mode, **kwargs)
 
+        if self.shards is not None:
+            self.setAttr("shards", self.shards.tolist())
+            self.setAttr("shard order", list(self.sizes))
+
         self.buffer = {}
         if buffered:
-            self.reset_buffer(buffered)
+            self.reset_buffer()
 
         self.data = self.buffer or self.z
 
-        atexit.register(cleanup, self.path)
+        # if not is_ray_task():
+        #     atexit.register(cleanup, self.path)
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -236,7 +267,7 @@ class CreateZarr(Create):
         Any
             The value of the item retrieved from the Zarr store
         """
-        return self.zarr[key]
+        return self.data[key]
 
     def __setitem__(self, key: str, value: Any) -> None:
         """
@@ -275,8 +306,6 @@ class CreateZarr(Create):
                 min_shards=self.min_shards,
                 scale=len(self.alldim),
             )
-            self.setAttr("shards", self.shards.tolist())
-            self.setAttr("shard order", list(self.sizes))
 
         self.z.attrs.update(self.attrs)
 
@@ -387,7 +416,7 @@ class CreateZarr(Create):
         for key, vals in self.buffer.items():
             self.z[key][slices] = vals
 
-    def reset_buffer(self, buffered):
+    def reset_buffer(self):
         """
         Resets the buffered data to ensure
         """

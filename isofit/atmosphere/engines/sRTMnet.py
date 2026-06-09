@@ -35,7 +35,7 @@ import yaml
 from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.atmosphere.engines import SixSRT
 from isofit.core import units
-from isofit.core.common import calculate_resample_matrix, resample_spectrum
+from isofit.core.common import Track, calculate_resample_matrix, resample_spectrum
 from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__name__)
@@ -331,7 +331,9 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         self.shard_size = f"{int(mem.total / 2**30 / 2.5)}gb"
         Logger.debug(f"Attempting to use shard size: {self.shard_size}")
 
-        super().__init__(*args, **kwargs)
+        # Because sRTMnet doesn't use makeSim and instead processes shards
+        # sequentially in preSim, have to enable the shard buffer here
+        super().__init__(*args, **kwargs, shard_size=self.shard_size, buffered=True)
 
     def preSim(self):
         """
@@ -397,8 +399,6 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             config,
             wl=self.sim_wl,
             fwhm=self.sim_fwhm,
-            # lut_path=self.sim_lut_path,
-            # lut_grid=self.lut_grid,
             n_cores=self.n_cores,
             modtran_emulation=True,
             build_interpolators=False,
