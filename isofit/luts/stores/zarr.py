@@ -316,14 +316,17 @@ class CreateZarr(Create):
         # Multi dimensional arrays
         dims += list(self.grid)
         shape = list(self.sizes.values())
+        chunks = tuple(self.chunks)
+        shards = tuple(self.shards) if self.shards else None
+
         for key, vals in self.alldim.items():
             if isinstance(vals, Iterable):
                 array = self.z.create_array(
                     key=key,
                     data=vals,
                     fill_value=None,
-                    chunks=tuple(self.chunks),
-                    shards=tuple(self.shards),
+                    chunks=chunks,
+                    shards=shards,
                     dimension_names=dims,
                 )
             else:
@@ -332,8 +335,8 @@ class CreateZarr(Create):
                     shape=shape,
                     dtype="float64",
                     fill_value=vals,
-                    chunks=self.chunks,
-                    shards=tuple(self.shards),
+                    chunks=chunks,
+                    shards=shards,
                     dimension_names=dims,
                 )
 
