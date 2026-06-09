@@ -211,7 +211,7 @@ class CreateZarr(Create):
         self.shard_size = shard_size
         self.min_shards = min_shards
 
-        super().__init__(path, *args, **kwargs)
+        super().__init__(path, *args, mode=mode, **kwargs)
 
         self.buffer = {}
         if buffered:
@@ -219,7 +219,7 @@ class CreateZarr(Create):
 
         self.data = self.buffer or self.z
 
-        atexit.register(cleanup, self.path, mode=mode)
+        atexit.register(cleanup, self.path)
 
     def __getitem__(self, key: str) -> Any:
         """
