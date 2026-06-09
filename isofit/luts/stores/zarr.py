@@ -317,7 +317,9 @@ class CreateZarr(Create):
         dims += list(self.grid)
         shape = list(self.sizes.values())
         chunks = tuple(self.chunks)
-        shards = tuple(self.shards) if self.shards else None
+        shards = None
+        if self.shards is not None:
+            shards = tuple(self.shards)
 
         for key, vals in self.alldim.items():
             if isinstance(vals, Iterable):
