@@ -8,6 +8,7 @@ import atexit
 import logging
 import shutil
 from collections.abc import Iterable
+from pathlib import Path
 
 import numpy as np
 import xarray as xr
