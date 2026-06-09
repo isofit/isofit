@@ -250,6 +250,7 @@ class CreateZarr(Create):
 
         self.data = self.buffer or self.z
 
+        # TODO: Temp disabled, causing crashes
         # if not is_ray_task():
         #     atexit.register(cleanup, self.path)
 
