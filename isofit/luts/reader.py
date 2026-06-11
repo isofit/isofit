@@ -7,7 +7,7 @@ from __future__ import annotations
 import io
 import logging
 from pathlib import Path
-from types import SimpleNamespace
+from types import MappingProxyType, SimpleNamespace
 
 import numpy as np
 import xarray as xr
@@ -615,6 +615,12 @@ class Reader:
 
         # Run the interpolators
         value = {key: lut(point) for key, lut in self.interpolators.items()}
+
+        # Convert both the dict and the values to read-only
+        value = MappingProxyType(value)
+        for v in value.values():
+            if isinstance(v, np.ndarray):
+                v.flags.writeable = False
 
         # Update the cache
         self.cached.point = point
