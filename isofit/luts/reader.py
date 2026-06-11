@@ -453,7 +453,8 @@ def load(
     if mf:
         xropen = xr.mfopen_dataset
 
-    ds = xropen(path, chunks=chunks, **kwargs)
+    # ds = xropen(path, chunks=chunks, **kwargs)
+    ds = xropen(path, **kwargs)
 
     status = ds.attrs.get("ISOFIT status", "<not set>")
     if status != "success":

@@ -133,7 +133,7 @@ class BaseAtmosphere(Reader):
 
         possible_h2o_names = ["H2OSTR", "h2o"]
         self.h2o_i = [
-            i for i, v in enumerate(possible_h2o_names) if v in self.statevec_names
+            i for i, v in enumerate(self.statevec_names) if v in possible_h2o_names
         ]
 
         # Configure and exit flag

@@ -28,19 +28,19 @@ from isofit.surface.surface import DefaultState
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 DefaultSkyGlintPrior = DefaultState(
-    bounds=[0.0, 100.0],
+    bounds=[0.0, 0.5],
     scale=1.0,
-    prior_mean=1 / np.pi,
-    prior_sigma=0.001,
+    prior_mean=0.1,
+    prior_sigma=0.1,
     init=1 / np.pi,
 )
 
 DefaultSunGlintPrior = DefaultState(
-    bounds=[0.0, 100.0],
+    bounds=[0.0, 10.0],
     scale=1.0,
     prior_mean=0.02,
-    prior_sigma=0.001,
-    init=0.02,
+    prior_sigma=1.0,
+    init=4.0,
 )
 
 
@@ -187,7 +187,7 @@ class GlintModelSurface(MultiComponentSurface):
         # glint_est is calc. in RFL-space. Makes sense that rfl < 1.0
         bounds_glint_est = [
             0,
-            1.0,
+            20.0,
         ]
         glint_est = max(
             bounds_glint_est[0] + eps,
@@ -208,7 +208,7 @@ class GlintModelSurface(MultiComponentSurface):
         )
 
         # Updating self.init will set the prior mean (xa) to this value
-        self.init[self.sun_glint_ind] = g_dd_est
+        # self.init[self.sun_glint_ind] = g_dd_est
 
         # SKY_GLINT g_dsf
         x[self.sky_glint_ind] = g_dsf_est

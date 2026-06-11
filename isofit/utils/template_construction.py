@@ -1031,7 +1031,7 @@ def load_climatology(
             aerosol_state_vector["AERFRAC_{}".format(_a)] = {
                 "bounds": [float(alr[0]), float(alr[1])],
                 "scale": 1,
-                "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
+                "init": 0.2,
                 "prior_sigma": 10.0,
                 "prior_mean": float((alr[1] - alr[0]) / 10.0 + alr[0]),
             }
@@ -1551,7 +1551,7 @@ def make_atmosphere_config(
 
     # Now do statevector
     statekeys = ["H2OSTR"]
-    statesigmas = [100.0]
+    statesigmas = [0.1]
     statescale = [1]
     if pressure_elevation and presolve is False:
         statekeys.append("surface_elevation_km")
