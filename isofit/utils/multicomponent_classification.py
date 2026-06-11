@@ -15,7 +15,7 @@ from spectral import envi
 
 import isofit.utils.template_construction as tmpl
 from isofit import ray
-from isofit.core.common import envi_header, resample_spectrum, svd_inv
+from isofit.core.common import envi_header, load_esd, resample_spectrum, svd_inv
 from isofit.core.fileio import IO, initialize_output, write_bil_chunk
 from isofit.core.geometry import Geometry
 from isofit.core.multistate import SurfaceMapping
@@ -106,7 +106,7 @@ class Worker(object):
         )
 
         self.component = Component(model_dict)
-        self.esd = IO.load_esd()
+        self.esd = load_esd()
         self.dayofyear = dayofyear
 
         self.wl = wl

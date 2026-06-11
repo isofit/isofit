@@ -131,6 +131,11 @@ class BaseAtmosphere(Reader):
         self.lut_names = list(self.lut_grid)
         self.statevec_names = self.config.statevector.get_element_names()
 
+        possible_h2o_names = ["H2OSTR", "h2o"]
+        self.h2o_i = [
+            i for i, v in enumerate(self.statevec_names) if v in possible_h2o_names
+        ]
+
         # Configure and exit flag
         self.configure_and_exit = self.config.configure_and_exit
 
@@ -207,6 +212,10 @@ class BaseAtmosphere(Reader):
         self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
             self.Sa_normalized
         )
+        if full_config.implementation.per_pixel_heuristic_prior:
+            self.xa = self.xa_heuristic
+        else:
+            self.xa = self.xa_static
 
         # Uncertainty
         self.bvec = self.config.unknowns.get_element_names()
@@ -292,9 +301,20 @@ class BaseAtmosphere(Reader):
             Logger.error(error)
             raise AttributeError(error)
 
-    def xa(self):
-        """Pull the priors from each of the individual RTs."""
+    def xa_static(self, x_atmosphere, geom):
+        """
+        Use the image-wide prior mean
+        """
         return self.prior_mean
+
+    def xa_heuristic(self, x_atmsophere, geom):
+        """
+        Set the prior mean (xa) on a per-pixel basis based on the
+        heuristic
+        """
+        xa = self.prior_mean.copy()
+        xa[self.h2o_i] = geom.x_atmosphere_init[self.h2o_i]
+        return xa
 
     def Sa(self):
         """Pull the priors from each of the individual RTs."""

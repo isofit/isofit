@@ -702,6 +702,7 @@ def build_config(
     presolve: bool = False,
     terrain_style: str = "flat",
     max_slope: float = 20.0,
+    per_pixel_heuristic_prior: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -818,6 +819,7 @@ def build_config(
                 presolve=presolve,
                 pressure_elevation=pressure_elevation,
                 retrieve_co2=retrieve_co2,
+                per_pixel_heuristic_prior=per_pixel_heuristic_prior,
                 relative_azimuth_lut_grid=relative_azimuth_lut_grid,
                 to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid,
                 to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
@@ -838,6 +840,7 @@ def build_config(
             inversion_windows=inversion_windows,
             n_cores=n_cores,
             debug=debug,
+            per_pixel_heuristic_prior=per_pixel_heuristic_prior,
         ),
         "input": input_config,
         "output": output_config,
@@ -1477,6 +1480,7 @@ def make_atmosphere_config(
     presolve: bool = False,
     pressure_elevation: bool = False,
     retrieve_co2: bool = False,
+    per_pixel_heuristic_prior: bool = False,
     relative_azimuth_lut_grid: np.array = None,
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
@@ -1730,7 +1734,7 @@ def make_atmosphere_config(
 
     # Now do statevector
     statekeys = ["H2OSTR"]
-    statesigmas = [100.0]
+    statesigmas = [1.0 if per_pixel_heuristic_prior else 100.0]
     statescale = [1]
     if pressure_elevation and presolve is False:
         statekeys.append("surface_elevation_km")
@@ -1902,6 +1906,7 @@ def make_implementation_config(
     inversion_windows: list = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     n_cores: int = -1,
     debug: bool = False,
+    per_pixel_heuristic_prior: bool = False,
 ):
 
     return {
@@ -1909,6 +1914,7 @@ def make_implementation_config(
         "ray_address": ray_ip_head,
         "inversion": {"windows": inversion_windows},
         "n_cores": n_cores,
+        "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
         "debug_mode": debug,
         "isofit_version": __version__,
     }

@@ -112,6 +112,7 @@ def apply_oe(
     retrieve_co2=False,
     eof_path=None,
     terrain_style="dem",
+    per_pixel_heuristic_prior=False,
 ):
     """
     Applies OE over a flightline using an atmospheric radiative transfer engine. This executes
@@ -670,6 +671,7 @@ def apply_oe(
         "multipart_transmittance": multipart_transmittance,
         "segmentation_size": segmentation_size,
         "terrain_style": terrain_style,
+        "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
     }
     if presolve:
         # write modtran presolve template
@@ -962,6 +964,7 @@ def apply_oe(
 @click.option("--retrieve_co2", is_flag=True, default=False)
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
+@click.option("--per_pixel_heuristic_prior", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

@@ -176,9 +176,9 @@ class ForwardModel:
         this is so we can calculate the local prior.
         """
 
-        x_surface = x[self.idx_surface]
+        x_surface, x_atmosphere, x_instrument = self.unpack(x)
         xa_surface = self.surface.xa(x_surface, geom)
-        xa_atmosphere = self.atmosphere.xa()
+        xa_atmosphere = self.atmosphere.xa(x_atmosphere, geom)
         xa_instrument = self.instrument.xa()
         return np.concatenate((xa_surface, xa_atmosphere, xa_instrument), axis=0)
 

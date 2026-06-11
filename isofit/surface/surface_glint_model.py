@@ -27,19 +27,19 @@ from isofit.surface.surface import DefaultState
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 DefaultSkyGlintPrior = DefaultState(
-    bounds=[0.0, 100.0],
+    bounds=[0.0, 10.0],
     scale=1.0,
     prior_mean=1 / np.pi,
-    prior_sigma=0.001,
+    prior_sigma=100.0,
     init=1 / np.pi,
 )
 
 DefaultSunGlintPrior = DefaultState(
-    bounds=[0.0, 100.0],
+    bounds=[0.0, 10.0],
     scale=1.0,
     prior_mean=0.02,
-    prior_sigma=0.001,
-    init=0.02,
+    prior_sigma=100.0,
+    init=4.0,
 )
 
 
@@ -103,12 +103,24 @@ class GlintModelSurface(MultiComponentSurface):
             Cov / np.mean(np.diag(Cov))
         )
 
-    def xa(self, x_surface, geom):
-        """Mean of prior distribution, calculated at state x."""
+        if full_config.implementation.per_pixel_heuristic_prior:
+            self.xa = self.xa_heuristic
+        else:
+            self.xa = self.xa_static
 
+    def xa_static(self, x_surface, geom):
+        """Mean of prior distribution, calculated at state x."""
         mu = MultiComponentSurface.xa(self, x_surface, geom)
         mu[self.sky_glint_ind] = self.sky_glint_mean
         mu[self.sun_glint_ind] = self.sun_glint_mean
+
+        return mu
+
+    def xa_heuristic(self, x_surface, geom):
+        """Mean of prior distribution, calculated at state x."""
+        mu = MultiComponentSurface.xa(self, x_surface, geom)
+        mu[self.sky_glint_ind] = self.sky_glint_mean
+        mu[self.sun_glint_ind] = geom.sun_glint_init
 
         return mu
 
@@ -146,12 +158,8 @@ class GlintModelSurface(MultiComponentSurface):
         blue_band_1 = np.argmin(np.abs(450 - self.wl))
         blue_band_2 = np.argmin(np.abs(500 - self.wl))
 
-        if np.max(self.wl) >= 2300:
-            glint_band_1 = np.argmin(np.abs(2200 - self.wl))
-            glint_band_2 = np.argmin(np.abs(2300 - self.wl))
-        else:
-            glint_band_1 = np.argmin(np.abs(1000 - self.wl))
-            glint_band_2 = np.argmin(np.abs(1020 - self.wl))
+        glint_band_1 = np.argmin(np.abs(1000 - self.wl))
+        glint_band_2 = np.argmin(np.abs(1020 - self.wl))
 
         glint_est = np.min(
             [
@@ -163,7 +171,7 @@ class GlintModelSurface(MultiComponentSurface):
         # hard-coded glint bounds from experience #TODO - get from config
         bounds_glint_est = [
             0,
-            1.0,
+            5.0,
         ]
         glint_est = max(
             bounds_glint_est[0] + eps,
@@ -179,6 +187,7 @@ class GlintModelSurface(MultiComponentSurface):
 
         # Updating self.init will set the prior mean (xa) to this value
         self.init[self.sun_glint_ind] = g_dd_est
+        geom.sun_glint_init = g_dd_est
 
         # SKY_GLINT g_dsf
         x[self.sky_glint_ind] = g_dsf_est
