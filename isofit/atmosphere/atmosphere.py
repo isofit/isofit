@@ -131,6 +131,11 @@ class BaseAtmosphere(Reader):
         self.lut_names = list(self.lut_grid)
         self.statevec_names = self.config.statevector.get_element_names()
 
+        possible_h2o_names = ["H2OSTR", "h2o"]
+        self.h2o_i = [
+            i for i, v in enumerate(possible_h2o_names) if v in self.statevec_names
+        ]
+
         # Configure and exit flag
         self.configure_and_exit = self.config.configure_and_exit
 
@@ -292,9 +297,18 @@ class BaseAtmosphere(Reader):
             Logger.error(error)
             raise AttributeError(error)
 
-    def xa(self):
+    def xa(self, x_atmosphere, geom):
         """Pull the priors from each of the individual RTs."""
-        return self.prior_mean
+        xa = self.prior_mean.copy()
+        if self.h2o_i:
+            if hasattr(geom, "atm_h2o_init"):
+                xa_h2o = geom.atm_h2o_init
+            else:
+                xa_h2o = x_atmosphere[self.h2o_i]
+                geom.atm_h2o_init = xa_h2o
+
+            xa[self.h2o_i] = xa_h2o
+        return xa
 
     def Sa(self):
         """Pull the priors from each of the individual RTs."""
