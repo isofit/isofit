@@ -319,6 +319,11 @@ def apply_oe(
             "ApplyOE must use multi-part transmittance to enable heterogeneous background reflectance."
         )
 
+    if surface_category == "lut_surface" and use_superpixels:
+        raise ValueError(
+            "Analytical line method does not work for LUT surface at this time."
+        )
+
     # Load in water column upper bound polynomials
     modtran_polynomials_dict = modtran_water_upperbound_polynomials()
     if atmosphere_type not in modtran_polynomials_dict:
