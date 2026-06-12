@@ -111,7 +111,7 @@ def heuristic_atmosphere(
                 geom,
             )
 
-            # NOTE only calls indexing if it's not the lut surface
+            # Special case, LUTSurface should not call fit_params here
             if not fm.is_lut_surface:
                 r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
 
