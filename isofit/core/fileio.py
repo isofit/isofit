@@ -680,26 +680,18 @@ class IO:
             # TODO for now this will output fill_value for uncertainty.
             if fm.is_lut_surface:
                 if fm.surface.solve_mixed_pixel:
+                    idx_endmembers = np.array(fm.full_idx)[fm.surface.idx_em_rfls]
                     if "estimated_state_file" in self.output_datasets:
-                        state_est_transformed = np.copy(state_est)
-                        state_est_transformed[fm.surface.idx_em_rfls] = (
-                            fm.surface.softmax(
-                                state_est_transformed[fm.surface.idx_em_rfls]
-                            )
+                        s = fill_statevector(
+                            state_est, fm.full_idx, fm.full_miss, self.full_statevec
                         )
-                        to_write["estimated_state_file"] = fill_statevector(
-                            state_est_transformed,
-                            fm.full_idx,
-                            fm.full_miss,
-                            self.full_statevec,
-                        )
+                        s[idx_endmembers] = fm.surface.softmax(s[idx_endmembers])
+                        to_write["estimated_state_file"] = s
 
                     if "posterior_uncertainty_file" in self.output_datasets:
-                        sigma = np.sqrt(np.diag(S_hat))
-                        sigma[fm.surface.idx_em_rfls] = fill_value
-                        to_write["posterior_uncertainty_file"] = fill_statevector(
-                            sigma, fm.full_idx, fm.full_miss, self.full_statevec
-                        )
+                        to_write["posterior_uncertainty_file"][
+                            idx_endmembers
+                        ] = fill_value
 
             ############ Now proceed to the calcs where they may be some overlap
 

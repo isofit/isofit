@@ -38,29 +38,52 @@ class LUTSurface(Surface):
 
     For a MATLAB lookup table, it contains the following fields:
         - grids: an object array containing n lists of gridpoints
+        - lut_names: an object array containing list of all ordered names
         - rho_dif_dir: an n+1 dimensional array containing the dif-dir reflectance for each gridpoint
         - rho_dir_dir: an n+1 dimensional array containing the dir-dir reflectance for each gridpoint [optional]
         - statevec_names: an array of n strings representing state vector element names
-        - mean: an array of n prior mean values, one for each state vector element [optional]
-        - sigma: an array of n prior standard deviations, one for each state vector element [optional]
 
     For a NetCDF lookup table, it contains the following fields:
         - Coordinates:
             * wl
-            * Other LUT dimensions (e.g., solar_zenith, observer_zenith, relative_azimuth, grain size)
+            * Other LUT dimensions (e.g., solar_zenith, observer_zenith, relative_azimuth, grain_size)
         - Data Variables:
             * rho_dif_dir: (LUT Axes..., n_wl)
             * rho_dir_dir: (LUT Axes..., n_wl) [optional]
-            * statevec_names: (n_state) [optional]
-            * mean: (n_state) [optional]
-            * sigma: (n_state) [optional]
+            * statevec_names: (n_state)
 
-    Reflectance keys should either be rho_dif_dir (or both can be included).
+    Reflectance keys should either be rho_dif_dir or rho_dir_dir (or both can be included). At least rho_dif_dir is required.
 
     Any of the angles are optional, but if provided should be in degrees and named "solar_zenith", "observer_zenith", and "relative_azimuth".
 
     You can also choose to run a mixed pixel retrieval by adding data variables of length wl with key name "endmember_TYPE".
     Where you can fill in TYPE for given surface(s) you would like to mix. You may use any number of endmembers.
+    For example, you could have data variables named: "endmember_CEANOTHUS", "endmember_CONIFER". The key thing is to have
+    the "endmember_" before the type for the reader to find the data correctly.
+
+    Below is an example output structure for the xarray case:
+
+    ```python
+        # Example structure for xarray dataset for LUTSurface
+        shape = (len(sza_list), len(vza_list), len(raa_list), len(grain_list), len(WL_NM))
+        ds = xr.Dataset(
+            {
+                "rho_dir_dir": (["solar_zenith", "observer_zenith", "relative_azimuth", "grain_radius", "wl"],
+                                np.full(shape, np.nan, dtype=np.float32)),
+                "rho_dif_dir": (["solar_zenith", "observer_zenith", "relative_azimuth", "grain_radius", "wl"],
+                                np.full(shape, np.nan, dtype=np.float32)),
+                "statevec_names": (["n_state"], statevec_names),
+                "endmember_conifer": (["wl"], soil_spectrum)
+            },
+            coords={
+                "solar_zenith": sza_list,
+                "observer_zenith": vza_list,
+                "relative_azimuth": raa_list,
+                "grain_radius": grain_list,
+                "wl": WL_NM,
+            }
+        )
+    ```
 
     """
 
@@ -74,7 +97,9 @@ class LUTSurface(Surface):
 
         # Load dif-dir rfl data, optional dir-dir term, and other important parameters from the surface LUT
         self.itp_hd, self.itp_dd, lut_params = load_prebuilt_surface(
-            config.surface_lut_file, terrain_style=self.terrain_style, config_only=False
+            surface_lut_file=config.surface_lut_file,
+            terrain_style=self.terrain_style,
+            statevector_only=False,
         )
 
         for key in [
@@ -95,13 +120,14 @@ class LUTSurface(Surface):
         ]:
             setattr(self, key, lut_params[key])
 
+        # First, stash important lengths and indices from the LUT
         self.n_wl = len(self.wl)
         self.n_state = len(self.statevec_names)
         self.n_lut = len(self.lut_names)
         self.idx_lut = np.arange(self.n_state)
         self.idx_lamb = np.arange(self.n_wl)
         self.idx_surface = np.arange(len(self.statevec_names))
-        idx_em_rfls = []
+        self.idx_em_rfls = []
         if self.solve_mixed_pixel:
             self.idx_em_rfls = [self.idx_surface[self.idx_fractional_data]]
             self.idx_em_rfls.extend(
@@ -111,7 +137,7 @@ class LUTSurface(Surface):
                 ]
             )
 
-        # Then, grab the priors and optimizaton parameters from the config
+        # Then, assign the priors and optimizaton parameters from the surface config
         self.init, self.bounds, self.scale, self.mean, self.sigma = [], [], [], [], []
 
         for name in self.statevec_names:
@@ -126,25 +152,6 @@ class LUTSurface(Surface):
         self.scale = np.array(self.scale)
         self.mean = np.array(self.mean)
         self.sigma = np.array(self.sigma)
-
-        # Checking the statevec names prior to running
-        for name in self.statevec_names:
-            if name in ["solar_zenith", "observer_zenith", "relative_azimuth"]:
-                raise ValueError(
-                    f"Variable:{name} in the statevector is not supported."
-                )
-            if name.startswith("FRACTIONAL_"):
-                continue
-            if name not in self.lut_names:
-                raise ValueError(
-                    f"Statevector:{name} not found in LUT dimensions: {self.lut_names}"
-                )
-
-        # Ensure priors shape is correct
-        if len(self.mean) != len(self.init) or len(self.sigma) != len(self.init):
-            raise ValueError(
-                f"Priors must match length of statevector (statevector length:{len(self.init)})."
-            )
 
         # Cache some important computations
         # NOTE for now this assumes no off diagonal elements
@@ -227,7 +234,7 @@ class LUTSurface(Surface):
         for v, idx in zip(x_surface, self.statevec_idxs):
             point[idx] = v
 
-        # Either take cosi from geom or from state, and clip to atm config.
+        # Either take cosi from geom or from state
         if self.cos_i_idx is not None:
             cos_i = x_surface[self.cos_i_idx]
         else:
@@ -250,6 +257,7 @@ class LUTSurface(Surface):
         return point
 
     def softmax(self, z):
+        "Used to maintain sum-to-1 condition and positive fractional covers"
         return np.exp(z) / np.sum(np.exp(z))
 
     def drfl_dsurface(self, x_surface, geom):

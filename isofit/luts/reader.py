@@ -504,12 +504,26 @@ def load(
     return ds
 
 
-def load_prebuilt_surface(surface_lut_file, terrain_style="flat", config_only=True):
+def load_prebuilt_surface(
+    surface_lut_file, terrain_style="flat", statevector_only=True
+):
     """
-    TODO
-    - can/should this be integrated into existing pieces within here or live seperately since its SurfaceLUT
-    - perhaps there are pieces here that are not needed for the template construction bit (config_only True), that could be moved to the lutsurface init
-    -
+    Used under the hood for LUTSurface() (as well as config creation) to load required data into ISOFIT.
+    A more thorough description of how to create the input data is provided in /isofit/surface/surface_lut.py
+
+    Parameters
+    ----------
+    surface_lut_file: str
+        Path to the prebuilt surface LUT
+    terrain_style: str
+        Terrain style used in ISOFIT ("flat", "dem", "solved")
+    statevector_only: bool
+        If set to true, this method does not create the interpolator objects
+
+    Returns
+    -------
+    itp_hd, itp_dd, lut_params: tuple
+        diffuse-direct interpolator, direct-direct interpolator, additional lut parameters
     """
     lut_params = {}
 
@@ -532,16 +546,19 @@ def load_prebuilt_surface(surface_lut_file, terrain_style="flat", config_only=Tr
             lut_grid = [ds[n].values.astype(np.float32) for n in lut_names]
             wl = ds["wl"].values
 
+    # Enforce statevector to be uppercase to match style of the others
+    lut_names = [n.upper() for n in lut_names]
+
     # Set dimensions based on lut (prior to endmembers)
-    statevec_names = [n.strip() for n in data["statevec_names"]]
+    statevec_names = [n.strip().upper() for n in data["statevec_names"]]
     statevec_idxs = [lut_names.index(n) for n in statevec_names]
     n_lut_states = len(statevec_idxs)
 
     # Grab endmember data if present and save indicies
     endmembers = {
-        k.replace("endmember_", ""): v
+        k.replace("endmember_", "").upper(): v
         for k, v in data.items()
-        if k.startswith("endmember_")
+        if k.lower().startswith("endmember_")
     }
     endmember_names = list(endmembers.keys())
 
@@ -553,7 +570,7 @@ def load_prebuilt_surface(surface_lut_file, terrain_style="flat", config_only=Tr
         if "FRACTIONAL_DATA" not in statevec_names:
             statevec_names.append("FRACTIONAL_DATA")
         for em_name in endmember_names:
-            statevec_names.append(f"FRACTIONAL_{em_name}")
+            statevec_names.append(f"FRACTIONAL_{em_name.upper()}")
 
     idx_fractional_data = next(
         (i for i, n in enumerate(statevec_names) if n == "FRACTIONAL_DATA"), None
@@ -571,6 +588,16 @@ def load_prebuilt_surface(surface_lut_file, terrain_style="flat", config_only=Tr
         statevec_names.append("COS_I")
 
     cos_i_idx = next((i for i, n in enumerate(statevec_names) if n == "COS_I"), None)
+
+    # Find any relevant geometry indices
+    # This assumes LUT is in units of degrees for geometry
+    sza_idx = lut_names.index("solar_zenith") if "solar_zenith" in lut_names else None
+    vza_idx = (
+        lut_names.index("observer_zenith") if "observer_zenith" in lut_names else None
+    )
+    raa_idx = (
+        lut_names.index("relative_azimuth") if "relative_azimuth" in lut_names else None
+    )
 
     # Set default priors and optimization params on load,
     # these can be overwritten during config setup
@@ -618,20 +645,23 @@ def load_prebuilt_surface(surface_lut_file, terrain_style="flat", config_only=Tr
         "scale": np.array(lut_statevector_data["scale"]),
     }
 
-    # Find any relevant geometry indices
-    # This assumes LUT is in units of degrees for geometry
-    sza_idx = lut_names.index("solar_zenith") if "solar_zenith" in lut_names else None
-    vza_idx = (
-        lut_names.index("observer_zenith") if "observer_zenith" in lut_names else None
-    )
-    raa_idx = (
-        lut_names.index("relative_azimuth") if "relative_azimuth" in lut_names else None
-    )
+    # Defend against geom in the statevec or user missing lut name that is in statevec
+    for name in statevec_names:
+        if name.lower() in ["solar_zenith", "observer_zenith", "relative_azimuth"]:
+            raise ValueError(
+                f"Variable:{name.lower()} in the statevector is not supported."
+            )
+        if name.startswith("FRACTIONAL_"):
+            continue
+        if name not in lut_names:
+            raise ValueError(
+                f"Statevector:{name} not found in LUT dimensions: {lut_names}"
+            )
 
     itp_hd = None
     itp_dd = None
 
-    if not config_only:
+    if not statevector_only:
         # Build the interpolator(s) and assemble all needed data
         data_hd = data["rho_dif_dir"]
         data_dd = data.get("rho_dir_dir")

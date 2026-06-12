@@ -34,6 +34,7 @@ from isofit.surface.surface_glint_model import (
     DefaultSunGlintPrior,
 )
 from isofit.surface.surface_thermal import DefaultSurfTempKPrior
+from isofit.luts.reader import load_prebuilt_surface
 
 
 class SurfaceStateVectorConfig(StateVectorConfig):
@@ -205,10 +206,6 @@ class SurfaceConfig(BaseConfigSection):
             for i, name in enumerate(model_dict.get("statevec_names", [])):
                 for key in DefaultState._fields:
                     if len(model_dict[key]) > 1:
-                        # TODO
-                        # This can be improved.. but squeeze() causes it to fails when statevector is only of length 1
-                        # But this is sort of not the full fix becuase in my local tests it should be more than 1 ...
-                        # Need to consider data from LUT Surface too?
                         if not (
                             np.all(statevec[name][key] == model_dict[key].squeeze()[i])
                         ):
@@ -216,6 +213,31 @@ class SurfaceConfig(BaseConfigSection):
                     else:
                         if not (np.all(statevec[name][key] == model_dict[key][i])):
                             mismatch[key] = name
+
+        # Special case, if some of the statevector came from LUTSurface we can check this here too
+        if self.surface_lut_file:
+            _, _, lut_params = load_prebuilt_surface(
+                surface_lut_file=self.surface_lut_file,
+                terrain_style=self.terrain_style,
+                statevector_only=True,
+            )
+            for i, name in enumerate(
+                lut_params["lut_statevector_data"]["statevec_names"]
+            ):
+                if name not in model_dict.get("statevec_names", []):
+                    for key in DefaultState._fields:
+                        if len(model_dict[key]) > 1:
+                            if not (
+                                np.all(
+                                    statevec[name][key] == model_dict[key].squeeze()[i]
+                                )
+                            ):
+                                mismatch[key] = name
+                            else:
+                                if not (
+                                    np.all(statevec[name][key] == model_dict[key][i])
+                                ):
+                                    mismatch[key] = name
 
         if len(mismatch):
             message = (

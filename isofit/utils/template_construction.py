@@ -1697,9 +1697,9 @@ def make_surface_config(
 
             # Read the LUT Surface (without creating the Vect Interpolators)
             _, _, lut_params = load_prebuilt_surface(
-                surface_lut_file,
+                surface_lut_file=surface_lut_file,
                 terrain_style=terrain_style,
-                config_only=True,
+                statevector_only=True,
             )
             lut_data = lut_params["lut_statevector_data"]
             for i, name in enumerate(lut_data["statevec_names"]):
