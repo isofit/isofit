@@ -205,39 +205,14 @@ class SurfaceConfig(BaseConfigSection):
             model_dict = loadmat(f)
             for i, name in enumerate(model_dict.get("statevec_names", [])):
                 for key in DefaultState._fields:
-                    if len(model_dict[key]) > 1:
+                    if len(model_dict.get("statevec_names", [])) == 1:
+                        if not (np.all(statevec[name][key] == model_dict[key][i])):
+                            mismatch[key] = name
+                    else:
                         if not (
                             np.all(statevec[name][key] == model_dict[key].squeeze()[i])
                         ):
                             mismatch[key] = name
-                    else:
-                        if not (np.all(statevec[name][key] == model_dict[key][i])):
-                            mismatch[key] = name
-
-        # Special case, if some of the statevector came from LUTSurface we can check this here too
-        if self.surface_lut_file:
-            _, _, lut_params = load_prebuilt_surface(
-                surface_lut_file=self.surface_lut_file,
-                terrain_style=self.terrain_style,
-                statevector_only=True,
-            )
-            for i, name in enumerate(
-                lut_params["lut_statevector_data"]["statevec_names"]
-            ):
-                if name not in model_dict.get("statevec_names", []):
-                    for key in DefaultState._fields:
-                        if len(model_dict[key]) > 1:
-                            if not (
-                                np.all(
-                                    statevec[name][key] == model_dict[key].squeeze()[i]
-                                )
-                            ):
-                                mismatch[key] = name
-                            else:
-                                if not (
-                                    np.all(statevec[name][key] == model_dict[key][i])
-                                ):
-                                    mismatch[key] = name
 
         if len(mismatch):
             message = (
