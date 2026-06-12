@@ -275,11 +275,15 @@ class MultiComponentSurface(Surface):
 
         return np.concatenate((prefix, dlamb, suffix), axis=1)
 
-    def drdn_drfl(self, L_tot, s_alb, rho_dif_dir):
+    def drdn_drfl(
+        self, L_tot, s_alb, rho_dif_dir, L_dir_dir, L_dir_dif, L_dif_dir, L_dif_dif
+    ):
         """Partial derivative of radiance with respect to
         surface reflectance"""
-
-        return L_tot / ((1.0 - s_alb * rho_dif_dir) ** 2)
+        if self.use_background_rfl:
+            return L_dir_dir + (L_dif_dir / (1.0 - s_alb * rho_dif_dir))
+        else:
+            return L_tot / ((1.0 - s_alb * rho_dif_dir) ** 2)
 
     def calc_Ls(self, x_surface, geom):
         """Emission of surface, as a radiance."""
@@ -324,7 +328,15 @@ class MultiComponentSurface(Surface):
         # Dimensions should be (len(RT.wl), len(x_surface))
         # which is correctly handled by the instrument resampling
         drdn_dsurface = np.zeros(drfl_dsurface.shape)
-        drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
+        drdn_drfl = self.drdn_drfl(
+            L_tot,
+            s_alb,
+            rho_dif_dir,
+            L_dir_dir=L_dir_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dir=L_dif_dir,
+            L_dif_dif=L_dif_dif,
+        )
 
         drdn_dsurface[:, : self.n_wl] = np.multiply(
             drdn_drfl[:, np.newaxis], drfl_dsurface[:, : self.n_wl]
@@ -337,7 +349,6 @@ class MultiComponentSurface(Surface):
 
     def analytical_model(
         self,
-        background,
         L_tot,
         geom,
         L_dir_dir=None,
@@ -347,14 +358,12 @@ class MultiComponentSurface(Surface):
     ):
         """
         Linearization of the surface reflectance terms to use in the
-        AOE inner loop (see Susiluoto, 2025). We set the quadratic
-        spherical albedo term to a constant background, which
-        simplifies the linearization
-        background = s * rho_bg
+        AOE inner loop (see Susiluoto, 2025).
         """
-        # If you ignore multi-scattering
-        theta = L_tot + (L_tot * background / (1 - background))
-        # theta = L_tot
+        if type(L_dir_dir) != np.ndarray or len(L_dir_dir) == 1:
+            theta = L_tot
+        else:
+            theta = L_dir_dir + L_dif_dir
 
         H = np.eye(self.n_wl, self.n_wl)
         H = theta[:, np.newaxis] * H

@@ -75,6 +75,9 @@ class SurfaceConfig(BaseConfigSection):
         self._multi_surface_flag_type = bool
         self.multi_surface_flag = False
 
+        self._use_background_rfl_type = bool
+        self.use_background_rfl = False
+
         self._surface_file_type = str
         self.surface_file = None
 

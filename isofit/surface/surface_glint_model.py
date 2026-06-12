@@ -318,7 +318,15 @@ class GlintModelSurface(MultiComponentSurface):
         # Dimensions should be (len(RT.wl), len(x_surface))
         # which is correctly handled by the instrument resampling
         drdn_dsurface = np.zeros(drfl_dsurface.shape)
-        drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
+        drdn_drfl = self.drdn_drfl(
+            L_tot,
+            s_alb,
+            rho_dif_dir,
+            L_dir_dir=L_dir_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dir=L_dif_dir,
+            L_dif_dif=L_dif_dif,
+        )
         drdn_dsurface[:, : self.n_wl] = np.multiply(
             drdn_drfl[:, np.newaxis], drfl_dsurface[:, : self.n_wl]
         )
@@ -346,7 +354,6 @@ class GlintModelSurface(MultiComponentSurface):
 
     def analytical_model(
         self,
-        background,
         L_tot,
         geom,
         L_dir_dir=None,
@@ -368,7 +375,6 @@ class GlintModelSurface(MultiComponentSurface):
         # gam (sun glint portion)
         # ep (sky glint portion)
         H = super().analytical_model(
-            background,
             L_tot,
             geom,
             L_dir_dir,
@@ -381,16 +387,14 @@ class GlintModelSurface(MultiComponentSurface):
         # It must match the alphabeitcal order of the glint terms
 
         # Diffuse portion
-        ep = (
-            (L_dif_dir + L_dif_dif) + ((L_tot * background) / (1 - background))
-        ) * rho_ls
+        ep = L_dif_dir * rho_ls
         # If you ignore multi-scattering
         # ep = (L_dif_dir + L_dif_dif) * rho_ls
         ep = np.reshape(ep, (len(ep), 1))
         H = np.append(H, ep, axis=1)
 
         # Direct portion
-        gam = (L_dir_dir + L_dir_dif) * rho_ls
+        gam = L_dir_dir * rho_ls
         gam = np.reshape(gam, (len(gam), 1))
         H = np.append(H, gam, axis=1)
 
