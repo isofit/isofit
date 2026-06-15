@@ -17,15 +17,11 @@ from scipy.io import loadmat
 from spectral.io import envi
 
 from isofit import __version__
+from isofit.atmosphere.engines.modtran import ModtranRT
 from isofit.core import units
-from isofit.core.common import (
-    envi_header,
-    expand_path,
-    json_load_ascii,
-)
+from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
-from isofit.atmosphere.engines.modtran import ModtranRT
 from isofit.utils.surface_model import surface_model
 
 
@@ -63,6 +59,8 @@ class Pathnames:
             self.fid = split(input_radiance)[-1][:18]
         elif sensor == "av3":
             self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "av4":
+            self.fid = split(input_radiance)[-1][:42]
         elif sensor == "av5":
             self.fid = split(input_radiance)[-1][:18]
         elif sensor == "avcl":
@@ -1312,6 +1310,12 @@ def sensor_name_to_dt(sensor: str, fid: str):
         # parse flightline ID (AVIRIS-3 assumptions)
         dt = datetime.strptime(fid[3:], "%Y%m%dt%H%M%S")
         inversion_window_update = [[380.0, 1350.0], [1435, 1800.0], [1970.0, 2500.0]]
+    elif sensor == "av4":
+        # parse flightline ID (AVIRIS-4 assumptions)
+        date = fid[5:11]
+        time = fid[32:38]
+        dt = str(date) + str(time)
+        dt = datetime.strptime(dt, "%y%m%d%H%M%S")
     elif sensor == "av5":
         # parse flightline ID (AVIRIS-5 assumptions)
         dt = datetime.strptime(fid[3:], "%Y%m%dt%H%M%S")
