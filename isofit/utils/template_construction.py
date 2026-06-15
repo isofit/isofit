@@ -55,7 +55,7 @@ class Pathnames:
         skyview_factor=None,
         subs: bool = False,
         classify_multisurface: bool = False,
-        use_background_rfl: bool = True,
+        use_background_rfl: bool = False,
         dn_uncertainty_file: str = None,
         eof_path=None,
     ):
