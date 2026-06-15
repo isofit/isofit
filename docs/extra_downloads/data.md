@@ -133,19 +133,20 @@ $ cd $(isofit -i test.ini -s test path srtmnet)
 
 ## Downloads
 
-ISOFIT comes with a `download` command that provides users the ability to download and install extra files such as larger data files and examples. To get started, execute the `isofit download --help` in a terminal. At this time, there are 9 subcommands:
+ISOFIT comes with a `download` command that provides users the ability to download and install extra files such as larger data files and examples. To get started, execute the `isofit download --help` in a terminal. At this time, there are 11 subcommands:
 
 | Command     | Description |
 |-------------|-------------|
-| `paths`     | Displays the currently configured path for a download |
 | `all`       | Executes all of the download commands below |
 | `data`      | Downloads ISOFIT data files from https://github.com/isofit/isofit-data |
+| `essentials`| Downloads only the essential ISOFIT extra dependencies |
 | `examples`  | Downloads the ISOFIT examples from https://github.com/isofit/isofit-tutorials |
-| `imagecube` | Downloads required data for the image_cube example |
-| `sRTMnet`   | Downloads the sRTMnet model |
-| `sixs`      | Downloads and builds 6sv-2.1 |
+| `libradtran`| Downloads and installs the libRadtran radiative transfer model. This is experimental and not guaranteed to work. For advanced users only |
+| `paths`     | Displays the currently configured path for a download |
 | `plots`     | Downloads and installs the ISOFIT plots package from https://github.com/isofit/isofit-plots |
-| `libradtran`| Downloads and installs the LibRadTran radiative transfer model. This is experimental and not guaranteed to work. For advanced users only |
+| `sixs`      | Downloads and builds 6sv-2.1 |
+| `sRTMnet`   | Downloads the sRTMnet model |
+| `surface`   | Downloads the extra ISOFIT surface prior files |
 | `windows` | Downloads Windows helper tools (MinGW64, Portable Git) |
 
 The paths for each download are defined in the currently active INI.
