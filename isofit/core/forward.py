@@ -449,6 +449,12 @@ class ForwardModel:
         cos_i_bg = geom.coszen
         skyview_factor_bg = 1.0
 
+        # Used to modulate the terrain view factor for target pixel and background
+        # NOTE for now, this is assumed a flat slope, such that terrain view is,
+        # v_t = (1 + cos_slope) / 2 - skyview   =    (1 + 1)/2  - skyview
+        cos_slope = 1.0
+        cos_slope_bg = 1.0
+
         # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.
         # Downward diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
         L_dir_dir = L_coupled[0] / geom.coszen * geom.cos_i * b
@@ -466,6 +472,19 @@ class ForwardModel:
             (t_down_dir * (cos_i_bg / geom.coszen))
             + ((1 - t_down_dir) * skyview_factor_bg)
         )
+
+        # Re-reflection from nearby surface contributing to at surface signal
+        # Assumptions: no atmospheric attenuation, and reflectance is isotropic over the field of view
+        if geom.bg_rfl is not None:
+
+            v_t = (1 + cos_slope) / 2 - geom.skyview_factor
+            v_t_avg = (1 + cos_slope_bg) / 2 - skyview_factor_bg
+            t = 1 + ((geom.bg_rfl * v_t) / (1 - geom.bg_rfl * v_t_avg))
+
+            L_dir_dir *= t
+            L_dif_dir *= t
+            L_dir_dif *= t
+            L_dif_dif *= t
 
         # Apply equation 11
         # If no rho_dif_dif passed eq_11_term -> 1
