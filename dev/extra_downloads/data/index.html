@@ -4977,7 +4977,7 @@ $ ls $(isofit path data)/reflectance
 $ cd $(isofit -i test.ini -s test path srtmnet)
 </code></pre></div>
 <h3 id="downloads">Downloads<a class="headerlink" href="#downloads" title="Permanent link">#</a></h3>
-<p>ISOFIT comes with a <code>download</code> command that provides users the ability to download and install extra files such as larger data files and examples. To get started, execute the <code>isofit download --help</code> in a terminal. At this time, there are 9 subcommands:</p>
+<p>ISOFIT comes with a <code>download</code> command that provides users the ability to download and install extra files such as larger data files and examples. To get started, execute the <code>isofit download --help</code> in a terminal. At this time, there are 11 subcommands:</p>
 <table>
 <thead>
 <tr>
@@ -4987,10 +4987,6 @@ $ cd $(isofit -i test.ini -s test path srtmnet)
 </thead>
 <tbody>
 <tr>
-<td><code>paths</code></td>
-<td>Displays the currently configured path for a download</td>
-</tr>
-<tr>
 <td><code>all</code></td>
 <td>Executes all of the download commands below</td>
 </tr>
@@ -4999,28 +4995,36 @@ $ cd $(isofit -i test.ini -s test path srtmnet)
 <td>Downloads ISOFIT data files from https://github.com/isofit/isofit-data</td>
 </tr>
 <tr>
+<td><code>essentials</code></td>
+<td>Downloads only the essential ISOFIT extra dependencies</td>
+</tr>
+<tr>
 <td><code>examples</code></td>
 <td>Downloads the ISOFIT examples from https://github.com/isofit/isofit-tutorials</td>
 </tr>
 <tr>
-<td><code>imagecube</code></td>
-<td>Downloads required data for the image_cube example</td>
+<td><code>libradtran</code></td>
+<td>Downloads and installs the libRadtran radiative transfer model. This is experimental and not guaranteed to work. For advanced users only</td>
 </tr>
 <tr>
-<td><code>sRTMnet</code></td>
-<td>Downloads the sRTMnet model</td>
-</tr>
-<tr>
-<td><code>sixs</code></td>
-<td>Downloads and builds 6sv-2.1</td>
+<td><code>paths</code></td>
+<td>Displays the currently configured path for a download</td>
 </tr>
 <tr>
 <td><code>plots</code></td>
 <td>Downloads and installs the ISOFIT plots package from https://github.com/isofit/isofit-plots</td>
 </tr>
 <tr>
-<td><code>libradtran</code></td>
-<td>Downloads and installs the LibRadTran radiative transfer model. This is experimental and not guaranteed to work. For advanced users only</td>
+<td><code>sixs</code></td>
+<td>Downloads and builds 6sv-2.1</td>
+</tr>
+<tr>
+<td><code>sRTMnet</code></td>
+<td>Downloads the sRTMnet model</td>
+</tr>
+<tr>
+<td><code>surface</code></td>
+<td>Downloads the extra ISOFIT surface prior files</td>
 </tr>
 <tr>
 <td><code>windows</code></td>
