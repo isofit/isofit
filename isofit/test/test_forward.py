@@ -184,6 +184,7 @@ def test_get_L_coupled_nadir_sum():
     geom.coszen = 1.0
     geom.cos_i = 1.0
     geom.skyview_factor = 1.0
+    geom.bg_rfl = None
 
     L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = ForwardModel.get_L_coupled(
         fm, r, geom, rho_dif_dif=0
@@ -208,6 +209,7 @@ def test_get_L_coupled_cos_i_scaling():
     geom.coszen = 1.0
     geom.cos_i = 0.5
     geom.skyview_factor = 1.0
+    geom.bg_rfl = None
 
     L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = ForwardModel.get_L_coupled(
         fm, r, geom, rho_dif_dif=0
