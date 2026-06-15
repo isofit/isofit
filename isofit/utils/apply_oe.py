@@ -867,6 +867,7 @@ def apply_oe(
         if presolve and use_background_rfl:
             # Only create background reflectance if it doesn't already exist in /data
             # NOTE this may be useful for our single pixel pytests
+            remove_bgrfl_file = False
             if not exists(paths.bgrfl_working_path) or (
                 use_superpixels and not exists(paths.bgrfl_subs_path)
             ):
@@ -887,6 +888,7 @@ def apply_oe(
                     log_file=log_file,
                     n_cores=n_cores,
                 )
+                remove_bgrfl_file = True
 
         if config_only:
             logging.info("`config_only` enabled, exiting early")
@@ -951,6 +953,19 @@ def apply_oe(
                 smoothing_sigma=atm_sigma,
                 segmentation_size=segmentation_size,
             )
+    # Remove any other large temporary files created during ApplyOE
+    if remove_bgrfl_file:
+        bgrfl_files_to_remove = [
+            paths.bgrfl_working_path,
+            envi_header(paths.bgrfl_working_path),
+        ]
+        if use_superpixels:
+            bgrfl_files_to_remove.extend(
+                [paths.bgrfl_subs_path, envi_header(paths.bgrfl_subs_path)]
+            )
+        for f in bgrfl_files_to_remove:
+            if os.path.exists(f):
+                os.remove(f)
 
     logging.info("Done.")
     ray.shutdown()
