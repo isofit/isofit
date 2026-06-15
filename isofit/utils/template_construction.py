@@ -60,7 +60,7 @@ class Pathnames:
         elif sensor == "av3":
             self.fid = split(input_radiance)[-1][:18]
         elif sensor == "av4":
-            self.fid = split(input_radiance)[-1][:42]
+            self.fid = split(input_radiance)[-1][:-8]
         elif sensor == "av5":
             self.fid = split(input_radiance)[-1][:18]
         elif sensor == "avcl":
@@ -1313,7 +1313,7 @@ def sensor_name_to_dt(sensor: str, fid: str):
     elif sensor == "av4":
         # parse flightline ID (AVIRIS-4 assumptions)
         date = fid[5:11]
-        time = fid[32:38]
+        time = fid[-11:-5]
         dt = str(date) + str(time)
         dt = datetime.strptime(dt, "%y%m%d%H%M%S")
     elif sensor == "av5":
