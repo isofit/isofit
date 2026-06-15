@@ -314,11 +314,6 @@ def apply_oe(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
 
-    if use_background_rfl and not presolve:
-        raise ValueError(
-            "Background reflectance can only be used if presolve is turned on."
-        )
-
     # Load in water column upper bound polynomials
     modtran_polynomials_dict = modtran_water_upperbound_polynomials()
     if atmosphere_type not in modtran_polynomials_dict:
@@ -449,6 +444,12 @@ def apply_oe(
     paths.make_directories()
     paths.stage_files()
     logging.info("...file/directory setup complete")
+
+    remove_bgrfl_file = False
+    if use_background_rfl and not presolve and not exists(paths.bgrfl_working_path):
+        raise ValueError(
+            "Background reflectance can only be computed if presolve is turned on."
+        )
 
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
@@ -858,6 +859,7 @@ def apply_oe(
         # This is here to allow presolve and bg_rfl to use superpixel speed up.
         if not (analytical_line or empirical_line):
             config_params["use_superpixels"] = False
+            use_superpixels = False
 
         tmpl.build_config(
             h2o_lut_grid=h2o_lut_grid,
@@ -867,7 +869,6 @@ def apply_oe(
         if presolve and use_background_rfl:
             # Only create background reflectance if it doesn't already exist in /data
             # NOTE this may be useful for our single pixel pytests
-            remove_bgrfl_file = False
             if not exists(paths.bgrfl_working_path) or (
                 use_superpixels and not exists(paths.bgrfl_subs_path)
             ):
