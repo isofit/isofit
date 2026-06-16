@@ -69,6 +69,9 @@ def unpack_statevector(statevector, surface_category=None):
         return data
 
     if isinstance(statevector, dict):
+        if "name" in statevector:
+            return unpack_statevector([statevector], surface_category)
+
         if surface_category:
             return unpack_statevector(
                 statevector.get(surface_category), surface_category
