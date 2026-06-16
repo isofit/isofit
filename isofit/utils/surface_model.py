@@ -69,7 +69,7 @@ def unpack_statevector(statevector, surface_category=None):
         return data
 
     if isinstance(statevector, dict):
-        if "name" in statevector:
+        if "name" in statevector and surface_category is None:
             return unpack_statevector([statevector], surface_category)
 
         if surface_category:
