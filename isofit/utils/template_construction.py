@@ -17,15 +17,11 @@ from scipy.io import loadmat
 from spectral.io import envi
 
 from isofit import __version__
+from isofit.atmosphere.engines.modtran import ModtranRT
 from isofit.core import units
-from isofit.core.common import (
-    envi_header,
-    expand_path,
-    json_load_ascii,
-)
+from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
-from isofit.atmosphere.engines.modtran import ModtranRT
 from isofit.utils.surface_model import surface_model
 
 
@@ -828,7 +824,6 @@ def build_config(
                 surface_class_subs_path=paths.surface_class_subs_path,
                 surface_working_paths=paths.surface_working_paths,
                 surface_category=surface_category,
-                pressure_elevation=pressure_elevation,
                 use_superpixels=use_superpixels,
                 terrain_style=terrain_style,
                 max_slope=max_slope,
@@ -1598,10 +1593,10 @@ def make_surface_config(
     surface_class_subs_path: str = None,
     surface_working_paths: dict = None,
     surface_category: str = "multicomponent_surface",
-    pressure_elevation: bool = False,
     use_superpixels: bool = False,
     terrain_style: str = "flat",
     max_slope: float = 20.0,
+    surface_refractive_index_path: str = None,
 ):
     # Initialize config dict
     surface_config_dict = {
@@ -1667,6 +1662,17 @@ def make_surface_config(
                     "prior_sigma": surface_mat["prior_sigma"][0][i],
                     "scale": surface_mat["scale"][0][i],
                 }
+
+    # Add refractive index path if specified
+    if surface_refractive_index_path:
+        surface_config_dict["refractive_index_path"] = surface_refractive_index_path
+
+    elif (surface_category == "glint_model_surface") or (
+        "glint_model_surface" in list(surface_config_dict.get("Surfaces", {}).keys())
+    ):
+        surface_config_dict["refractive_index_path"] = str(
+            env.path("data", "h2o_real_refractive_index.txt")
+        )
 
     return surface_config_dict
 
