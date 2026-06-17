@@ -179,8 +179,8 @@ class GlintModelSurface(MultiComponentSurface):
         blue_band_1 = np.argmin(np.abs(450 - self.wl))
         blue_band_2 = np.argmin(np.abs(500 - self.wl))
 
-        glint_band_1 = np.argmin(np.abs(1060 - self.wl))
-        glint_band_2 = np.argmin(np.abs(1030 - self.wl))
+        glint_band_1 = np.argmin(np.abs(1030 - self.wl))
+        glint_band_2 = np.argmin(np.abs(1060 - self.wl))
 
         glint_est = np.min(
             [
@@ -206,7 +206,6 @@ class GlintModelSurface(MultiComponentSurface):
         g_dsf_est = self.init[self.sky_glint_ind]
 
         # Reference wavelength
-        # g_dd_est = glint_est / self.fresnel_rf(geom.observer_zenith)
         g_dd_est = (
             glint_est
             / self.fresnel_rf_refractive_index(geom.observer_zenith)[
