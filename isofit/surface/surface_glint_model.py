@@ -179,14 +179,8 @@ class GlintModelSurface(MultiComponentSurface):
         blue_band_1 = np.argmin(np.abs(450 - self.wl))
         blue_band_2 = np.argmin(np.abs(500 - self.wl))
 
-        # if np.max(self.wl) >= 2300:
-        # glint_band_1 = np.argmin(np.abs(2200 - self.wl))
-        # glint_band_2 = np.argmin(np.abs(2300 - self.wl))
-        # else:
-        # glint_band_1 = np.argmin(np.abs(1000 - self.wl))
-        # glint_band_2 = np.argmin(np.abs(1020 - self.wl))
-        glint_band_1 = np.argmin(np.abs(1625 - self.wl))
-        glint_band_2 = np.argmin(np.abs(1675 - self.wl))
+        glint_band_1 = np.argmin(np.abs(1060 - self.wl))
+        glint_band_2 = np.argmin(np.abs(1030 - self.wl))
 
         glint_est = np.min(
             [
