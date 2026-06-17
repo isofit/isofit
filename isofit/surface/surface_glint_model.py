@@ -22,7 +22,8 @@ from __future__ import annotations
 import numpy as np
 from scipy.linalg import block_diag
 
-from isofit.core.common import eps, svd_inv_sqrt
+from isofit.core.common import eps, resample_spectrum, svd_inv_sqrt
+from isofit.data import env
 from isofit.surface.surface import DefaultState
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
@@ -102,6 +103,30 @@ class GlintModelSurface(MultiComponentSurface):
         self.Sa_inv_glint, self.Sa_inv_sqrt_glint = svd_inv_sqrt(
             Cov / np.mean(np.diag(Cov))
         )
+        # Check for fwhm, if not in surface -> use instrument
+        if not len(self.fwhm):
+            q = np.loadtxt(full_config.forward_model.instrument.wavelength_file)
+
+            # Assume that fwhm is the second dim, and that wl file has multi-dim
+            assert q.shape[1] > 1
+
+            fwhm = q[:, 1]
+            if q[0, 0] < 100:
+                fwhm = units.micron_to_nm(fwhm)
+            self.fwhm = fwhm
+
+        # Refractive index file
+        # [:, 0] - wavelength (nm)
+        # [:, 2] - refractive index
+        real_ref_idx = np.loadtxt(config.refractive_index_path)
+        # Normalize s.t. reference wl has value of 1
+        self.ref_wl = 1050  # Choices 1050 nm, 1640 nm
+        ref_i = np.argmin(np.abs(real_ref_idx[:, 0] - self.ref_wl))
+        real_ref_idx[:, 1] = real_ref_idx[:, 1] / real_ref_idx[ref_i, 1]
+
+        self.real_ref_idx = resample_spectrum(
+            real_ref_idx[:, 1], real_ref_idx[:, 0], self.wl, self.fwhm
+        )
 
     def update_heuristic_prior_means(self, x_surface, geom):
         """Update the sun glint prior to match initial guess (x_surface"""
@@ -163,7 +188,7 @@ class GlintModelSurface(MultiComponentSurface):
             ]
         )
 
-        # hard-coded glint bounds from experience #TODO - get from config
+        # glint_est is calc. in RFL-space. Makes sense that rfl < 1.0
         bounds_glint_est = [
             0,
             5.0,
@@ -178,7 +203,14 @@ class GlintModelSurface(MultiComponentSurface):
         # Get estimate for g_dd and g_dsf parameters
         # Set sky glint to a static number; use prior mean.
         g_dsf_est = self.init[self.sky_glint_ind]
-        g_dd_est = glint_est / self.fresnel_rf(geom.observer_zenith)
+
+        # Reference wavelength
+        g_dd_est = (
+            glint_est
+            / self.fresnel_rf_refractive_index(geom.observer_zenith)[
+                np.argmin(np.abs(self.wl - self.ref_wl))
+            ]
+        )
 
         # Updating self.init will set the prior mean (xa) to this value
         self.init[self.sun_glint_ind] = g_dd_est
@@ -213,7 +245,7 @@ class GlintModelSurface(MultiComponentSurface):
             independently.
         """
         # fresnel reflectance factor (approx. 0.02 for nadir view)
-        rho_ls = self.fresnel_rf(geom.observer_zenith)
+        rho_ls = self.fresnel_rf_refractive_index(geom.observer_zenith)
 
         # Enforce bounds, also turns -9999. fill into 0.
         # Note if null_value > bounds[1], will return bounds[1]
@@ -259,7 +291,7 @@ class GlintModelSurface(MultiComponentSurface):
 
         drfl = self.dlamb_dsurface(x_surface, geom)
 
-        rho_ls = self.fresnel_rf(geom.observer_zenith)
+        rho_ls = self.fresnel_rf_refractive_index(geom.observer_zenith)
         # TODO make the indexing better for the surface state elements
         drfl[:, self.sun_glint_ind] = rho_ls
         drfl[:, self.sky_glint_ind] = rho_ls
@@ -335,7 +367,7 @@ class GlintModelSurface(MultiComponentSurface):
         Currently we set the diffuse glint scaling term to constant
         value, which makes the AOE inner loop inversion possible.
         """
-        rho_ls = self.fresnel_rf(geom.observer_zenith)
+        rho_ls = self.fresnel_rf_refractive_index(geom.observer_zenith)
 
         # Construct the H matrix from:
         # theta (rho portion)
@@ -379,6 +411,15 @@ class GlintModelSurface(MultiComponentSurface):
             x_surface[self.sun_glint_ind],
             x_surface[self.sky_glint_ind],
         )
+
+    def fresnel_rf_refractive_index(self, vza):
+        """Calculates the fresnel reflectance spectrum.
+        Can also return value at single wavelength
+
+        Arguments:
+        wl (nm) - float valued wavelength center
+        """
+        return self.fresnel_rf(vza) * self.real_ref_idx
 
     @staticmethod
     def fresnel_rf(vza):
