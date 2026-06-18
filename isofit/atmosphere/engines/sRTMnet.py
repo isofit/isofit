@@ -28,7 +28,6 @@ from pathlib import Path
 import dask.array as da
 import h5py
 import numpy as np
-import psutil
 import torch
 import yaml
 
@@ -322,17 +321,6 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
     }
     _disable_makeSim = True
 
-    def __init__(self, *args, **kwargs):
-        # Experimental sRTMnet sharding size
-        # Shards may use up to 2x their size of memory, plus some extra
-        # so divide by 2.5 for safety
-        # REVIEW: is there a better strategy?
-        mem = psutil.virtual_memory()
-        self.shard_size = f"{int(mem.total / 2**30 / 2.5)}gb"
-        Logger.debug(f"Attempting to use shard size: {self.shard_size}")
-
-        super().__init__(*args, **kwargs)
-
     def preSim(self):
         """
         sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins
@@ -403,7 +391,6 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             modtran_emulation=True,
             build_interpolators=False,
             postprocess=False,
-            shard_size=self.shard_size,
             load_kwargs={"load": False},
         )
 
