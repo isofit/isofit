@@ -204,7 +204,7 @@ class GlintModelSurface(MultiComponentSurface):
         ref_wl = 1050  # Choices 1050 nm, 1640 nm
         g_dd_est = (
             glint_est
-            / self.fresnel_rf(geom.observer_zenith)[np.argmin(np.abs(self.wl - ref_wl))]
+            / self.fresnel_rf(geom.solar_zenith)[np.argmin(np.abs(self.wl - ref_wl))]
         )
 
         # Updating self.init will set the prior mean (xa) to this value
@@ -239,7 +239,7 @@ class GlintModelSurface(MultiComponentSurface):
             independently.
         """
         # fresnel reflectance factor (approx. 0.02 for nadir view)
-        rho_ls = self.fresnel_rf(geom.observer_zenith)
+        rho_ls = self.fresnel_rf(geom.solar_zenith)
 
         # Enforce bounds, also turns -9999. fill into 0.
         # Note if null_value > bounds[1], will return bounds[1]
@@ -285,7 +285,7 @@ class GlintModelSurface(MultiComponentSurface):
 
         drfl = self.dlamb_dsurface(x_surface, geom)
 
-        rho_ls = self.fresnel_rf(geom.observer_zenith)
+        rho_ls = self.fresnel_rf(geom.solar_zenith)
         # TODO make the indexing better for the surface state elements
         drfl[:, self.sun_glint_ind] = rho_ls
         drfl[:, self.sky_glint_ind] = rho_ls
@@ -361,7 +361,7 @@ class GlintModelSurface(MultiComponentSurface):
         Currently we set the diffuse glint scaling term to constant
         value, which makes the AOE inner loop inversion possible.
         """
-        rho_ls = self.fresnel_rf(geom.observer_zenith)
+        rho_ls = self.fresnel_rf(geom.solar_zenith)
 
         # Construct the H matrix from:
         # theta (rho portion)
@@ -406,13 +406,13 @@ class GlintModelSurface(MultiComponentSurface):
             x_surface[self.sky_glint_ind],
         )
 
-    def fresnel_rf(self, vza):
+    def fresnel_rf(self, sza):
         """Calculates reflectance factor of sky radiance based on the
         Fresnel equation for unpolarized light as a function of view zenith angle (vza).
         """
-        if vza > 0.0:
+        if sza > 0.0:
             n_w = 1.33  # refractive index of water
-            theta = np.deg2rad(vza)
+            theta = np.deg2rad(sza)
 
             # calculate angle of refraction using Snell′s law
             theta_i = np.arcsin(np.sin(theta) / self.real_ref_idx)
