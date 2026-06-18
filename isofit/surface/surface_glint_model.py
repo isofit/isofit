@@ -120,11 +120,6 @@ class GlintModelSurface(MultiComponentSurface):
         # [:, 0] - wavelength (nm)
         # [:, 2] - refractive index
         real_ref_idx = np.loadtxt(config.refractive_index_path)
-        # Normalize s.t. reference wl has value of 1
-        self.ref_wl = 1050  # Choices 1050 nm, 1640 nm
-        ref_i = np.argmin(np.abs(real_ref_idx[:, 0] - self.ref_wl))
-        real_ref_idx[:, 1] = real_ref_idx[:, 1] / real_ref_idx[ref_i, 1]
-
         self.real_ref_idx = resample_spectrum(
             real_ref_idx[:, 1], real_ref_idx[:, 0], self.wl, self.fwhm
         )
@@ -206,11 +201,10 @@ class GlintModelSurface(MultiComponentSurface):
         g_dsf_est = self.init[self.sky_glint_ind]
 
         # Reference wavelength
+        ref_wl = 1050  # Choices 1050 nm, 1640 nm
         g_dd_est = (
             glint_est
-            / self.fresnel_rf_refractive_index(geom.observer_zenith)[
-                np.argmin(np.abs(self.wl - self.ref_wl))
-            ]
+            / self.fresnel_rf(geom.observer_zenith)[np.argmin(np.abs(self.wl - ref_wl))]
         )
 
         # Updating self.init will set the prior mean (xa) to this value
@@ -245,7 +239,7 @@ class GlintModelSurface(MultiComponentSurface):
             independently.
         """
         # fresnel reflectance factor (approx. 0.02 for nadir view)
-        rho_ls = self.fresnel_rf_refractive_index(geom.observer_zenith)
+        rho_ls = self.fresnel_rf(geom.observer_zenith)
 
         # Enforce bounds, also turns -9999. fill into 0.
         # Note if null_value > bounds[1], will return bounds[1]
@@ -291,7 +285,7 @@ class GlintModelSurface(MultiComponentSurface):
 
         drfl = self.dlamb_dsurface(x_surface, geom)
 
-        rho_ls = self.fresnel_rf_refractive_index(geom.observer_zenith)
+        rho_ls = self.fresnel_rf(geom.observer_zenith)
         # TODO make the indexing better for the surface state elements
         drfl[:, self.sun_glint_ind] = rho_ls
         drfl[:, self.sky_glint_ind] = rho_ls
@@ -367,7 +361,7 @@ class GlintModelSurface(MultiComponentSurface):
         Currently we set the diffuse glint scaling term to constant
         value, which makes the AOE inner loop inversion possible.
         """
-        rho_ls = self.fresnel_rf_refractive_index(geom.observer_zenith)
+        rho_ls = self.fresnel_rf(geom.observer_zenith)
 
         # Construct the H matrix from:
         # theta (rho portion)
@@ -412,17 +406,7 @@ class GlintModelSurface(MultiComponentSurface):
             x_surface[self.sky_glint_ind],
         )
 
-    def fresnel_rf_refractive_index(self, vza):
-        """Calculates the fresnel reflectance spectrum.
-        Can also return value at single wavelength
-
-        Arguments:
-        wl (nm) - float valued wavelength center
-        """
-        return self.fresnel_rf(vza) * self.real_ref_idx
-
-    @staticmethod
-    def fresnel_rf(vza):
+    def fresnel_rf(self, vza):
         """Calculates reflectance factor of sky radiance based on the
         Fresnel equation for unpolarized light as a function of view zenith angle (vza).
         """
@@ -431,7 +415,7 @@ class GlintModelSurface(MultiComponentSurface):
             theta = np.deg2rad(vza)
 
             # calculate angle of refraction using Snell′s law
-            theta_i = np.arcsin(np.sin(theta) / n_w)
+            theta_i = np.arcsin(np.sin(theta) / self.real_ref_idx)
 
             # reflectance factor of sky radiance based on the Fresnel equation for unpolarized light
             rho_ls = 0.5 * np.abs(
