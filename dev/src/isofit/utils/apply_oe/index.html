@@ -5715,7 +5715,8 @@
 <span class="normal">981</span>
 <span class="normal">982</span>
 <span class="normal">983</span>
-<span class="normal">984</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">984</span>
+<span class="normal">985</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: David R Thompson and Philip G. Brodrick</span>
 <span class="c1">#</span>
@@ -5734,10 +5735,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">spectral.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">isofit.utils.template_construction</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tmpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.atmosphere.engines.modtran</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModtranRT</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">isofit</span><span class="p">,</span> <span class="n">units</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.debug.resource_tracker</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileResources</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.atmosphere.engines.modtran</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModtranRT</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">analytical_line</span> <span class="k">as</span> <span class="n">ALAlg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">empirical_line</span> <span class="k">as</span> <span class="n">ELAlg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -5767,6 +5768,7 @@
     <span class="s2">&quot;oci&quot;</span><span class="p">,</span>
     <span class="s2">&quot;tanager&quot;</span><span class="p">,</span>
     <span class="s2">&quot;av5&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;av4&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 <span class="n">RTM_CLEANUP_LIST</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;*r_k&quot;</span><span class="p">,</span>
