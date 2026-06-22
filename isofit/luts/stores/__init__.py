@@ -129,7 +129,7 @@ class Create:
 
         if init:
             self.initialize()
-            self.setAttr("lut_grid", grid)
+            self.setAttr("lut_grid", {k: v.tolist() for k, v in self.grid.items()})
 
     def pointIndices(self, point: np.ndarray) -> List[int]:
         """
