@@ -57,33 +57,30 @@ def unpack_statevector(statevector, surface_category=None):
     if not statevector:
         return {}
 
-    if isinstance(statevector, list):
-        for state in statevector:
-            data["statevec_names"].append(state["name"])
-            data["bounds"].append(state["bounds"])
-            data["init"].append(state["init"])
-            data["prior_mean"].append(state["prior_mean"])
-            data["prior_sigma"].append(state["prior_sigma"])
-            data["scale"].append(state["scale"])
-
+    # This is where the unpacking happens.
+    # In the case it is flat (e.g., "bounds" in dict),
+    # surface_category is the statevec name.
+    if surface_category and surface_category in statevector:
+        statevector_data = statevector[surface_category]
+        if "bounds" in statevector_data:
+            data["statevec_names"].append(surface_category)
+            for k in ["bounds", "init", "prior_mean", "prior_sigma", "scale"]:
+                data[k].append(statevector_data.get(k))
+        else:
+            for key, value in statevector_data.items():
+                data["statevec_names"].append(key)
+                for k in ["bounds", "init", "prior_mean", "prior_sigma", "scale"]:
+                    data[k].append(value.get(k))
         return data
 
-    if isinstance(statevector, dict):
-        if "name" in statevector and surface_category is None:
-            return unpack_statevector([statevector], surface_category)
+    # If surface_category is None, we can recover info on single vs multi case here
+    for key, value in statevector.items():
+        if isinstance(value, dict):
+            statevector_data = unpack_statevector(statevector, surface_category=key)
+            for k in data:
+                data[k].extend(statevector_data[k])
 
-        if surface_category:
-            return unpack_statevector(
-                statevector.get(surface_category), surface_category
-            )
-
-        else:
-            for key, value in statevector.items():
-                category_state = unpack_statevector(value, surface_category=key)
-                for key, values in category_state.items():
-                    data[key].extend(values)
-
-            return data
+    return data
 
 
 def surface_model(
