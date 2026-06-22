@@ -479,10 +479,10 @@ class ForwardModel:
         # NOTE for now, a flat slope is assumed, such that terrain view is,
         # v_t = (1 + cos_slope) / 2 - skyview = (1 + 1)/2  - skyview = 1 - skyview
         t = self.terrain_rereflection(geom)
-        L_dir_dir *= t
-        L_dif_dir *= t
-        L_dir_dif *= t
-        L_dif_dif *= t
+        L_dir_dir *= float(t)
+        L_dif_dir *= float(t)
+        L_dir_dif *= float(t)
+        L_dif_dif *= float(t)
 
         # Apply equation 11
         # If no rho_dif_dif passed eq_11_term -> 1
