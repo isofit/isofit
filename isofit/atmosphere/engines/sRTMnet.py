@@ -330,6 +330,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         mem = psutil.virtual_memory()
         self.shard_size = f"{int(mem.total / 2**30 / 2.5)}gb"
         Logger.debug(f"Attempting to use shard size: {self.shard_size}")
+        # self.shard_size = None
 
         # Because sRTMnet doesn't use makeSim and instead processes shards
         # sequentially in preSim, have to enable the shard buffer here
