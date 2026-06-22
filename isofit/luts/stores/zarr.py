@@ -99,7 +99,7 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
         result in fewer shards are discarded.
     scale : int, default=1
         Multiplier applied to the estimated chunk size. Useful when multiple arrays
-        are written per chunk, to better approximate the actual memory when in buffered
+        are written per chunk to better approximate the actual memory when in buffered
         mode.
 
     Returns
@@ -170,7 +170,9 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
 
     # Useful information
     Logger.info(f"Number of points: {np.prod(shape):,}")
-    Logger.info(f"Target chunks per file: {target} ({target * space / 2**30:.2f}gb)")
+    Logger.info(
+        f"Target chunks per file: {target} ({target * space / 2**30:.2f}gb) (scale: {scale})"
+    )
     Logger.info(f"Shapes:")
     Logger.info(f"  dimensions: {shape}")
     Logger.info(f"    chunking: {np.array(chunk)}")
