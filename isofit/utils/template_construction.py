@@ -864,12 +864,54 @@ def build_config(
     return config
 
 
+def inspect_prebuilt_lut_dimensions(prebuilt_lut_path: str, ncds: nc.Dataset = None):
+    """Inspect a prebuilt LUT NetCDF file to determine available dimensions and their ranges.
+
+    Args:
+        prebuilt_lut_path: path to the prebuilt LUT NetCDF file
+        ncds: optional already-opened NetCDF dataset (to avoid reopening)
+
+    Returns:
+        dict mapping dimension names to (min, max) tuples
+    """
+    close_after = False
+    if ncds is None:
+        ncds = nc.Dataset(prebuilt_lut_path, "r")
+        close_after = True
+
+    lut_dimensions = {}
+
+    # Iterate through all variables that could be LUT dimensions
+    # These are typically 1-D coordinate variables
+    for var_name in ncds.variables:
+        var = ncds.variables[var_name]
+
+        # Check if this is a coordinate/dimension variable (1-D)
+        if len(var.dimensions) == 1 and var.dimensions[0] == var_name:
+            # This is a dimension variable
+            data = var[:]
+            if len(data) > 0:
+                lut_dimensions[var_name] = (float(np.min(data)), float(np.max(data)))
+
+    if close_after:
+        ncds.close()
+
+    return lut_dimensions
+
+
 def get_lut_subset(vals):
     """Populate lut_names for the appropriate style of subsetting
 
     Args:
-        vals: the values to use for subsetting
+        vals: the values to use for subsetting (list, array, or dict)
+
+    Returns:
+        dict with either {"interp": value} for single values or
+        {"gte": min, "lte": max} for ranges, or None
     """
+    if isinstance(vals, dict):
+        # Already formatted, return as-is
+        return vals
 
     if vals is not None and len(vals) == 1:
         return {"interp": vals[0]}
@@ -1543,14 +1585,78 @@ def make_atmosphere_config(
     ncds = None
     if prebuilt_lut_path is not None:
         ncds = nc.Dataset(prebuilt_lut_path, "r")
-        for gn, gc in lut_grid.items():
-            if gn not in ncds.variables:
-                logging.warning(
-                    f"Key {gn} not found in prebuilt LUT, removing it from LUT."
+        lut_dimensions = inspect_prebuilt_lut_dimensions(prebuilt_lut_path, ncds)
+
+        # Check for variables in heuristic but not in LUT (fatal error)
+        for dim_name, dim_val in lut_grid.items():
+            if dim_val is not None and len(dim_val) > 1:
+                if dim_name not in lut_dimensions:
+                    raise ValueError(
+                        f"Variable '{dim_name}' is required by the template heuristic but is not "
+                        f"present in the prebuilt LUT at {prebuilt_lut_path}. "
+                        f"Available dimensions in LUT: {list(lut_dimensions.keys())}"
+                    )
+
+        # Check for variables in LUT but not in heuristic (interpolate to fixed value)
+        for lut_dim_name, lut_range in lut_dimensions.items():
+            if lut_dim_name not in lut_grid or lut_grid[lut_dim_name] is None:
+                # Determine the interpolation point
+                if lut_dim_name.startswith("AOT") or lut_dim_name.startswith("AERFRAC"):
+                    # For AOD, use the same initial guess as statevector
+                    # This matches load_climatology logic
+                    interp_value = (lut_range[1] - lut_range[0]) / 10.0 + lut_range[0]
+                else:
+                    # For other variables, use mean value
+                    interp_value = (lut_range[0] + lut_range[1]) / 2.0
+
+                logging.info(
+                    f"Variable '{lut_dim_name}' is present in prebuilt LUT but not "
+                    f"in heuristic. Will interpolate to {interp_value}"
                 )
-                to_remove.append(gn)
-            else:
-                lut_grid[gn] = get_lut_subset(gc)
+                lut_grid[lut_dim_name] = {"interp": interp_value}
+
+        # Check for range mismatches (subset if heuristic range exceeds LUT range)
+        for dim_name, dim_val in lut_grid.items():
+            if dim_name in lut_dimensions and dim_val is not None:
+                lut_min, lut_max = lut_dimensions[dim_name]
+
+                # Handle dict case (already formatted)
+                if isinstance(dim_val, dict):
+                    heuristic_values = None
+                else:
+                    heuristic_values = (
+                        dim_val if isinstance(dim_val, (list, np.ndarray)) else None
+                    )
+
+                if heuristic_values is not None and len(heuristic_values) > 1:
+                    heuristic_min, heuristic_max = min(heuristic_values), max(
+                        heuristic_values
+                    )
+
+                    # Check if heuristic exceeds LUT range
+                    if heuristic_min < lut_min or heuristic_max > lut_max:
+                        # Subset the heuristic to LUT range
+                        subset_values = [
+                            v for v in heuristic_values if lut_min <= v <= lut_max
+                        ]
+
+                        if len(subset_values) == 0:
+                            # No overlap - use closest LUT boundary
+                            if heuristic_min > lut_max:
+                                subset_values = [lut_max]
+                            else:
+                                subset_values = [lut_min]
+
+                        logging.warning(
+                            f"Variable '{dim_name}' heuristic range [{heuristic_min}, {heuristic_max}] "
+                            f"exceeds prebuilt LUT range [{lut_min}, {lut_max}]. "
+                            f"Subsetting to {subset_values}"
+                        )
+                        lut_grid[dim_name] = subset_values
+
+                # Apply the subset mechanism (existing logic)
+                if not isinstance(lut_grid[dim_name], dict):
+                    lut_grid[dim_name] = get_lut_subset(lut_grid[dim_name])
 
     for tr in np.unique(to_remove):
         lut_grid.pop(tr)
