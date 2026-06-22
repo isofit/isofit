@@ -864,6 +864,21 @@ def build_config(
     return config
 
 
+def get_aerosol_initial_value(range_min: float, range_max: float) -> float:
+    """Calculate the initial/interpolation value for aerosol parameters.
+    Somewhat arbitrary, but puts the starting value away from the lower bound,
+    but still low (assuming clear sky).
+
+    Args:
+        range_min: minimum value of the aerosol parameter range
+        range_max: maximum value of the aerosol parameter range
+
+    Returns:
+        float: the initial/interpolation value (min + 10% of range)
+    """
+    return (range_max - range_min) / 10.0 + range_min
+
+
 def inspect_prebuilt_lut_dimensions(prebuilt_lut_path: str, ncds: nc.Dataset = None):
     """Inspect a prebuilt LUT NetCDF file to determine available dimensions and their ranges.
 
@@ -1073,12 +1088,13 @@ def load_climatology(
         )
 
         if aerosol_lut is not None:
+            init_value = get_aerosol_initial_value(alr[0], alr[1])
             aerosol_state_vector["AERFRAC_{}".format(_a)] = {
                 "bounds": [float(alr[0]), float(alr[1])],
                 "scale": 1,
-                "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
+                "init": float(init_value),
                 "prior_sigma": 10.0,
-                "prior_mean": float((alr[1] - alr[0]) / 10.0 + alr[0]),
+                "prior_mean": float(init_value),
             }
 
             aerosol_lut_grid["AERFRAC_{}".format(_a)] = aerosol_lut.tolist()
@@ -1093,12 +1109,13 @@ def load_climatology(
     if aot_550_lut is not None:
         aerosol_lut_grid["AOT550"] = aot_550_lut.tolist()
         alr = [aerosol_lut_grid["AOT550"][0], aerosol_lut_grid["AOT550"][-1]]
+        init_value = get_aerosol_initial_value(alr[0], alr[1])
         aerosol_state_vector["AOT550"] = {
             "bounds": [float(alr[0]), float(alr[1])],
             "scale": 1,
-            "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
+            "init": float(init_value),
             "prior_sigma": 10.0,
-            "prior_mean": float((alr[1] - alr[0]) / 10.0 + alr[0]),
+            "prior_mean": float(init_value),
         }
 
     logging.info("Loading Climatology")
@@ -1603,8 +1620,7 @@ def make_atmosphere_config(
                 # Determine the interpolation point
                 if lut_dim_name.startswith("AOT") or lut_dim_name.startswith("AERFRAC"):
                     # For AOD, use the same initial guess as statevector
-                    # This matches load_climatology logic
-                    interp_value = (lut_range[1] - lut_range[0]) / 10.0 + lut_range[0]
+                    interp_value = get_aerosol_initial_value(lut_range[0], lut_range[1])
                 else:
                     # For other variables, use mean value
                     interp_value = (lut_range[0] + lut_range[1]) / 2.0
