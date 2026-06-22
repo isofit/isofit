@@ -1680,20 +1680,42 @@ def make_atmosphere_config(
 
                         logging.warning(
                             f"Variable '{dim_name}' heuristic range [{heuristic_min:.4f}, {heuristic_max:.4f}] "
-                            f"adjusted to use prebuilt LUT points that encompass this range: "
-                            f"[{lower_bound:.4f}, {upper_bound:.4f}] ({len(subset_lut_points)} points)"
+                            f"constrained to LUT range [{lut_min:.4f}, {lut_max:.4f}]. "
+                            f"Reader will use LUT points that encompass [{max(heuristic_min, lut_min):.4f}, "
+                            f"{min(heuristic_max, lut_max):.4f}]"
                         )
+                        # Store all LUT grid points that encompass the heuristic range
                         lut_grid[dim_name] = subset_lut_points.tolist()
 
-                # Apply the subset mechanism (existing logic)
-                if not isinstance(lut_grid[dim_name], dict):
-                    lut_grid[dim_name] = get_lut_subset(lut_grid[dim_name])
+                # Don't convert to dict here - we'll do that separately for lut_names
 
     for tr in np.unique(to_remove):
         lut_grid.pop(tr)
 
     atmosphere_config["lut_grid"].update(lut_grid)
-    atmosphere_config["engine"]["lut_names"] = {key: None for key in lut_grid.keys()}
+
+    # Set up lut_names for subsetting
+    # For prebuilt LUTs, convert grid definitions to subset strategies
+    # For new LUTs, lut_names should be None (use all points)
+    if prebuilt_lut_path is not None:
+        # lut_names controls how to subset the prebuilt LUT
+        # Convert lut_grid values to subset strategies (gte/lte dicts or interp dicts)
+        lut_names = {}
+        for key, val in lut_grid.items():
+            if isinstance(val, dict):
+                # Already a strategy (interp dict)
+                lut_names[key] = val
+            else:
+                # Convert list/array to gte/lte strategy
+                # Reader's sel() with encompass=True will find actual LUT grid points
+                lut_names[key] = get_lut_subset(val)
+
+        atmosphere_config["engine"]["lut_names"] = lut_names
+    else:
+        # For new LUTs being built, lut_names should be None (use all points)
+        atmosphere_config["engine"]["lut_names"] = {
+            key: None for key in lut_grid.keys()
+        }
 
     # Now do statevector
     statekeys = ["H2OSTR"]
