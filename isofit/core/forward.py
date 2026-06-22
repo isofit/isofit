@@ -158,6 +158,13 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
+        if self.surface.use_background_rfl:
+            self.calc_rdn_bgrfl = self.calc_rdn_bgrfl_heterogeneous
+            self.terrain_rereflection = self.terrain_rereflection_heterogeneous
+        else:
+            self.calc_rdn_bgrfl = self.calc_rdn_bgrfl_homogeneous
+            self.terrain_rereflection = self.terrain_rereflection_homogeneous
+
         if full_config.implementation.per_pixel_heuristic_prior:
             self.xa = self.xa_heuristic
         else:
@@ -449,12 +456,6 @@ class ForwardModel:
         cos_i_bg = geom.coszen
         skyview_factor_bg = 1.0
 
-        # Used to modulate the terrain view factor for target pixel and background
-        # NOTE for now, this is assumed a flat slope, such that terrain view is,
-        # v_t = (1 + cos_slope) / 2 - skyview   =    (1 + 1)/2  - skyview
-        cos_slope = 1.0
-        cos_slope_bg = 1.0
-
         # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.
         # Downward diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
         L_dir_dir = L_coupled[0] / geom.coszen * geom.cos_i * b
@@ -475,16 +476,13 @@ class ForwardModel:
 
         # Re-reflection from nearby surface contributing to at surface signal
         # Assumptions: no atmospheric attenuation, and reflectance is isotropic over the field of view
-        if geom.bg_rfl is not None:
-
-            v_t = (1 + cos_slope) / 2 - geom.skyview_factor
-            v_t_avg = (1 + cos_slope_bg) / 2 - skyview_factor_bg
-            t = 1 + ((geom.bg_rfl * v_t) / (1 - geom.bg_rfl * v_t_avg))
-
-            L_dir_dir *= t
-            L_dif_dir *= t
-            L_dir_dif *= t
-            L_dif_dif *= t
+        # NOTE for now, a flat slope is assumed, such that terrain view is,
+        # v_t = (1 + cos_slope) / 2 - skyview = (1 + 1)/2  - skyview = 1 - skyview
+        t = self.terrain_rereflection(geom)
+        L_dir_dir *= t
+        L_dif_dir *= t
+        L_dir_dif *= t
+        L_dif_dif *= t
 
         # Apply equation 11
         # If no rho_dif_dif passed eq_11_term -> 1
@@ -578,20 +576,36 @@ class ForwardModel:
 
         return ret
 
-    def calc_rdn_bg(self, rho_dir_dif, rho_dif_dif, L_dir_dif, L_dif_dif, L_tot, s_alb):
-        """TOA radiance that is a function of the background reflectance (used in AOE)."""
-
-        atm_surface_scattering = s_alb * rho_dif_dif
-        if not isinstance(L_dir_dif, np.ndarray) or len(L_dir_dif) == 1:
-            atm_surface_scattering = 1
-
-        L_bg = (
+    def calc_rdn_bgrfl_heterogeneous(
+        self, rho_dir_dif, rho_dif_dif, L_dir_dif, L_dif_dif, L_tot, s_alb
+    ):
+        """TOA radiance that is a function of the heterogeneous background reflectance (used in AOE)."""
+        return (
             (L_dir_dif * rho_dir_dif)
             + (L_dif_dif * rho_dif_dif)
-            + (L_tot * atm_surface_scattering * rho_dif_dif) / (1 - s_alb * rho_dif_dif)
+            + (L_tot * (s_alb * rho_dif_dif) * rho_dif_dif) / (1 - s_alb * rho_dif_dif)
         )
 
-        return L_bg
+    def calc_rdn_bgrfl_homogeneous(
+        self, rho_dir_dif, rho_dif_dif, L_dir_dif, L_dif_dif, L_tot, s_alb
+    ):
+        """TOA radiance that is a function of the background reflectance in homogenous case (used in AOE)."""
+        return np.zeros_like(L_tot)
+
+    def terrain_rereflection_heterogeneous(
+        self, geom, skyview_factor_bg=1.0, cos_slope=1.0, cos_slope_bg=1.0
+    ):
+        """Isotropic scattering from nearby terrain."""
+        v_t = (1 + cos_slope) / 2 - geom.skyview_factor
+        v_t_avg = (1 + cos_slope_bg) / 2 - skyview_factor_bg
+        t = 1 + ((geom.bg_rfl * v_t) / (1 - geom.bg_rfl * v_t_avg))
+        return t
+
+    def terrain_rereflection_homogeneous(
+        self, geom, skyview_factor_bg=1.0, cos_slope=1.0, cos_slope_bg=1.0
+    ):
+        """Terrain scattering is ignored in the case dir_dir=dir_dif=dif_dir=dif_dif."""
+        return 1.0
 
     def calc_Ls(self, x, geom):
         """Calculate the surface emission."""

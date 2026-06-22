@@ -314,6 +314,11 @@ def apply_oe(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
 
+    if use_background_rfl and not multipart_transmittance:
+        raise ValueError(
+            "ApplyOE must use multi-part transmittance to enable heterogeneous background reflectance."
+        )
+
     # Load in water column upper bound polynomials
     modtran_polynomials_dict = modtran_water_upperbound_polynomials()
     if atmosphere_type not in modtran_polynomials_dict:

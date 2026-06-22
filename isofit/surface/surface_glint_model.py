@@ -356,6 +356,7 @@ class GlintModelSurface(MultiComponentSurface):
         self,
         L_tot,
         geom,
+        s_alb=None,
         L_dir_dir=None,
         L_dir_dif=None,
         L_dif_dir=None,
@@ -377,6 +378,7 @@ class GlintModelSurface(MultiComponentSurface):
         H = super().analytical_model(
             L_tot,
             geom,
+            s_alb,
             L_dir_dir,
             L_dir_dif,
             L_dif_dir,

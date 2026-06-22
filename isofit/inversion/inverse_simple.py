@@ -261,6 +261,7 @@ def invert_analytical(
         if isinstance(geom.bg_rfl, np.ndarray)
         else rho_dif_dir
     )
+    geom.bg_rfl = rho_dif_dif
 
     # Get all the atmosphere quantities
     r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = (
@@ -272,7 +273,7 @@ def invert_analytical(
     s_alb = r["sphalb"]
 
     # Estimation of background radiance (background terms assumed rho_dir_dif ~= rho_dif_dif)
-    L_bg = fm.calc_rdn_bg(
+    L_bg = fm.calc_rdn_bgrfl(
         rho_dir_dif=rho_dif_dif,
         rho_dif_dif=rho_dif_dif,
         L_dir_dif=L_dir_dif,
@@ -295,6 +296,7 @@ def invert_analytical(
     H = fm.surface.analytical_model(
         L_tot=L_tot,
         geom=geom,
+        s_alb=s_alb,
         L_dir_dir=L_dir_dir,
         L_dir_dif=L_dir_dif,
         L_dif_dir=L_dif_dir,
