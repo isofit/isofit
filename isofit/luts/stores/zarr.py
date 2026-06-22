@@ -349,7 +349,11 @@ class CreateZarr(Create):
         # Multi dimensional arrays
         dims += list(self.grid)
         shape = list(self.sizes.values())
-        chunks = tuple(self.chunks)
+
+        chunks = None
+        if self.chunks is not None:
+            chunks = tuple(self.chunks)
+
         shards = None
         if self.shards is not None:
             shards = tuple(self.shards)
