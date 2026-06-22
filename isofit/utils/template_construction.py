@@ -22,6 +22,7 @@ from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
+from isofit.luts.reader import inspect_lut_dimensions
 from isofit.utils.surface_model import surface_model
 
 
@@ -879,41 +880,6 @@ def get_aerosol_initial_value(range_min: float, range_max: float) -> float:
     return (range_max - range_min) / 10.0 + range_min
 
 
-def inspect_prebuilt_lut_dimensions(prebuilt_lut_path: str, ncds: nc.Dataset = None):
-    """Inspect a prebuilt LUT NetCDF file to determine available dimensions and their grid points.
-
-    Args:
-        prebuilt_lut_path: path to the prebuilt LUT NetCDF file
-        ncds: optional already-opened NetCDF dataset (to avoid reopening)
-
-    Returns:
-        dict mapping dimension names to numpy arrays of grid points
-    """
-    close_after = False
-    if ncds is None:
-        ncds = nc.Dataset(prebuilt_lut_path, "r")
-        close_after = True
-
-    lut_dimensions = {}
-
-    # Iterate through all variables that could be LUT dimensions
-    # These are typically 1-D coordinate variables
-    for var_name in ncds.variables:
-        var = ncds.variables[var_name]
-
-        # Check if this is a coordinate/dimension variable (1-D)
-        if len(var.dimensions) == 1 and var.dimensions[0] == var_name:
-            # This is a dimension variable - store the actual grid points
-            data = var[:]
-            if len(data) > 0:
-                lut_dimensions[var_name] = np.array(data)
-
-    if close_after:
-        ncds.close()
-
-    return lut_dimensions
-
-
 def get_lut_subset(vals):
     """Populate lut_names for the appropriate style of subsetting
 
@@ -1602,7 +1568,7 @@ def make_atmosphere_config(
     ncds = None
     if prebuilt_lut_path is not None:
         ncds = nc.Dataset(prebuilt_lut_path, "r")
-        lut_dimensions = inspect_prebuilt_lut_dimensions(prebuilt_lut_path, ncds)
+        lut_dimensions = inspect_lut_dimensions(prebuilt_lut_path)
 
         # Check for variables in heuristic but not in LUT (fatal error)
         for dim_name, dim_val in lut_grid.items():
