@@ -1566,94 +1566,97 @@ def make_atmosphere_config(
         bounds_check(lut_grid, emulator_base, modify=True)
 
     ncds = None
+    lut_names = {}
     if prebuilt_lut_path is not None:
         ncds = nc.Dataset(prebuilt_lut_path, "r")
-        lut_dimensions = inspect_lut_dimensions(prebuilt_lut_path)
+        prebuilt_dimensions = inspect_lut_dimensions(prebuilt_lut_path)
 
         # Check for variables in heuristic but not in LUT (fatal error)
         for dim_name, dim_val in lut_grid.items():
             if dim_val is not None and len(dim_val) > 1:
-                if dim_name not in lut_dimensions:
+                if dim_name not in prebuilt_dimensions:
                     raise ValueError(
                         f"Variable '{dim_name}' is required by the template heuristic but is not "
                         f"present in the prebuilt LUT at {prebuilt_lut_path}. "
-                        f"Available dimensions in LUT: {list(lut_dimensions.keys())}"
+                        f"Available dimensions in LUT: {list(prebuilt_dimensions.keys())}"
                     )
 
-        # Check for variables in LUT but not in heuristic (interpolate to fixed value)
-        for lut_dim_name, lut_grid_points in lut_dimensions.items():
-            if lut_dim_name not in lut_grid or lut_grid[lut_dim_name] is None:
-                # Determine the interpolation point
-                lut_min, lut_max = lut_grid_points.min(), lut_grid_points.max()
-                if lut_dim_name.startswith("AOT") or lut_dim_name.startswith("AERFRAC"):
-                    # For AOD, use the same initial guess as statevector
-                    interp_value = get_aerosol_initial_value(lut_min, lut_max)
+        # Process each dimension in the prebuilt LUT
+        for dim_name, lut_grid_points in prebuilt_dimensions.items():
+            vmin, vmax = lut_grid_points.min(), lut_grid_points.max()
+
+            if dim_name not in lut_grid or lut_grid[dim_name] is None:
+                # Dimension in LUT but not in heuristic === interpolate
+                if dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
+                    interp_value = get_aerosol_initial_value(vmin, vmax)
                 else:
-                    # For other variables, use mean value
-                    interp_value = (lut_min + lut_max) / 2.0
+                    interp_value = (vmin + vmax) / 2.0
 
                 logging.info(
-                    f"Variable '{lut_dim_name}' is present in prebuilt LUT but not "
-                    f"in heuristic. Will interpolate to {interp_value}"
+                    f"Variable '{dim_name}' is present in prebuilt LUT but not "
+                    f"in heuristic. Will interpolate to {interp_value:.4f}"
                 )
-                lut_grid[lut_dim_name] = {"interp": interp_value}
+                lut_grid[dim_name] = {"interp": interp_value}
+                lut_names[dim_name] = {"interp": interp_value}
 
-        # Check for range mismatches - use LUT grid points that encompass heuristic range
-        for dim_name, dim_val in lut_grid.items():
-            if dim_name in lut_dimensions and dim_val is not None:
-                lut_grid_points = lut_dimensions[dim_name]
+            else:
+                # Dimension in both LUT and heuristic === subset
+                heuristic_val = lut_grid[dim_name]
 
-                # Handle dict case (already formatted - skip subsetting)
-                if isinstance(dim_val, dict):
+                # Skip if already formatted as a dict
+                if isinstance(heuristic_val, dict):
+                    lut_names[dim_name] = heuristic_val
                     continue
 
-                heuristic_values = (
-                    dim_val if isinstance(dim_val, (list, np.ndarray)) else None
-                )
+                # Get heuristic range
+                if (
+                    isinstance(heuristic_val, (list, np.ndarray))
+                    and len(heuristic_val) > 1
+                ):
+                    heur_min, heur_max = min(heuristic_val), max(heuristic_val)
 
-                if heuristic_values is not None and len(heuristic_values) > 1:
-                    heuristic_min, heuristic_max = min(heuristic_values), max(
-                        heuristic_values
+                    # Constrain heuristic to LUT bounds
+                    constrained_min = max(heur_min, vmin)
+                    constrained_max = min(heur_max, vmax)
+
+                    # Find LUT grid points that encompass the constrained range
+                    lower_candidates = lut_grid_points[
+                        lut_grid_points <= constrained_min
+                    ]
+                    lower_bound = (
+                        lower_candidates.max() if len(lower_candidates) > 0 else vmin
                     )
-                    lut_min, lut_max = lut_grid_points.min(), lut_grid_points.max()
 
-                    # Check if we need to subset to LUT range
-                    if heuristic_min < lut_min or heuristic_max > lut_max:
-                        # Find LUT grid points that fully encompass the heuristic range
-                        # Get the largest LUT point <= heuristic_min (or smallest LUT point if none)
-                        lower_candidates = lut_grid_points[
-                            lut_grid_points <= heuristic_min
-                        ]
-                        if len(lower_candidates) > 0:
-                            lower_bound = lower_candidates.max()
-                        else:
-                            lower_bound = lut_grid_points.min()
+                    upper_candidates = lut_grid_points[
+                        lut_grid_points >= constrained_max
+                    ]
+                    upper_bound = (
+                        upper_candidates.min() if len(upper_candidates) > 0 else vmax
+                    )
 
-                        # Get the smallest LUT point >= heuristic_max (or largest LUT point if none)
-                        upper_candidates = lut_grid_points[
-                            lut_grid_points >= heuristic_max
-                        ]
-                        if len(upper_candidates) > 0:
-                            upper_bound = upper_candidates.min()
-                        else:
-                            upper_bound = lut_grid_points.max()
+                    # Get all LUT points in the encompassing range
+                    subset_points = lut_grid_points[
+                        (lut_grid_points >= lower_bound)
+                        & (lut_grid_points <= upper_bound)
+                    ]
 
-                        # Get all LUT points within [lower_bound, upper_bound]
-                        subset_lut_points = lut_grid_points[
-                            (lut_grid_points >= lower_bound)
-                            & (lut_grid_points <= upper_bound)
-                        ]
-
-                        logging.warning(
-                            f"Variable '{dim_name}' heuristic range [{heuristic_min:.4f}, {heuristic_max:.4f}] "
-                            f"constrained to LUT range [{lut_min:.4f}, {lut_max:.4f}]. "
-                            f"Reader will use LUT points that encompass [{max(heuristic_min, lut_min):.4f}, "
-                            f"{min(heuristic_max, lut_max):.4f}]"
+                    # Heuristic bounds exceed LUT bounds, raise an error
+                    # May choose to relax this to just a warning later.
+                    if heur_min < vmin or heur_max > vmax:
+                        raise ValueError(
+                            f"Variable '{dim_name}' heuristic range [{heur_min:.4f}, {heur_max:.4f}] "
+                            f"constrained to LUT range [{vmin:.4f}, {vmax:.4f}]. "
+                            f"Reader will use LUT points that encompass [{constrained_min:.4f}, {constrained_max:.4f}]"
                         )
-                        # Store all LUT grid points that encompass the heuristic range
-                        lut_grid[dim_name] = subset_lut_points.tolist()
 
-                # Don't convert to dict here - we'll do that separately for lut_names
+                    # Store all encompassing LUT points in lut_grid
+                    lut_grid[dim_name] = subset_points.tolist()
+                    # Set gte and lte.  Also set encompass for completeness
+                    lut_names[dim_name] = {
+                        "gte": constrained_min,
+                        "lte": constrained_max,
+                        "encompass": True,
+                    }
 
     for tr in np.unique(to_remove):
         lut_grid.pop(tr)
@@ -1661,21 +1664,8 @@ def make_atmosphere_config(
     atmosphere_config["lut_grid"].update(lut_grid)
 
     # Set up lut_names for subsetting
-    # For prebuilt LUTs, convert grid definitions to subset strategies
-    # For new LUTs, lut_names should be None (use all points)
     if prebuilt_lut_path is not None:
-        # lut_names controls how to subset the prebuilt LUT
-        # Convert lut_grid values to subset strategies (gte/lte dicts or interp dicts)
-        lut_names = {}
-        for key, val in lut_grid.items():
-            if isinstance(val, dict):
-                # Already a strategy (interp dict)
-                lut_names[key] = val
-            else:
-                # Convert list/array to gte/lte strategy
-                # Reader's sel() with encompass=True will find actual LUT grid points
-                lut_names[key] = get_lut_subset(val)
-
+        # lut_names was already built during reconciliation above
         atmosphere_config["engine"]["lut_names"] = lut_names
     else:
         # For new LUTs being built, lut_names should be None (use all points)
