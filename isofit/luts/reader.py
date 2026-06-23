@@ -40,12 +40,17 @@ def inspect_lut_dimensions(lut_path: str) -> dict[str, np.ndarray]:
     lut_path = Path(lut_path)
 
     # Detect format based on file extension or directory structure
-    if lut_path.suffix == ".nc" or (lut_path.is_file() and not lut_path.is_dir()):
-        # NetCDF format
+    if lut_path.suffix == ".zarr" or (
+        lut_path.is_dir() and not lut_path.suffix == ".nc"
+    ):
+        return _inspect_zarr_dimensions(lut_path)
+    elif lut_path.suffix == ".nc" or lut_path.is_file():
         return _inspect_netcdf_dimensions(lut_path)
     else:
-        # Assume zarr format (directory-based store)
-        return _inspect_zarr_dimensions(lut_path)
+        raise ValueError(
+            f"Cannot determine LUT format for: {lut_path}. "
+            f"Expected .nc file (NetCDF) or .zarr directory (Zarr)."
+        )
 
 
 def _inspect_netcdf_dimensions(lut_path: Path) -> dict[str, np.ndarray]:

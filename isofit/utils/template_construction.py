@@ -1565,10 +1565,8 @@ def make_atmosphere_config(
         # Should only modify H2OSTR and surface_elevation_km
         bounds_check(lut_grid, emulator_base, modify=True)
 
-    ncds = None
     lut_names = {}
     if prebuilt_lut_path is not None:
-        ncds = nc.Dataset(prebuilt_lut_path, "r")
         prebuilt_dimensions = inspect_lut_dimensions(prebuilt_lut_path)
 
         # Check for variables in heuristic but not in LUT (fatal error)
