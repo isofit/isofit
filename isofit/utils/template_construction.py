@@ -1581,6 +1581,9 @@ def make_atmosphere_config(
 
         # Process each dimension in the prebuilt LUT
         for dim_name, lut_grid_points in prebuilt_dimensions.items():
+            if dim_name == "wl":
+                continue
+
             vmin, vmax = lut_grid_points.min(), lut_grid_points.max()
 
             if dim_name not in lut_grid or lut_grid[dim_name] is None:
