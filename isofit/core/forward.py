@@ -81,7 +81,9 @@ class ForwardModel:
         modtran_config = json_load_ascii(
             self.full_config.forward_model.atmosphere.template_file
         )["MODTRAN"][0]["MODTRANINPUT"]
-        self.atmosphere_type = modtran_config["ATMOSPHERE"]["M1"]
+        self.atmosphere_type = modtran_config["ATMOSPHERE"].get(
+            "M1", "ATM_MIDLAT_SUMMER"
+        )
         self.h2o_polynomial = ModtranRT.modtran_water_upperbound_polynomials()[
             self.atmosphere_type
         ]
