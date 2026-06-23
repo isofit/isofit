@@ -335,8 +335,8 @@ class Inversion:
             x0 = x0[self.inds_free]
 
             # Ensure H2O bounds are physical and update the bounds for the worker
-            self.fm.bounds[1][self.atmosphere.statevec_names.index("H2OSTR")] = (
-                self.fm.max_h2o(geom.surface_elevation_km) - 1e-8
+            self.fm.bounds[1][self.fm.atmosphere.statevec_names.index("H2OSTR")] = (
+                self.fm.h2o_polynomial(geom.surface_elevation_km) - 1e-8
             )
             self.least_squares_params["bounds"] = (
                 self.fm.bounds[0][self.inds_free],
