@@ -27,8 +27,9 @@ from scipy.interpolate import interp1d
 from scipy.io import loadmat
 from scipy.linalg import block_diag
 
+from isofit.atmosphere.engines.modtran import ModtranRT
 from isofit.atmosphere import Atmosphere
-from isofit.core.common import eps
+from isofit.core.common import eps, json_load_ascii
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
 from isofit.core.multistate import match_statevector
@@ -75,6 +76,15 @@ class ForwardModel:
             self.atmosphere = cache_atmosphere
         else:
             self.atmosphere = Atmosphere(self.full_config)
+
+        # Determine atmosphere type to dynamically set h2o bounds with respect to elevation
+        modtran_config = json_load_ascii(self.config.template_file)["MODTRAN"][0][
+            "MODTRANINPUT"
+        ]
+        self.atmosphere_type = modtran_config["ATMOSPHERE"]["M1"]
+        self.h2o_polynomial = ModtranRT.modtran_water_upperbound_polynomials()[
+            self.atmosphere_type
+        ]
 
         # Build the surface model
         self.surface = Surface(full_config)
