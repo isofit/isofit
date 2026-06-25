@@ -5,6 +5,8 @@ on:
     - cron: "0 14 * * *" # daily at 14:00 UTC / 06:00 PST
   workflow_dispatch:
   pull_request:
+    branches-ignore: ["main", "gh-pages"]
+    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/**"]
 
 jobs:
   pypi:
