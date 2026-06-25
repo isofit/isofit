@@ -5,8 +5,6 @@ on:
     - cron: "0 14 * * *" # daily at 14:00 UTC / 06:00 PST
   workflow_dispatch:
   pull_request:
-    branches-ignore: ["main", "gh-pages"]
-    paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/**"]
 
 jobs:
   pypi:
@@ -61,8 +59,8 @@ jobs:
   conda:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        fail-fast: false
         python-version:
           - "3.11"
           - "3.12"
