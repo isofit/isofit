@@ -453,6 +453,10 @@ def load(
     if mf:
         xropen = xr.mfopen_dataset
 
+    # Convert dicts of {dim: None, ...} to None
+    if subset and not any(subset.values()):
+        subset = None
+
     # Special case that doesn't require defining the entire grid subsetting strategy
     if subset is None and load:
         Logger.debug(
