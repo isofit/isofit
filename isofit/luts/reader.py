@@ -458,7 +458,7 @@ def load(
         subset = None
 
     # Special case that doesn't require defining the entire grid subsetting strategy
-    if subset is None and load:
+    if not subset and load:
         Logger.debug(
             "With no subset defined and load enabled, disabling default chunking for performance"
         )
