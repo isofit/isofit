@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  pypi:
+  pip:
     strategy:
       fail-fast: false
       matrix:
@@ -25,13 +25,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install from PyPI
+      - name: Install from PyPI using pip
         run: |
           pip install isofit
 
       - name: Verify install
         run: |
-          isofit --help
+          isofit --help | tee help.txt
+          grep -q "usage:" help.txt
 
   uv:
     strategy:
@@ -53,14 +54,17 @@ jobs:
           version: "0.9.25"
           python-version: ${{ matrix.python-version }}
           activate-environment: true
+          enable-cache: false
+          no-project: true
 
-      - name: Install from PyPI
+      - name: Install from PyPI using uv
         run: |
           uv pip install isofit
 
       - name: Verify install
         run: |
-          isofit --help
+          isofit --help | tee help.txt
+          grep -q "usage:" help.txt
 
   conda:
     strategy:
@@ -90,4 +94,5 @@ jobs:
       - name: Verify install
         shell: bash -l {0}
         run: |
-          isofit --help
+          isofit --help | tee help.txt
+          grep -q "usage:" help.txt
