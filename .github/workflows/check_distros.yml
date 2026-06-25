@@ -31,8 +31,9 @@ jobs:
 
       - name: Verify install
         run: |
-          isofit --help | tee help.txt
-          grep -q "usage:" help.txt
+          output="$(isofit --help)"
+          echo "$output"
+          grep -q "usage:" <<< "$output"
 
   uv:
     strategy:
@@ -63,8 +64,9 @@ jobs:
 
       - name: Verify install
         run: |
-          isofit --help | tee help.txt
-          grep -q "usage:" help.txt
+          output="$(isofit --help)"
+          echo "$output"
+          grep -q "usage:" <<< "$output"
 
   conda:
     strategy:
@@ -94,5 +96,6 @@ jobs:
       - name: Verify install
         shell: bash -l {0}
         run: |
-          isofit --help | tee help.txt
-          grep -q "usage:" help.txt
+          output="$(isofit --help)"
+          echo "$output"
+          grep -q "usage:" <<< "$output"
