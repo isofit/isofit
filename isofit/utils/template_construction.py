@@ -1597,7 +1597,6 @@ def make_atmosphere_config(
                     f"Variable '{dim_name}' is present in prebuilt LUT but not "
                     f"in heuristic. Will interpolate to {interp_value:.4f}"
                 )
-                lut_grid[dim_name] = {"interp": interp_value}
                 lut_names[dim_name] = {"interp": interp_value}
 
             else:
