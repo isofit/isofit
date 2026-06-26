@@ -1640,10 +1640,10 @@ def make_atmosphere_config(
                         & (lut_grid_points <= upper_bound)
                     ]
 
-                    # Heuristic bounds exceed LUT bounds, raise an error
-                    # May choose to relax this to just a warning later.
+                    # We hit this for AOD lower bound all the time,
+                    # so leaving as a warning for now
                     if heur_min < vmin or heur_max > vmax:
-                        raise ValueError(
+                        logging.warning(
                             f"Variable '{dim_name}' heuristic range [{heur_min:.4f}, {heur_max:.4f}] "
                             f"constrained to LUT range [{vmin:.4f}, {vmax:.4f}]. "
                             f"Reader will use LUT points that encompass [{constrained_min:.4f}, {constrained_max:.4f}]"
