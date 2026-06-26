@@ -46,6 +46,9 @@ class Inversion:
         self.hashtable = OrderedDict()  # Hash table for caching inverse matrices
         self.max_table_size = full_config.implementation.max_hash_table_size
         self.state_indep_S_hat = False
+        self.per_pixel_heuristic_prior = (
+            full_config.implementation.per_pixel_heuristic_prior
+        )
 
         self.windows = config.windows  # Retrieval windows
         self.mode = full_config.implementation.mode
@@ -334,20 +337,24 @@ class Inversion:
 
             x0 = x0[self.inds_free]
 
-            # Catch any state vector elements outside of bounds
-            lower_bound_violation = x0 < self.fm.bounds[0][self.inds_free]
-            x0[lower_bound_violation] = (
-                self.fm.bounds[0][self.inds_free][lower_bound_violation] + eps
-            )
+            # Could avoid this if-else and always save values to geom, just
+            # don't use them in cases where --per_pixel_heuristic_prior = False
+            if self.per_pixel_heuristic_prior:
+                # Set bounds - Should high geom directly
+                bounds = self.fm.heuristic_bounds(geom)
+                self.least_squares_params["bounds"] = bounds
+            else:
+                bounds = self.fm.bounds
 
-            upper_bound_violation = x0 > self.fm.bounds[1][self.inds_free]
-            x0[upper_bound_violation] = (
-                self.fm.bounds[1][self.inds_free][upper_bound_violation] - eps
-            )
-            del lower_bound_violation, upper_bound_violation
+            x0 = self.fm.clip_bounds(x0, bounds, inds_free=self.inds_free, eps=eps)
 
             # Find the full state vector with bounds checked
             x = self.full_statevector(x0)
+
+            # Heuristic prior means are based on initial guess
+            # Saving here will inherit the bounds check that comes before it.
+            if self.per_pixel_heuristic_prior:
+                self.fm.update_heuristic_prior_means(x, geom)
 
             # Regardless of anything we did for the heuristic guess, bring the
             # static preseed back into play (only does anything if inds_preseed

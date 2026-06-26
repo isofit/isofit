@@ -158,6 +158,28 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
+        if full_config.implementation.per_pixel_heuristic_prior:
+            self.xa = self.xa_heuristic
+        else:
+            self.xa = self.xa_static
+
+    @staticmethod
+    def clip_bounds(x, bounds, inds_free=slice(None), eps=1e-5):
+        """Clip state vector against bounds.
+        eps shifts bounds by epsilon to not pin
+        boundary returned val at boundary. Used when clipping prior mean.
+        Use a relative espilon to scale with statevecor value.
+        """
+        check = bounds[0] != bounds[1]
+        low = bounds[0].astype(float)
+        high = bounds[1].astype(float)
+
+        rel_eps = np.maximum(0, np.minimum(eps * np.maximum(bounds[1], 1.0), 1))
+        low[check] = low[check] + rel_eps[check]
+        high[check] = high[check] - rel_eps[check]
+
+        return np.clip(x[inds_free], a_min=low[inds_free], a_max=high[inds_free])
+
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
 
@@ -168,7 +190,35 @@ class ForwardModel:
             x_atmosphere <= (bound_lwr[self.idx_atmosphere] + eps * 2.0)
         )
 
-    def xa(self, x, geom):
+    def update_heuristic_prior_means(self, x, geom):
+        """Save the pixel-specific prior to the geometry object"""
+        x_surface, x_atmosphere, x_instrument = self.unpack(x)
+        x_surface = self.surface.update_heuristic_prior_means(x[self.idx_surface], geom)
+        x_atmosphere = self.atmosphere.update_heuristic_prior_means(
+            x[self.idx_atmosphere], geom
+        )
+        # No implimentation for Instrument
+
+        # Should be persist out of this function scope
+        geom.xa = np.concatenate([x_surface, x_atmosphere, x_instrument])
+
+        return
+
+    def heuristic_bounds(self, geom):
+        """Save pixel-specific bounds. Currently only implemented for H2O"""
+        # Would like to avoid if statement here
+        low_bound = self.bounds[0]
+        high_bound = self.bounds[1]
+        if self.atmosphere.h2o_i:
+            high_bound[self.idx_atmosphere[self.atmosphere.h2o_i]] = (
+                self.atmosphere.h2o_bounds_polynomial(geom.surface_elevation_km) - eps
+            )
+        return (low_bound, high_bound)
+
+    def xa_heuristic(self, x, geom):
+        return geom.xa
+
+    def xa_static(self, x, geom):
         """Calculate the prior mean of the state vector (the concatenation
         of state vectors for the surface, atmosphere, and instrument).
 

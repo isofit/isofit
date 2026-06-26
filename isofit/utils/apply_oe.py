@@ -17,7 +17,7 @@ import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
-from isofit.atmosphere.engines.modtran import ModtranRT
+from isofit.atmosphere.atmosphere import modtran_water_upperbound_polynomials
 from isofit.core import isofit, units
 from isofit.core.common import envi_header
 from isofit.debug.resource_tracker import FileResources
@@ -311,7 +311,7 @@ def apply_oe(
             )
 
     # Load in water column upper bound polynomials
-    modtran_polynomials_dict = ModtranRT.modtran_water_upperbound_polynomials()
+    modtran_polynomials_dict = modtran_water_upperbound_polynomials()
     if atmosphere_type not in modtran_polynomials_dict:
         keys = ", ".join(modtran_polynomials_dict.keys())
         raise ValueError(

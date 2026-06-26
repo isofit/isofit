@@ -17,7 +17,10 @@ from scipy.io import loadmat
 from spectral.io import envi
 
 from isofit import __version__
-from isofit.atmosphere.engines.modtran import ModtranRT
+from isofit.atmosphere.atmosphere import (
+    modtran_aot_lowerbound_polynomials,
+    modtran_water_upperbound_polynomials,
+)
 from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.core.multistate import SurfaceMapping
@@ -412,9 +415,7 @@ class LUTConfig:
 
         # Set defaults, will override based on settings
         # Units of g / m2
-        modtran_max_water = ModtranRT.modtran_water_upperbound_polynomials()[
-            atmosphere_type
-        ](0)
+        modtran_max_water = modtran_water_upperbound_polynomials()[atmosphere_type](0)
         self.h2o_range = [0.2, modtran_max_water]
 
         # Units of degrees
@@ -442,9 +443,7 @@ class LUTConfig:
         self.aerosol_2_spacing_min = 0
 
         # Units of AOD
-        modtran_min_aerosol = ModtranRT.modtran_aot_lowerbound_polynomials()[
-            atmosphere_type
-        ](0)
+        modtran_min_aerosol = modtran_aot_lowerbound_polynomials()[atmosphere_type](0)
         self.aerosol_0_range = [modtran_min_aerosol, 1]
         self.aerosol_1_range = [modtran_min_aerosol, 1]
         self.aerosol_2_range = [modtran_min_aerosol, 1]

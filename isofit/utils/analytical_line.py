@@ -32,7 +32,7 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_esd, load_spectrum, load_wavelen
+from isofit.core.common import envi_header, eps, load_esd, load_spectrum, load_wavelen
 from isofit.core.fileio import initialize_output, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
@@ -462,6 +462,7 @@ class Worker(object):
             self.radiance_correction = None
 
         self.initializer = initializer
+        self.per_pixel_heuristic_prior = config.implementation.per_pixel_heuristic_prior
 
     def run_chunks(self, line_breaks: tuple, fill_value: float = -9999.0) -> None:
         """
@@ -586,8 +587,16 @@ class Worker(object):
             else:
                 raise ValueError("No valid initializer given for AOE algorithm")
 
-            # NOTE: this line needs to be here to ensure geom.surf_cmp_init is populated
-            geom.x_surf_init = x0[self.fm.idx_surface]
+            # Update the bounds and set prior to initial (if that is the run
+            if self.per_pixel_heuristic_prior:
+                bounds = self.fm.heuristic_bounds(geom)
+            else:
+                bounds = self.fm.bounds
+
+            x0 = self.fm.clip_bounds(x0, bounds, eps=eps)
+
+            if self.per_pixel_heuristic_prior:
+                self.fm.update_heuristic_prior_means(x0, geom)
 
             states, unc = invert_analytical(
                 self.fm,

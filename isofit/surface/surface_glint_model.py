@@ -103,24 +103,19 @@ class GlintModelSurface(MultiComponentSurface):
             Cov / np.mean(np.diag(Cov))
         )
 
-        if full_config.implementation.per_pixel_heuristic_prior:
-            self.xa = self.xa_heuristic
-        else:
-            self.xa = self.xa_static
+    def update_heuristic_prior_means(self, x_surface, geom):
+        """Update the sun glint prior to match initial guess (x_surface"""
+        mu = MultiComponentSurface.update_heuristic_prior_means(self, x_surface, geom)
+        mu[self.sky_glint_ind] = self.sky_glint_mean
+        mu[self.sun_glint_ind] = x_surface[self.sun_glint_ind]
 
-    def xa_static(self, x_surface, geom):
+        return mu
+
+    def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
         mu = MultiComponentSurface.xa(self, x_surface, geom)
         mu[self.sky_glint_ind] = self.sky_glint_mean
         mu[self.sun_glint_ind] = self.sun_glint_mean
-
-        return mu
-
-    def xa_heuristic(self, x_surface, geom):
-        """Mean of prior distribution, calculated at state x."""
-        mu = MultiComponentSurface.xa(self, x_surface, geom)
-        mu[self.sky_glint_ind] = self.sky_glint_mean
-        mu[self.sun_glint_ind] = geom.sun_glint_init
 
         return mu
 
