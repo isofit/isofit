@@ -1569,6 +1569,32 @@ def make_atmosphere_config(
     if prebuilt_lut_path is not None:
         prebuilt_dimensions = inspect_lut_dimensions(prebuilt_lut_path)
 
+        # Read MODTRAN template to get scene-wise mean values for interpolation
+        template_means = {}
+        if modtran_template_path is not None and os.path.exists(modtran_template_path):
+            with open(modtran_template_path, "r") as f:
+                template = json.load(f)
+                # Extract geometry parameters from first case
+                if "cases" in template and len(template["cases"]) > 0:
+                    geom = template["cases"][0]["MODTRAN"][0].get("GEOMETRY", {})
+                    surf = template["cases"][0]["MODTRAN"][0].get("SURFACE", {})
+                    atm = template["cases"][0]["MODTRAN"][0].get("ATMOSPHERE", {})
+
+                    # Map MODTRAN parameters to isofit dimension names
+                    template_means["solar_zenith"] = geom.get("PARM2")
+                    template_means["observer_zenith"] = (
+                        180 - geom.get("OBSZEN")
+                        if geom.get("OBSZEN") is not None
+                        else None
+                    )  # Convert from MODTRAN convention
+                    template_means["relative_azimuth"] = geom.get("PARM1")
+                    template_means["surface_elevation_km"] = surf.get("GNDALT")
+                    template_means["CO2"] = atm.get("CO2MX")
+
+                    logging.debug(
+                        f"Extracted scene means from template: {template_means}"
+                    )
+
         # Check for variables in heuristic but not in LUT (fatal error)
         for dim_name, dim_val in lut_grid.items():
             if dim_val is not None and len(dim_val) > 1:
@@ -1588,14 +1614,20 @@ def make_atmosphere_config(
 
             if dim_name not in lut_grid or lut_grid[dim_name] is None:
                 # Dimension in LUT but not in heuristic === interpolate
-                if dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
+                # Use scene mean from template if available, otherwise fall back to LUT mean or aerosol formula
+                if dim_name in template_means and template_means[dim_name] is not None:
+                    interp_value = template_means[dim_name]
+                    source = "scene mean from template"
+                elif dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
                     interp_value = get_aerosol_initial_value(vmin, vmax)
+                    source = "aerosol initial value formula"
                 else:
                     interp_value = (vmin + vmax) / 2.0
+                    source = "LUT midpoint"
 
                 logging.info(
                     f"Variable '{dim_name}' is present in prebuilt LUT but not "
-                    f"in heuristic. Will interpolate to {interp_value:.4f}"
+                    f"in heuristic. Will interpolate to {interp_value:.4f} ({source})"
                 )
                 lut_names[dim_name] = {"interp": interp_value}
 
@@ -1657,6 +1689,17 @@ def make_atmosphere_config(
                         "lte": constrained_max,
                         "encompass": True,
                     }
+                else:
+                    # Single value or no valid range - should interpolate
+                    logging.warning(
+                        f"Dimension '{dim_name}' in both LUT and heuristic but heuristic has "
+                        f"invalid value: {heuristic_val}. Treating as interpolation."
+                    )
+                    if dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
+                        interp_value = get_aerosol_initial_value(vmin, vmax)
+                    else:
+                        interp_value = (vmin + vmax) / 2.0
+                    lut_names[dim_name] = {"interp": interp_value}
 
     for tr in np.unique(to_remove):
         lut_grid.pop(tr)
@@ -1666,6 +1709,8 @@ def make_atmosphere_config(
     # Set up lut_names for subsetting
     if prebuilt_lut_path is not None:
         # lut_names was already built during reconciliation above
+        logging.info(f"Final lut_names keys: {list(lut_names.keys())}")
+        logging.info(f"Final lut_names content: {lut_names}")
         atmosphere_config["engine"]["lut_names"] = lut_names
     else:
         # For new LUTs being built, lut_names should be None (use all points)
