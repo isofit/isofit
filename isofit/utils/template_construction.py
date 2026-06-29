@@ -1687,10 +1687,10 @@ def make_atmosphere_config(
 
                     # Store all encompassing LUT points in lut_grid
                     lut_grid[dim_name] = subset_points.tolist()
-                    # Set gte and lte.  Also set encompass for completeness
+                    # Set gte and lte to the actual LUT grid boundaries (first and last point)
                     lut_names[dim_name] = {
-                        "gte": constrained_min,
-                        "lte": constrained_max,
+                        "gte": subset_points[0],
+                        "lte": subset_points[-1],
                         "encompass": True,
                     }
                 else:
