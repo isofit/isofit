@@ -22,6 +22,7 @@ on:
   pull_request:
     branches-ignore: ["main", "gh-pages"]
     paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/**"]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.event.pull_request.head.ref }}
