@@ -4668,6 +4668,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.luts.reader.inspect_lut_dimensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inspect_lut_dimensions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.luts.reader.findSlice" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5544,7 +5555,90 @@
 <span class="normal">683</span>
 <span class="normal">684</span>
 <span class="normal">685</span>
-<span class="normal">686</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">686</span>
+<span class="normal">687</span>
+<span class="normal">688</span>
+<span class="normal">689</span>
+<span class="normal">690</span>
+<span class="normal">691</span>
+<span class="normal">692</span>
+<span class="normal">693</span>
+<span class="normal">694</span>
+<span class="normal">695</span>
+<span class="normal">696</span>
+<span class="normal">697</span>
+<span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span>
+<span class="normal">702</span>
+<span class="normal">703</span>
+<span class="normal">704</span>
+<span class="normal">705</span>
+<span class="normal">706</span>
+<span class="normal">707</span>
+<span class="normal">708</span>
+<span class="normal">709</span>
+<span class="normal">710</span>
+<span class="normal">711</span>
+<span class="normal">712</span>
+<span class="normal">713</span>
+<span class="normal">714</span>
+<span class="normal">715</span>
+<span class="normal">716</span>
+<span class="normal">717</span>
+<span class="normal">718</span>
+<span class="normal">719</span>
+<span class="normal">720</span>
+<span class="normal">721</span>
+<span class="normal">722</span>
+<span class="normal">723</span>
+<span class="normal">724</span>
+<span class="normal">725</span>
+<span class="normal">726</span>
+<span class="normal">727</span>
+<span class="normal">728</span>
+<span class="normal">729</span>
+<span class="normal">730</span>
+<span class="normal">731</span>
+<span class="normal">732</span>
+<span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span>
+<span class="normal">738</span>
+<span class="normal">739</span>
+<span class="normal">740</span>
+<span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span>
+<span class="normal">744</span>
+<span class="normal">745</span>
+<span class="normal">746</span>
+<span class="normal">747</span>
+<span class="normal">748</span>
+<span class="normal">749</span>
+<span class="normal">750</span>
+<span class="normal">751</span>
+<span class="normal">752</span>
+<span class="normal">753</span>
+<span class="normal">754</span>
+<span class="normal">755</span>
+<span class="normal">756</span>
+<span class="normal">757</span>
+<span class="normal">758</span>
+<span class="normal">759</span>
+<span class="normal">760</span>
+<span class="normal">761</span>
+<span class="normal">762</span>
+<span class="normal">763</span>
+<span class="normal">764</span>
+<span class="normal">765</span>
+<span class="normal">766</span>
+<span class="normal">767</span>
+<span class="normal">768</span>
+<span class="normal">769</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Manages the reading and subsetting of look-up tables (LUTs)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -5563,6 +5657,89 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">common</span>
 
 <span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">inspect_lut_dimensions</span><span class="p">(</span><span class="n">lut_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span><div class="mkapi-source-link" id="isofit.luts.reader.inspect_lut_dimensions"><a href="../../../../api/isofit/luts/reader/#isofit.luts.reader.inspect_lut_dimensions" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inspect a prebuilt LUT file to determine available dimensions and their grid points.</span>
+
+<span class="sd">    Supports both NetCDF (.nc) and Zarr formats.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        lut_path: Path to the prebuilt LUT file (NetCDF or Zarr store)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: Mapping dimension names to numpy arrays of grid points</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; dims = inspect_lut_dimensions(&quot;lut.nc&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; dims.keys()</span>
+<span class="sd">        dict_keys([&#39;H2OSTR&#39;, &#39;AOT550&#39;, &#39;observer_zenith&#39;, &#39;wl&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; dims[&#39;H2OSTR&#39;]</span>
+<span class="sd">        array([0.5, 1.0, 1.5, 2.0, 2.5])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lut_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">lut_path</span><span class="p">)</span>
+
+    <span class="c1"># Detect format based on file extension or directory structure</span>
+    <span class="k">if</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.zarr&quot;</span> <span class="ow">or</span> <span class="p">(</span>
+        <span class="n">lut_path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.nc&quot;</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="n">_inspect_zarr_dimensions</span><span class="p">(</span><span class="n">lut_path</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.nc&quot;</span> <span class="ow">or</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">_inspect_netcdf_dimensions</span><span class="p">(</span><span class="n">lut_path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Cannot determine LUT format for: </span><span class="si">{</span><span class="n">lut_path</span><span class="si">}</span><span class="s2">. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Expected .nc file (NetCDF) or .zarr directory (Zarr).&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_inspect_netcdf_dimensions</span><span class="p">(</span><span class="n">lut_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inspect NetCDF LUT dimensions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        lut_path: Path to the NetCDF LUT file</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: Mapping dimension names to numpy arrays of grid points</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lut_dimensions</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">lut_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ncds</span><span class="p">:</span>
+        <span class="c1"># Iterate through all variables that could be LUT dimensions</span>
+        <span class="c1"># These are typically 1-D coordinate variables</span>
+        <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">ncds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">ncds</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
+
+            <span class="c1"># Check if this is a coordinate/dimension variable (1-D)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">dimensions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">var</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">var_name</span><span class="p">:</span>
+                <span class="c1"># This is a dimension variable - store the actual grid points</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">var</span><span class="p">[:]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">lut_dimensions</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">lut_dimensions</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_inspect_zarr_dimensions</span><span class="p">(</span><span class="n">lut_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inspect Zarr LUT dimensions using xarray.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        lut_path: Path to the Zarr LUT store</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: Mapping dimension names to numpy arrays of grid points</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lut_dimensions</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Open zarr store with xarray (don&#39;t load data, just inspect)</span>
+    <span class="k">with</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">lut_path</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;zarr&quot;</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+        <span class="c1"># Extract all coordinate dimensions</span>
+        <span class="k">for</span> <span class="n">coord_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
+            <span class="n">coord_data</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">coord_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coord_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">lut_dimensions</span><span class="p">[</span><span class="n">coord_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coord_data</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">lut_dimensions</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">findSlice</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.reader.findSlice"><a href="../../../../api/isofit/luts/reader/#isofit.luts.reader.findSlice" title="Go to docs">[docs]</a></div>

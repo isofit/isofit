@@ -5570,14 +5570,7 @@
 <span class="normal">792</span>
 <span class="normal">793</span>
 <span class="normal">794</span>
-<span class="normal">795</span>
-<span class="normal">796</span>
-<span class="normal">797</span>
-<span class="normal">798</span>
-<span class="normal">799</span>
-<span class="normal">800</span>
-<span class="normal">801</span>
-<span class="normal">802</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">795</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick</span>
 <span class="c1">#</span>
@@ -5903,23 +5896,16 @@
     <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.jld2&quot;</span><span class="p">):</span>
             <span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">elif</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.h5&quot;</span><span class="p">):</span>
+            <span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">elif</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.6c&quot;</span><span class="p">):</span>
+            <span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">True</span>
+
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.npz&quot;</span><span class="p">):</span>
-                <span class="n">emulator_aux_file</span> <span class="o">=</span> <span class="n">emulator_base</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">emulator_aux_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
-                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">emulator_base</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;_aux.npz&quot;</span>
-                <span class="p">)</span>
-            <span class="n">aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">emulator_aux_file</span><span class="p">)</span>
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="s2">&quot;transm_down_dir&quot;</span>
-                <span class="ow">and</span> <span class="s2">&quot;transm_down_dif&quot;</span>
-                <span class="ow">and</span> <span class="s2">&quot;transm_up_dir&quot;</span>
-                <span class="ow">and</span> <span class="s2">&quot;transm_up_dif&quot;</span> <span class="ow">in</span> <span class="n">aux</span><span class="p">[</span><span class="s2">&quot;rt_quantities&quot;</span><span class="p">]</span>
-            <span class="p">):</span>
-                <span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid emulator_base extension. Use .h5, .6c, or .jld2&quot;</span><span class="p">)</span>
+
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># This is the MODTRAN case. Do we want to enable the 4c mode by default?</span>
         <span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">True</span>

@@ -3340,6 +3340,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.luts.reader.inspect_lut_dimensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inspect_lut_dimensions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.luts.reader.findSlice" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4892,6 +4903,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.luts.reader.inspect_lut_dimensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inspect_lut_dimensions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.luts.reader.findSlice" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5208,6 +5230,11 @@ LUT reader class to manage the reading and manipulation of LUT stores</p>
 <div class="mkapi-section-content">
 <ul class="mkapi-item-list">
 <li>
+<p><span class="mkapi-item-name"><a href="./#isofit.luts.reader.inspect_lut_dimensions" title="isofit.luts.reader.inspect_lut_dimensions">inspect_lut_dimensions</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Inspect a prebuilt LUT file to determine available dimensions and their grid points.</p>
+</li>
+<li>
 <p><span class="mkapi-item-name"><a href="./#isofit.luts.reader.findSlice" title="isofit.luts.reader.findSlice">findSlice</a></span>
  <span class="mkapi-dash">&mdash;</span>
 Creates a slice for selecting along a dimension such that a value is encompassed by
@@ -5241,6 +5268,88 @@ Checks for NaNs in the Dataset</p>
 </li>
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.luts.reader.load" title="isofit.luts.reader.load">load</a></span></p>
+</li>
+</ul>
+</div>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.luts.reader.inspect_lut_dimensions">
+<span class="mkapi-object-link">
+
+
+<a href="../../../../src/isofit/luts/reader/#isofit.luts.reader.inspect_lut_dimensions" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-object-name"><a href="./#isofit.luts.reader.inspect_lut_dimensions" title="isofit.luts.reader.inspect_lut_dimensions">inspect_lut_dimensions</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">lut_path</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-paren">)</span><span class="mkapi-arrow"> → </span><span class="mkapi-return">dict[str, <span class="mkapi-tooltip" title="numpy">np</span>.<span class="mkapi-tooltip" title="numpy._core.ndarray">ndarray</span>]</span></span>
+</p>
+<div class="mkapi-document">
+<p>Inspect a prebuilt LUT file to determine available dimensions and their grid points.</p>
+<p>Supports both NetCDF (.nc) and Zarr formats.</p>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle parameters">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Parameters</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-name">lut_path</span> : 
+<span class="mkapi-item-type">str</span> <span class="mkapi-dash">&mdash;</span>
+Path to the prebuilt LUT file (NetCDF or Zarr store)</p>
+</li>
+</ul>
+</div>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle returns">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Returns</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type">dict</span> <span class="mkapi-dash">&mdash;</span>
+Mapping dimension names to numpy arrays of grid points</p>
+</li>
+</ul>
+</div>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle examples">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Examples</span>
+</p>
+<div class="mkapi-section-content">
+<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">dims</span> <span class="o">=</span> <span class="n">inspect_lut_dimensions</span><span class="p">(</span><span class="s2">&quot;lut.nc&quot;</span><span class="p">)</span>
+<span class="n">dims</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+</code></pre></div>
+<div class="mkapi-example-output highlight"><pre><span></span><code>dict_keys([&#39;H2OSTR&#39;, &#39;AOT550&#39;, &#39;observer_zenith&#39;, &#39;wl&#39;])
+</code></pre></div>
+<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;H2OSTR&#39;</span><span class="p">]</span>
+</code></pre></div>
+<div class="mkapi-example-output highlight"><pre><span></span><code>array([0.5, 1.0, 1.5, 2.0, 2.5])
+</code></pre></div>
+</div>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle raises">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Raises</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type">ValueError</span></p>
 </li>
 </ul>
 </div>

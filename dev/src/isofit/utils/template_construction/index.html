@@ -4796,6 +4796,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.utils.template_construction.get_aerosol_initial_value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_aerosol_initial_value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.utils.template_construction.get_lut_subset" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6769,7 +6780,177 @@
 <span class="normal">1775</span>
 <span class="normal">1776</span>
 <span class="normal">1777</span>
-<span class="normal">1778</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1778</span>
+<span class="normal">1779</span>
+<span class="normal">1780</span>
+<span class="normal">1781</span>
+<span class="normal">1782</span>
+<span class="normal">1783</span>
+<span class="normal">1784</span>
+<span class="normal">1785</span>
+<span class="normal">1786</span>
+<span class="normal">1787</span>
+<span class="normal">1788</span>
+<span class="normal">1789</span>
+<span class="normal">1790</span>
+<span class="normal">1791</span>
+<span class="normal">1792</span>
+<span class="normal">1793</span>
+<span class="normal">1794</span>
+<span class="normal">1795</span>
+<span class="normal">1796</span>
+<span class="normal">1797</span>
+<span class="normal">1798</span>
+<span class="normal">1799</span>
+<span class="normal">1800</span>
+<span class="normal">1801</span>
+<span class="normal">1802</span>
+<span class="normal">1803</span>
+<span class="normal">1804</span>
+<span class="normal">1805</span>
+<span class="normal">1806</span>
+<span class="normal">1807</span>
+<span class="normal">1808</span>
+<span class="normal">1809</span>
+<span class="normal">1810</span>
+<span class="normal">1811</span>
+<span class="normal">1812</span>
+<span class="normal">1813</span>
+<span class="normal">1814</span>
+<span class="normal">1815</span>
+<span class="normal">1816</span>
+<span class="normal">1817</span>
+<span class="normal">1818</span>
+<span class="normal">1819</span>
+<span class="normal">1820</span>
+<span class="normal">1821</span>
+<span class="normal">1822</span>
+<span class="normal">1823</span>
+<span class="normal">1824</span>
+<span class="normal">1825</span>
+<span class="normal">1826</span>
+<span class="normal">1827</span>
+<span class="normal">1828</span>
+<span class="normal">1829</span>
+<span class="normal">1830</span>
+<span class="normal">1831</span>
+<span class="normal">1832</span>
+<span class="normal">1833</span>
+<span class="normal">1834</span>
+<span class="normal">1835</span>
+<span class="normal">1836</span>
+<span class="normal">1837</span>
+<span class="normal">1838</span>
+<span class="normal">1839</span>
+<span class="normal">1840</span>
+<span class="normal">1841</span>
+<span class="normal">1842</span>
+<span class="normal">1843</span>
+<span class="normal">1844</span>
+<span class="normal">1845</span>
+<span class="normal">1846</span>
+<span class="normal">1847</span>
+<span class="normal">1848</span>
+<span class="normal">1849</span>
+<span class="normal">1850</span>
+<span class="normal">1851</span>
+<span class="normal">1852</span>
+<span class="normal">1853</span>
+<span class="normal">1854</span>
+<span class="normal">1855</span>
+<span class="normal">1856</span>
+<span class="normal">1857</span>
+<span class="normal">1858</span>
+<span class="normal">1859</span>
+<span class="normal">1860</span>
+<span class="normal">1861</span>
+<span class="normal">1862</span>
+<span class="normal">1863</span>
+<span class="normal">1864</span>
+<span class="normal">1865</span>
+<span class="normal">1866</span>
+<span class="normal">1867</span>
+<span class="normal">1868</span>
+<span class="normal">1869</span>
+<span class="normal">1870</span>
+<span class="normal">1871</span>
+<span class="normal">1872</span>
+<span class="normal">1873</span>
+<span class="normal">1874</span>
+<span class="normal">1875</span>
+<span class="normal">1876</span>
+<span class="normal">1877</span>
+<span class="normal">1878</span>
+<span class="normal">1879</span>
+<span class="normal">1880</span>
+<span class="normal">1881</span>
+<span class="normal">1882</span>
+<span class="normal">1883</span>
+<span class="normal">1884</span>
+<span class="normal">1885</span>
+<span class="normal">1886</span>
+<span class="normal">1887</span>
+<span class="normal">1888</span>
+<span class="normal">1889</span>
+<span class="normal">1890</span>
+<span class="normal">1891</span>
+<span class="normal">1892</span>
+<span class="normal">1893</span>
+<span class="normal">1894</span>
+<span class="normal">1895</span>
+<span class="normal">1896</span>
+<span class="normal">1897</span>
+<span class="normal">1898</span>
+<span class="normal">1899</span>
+<span class="normal">1900</span>
+<span class="normal">1901</span>
+<span class="normal">1902</span>
+<span class="normal">1903</span>
+<span class="normal">1904</span>
+<span class="normal">1905</span>
+<span class="normal">1906</span>
+<span class="normal">1907</span>
+<span class="normal">1908</span>
+<span class="normal">1909</span>
+<span class="normal">1910</span>
+<span class="normal">1911</span>
+<span class="normal">1912</span>
+<span class="normal">1913</span>
+<span class="normal">1914</span>
+<span class="normal">1915</span>
+<span class="normal">1916</span>
+<span class="normal">1917</span>
+<span class="normal">1918</span>
+<span class="normal">1919</span>
+<span class="normal">1920</span>
+<span class="normal">1921</span>
+<span class="normal">1922</span>
+<span class="normal">1923</span>
+<span class="normal">1924</span>
+<span class="normal">1925</span>
+<span class="normal">1926</span>
+<span class="normal">1927</span>
+<span class="normal">1928</span>
+<span class="normal">1929</span>
+<span class="normal">1930</span>
+<span class="normal">1931</span>
+<span class="normal">1932</span>
+<span class="normal">1933</span>
+<span class="normal">1934</span>
+<span class="normal">1935</span>
+<span class="normal">1936</span>
+<span class="normal">1937</span>
+<span class="normal">1938</span>
+<span class="normal">1939</span>
+<span class="normal">1940</span>
+<span class="normal">1941</span>
+<span class="normal">1942</span>
+<span class="normal">1943</span>
+<span class="normal">1944</span>
+<span class="normal">1945</span>
+<span class="normal">1946</span>
+<span class="normal">1947</span>
+<span class="normal">1948</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick and Niklas Bohn</span>
 <span class="c1">#</span>
@@ -6793,6 +6974,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span><span class="p">,</span> <span class="n">expand_path</span><span class="p">,</span> <span class="n">json_load_ascii</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.multistate</span><span class="w"> </span><span class="kn">import</span> <span class="n">SurfaceMapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">env</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.luts.reader</span><span class="w"> </span><span class="kn">import</span> <span class="n">inspect_lut_dimensions</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.utils.surface_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">surface_model</span>
 
 
@@ -7634,13 +7816,35 @@
 
     <span class="k">return</span> <span class="n">config</span>
 
+<div class="mkapi-source-link" id="isofit.utils.template_construction.get_aerosol_initial_value"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.get_aerosol_initial_value" title="Go to docs">[docs]</a></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_aerosol_initial_value</span><span class="p">(</span><span class="n">range_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">range_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the initial/interpolation value for aerosol parameters.</span>
+<span class="sd">    Somewhat arbitrary, but puts the starting value away from the lower bound,</span>
+<span class="sd">    but still low (assuming clear sky).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        range_min: minimum value of the aerosol parameter range</span>
+<span class="sd">        range_max: maximum value of the aerosol parameter range</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: the initial/interpolation value (min + 10% of range)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">range_max</span> <span class="o">-</span> <span class="n">range_min</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span> <span class="o">+</span> <span class="n">range_min</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_lut_subset</span><span class="p">(</span><span class="n">vals</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.template_construction.get_lut_subset"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.get_lut_subset" title="Go to docs">[docs]</a></div>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Populate lut_names for the appropriate style of subsetting</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        vals: the values to use for subsetting</span>
+<span class="sd">        vals: the values to use for subsetting (list, array, or dict)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict with either {&quot;interp&quot;: value} for single values or</span>
+<span class="sd">        {&quot;gte&quot;: min, &quot;lte&quot;: max} for ranges, or None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="c1"># Already formatted, return as-is</span>
+        <span class="k">return</span> <span class="n">vals</span>
 
     <span class="k">if</span> <span class="n">vals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;interp&quot;</span><span class="p">:</span> <span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]}</span>
@@ -7802,12 +8006,13 @@
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">aerosol_lut</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">init_value</span> <span class="o">=</span> <span class="n">get_aerosol_initial_value</span><span class="p">(</span><span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">alr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">aerosol_state_vector</span><span class="p">[</span><span class="s2">&quot;AERFRAC_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_a</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">alr</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span>
                 <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">((</span><span class="n">alr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mf">10.0</span> <span class="o">+</span> <span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">init_value</span><span class="p">),</span>
                 <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">((</span><span class="n">alr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mf">10.0</span> <span class="o">+</span> <span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">init_value</span><span class="p">),</span>
             <span class="p">}</span>
 
             <span class="n">aerosol_lut_grid</span><span class="p">[</span><span class="s2">&quot;AERFRAC_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_a</span><span class="p">)]</span> <span class="o">=</span> <span class="n">aerosol_lut</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
@@ -7822,12 +8027,13 @@
     <span class="k">if</span> <span class="n">aot_550_lut</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">aerosol_lut_grid</span><span class="p">[</span><span class="s2">&quot;AOT550&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aot_550_lut</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
         <span class="n">alr</span> <span class="o">=</span> <span class="p">[</span><span class="n">aerosol_lut_grid</span><span class="p">[</span><span class="s2">&quot;AOT550&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">aerosol_lut_grid</span><span class="p">[</span><span class="s2">&quot;AOT550&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">init_value</span> <span class="o">=</span> <span class="n">get_aerosol_initial_value</span><span class="p">(</span><span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">alr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">aerosol_state_vector</span><span class="p">[</span><span class="s2">&quot;AOT550&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">alr</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span>
             <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">((</span><span class="n">alr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mf">10.0</span> <span class="o">+</span> <span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">init_value</span><span class="p">),</span>
             <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>
-            <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">((</span><span class="n">alr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mf">10.0</span> <span class="o">+</span> <span class="n">alr</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">init_value</span><span class="p">),</span>
         <span class="p">}</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading Climatology&quot;</span><span class="p">)</span>
@@ -8305,29 +8511,174 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">lut_grid</span><span class="p">[</span><span class="n">gn</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gc</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
+    <span class="c1"># Remove single-value/None dimensions BEFORE reconciliation so</span>
+    <span class="c1"># to prevent entry in the heuristic (IE, we need to interpolate)</span>
+    <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">to_remove</span><span class="p">):</span>
+        <span class="n">lut_grid</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">tr</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">emulator_base</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.jld2&quot;</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.atmosphere.engines.kernel_flows</span><span class="w"> </span><span class="kn">import</span> <span class="n">bounds_check</span>
 
         <span class="c1"># Should only modify H2OSTR and surface_elevation_km</span>
         <span class="n">bounds_check</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">,</span> <span class="n">emulator_base</span><span class="p">,</span> <span class="n">modify</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">ncds</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">lut_names</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">prebuilt_lut_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">ncds</span> <span class="o">=</span> <span class="n">nc</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">prebuilt_lut_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">gn</span><span class="p">,</span> <span class="n">gc</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">gn</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ncds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">gn</span><span class="si">}</span><span class="s2"> not found in prebuilt LUT, removing it from LUT.&quot;</span>
-                <span class="p">)</span>
-                <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gn</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">lut_grid</span><span class="p">[</span><span class="n">gn</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_lut_subset</span><span class="p">(</span><span class="n">gc</span><span class="p">)</span>
+        <span class="n">prebuilt_dimensions</span> <span class="o">=</span> <span class="n">inspect_lut_dimensions</span><span class="p">(</span><span class="n">prebuilt_lut_path</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">to_remove</span><span class="p">):</span>
-        <span class="n">lut_grid</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">tr</span><span class="p">)</span>
+        <span class="c1"># Read MODTRAN template to get scene-wise mean values for interpolation</span>
+        <span class="n">template_means</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">modtran_template_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">modtran_template_path</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">modtran_template_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">template</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s2">&quot;cases&quot;</span> <span class="ow">in</span> <span class="n">template</span><span class="p">:</span>
+                    <span class="n">template</span> <span class="o">=</span> <span class="n">template</span><span class="p">[</span><span class="s2">&quot;cases&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">template</span> <span class="o">=</span> <span class="n">template</span><span class="p">[</span><span class="s2">&quot;MODTRAN&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">]</span>
+
+                <span class="c1"># Extract geometry parameters from first case</span>
+                <span class="n">geom</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                <span class="n">surf</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SURFACE&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                <span class="n">atm</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+                <span class="c1"># Map MODTRAN parameters to isofit dimension names</span>
+                <span class="n">template_means</span><span class="p">[</span><span class="s2">&quot;solar_zenith&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PARM2&quot;</span><span class="p">)</span>
+                <span class="n">template_means</span><span class="p">[</span><span class="s2">&quot;observer_zenith&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="mi">180</span> <span class="o">-</span> <span class="n">geom</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;OBSZEN&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;OBSZEN&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">)</span>  <span class="c1"># Convert from MODTRAN convention</span>
+                <span class="n">template_means</span><span class="p">[</span><span class="s2">&quot;relative_azimuth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PARM1&quot;</span><span class="p">)</span>
+                <span class="n">template_means</span><span class="p">[</span><span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">surf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;GNDALT&quot;</span><span class="p">)</span>
+                <span class="n">template_means</span><span class="p">[</span><span class="s2">&quot;CO2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;CO2MX&quot;</span><span class="p">)</span>
+
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extracted scene means from template: </span><span class="si">{</span><span class="n">template_means</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check for variables in heuristic but not in LUT (fatal error)</span>
+        <span class="k">for</span> <span class="n">dim_name</span><span class="p">,</span> <span class="n">dim_val</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">dim_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">dim_val</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dim_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">prebuilt_dimensions</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">dim_name</span><span class="si">}</span><span class="s2">&#39; is required by the template heuristic but is not &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;present in the prebuilt LUT at </span><span class="si">{</span><span class="n">prebuilt_lut_path</span><span class="si">}</span><span class="s2">. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Available dimensions in LUT: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">prebuilt_dimensions</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="c1"># Process each dimension in the prebuilt LUT</span>
+        <span class="k">for</span> <span class="n">dim_name</span><span class="p">,</span> <span class="n">lut_grid_points</span> <span class="ow">in</span> <span class="n">prebuilt_dimensions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">dim_name</span> <span class="o">==</span> <span class="s2">&quot;wl&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">lut_grid_points</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">lut_grid_points</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+            <span class="c1"># Dimension in LUT but not in heuristic === interpolate</span>
+            <span class="k">if</span> <span class="n">dim_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lut_grid</span> <span class="ow">or</span> <span class="n">lut_grid</span><span class="p">[</span><span class="n">dim_name</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Use scene mean from template if available, otherwise fall back to LUT mean or aerosol formula</span>
+                <span class="k">if</span> <span class="n">dim_name</span> <span class="ow">in</span> <span class="n">template_means</span> <span class="ow">and</span> <span class="n">template_means</span><span class="p">[</span><span class="n">dim_name</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">interp_value</span> <span class="o">=</span> <span class="n">template_means</span><span class="p">[</span><span class="n">dim_name</span><span class="p">]</span>
+                    <span class="n">source</span> <span class="o">=</span> <span class="s2">&quot;scene mean from template&quot;</span>
+                <span class="k">elif</span> <span class="n">dim_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;AOT&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">dim_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;AERFRAC&quot;</span><span class="p">):</span>
+                    <span class="n">interp_value</span> <span class="o">=</span> <span class="n">get_aerosol_initial_value</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">)</span>
+                    <span class="n">source</span> <span class="o">=</span> <span class="s2">&quot;aerosol initial value formula&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">interp_value</span> <span class="o">=</span> <span class="p">(</span><span class="n">vmin</span> <span class="o">+</span> <span class="n">vmax</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+                    <span class="n">source</span> <span class="o">=</span> <span class="s2">&quot;LUT midpoint&quot;</span>
+
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">dim_name</span><span class="si">}</span><span class="s2">&#39; is present in prebuilt LUT but not &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;in heuristic. Will interpolate to </span><span class="si">{</span><span class="n">interp_value</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="p">)</span>
+                <span class="n">lut_names</span><span class="p">[</span><span class="n">dim_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;interp&quot;</span><span class="p">:</span> <span class="n">interp_value</span><span class="p">}</span>
+
+            <span class="c1"># Dimension in both LUT and heuristic === subset</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">heuristic_val</span> <span class="o">=</span> <span class="n">lut_grid</span><span class="p">[</span><span class="n">dim_name</span><span class="p">]</span>
+
+                <span class="c1"># Skip if already formatted as a dict</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">heuristic_val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">lut_names</span><span class="p">[</span><span class="n">dim_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">heuristic_val</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="p">)</span>  <span class="c1"># Copy to avoid shared references</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Get heuristic range</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">heuristic_val</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">))</span>
+                    <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">heuristic_val</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+                <span class="p">):</span>
+                    <span class="n">heur_min</span><span class="p">,</span> <span class="n">heur_max</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">heuristic_val</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">heuristic_val</span><span class="p">)</span>
+
+                    <span class="c1"># Constrain heuristic to LUT bounds</span>
+                    <span class="n">constrained_min</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">heur_min</span><span class="p">,</span> <span class="n">vmin</span><span class="p">)</span>
+                    <span class="n">constrained_max</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">heur_max</span><span class="p">,</span> <span class="n">vmax</span><span class="p">)</span>
+
+                    <span class="c1"># Find LUT grid points that encompass the constrained range</span>
+                    <span class="n">lower_candidates</span> <span class="o">=</span> <span class="n">lut_grid_points</span><span class="p">[</span>
+                        <span class="n">lut_grid_points</span> <span class="o">&lt;=</span> <span class="n">constrained_min</span>
+                    <span class="p">]</span>
+                    <span class="n">lower_bound</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">lower_candidates</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lower_candidates</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">vmin</span>
+                    <span class="p">)</span>
+
+                    <span class="n">upper_candidates</span> <span class="o">=</span> <span class="n">lut_grid_points</span><span class="p">[</span>
+                        <span class="n">lut_grid_points</span> <span class="o">&gt;=</span> <span class="n">constrained_max</span>
+                    <span class="p">]</span>
+                    <span class="n">upper_bound</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">upper_candidates</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">upper_candidates</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">vmax</span>
+                    <span class="p">)</span>
+
+                    <span class="c1"># Get all LUT points in the encompassing range</span>
+                    <span class="n">subset_points</span> <span class="o">=</span> <span class="n">lut_grid_points</span><span class="p">[</span>
+                        <span class="p">(</span><span class="n">lut_grid_points</span> <span class="o">&gt;=</span> <span class="n">lower_bound</span><span class="p">)</span>
+                        <span class="o">&amp;</span> <span class="p">(</span><span class="n">lut_grid_points</span> <span class="o">&lt;=</span> <span class="n">upper_bound</span><span class="p">)</span>
+                    <span class="p">]</span>
+
+                    <span class="c1"># We hit this for AOD lower bound all the time,</span>
+                    <span class="c1"># so leaving as a warning for now</span>
+                    <span class="k">if</span> <span class="n">heur_min</span> <span class="o">&lt;</span> <span class="n">vmin</span> <span class="ow">or</span> <span class="n">heur_max</span> <span class="o">&gt;</span> <span class="n">vmax</span><span class="p">:</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">dim_name</span><span class="si">}</span><span class="s2">&#39; heuristic range [</span><span class="si">{</span><span class="n">heur_min</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">heur_max</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">] &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;constrained to LUT range [</span><span class="si">{</span><span class="n">vmin</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">vmax</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">]. &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;Reader will use LUT points that encompass [</span><span class="si">{</span><span class="n">constrained_min</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">constrained_max</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">]&quot;</span>
+                        <span class="p">)</span>
+
+                    <span class="c1"># Store all encompassing LUT points in lut_grid</span>
+                    <span class="n">lut_grid</span><span class="p">[</span><span class="n">dim_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">subset_points</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                    <span class="c1"># Set gte and lte to the actual LUT grid boundaries (first and last point)</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">dim_name</span><span class="si">}</span><span class="s2">: Setting lut_grid to </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">subset_points</span><span class="p">)</span><span class="si">}</span><span class="s2"> LUT points: &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">subset_points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, ..., </span><span class="si">{</span><span class="n">subset_points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">]&quot;</span>
+                    <span class="p">)</span>
+
+                    <span class="c1"># Convert to Python native floats to avoid numpy reference issues</span>
+                    <span class="n">gte_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">subset_points</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">lte_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">subset_points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+                    <span class="n">lut_names</span><span class="p">[</span><span class="n">dim_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;gte&quot;</span><span class="p">:</span> <span class="n">gte_val</span><span class="p">,</span>
+                        <span class="s2">&quot;lte&quot;</span><span class="p">:</span> <span class="n">lte_val</span><span class="p">,</span>
+                        <span class="s2">&quot;encompass&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Single value or no valid range - should interpolate</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Dimension &#39;</span><span class="si">{</span><span class="n">dim_name</span><span class="si">}</span><span class="s2">&#39; in both LUT and heuristic but heuristic has &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;invalid value: </span><span class="si">{</span><span class="n">heuristic_val</span><span class="si">}</span><span class="s2">. Treating as interpolation.&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">dim_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;AOT&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">dim_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;AERFRAC&quot;</span><span class="p">):</span>
+                        <span class="n">interp_value</span> <span class="o">=</span> <span class="n">get_aerosol_initial_value</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">interp_value</span> <span class="o">=</span> <span class="p">(</span><span class="n">vmin</span> <span class="o">+</span> <span class="n">vmax</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+                    <span class="n">lut_names</span><span class="p">[</span><span class="n">dim_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;interp&quot;</span><span class="p">:</span> <span class="n">interp_value</span><span class="p">}</span>
 
     <span class="n">atmosphere_config</span><span class="p">[</span><span class="s2">&quot;lut_grid&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">lut_grid</span><span class="p">)</span>
-    <span class="n">atmosphere_config</span><span class="p">[</span><span class="s2">&quot;engine&quot;</span><span class="p">][</span><span class="s2">&quot;lut_names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+
+    <span class="c1"># Set up lut_names for subsetting</span>
+    <span class="k">if</span> <span class="n">prebuilt_lut_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># lut_names was already built during reconciliation above</span>
+        <span class="n">atmosphere_config</span><span class="p">[</span><span class="s2">&quot;engine&quot;</span><span class="p">][</span><span class="s2">&quot;lut_names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lut_names</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># For new LUTs being built, lut_names should be None (use all points)</span>
+        <span class="n">atmosphere_config</span><span class="p">[</span><span class="s2">&quot;engine&quot;</span><span class="p">][</span><span class="s2">&quot;lut_names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">lut_grid</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="p">}</span>
 
     <span class="c1"># Now do statevector</span>
     <span class="n">statekeys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">]</span>

@@ -4759,6 +4759,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.utils.template_construction.get_aerosol_initial_value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_aerosol_initial_value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.utils.template_construction.get_lut_subset" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5142,6 +5153,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.utils.template_construction.get_aerosol_initial_value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_aerosol_initial_value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.utils.template_construction.get_lut_subset" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5471,6 +5493,13 @@ Checks and rebuilds surface model if needed.</p>
 <p><span class="mkapi-item-name"><a href="./#isofit.utils.template_construction.build_config" title="isofit.utils.template_construction.build_config">build_config</a></span>
  <span class="mkapi-dash">&mdash;</span>
 Write an isofit config file for the main solve, using the specified pathnames and all given info</p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.utils.template_construction.get_aerosol_initial_value" title="isofit.utils.template_construction.get_aerosol_initial_value">get_aerosol_initial_value</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Calculate the initial/interpolation value for aerosol parameters.
+Somewhat arbitrary, but puts the starting value away from the lower bound,
+but still low (assuming clear sky).</p>
 </li>
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.utils.template_construction.get_lut_subset" title="isofit.utils.template_construction.get_lut_subset">get_lut_subset</a></span>
@@ -5989,6 +6018,60 @@ maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat
 </ul>
 </div>
 </div>
+<p class="mkapi-object mkapi-page-source" id="isofit.utils.template_construction.get_aerosol_initial_value">
+<span class="mkapi-object-link">
+
+
+<a href="../../../../src/isofit/utils/template_construction/#isofit.utils.template_construction.get_aerosol_initial_value" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-object-name"><a href="./#isofit.utils.template_construction.get_aerosol_initial_value" title="isofit.utils.template_construction.get_aerosol_initial_value">get_aerosol_initial_value</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">range_min</span><span class="mkapi-colon">: </span><span class="mkapi-ann">float</span><span class="mkapi-comma">, </span><span class="mkapi-arg">range_max</span><span class="mkapi-colon">: </span><span class="mkapi-ann">float</span><span class="mkapi-paren">)</span><span class="mkapi-arrow"> → </span><span class="mkapi-return">float</span></span>
+</p>
+<div class="mkapi-document">
+<p>Calculate the initial/interpolation value for aerosol parameters.
+Somewhat arbitrary, but puts the starting value away from the lower bound,
+but still low (assuming clear sky).</p>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle parameters">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Parameters</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-name">range_min</span> : 
+<span class="mkapi-item-type">float</span> <span class="mkapi-dash">&mdash;</span>
+minimum value of the aerosol parameter range</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">range_max</span> : 
+<span class="mkapi-item-type">float</span> <span class="mkapi-dash">&mdash;</span>
+maximum value of the aerosol parameter range</p>
+</li>
+</ul>
+</div>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle returns">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Returns</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type">float</span> <span class="mkapi-dash">&mdash;</span>
+the initial/interpolation value (min + 10% of range)</p>
+</li>
+</ul>
+</div>
+</div>
 <p class="mkapi-object mkapi-page-source" id="isofit.utils.template_construction.get_lut_subset">
 <span class="mkapi-object-link">
 
@@ -6015,7 +6098,24 @@ maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat
 <li>
 <p><span class="mkapi-item-name">vals</span>
  <span class="mkapi-dash">&mdash;</span>
-the values to use for subsetting</p>
+the values to use for subsetting (list, array, or dict)</p>
+</li>
+</ul>
+</div>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle returns">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Returns</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type">dict with either {"interp"</span> <span class="mkapi-dash">&mdash;</span>
+value} for single values or
+{"gte": min, "lte": max} for ranges, or None</p>
 </li>
 </ul>
 </div>
