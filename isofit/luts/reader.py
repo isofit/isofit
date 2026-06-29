@@ -19,6 +19,89 @@ from isofit.core import common
 Logger = logging.getLogger(__name__)
 
 
+def inspect_lut_dimensions(lut_path: str) -> dict[str, np.ndarray]:
+    """Inspect a prebuilt LUT file to determine available dimensions and their grid points.
+
+    Supports both NetCDF (.nc) and Zarr formats.
+
+    Args:
+        lut_path: Path to the prebuilt LUT file (NetCDF or Zarr store)
+
+    Returns:
+        dict: Mapping dimension names to numpy arrays of grid points
+
+    Examples:
+        >>> dims = inspect_lut_dimensions("lut.nc")
+        >>> dims.keys()
+        dict_keys(['H2OSTR', 'AOT550', 'observer_zenith', 'wl'])
+        >>> dims['H2OSTR']
+        array([0.5, 1.0, 1.5, 2.0, 2.5])
+    """
+    lut_path = Path(lut_path)
+
+    # Detect format based on file extension or directory structure
+    if lut_path.suffix == ".zarr" or (
+        lut_path.is_dir() and not lut_path.suffix == ".nc"
+    ):
+        return _inspect_zarr_dimensions(lut_path)
+    elif lut_path.suffix == ".nc" or lut_path.is_file():
+        return _inspect_netcdf_dimensions(lut_path)
+    else:
+        raise ValueError(
+            f"Cannot determine LUT format for: {lut_path}. "
+            f"Expected .nc file (NetCDF) or .zarr directory (Zarr)."
+        )
+
+
+def _inspect_netcdf_dimensions(lut_path: Path) -> dict[str, np.ndarray]:
+    """Inspect NetCDF LUT dimensions.
+
+    Args:
+        lut_path: Path to the NetCDF LUT file
+
+    Returns:
+        dict: Mapping dimension names to numpy arrays of grid points
+    """
+    lut_dimensions = {}
+
+    with Dataset(lut_path, "r") as ncds:
+        # Iterate through all variables that could be LUT dimensions
+        # These are typically 1-D coordinate variables
+        for var_name in ncds.variables:
+            var = ncds.variables[var_name]
+
+            # Check if this is a coordinate/dimension variable (1-D)
+            if len(var.dimensions) == 1 and var.dimensions[0] == var_name:
+                # This is a dimension variable - store the actual grid points
+                data = var[:]
+                if len(data) > 0:
+                    lut_dimensions[var_name] = np.array(data)
+
+    return lut_dimensions
+
+
+def _inspect_zarr_dimensions(lut_path: Path) -> dict[str, np.ndarray]:
+    """Inspect Zarr LUT dimensions using xarray.
+
+    Args:
+        lut_path: Path to the Zarr LUT store
+
+    Returns:
+        dict: Mapping dimension names to numpy arrays of grid points
+    """
+    lut_dimensions = {}
+
+    # Open zarr store with xarray (don't load data, just inspect)
+    with xr.open_dataset(lut_path, engine="zarr", chunks=None) as ds:
+        # Extract all coordinate dimensions
+        for coord_name in ds.coords:
+            coord_data = ds[coord_name].values
+            if len(coord_data) > 0:
+                lut_dimensions[coord_name] = np.array(coord_data)
+
+    return lut_dimensions
+
+
 def findSlice(dim, val):
     """
     Creates a slice for selecting along a dimension such that a value is encompassed by

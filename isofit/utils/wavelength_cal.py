@@ -324,23 +324,16 @@ def wavelength_cal(
     if emulator_base is not None:
         if emulator_base.endswith(".jld2"):
             multipart_transmittance = False
+
+        elif emulator_base.endswith(".h5"):
+            multipart_transmittance = False
+
+        elif emulator_base.endswith(".6c"):
+            multipart_transmittance = True
+
         else:
-            if emulator_base.endswith(".npz"):
-                emulator_aux_file = emulator_base
-            else:
-                emulator_aux_file = os.path.abspath(
-                    os.path.splitext(emulator_base)[0] + "_aux.npz"
-                )
-            aux = np.load(emulator_aux_file)
-            if (
-                "transm_down_dir"
-                and "transm_down_dif"
-                and "transm_up_dir"
-                and "transm_up_dif" in aux["rt_quantities"]
-            ):
-                multipart_transmittance = True
-            else:
-                multipart_transmittance = False
+            raise ValueError("Invalid emulator_base extension. Use .h5, .6c, or .jld2")
+
     else:
         # This is the MODTRAN case. Do we want to enable the 4c mode by default?
         multipart_transmittance = True

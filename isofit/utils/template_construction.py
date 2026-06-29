@@ -22,6 +22,7 @@ from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
+from isofit.luts.reader import inspect_lut_dimensions
 from isofit.utils.surface_model import surface_model
 
 
@@ -864,12 +865,34 @@ def build_config(
     return config
 
 
+def get_aerosol_initial_value(range_min: float, range_max: float) -> float:
+    """Calculate the initial/interpolation value for aerosol parameters.
+    Somewhat arbitrary, but puts the starting value away from the lower bound,
+    but still low (assuming clear sky).
+
+    Args:
+        range_min: minimum value of the aerosol parameter range
+        range_max: maximum value of the aerosol parameter range
+
+    Returns:
+        float: the initial/interpolation value (min + 10% of range)
+    """
+    return (range_max - range_min) / 10.0 + range_min
+
+
 def get_lut_subset(vals):
     """Populate lut_names for the appropriate style of subsetting
 
     Args:
-        vals: the values to use for subsetting
+        vals: the values to use for subsetting (list, array, or dict)
+
+    Returns:
+        dict with either {"interp": value} for single values or
+        {"gte": min, "lte": max} for ranges, or None
     """
+    if isinstance(vals, dict):
+        # Already formatted, return as-is
+        return vals
 
     if vals is not None and len(vals) == 1:
         return {"interp": vals[0]}
@@ -1031,12 +1054,13 @@ def load_climatology(
         )
 
         if aerosol_lut is not None:
+            init_value = get_aerosol_initial_value(alr[0], alr[1])
             aerosol_state_vector["AERFRAC_{}".format(_a)] = {
                 "bounds": [float(alr[0]), float(alr[1])],
                 "scale": 1,
-                "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
+                "init": float(init_value),
                 "prior_sigma": 10.0,
-                "prior_mean": float((alr[1] - alr[0]) / 10.0 + alr[0]),
+                "prior_mean": float(init_value),
             }
 
             aerosol_lut_grid["AERFRAC_{}".format(_a)] = aerosol_lut.tolist()
@@ -1051,12 +1075,13 @@ def load_climatology(
     if aot_550_lut is not None:
         aerosol_lut_grid["AOT550"] = aot_550_lut.tolist()
         alr = [aerosol_lut_grid["AOT550"][0], aerosol_lut_grid["AOT550"][-1]]
+        init_value = get_aerosol_initial_value(alr[0], alr[1])
         aerosol_state_vector["AOT550"] = {
             "bounds": [float(alr[0]), float(alr[1])],
             "scale": 1,
-            "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
+            "init": float(init_value),
             "prior_sigma": 10.0,
-            "prior_mean": float((alr[1] - alr[0]) / 10.0 + alr[0]),
+            "prior_mean": float(init_value),
         }
 
     logging.info("Loading Climatology")
@@ -1534,29 +1559,174 @@ def make_atmosphere_config(
         else:
             lut_grid[gn] = np.array(gc).tolist()
 
+    # Remove single-value/None dimensions BEFORE reconciliation so
+    # to prevent entry in the heuristic (IE, we need to interpolate)
+    for tr in np.unique(to_remove):
+        lut_grid.pop(tr)
+
     if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
         from isofit.atmosphere.engines.kernel_flows import bounds_check
 
         # Should only modify H2OSTR and surface_elevation_km
         bounds_check(lut_grid, emulator_base, modify=True)
 
-    ncds = None
+    lut_names = {}
     if prebuilt_lut_path is not None:
-        ncds = nc.Dataset(prebuilt_lut_path, "r")
-        for gn, gc in lut_grid.items():
-            if gn not in ncds.variables:
-                logging.warning(
-                    f"Key {gn} not found in prebuilt LUT, removing it from LUT."
-                )
-                to_remove.append(gn)
-            else:
-                lut_grid[gn] = get_lut_subset(gc)
+        prebuilt_dimensions = inspect_lut_dimensions(prebuilt_lut_path)
 
-    for tr in np.unique(to_remove):
-        lut_grid.pop(tr)
+        # Read MODTRAN template to get scene-wise mean values for interpolation
+        template_means = {}
+        if modtran_template_path is not None and os.path.exists(modtran_template_path):
+            with open(modtran_template_path, "r") as f:
+                template = json.load(f)
+                if "cases" in template:
+                    template = template["cases"][0]
+                template = template["MODTRAN"][0]["MODTRANINPUT"]
+
+                # Extract geometry parameters from first case
+                geom = template.get("GEOMETRY", {})
+                surf = template.get("SURFACE", {})
+                atm = template.get("ATMOSPHERE", {})
+
+                # Map MODTRAN parameters to isofit dimension names
+                template_means["solar_zenith"] = geom.get("PARM2")
+                template_means["observer_zenith"] = (
+                    180 - geom.get("OBSZEN") if geom.get("OBSZEN") is not None else None
+                )  # Convert from MODTRAN convention
+                template_means["relative_azimuth"] = geom.get("PARM1")
+                template_means["surface_elevation_km"] = surf.get("GNDALT")
+                template_means["CO2"] = atm.get("CO2MX")
+
+                logging.debug(f"Extracted scene means from template: {template_means}")
+
+        # Check for variables in heuristic but not in LUT (fatal error)
+        for dim_name, dim_val in lut_grid.items():
+            if dim_val is not None and len(dim_val) > 1:
+                if dim_name not in prebuilt_dimensions:
+                    raise ValueError(
+                        f"Variable '{dim_name}' is required by the template heuristic but is not "
+                        f"present in the prebuilt LUT at {prebuilt_lut_path}. "
+                        f"Available dimensions in LUT: {list(prebuilt_dimensions.keys())}"
+                    )
+
+        # Process each dimension in the prebuilt LUT
+        for dim_name, lut_grid_points in prebuilt_dimensions.items():
+            if dim_name == "wl":
+                continue
+
+            vmin, vmax = lut_grid_points.min(), lut_grid_points.max()
+
+            # Dimension in LUT but not in heuristic === interpolate
+            if dim_name not in lut_grid or lut_grid[dim_name] is None:
+                # Use scene mean from template if available, otherwise fall back to LUT mean or aerosol formula
+                if dim_name in template_means and template_means[dim_name] is not None:
+                    interp_value = template_means[dim_name]
+                    source = "scene mean from template"
+                elif dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
+                    interp_value = get_aerosol_initial_value(vmin, vmax)
+                    source = "aerosol initial value formula"
+                else:
+                    interp_value = (vmin + vmax) / 2.0
+                    source = "LUT midpoint"
+
+                logging.info(
+                    f"Variable '{dim_name}' is present in prebuilt LUT but not "
+                    f"in heuristic. Will interpolate to {interp_value:.4f} ({source})"
+                )
+                lut_names[dim_name] = {"interp": interp_value}
+
+            # Dimension in both LUT and heuristic === subset
+            else:
+                heuristic_val = lut_grid[dim_name]
+
+                # Skip if already formatted as a dict
+                if isinstance(heuristic_val, dict):
+                    lut_names[dim_name] = (
+                        heuristic_val.copy()
+                    )  # Copy to avoid shared references
+                    continue
+
+                # Get heuristic range
+                if (
+                    isinstance(heuristic_val, (list, np.ndarray))
+                    and len(heuristic_val) > 1
+                ):
+                    heur_min, heur_max = min(heuristic_val), max(heuristic_val)
+
+                    # Constrain heuristic to LUT bounds
+                    constrained_min = max(heur_min, vmin)
+                    constrained_max = min(heur_max, vmax)
+
+                    # Find LUT grid points that encompass the constrained range
+                    lower_candidates = lut_grid_points[
+                        lut_grid_points <= constrained_min
+                    ]
+                    lower_bound = (
+                        lower_candidates.max() if len(lower_candidates) > 0 else vmin
+                    )
+
+                    upper_candidates = lut_grid_points[
+                        lut_grid_points >= constrained_max
+                    ]
+                    upper_bound = (
+                        upper_candidates.min() if len(upper_candidates) > 0 else vmax
+                    )
+
+                    # Get all LUT points in the encompassing range
+                    subset_points = lut_grid_points[
+                        (lut_grid_points >= lower_bound)
+                        & (lut_grid_points <= upper_bound)
+                    ]
+
+                    # We hit this for AOD lower bound all the time,
+                    # so leaving as a warning for now
+                    if heur_min < vmin or heur_max > vmax:
+                        logging.warning(
+                            f"Variable '{dim_name}' heuristic range [{heur_min:.4f}, {heur_max:.4f}] "
+                            f"constrained to LUT range [{vmin:.4f}, {vmax:.4f}]. "
+                            f"Reader will use LUT points that encompass [{constrained_min:.4f}, {constrained_max:.4f}]"
+                        )
+
+                    # Store all encompassing LUT points in lut_grid
+                    lut_grid[dim_name] = subset_points.tolist()
+                    # Set gte and lte to the actual LUT grid boundaries (first and last point)
+                    logging.info(
+                        f"  {dim_name}: Setting lut_grid to {len(subset_points)} LUT points: "
+                        f"[{subset_points[0]:.4f}, ..., {subset_points[-1]:.4f}]"
+                    )
+
+                    # Convert to Python native floats to avoid numpy reference issues
+                    gte_val = float(subset_points[0])
+                    lte_val = float(subset_points[-1])
+
+                    lut_names[dim_name] = {
+                        "gte": gte_val,
+                        "lte": lte_val,
+                        "encompass": True,
+                    }
+                else:
+                    # Single value or no valid range - should interpolate
+                    logging.warning(
+                        f"Dimension '{dim_name}' in both LUT and heuristic but heuristic has "
+                        f"invalid value: {heuristic_val}. Treating as interpolation."
+                    )
+                    if dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
+                        interp_value = get_aerosol_initial_value(vmin, vmax)
+                    else:
+                        interp_value = (vmin + vmax) / 2.0
+                    lut_names[dim_name] = {"interp": interp_value}
 
     atmosphere_config["lut_grid"].update(lut_grid)
-    atmosphere_config["engine"]["lut_names"] = {key: None for key in lut_grid.keys()}
+
+    # Set up lut_names for subsetting
+    if prebuilt_lut_path is not None:
+        # lut_names was already built during reconciliation above
+        atmosphere_config["engine"]["lut_names"] = lut_names
+    else:
+        # For new LUTs being built, lut_names should be None (use all points)
+        atmosphere_config["engine"]["lut_names"] = {
+            key: None for key in lut_grid.keys()
+        }
 
     # Now do statevector
     statekeys = ["H2OSTR"]
