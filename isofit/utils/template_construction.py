@@ -1641,7 +1641,9 @@ def make_atmosphere_config(
 
                 # Skip if already formatted as a dict
                 if isinstance(heuristic_val, dict):
-                    lut_names[dim_name] = heuristic_val
+                    lut_names[dim_name] = (
+                        heuristic_val.copy()
+                    )  # Copy to avoid shared references
                     continue
 
                 # Get heuristic range
@@ -1688,9 +1690,18 @@ def make_atmosphere_config(
                     # Store all encompassing LUT points in lut_grid
                     lut_grid[dim_name] = subset_points.tolist()
                     # Set gte and lte to the actual LUT grid boundaries (first and last point)
+                    logging.info(
+                        f"  {dim_name}: Setting lut_grid to {len(subset_points)} LUT points: "
+                        f"[{subset_points[0]:.4f}, ..., {subset_points[-1]:.4f}]"
+                    )
+
+                    # Convert to Python native floats to avoid numpy reference issues
+                    gte_val = float(subset_points[0])
+                    lte_val = float(subset_points[-1])
+
                     lut_names[dim_name] = {
-                        "gte": subset_points[0],
-                        "lte": subset_points[-1],
+                        "gte": gte_val,
+                        "lte": lte_val,
                         "encompass": True,
                     }
                 else:
@@ -1710,8 +1721,6 @@ def make_atmosphere_config(
     # Set up lut_names for subsetting
     if prebuilt_lut_path is not None:
         # lut_names was already built during reconciliation above
-        logging.info(f"Final lut_names keys: {list(lut_names.keys())}")
-        logging.info(f"Final lut_names content: {lut_names}")
         atmosphere_config["engine"]["lut_names"] = lut_names
     else:
         # For new LUTs being built, lut_names should be None (use all points)
