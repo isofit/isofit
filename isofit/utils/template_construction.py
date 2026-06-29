@@ -1559,6 +1559,11 @@ def make_atmosphere_config(
         else:
             lut_grid[gn] = np.array(gc).tolist()
 
+    # Remove single-value/None dimensions BEFORE reconciliation so
+    # to prevent entry in the heuristic (IE, we need to interpolate)
+    for tr in np.unique(to_remove):
+        lut_grid.pop(tr)
+
     if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
         from isofit.atmosphere.engines.kernel_flows import bounds_check
 
@@ -1586,17 +1591,13 @@ def make_atmosphere_config(
                 # Map MODTRAN parameters to isofit dimension names
                 template_means["solar_zenith"] = geom.get("PARM2")
                 template_means["observer_zenith"] = (
-                    180 - geom.get("OBSZEN")
-                    if geom.get("OBSZEN") is not None
-                    else None
+                    180 - geom.get("OBSZEN") if geom.get("OBSZEN") is not None else None
                 )  # Convert from MODTRAN convention
                 template_means["relative_azimuth"] = geom.get("PARM1")
                 template_means["surface_elevation_km"] = surf.get("GNDALT")
                 template_means["CO2"] = atm.get("CO2MX")
 
-                logging.debug(
-                    f"Extracted scene means from template: {template_means}"
-                )
+                logging.debug(f"Extracted scene means from template: {template_means}")
 
         # Check for variables in heuristic but not in LUT (fatal error)
         for dim_name, dim_val in lut_grid.items():
@@ -1703,9 +1704,6 @@ def make_atmosphere_config(
                     else:
                         interp_value = (vmin + vmax) / 2.0
                     lut_names[dim_name] = {"interp": interp_value}
-
-    for tr in np.unique(to_remove):
-        lut_grid.pop(tr)
 
     atmosphere_config["lut_grid"].update(lut_grid)
 
