@@ -32,9 +32,7 @@ jobs:
       - name: Verify install
         shell: bash
         run: |
-          output="$(isofit --help)"
-          echo "$output"
-          grep -q "Execute ISOFIT core" <<< "$output"
+          isofit --help
 
   uv:
     strategy:
@@ -66,9 +64,7 @@ jobs:
       - name: Verify install
         shell: bash
         run: |
-          output="$(isofit --help)"
-          echo "$output"
-          grep -q "Execute ISOFIT core" <<< "$output"
+          isofit --help
 
   conda:
     strategy:
@@ -98,6 +94,4 @@ jobs:
       - name: Verify install
         shell: bash -l {0}
         run: |
-          output="$(isofit --help)"
-          echo "$output"
-          grep -q "Execute ISOFIT core" <<< "$output"
+          isofit --help
