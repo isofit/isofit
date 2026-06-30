@@ -357,7 +357,7 @@ class Inversion:
 
             # Record initializaation state
             geom.x_surf_init = x[self.fm.idx_surface]
-            geom.x_RT_init = x[self.fm.idx_RT]
+            geom.x_atmosphere_init = x[self.fm.idx_atmosphere]
 
             # Seps is the covariance of "observation noise" including both
             # measurement noise from the instrument as well as variability due to

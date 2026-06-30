@@ -28,17 +28,17 @@ from pathlib import Path
 import dask.array as da
 import h5py
 import numpy as np
+import psutil
 import torch
 import yaml
-from scipy.interpolate import interp1d
 
+from isofit.atmosphere.atmosphere import BaseAtmosphere
+from isofit.atmosphere.engines import SixSRT
 from isofit.core import units
 from isofit.core.common import calculate_resample_matrix, resample_spectrum
-from isofit.radiative_transfer import luts
-from isofit.radiative_transfer.engines import SixSRT
-from isofit.radiative_transfer.radiative_transfer_engine import RadiativeTransferEngine
+from isofit.luts.writer import Writer
 
-Logger = logging.getLogger(__file__)
+Logger = logging.getLogger(__name__)
 
 
 class SRTMnetModel(torch.nn.Module):
@@ -293,7 +293,7 @@ class SRTMnetModel(torch.nn.Module):
         return outdict
 
 
-class SimulatedModtranRT(RadiativeTransferEngine):
+class SimulatedModtranRT(BaseAtmosphere, Writer):
     """
     A hybrid surrogate-model and emulator of MODTRAN-like results.  A description of
     the model can be found in:
@@ -322,23 +322,30 @@ class SimulatedModtranRT(RadiativeTransferEngine):
     }
     _disable_makeSim = True
 
+    def __init__(self, *args, **kwargs):
+        # Experimental sRTMnet sharding size
+        # Shards may use up to 2x their size of memory, plus some extra
+        # so divide by 2.5 for safety
+        # REVIEW: is there a better strategy?
+        mem = psutil.virtual_memory()
+        self.shard_size = f"{int(mem.total / 2**30 / 2.5)}gb"
+        Logger.debug(f"Attempting to use shard size: {self.shard_size}")
+
+        super().__init__(*args, **kwargs)
+
     def preSim(self):
         """
         sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins
         simulations itself
         """
-        Logger.info("Creating a simulator configuration")
-        # Create a copy of the engine_config and populate it with 6S parameters
-        config = build_sixs_config(self.engine_config)
-
         # Track the sRTMnet file used in the LUT attributes
-        self.lut.setAttr("sRTMnet", str(config.emulator_file))
+        self.lut.setAttr("sRTMnet", str(self.config.emulator_file))
 
         # Get the component mode up front
-        if self.engine_config.emulator_file.endswith(".h5"):
+        if self.config.emulator_file.endswith(".h5"):
             self.component_mode = "3c"
 
-        elif self.engine_config.emulator_file.endswith(".6c"):
+        elif self.config.emulator_file.endswith(".6c"):
             self.component_mode = "6c"
 
         else:
@@ -349,7 +356,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         # Pack the emulator Aux the same regardless of input file type.
         # Enforce types
         if self.component_mode == "3c":
-            aux = dict(np.load(config.emulator_aux_file, allow_pickle=True))
+            aux = dict(np.load(self.config.emulator_aux_file, allow_pickle=True))
             aux_dict = {}
             for key, value in self.aux_quantities.items():
                 if len(aux.get(key, [])):
@@ -359,7 +366,7 @@ class SimulatedModtranRT(RadiativeTransferEngine):
 
         else:
             aux = {}
-            with h5py.File(config.emulator_file, "r") as model:
+            with h5py.File(self.config.emulator_file, "r") as model:
                 for key, value in self.aux_quantities.items():
                     if value == dict:
                         aux[key] = {
@@ -381,53 +388,137 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         self.sim_wl = np.arange(350, 2500 + 2.5, 2.5)
         self.sim_fwhm = np.full(self.sim_wl.size, 2.0)
 
+        # Create a copy of the engine_config and populate it with 6S parameters
+        config = build_sixs_config(self.full_config)
+
         # Build the 6S simulations
         Logger.info("Building simulator and executing (6S)")
         sim = SixSRT(
             config,
             wl=self.sim_wl,
             fwhm=self.sim_fwhm,
-            lut_path=config.lut_path,
-            lut_grid=self.lut_grid,
+            # lut_path=self.sim_lut_path,
+            # lut_grid=self.lut_grid,
+            n_cores=self.n_cores,
             modtran_emulation=True,
             build_interpolators=False,
+            postprocess=False,
+            shard_size=self.shard_size,
+            load_kwargs={"load": False},
         )
 
-        if self.engine_config.rte_configure_and_exit:
+        if self.configure_and_exit:
             return
 
         # Extract useful information from the sim
         self.esd = sim.esd
-        self.sim_lut_path = config.lut_path
-
-        ## Prepare the sim results for the emulator
-        # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
-        # Safe to replace here
-        if sim.lut[aux_rt_quantities].isnull().any():
-            Logger.debug("Simulator detected to have NaNs, replacing with 0s")
-            sim.lut = sim.lut.fillna(0)
-
-        # Interpolate the sim results from its wavelengths to the emulator wavelengths
-        Logger.info("Interpolating simulator quantities to emulator size")
-        sixs = sim.lut[aux_rt_quantities]
-        resample = sixs.interp({"wl": aux["emulator_wavelengths"]})
 
         # Convert our irradiance to date 0 then back to current date
         # sc - If statement to make sure tsis solar model is used if supplied
-        if os.path.basename(config.irradiance_file) == "tsis_f0_0p1.txt":
+        if os.path.basename(self.config.irradiance_file) == "tsis_f0_0p1.txt":
             # Load coarser TSIS model to match emulator expectations
             _, sol_irr = np.loadtxt(
-                os.path.split(config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
+                os.path.split(self.config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
             ).T
             sol_irr = sol_irr / 10  # Convert to uW cm-2 sr-1 nm-1
         else:
             sol_irr = aux["solar_irr"]  # Otherwise, use sRTMnet f0
         irr_ref = sim.esd[200, 1]  # Irradiance factor
         irr_cur = sim.esd[sim.day_of_year - 1, 1]  # Factor for current date
-        sol_irr = sol_irr * irr_ref**2 / irr_cur**2
+        self.sim_sol_irr = sol_irr * irr_ref**2 / irr_cur**2
 
-        self.emulator_sol_irr = sol_irr
-        self.emulator_coszen = sim["coszen"]
+        self.aux = aux
+        self.sim_coszen = sim["coszen"]
+
+        sixs = sim.lut[aux_rt_quantities]
+        if getattr(self.lut, "groups", None):
+            self.sharded(sim, sixs)
+        else:
+            outshape = (len(self.wl),) + tuple(
+                len(self.lut_grid[n]) for n in self.lut_grid
+            )
+            self.process(sixs, outshape)
+
+        # Insert these into the LUT file
+        return {
+            "coszen": sim["coszen"],
+            "solzen": sim["solzen"],
+            "solar_irr": resample_spectrum(
+                self.sim_sol_irr, self.emu_wl, self.wl, self.fwhm
+            ),
+        }
+
+    def sharded(self, sim, sixs):
+        """
+        Process sRTMnet in Zarr shard groups. This enables processing of
+        larger-than-memory LUTs.
+
+        Parameters
+        ----------
+        sim : isofit.radiative_transfer.engines.sixs_s.SixSRT
+            The 6S engine
+        sixs : xarray.Dataset
+            The 6S LUT of only the aux_rt_quantities
+        """
+        groups = self.lut.groups
+
+        # Retrieve the dimensional ordering of the shards
+        dims = sim.lut.attrs["shard order"]
+
+        # Ensure the 6S LUT is in the same dimensional ordering as the sRTMnet LUT
+        # have to unstack so that shard slicing works as expected
+        order = list(self.lut_grid)
+        sixs = sixs.unstack().transpose("wl", *order)
+
+        outshape = tuple(self.lut.shards)
+
+        report = Track(groups, step=1, message="shards processed", print=Logger.info)
+        for i, group in enumerate(groups):
+            # Get the index slicing for this shard and format it for xarray slicing
+            # xarray: dict[dim, slice]
+            # numpy: tuple[slice, slice, ...]
+            slices = self.lut.coords[group]
+            todict = dict(zip(dims, slices))
+
+            # Load the shard into memory and re-stack the point dim (sRTMnet expects)
+            shard = sixs[todict].load()
+            shard = shard.stack(point=dims[1:]).transpose("point", "wl")
+
+            # Process the shard through sRTMnet
+            data = self.process(shard, outshape)
+
+            # Flush the shard to disk and reset
+            self.lut.flush_buffer(slices)
+            self.lut.reset_buffer()
+
+            # Make sure to recover the memory before loading a new shard
+            del shard
+            report(i + 1)
+
+    def process(self, sim, outshape):
+        """
+        Process sRTMnet
+
+        Parameters
+        ----------
+        sim : xarray.Dataset
+            The 6S LUT of only the aux_rt_quantities
+        outshape : tuple of ints
+            The output shape of the array
+        """
+        ## Prepare the sim results for the emulator
+        # In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0
+        # Safe to replace here
+        if sim.isnull().any():
+            Logger.debug("Simulator detected to have NaNs, replacing with 0s")
+            sim = sim.fillna(0)
+
+        # Interpolate the sim results from its wavelengths to the emulator wavelengths
+        Logger.info("Interpolating simulator quantities to emulator size")
+        resample = sim.interp({"wl": self.aux["emulator_wavelengths"]})
+
+        self.emulator_sol_irr = self.sim_sol_irr
+        self.emulator_coszen = self.sim_coszen
         self.emulator_H = calculate_resample_matrix(self.emu_wl, self.wl, self.fwhm)
 
         # Pack into dictionary for passing convenience to torch
@@ -454,25 +545,22 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             ## Reduce from 3D to 2D by stacking along the wavelength
             # dim for each quantity. Convert to DataArray to stack
             # the variables along a new `quantity` dimension
-            data = sixs.to_array("quantity").stack(stack=["quantity", "wl"])
-            response_scaler = aux.get("response_scaler", 100.0)
-            response_offset = aux.get("response_offset", 0.0)
+            data = sim.to_array("quantity").stack(stack=["quantity", "wl"])
+            response_scaler = self.aux.get("response_scaler", 100.0)
+            response_offset = self.aux.get("response_offset", 0.0)
 
             emulator = SRTMnetModel(
-                input_file=self.engine_config.emulator_file,
+                input_file=self.config.emulator_file,
                 key="3c",
                 n_cores=self.n_cores,
             )
             lp = emulator.predict(
                 [data.values],  # surrogate data (6S)
                 [resample.values],  #  stacked 3c data interpolated to emulator wl
-                batch_size=self.engine_config.emulator_batch_size,
+                batch_size=self.config.emulator_batch_size,
                 response_scaler=[response_scaler],
                 response_offset=[response_offset],
                 resample_dict=resample_dict,
-            )
-            outshape = (len(self.wl),) + tuple(
-                len(self.lut_grid[n]) for n in self.lut_grid
             )
             for outkey in lp.keys():
                 self.lut[outkey] = lp[outkey].T.reshape(outshape)
@@ -482,11 +570,11 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             Logger.debug("Detected 6c emulator file format")
 
             # This is an array of feature points tacked onto the interpolated 6s values
-            feature_point_names = aux["feature_point_names"].astype(str).tolist()
+            feature_point_names = self.aux["feature_point_names"].astype(str).tolist()
             add_vector = None
             if len(feature_point_names) > 0 and feature_point_names[0] != "None":
                 # Populate the 6S parameter values from a modtran template file
-                with open(self.engine_config.template_file, "r") as file:
+                with open(self.config.template_file, "r") as file:
                     data = yaml.safe_load(file)["MODTRAN"][0]["MODTRANINPUT"]
 
                 add_vector = np.zeros((self.points.shape[0], len(feature_point_names)))
@@ -524,21 +612,21 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 Logger.debug(f"Loading emulator {key}")
 
                 emulator = SRTMnetModel(
-                    input_file=self.engine_config.emulator_file,
+                    input_file=self.config.emulator_file,
                     key=key,
                     n_cores=self.n_cores,
                 )
 
                 Logger.info(f"Emulating {key}")
-                response_scaler = [aux["response_scaler"][x] for x in mapping[key]]
-                response_offset = [aux["response_offset"][x] for x in mapping[key]]
+                response_scaler = [self.aux["response_scaler"][x] for x in mapping[key]]
+                response_offset = [self.aux["response_offset"][x] for x in mapping[key]]
 
                 lp = emulator.predict(
-                    [sixs[x].values for x in mapping[key]],  # surrogate data (6S)
+                    [sim[x].values for x in mapping[key]],  # surrogate data (6S)
                     [
                         resample[x].values for x in mapping[key]
                     ],  #  6S data interpolated to emulator wl
-                    batch_size=self.engine_config.emulator_batch_size,
+                    batch_size=self.config.emulator_batch_size,
                     response_scaler=response_scaler,
                     response_offset=response_offset,
                     resample_dict=resample_dict,
@@ -546,9 +634,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
                 Logger.debug(f"Cleanup {key}")
                 del emulator
 
-                outshape = (len(self.wl),) + tuple(
-                    len(self.lut_grid[n]) for n in self.lut_grid
-                )
                 for outkey in lp.keys():
                     self.lut[outkey] = lp[outkey].T.reshape(outshape)
                 self.lut.flush()
@@ -563,13 +648,6 @@ class SimulatedModtranRT(RadiativeTransferEngine):
             self.rt_mode = "rdn"
             self.lut.setAttr("RT_mode", "rdn")
             self.lut.flush()
-
-        # Insert these into the LUT file
-        return {
-            "coszen": sim["coszen"],
-            "solzen": sim["solzen"],
-            "solar_irr": resample_spectrum(sol_irr, self.emu_wl, self.wl, self.fwhm),
-        }
 
     def makeSim(self, point):
         """
@@ -591,17 +669,18 @@ class SimulatedModtranRT(RadiativeTransferEngine):
         return {}
 
 
-def build_sixs_config(engine_config):
+def build_sixs_config(config):
     """
     Builds a configuration object for a 6S simulation using a MODTRAN template
     """
-    if not os.path.exists(engine_config.template_file):
-        raise FileNotFoundError(
-            f"MODTRAN template file does not exist: {engine_config.template_file}"
-        )
-
     # First create a copy of the starting config
-    config = deepcopy(engine_config)
+    full_config = deepcopy(config)
+    config = full_config.forward_model.atmosphere
+
+    if not os.path.exists(config.template_file):
+        raise FileNotFoundError(
+            f"MODTRAN template file does not exist: {config.template_file}"
+        )
 
     # Populate the 6S parameter values from a modtran template file
     with open(config.template_file, "r") as file:
@@ -644,6 +723,12 @@ def build_sixs_config(engine_config):
     # Save 6S to a different lut file, prepend 6S to the sRTMnet lut_path
     # REVIEW: Should this write to sim_path instead? I think so
     path = Path(config.lut_path)
-    config.lut_path = path.parent / f"6S.{path.name}"
+    config.lut_path = str(path.parent / f"6S.{path.name}")
 
-    return config
+    # Ensure sim_path is set so 6S knows where to write simulation files
+    if config.sim_path is None:
+        config.sim_path = str(path.parent)
+
+    full_config.forward_model.atmosphere = config
+
+    return full_config
