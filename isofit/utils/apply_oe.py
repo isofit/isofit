@@ -743,11 +743,21 @@ def apply_oe(
         h2o_est = h2o.read_band(h2o_band)[:].flatten()
 
         p05 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 2)
+        p50 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 50)
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
-        margin = (p95 - p05) * 0.5
 
-        lut_params.h2o_range[0] = max(lut_params.h2o_min, p05 - margin)
-        lut_params.h2o_range[1] = min(max_water, max(lut_params.h2o_min, p95 + margin))
+        margin = (p95 - p05) * 0.5
+        h2o_lut_min = max(lut_params.h2o_min, p05 - margin)
+        h2o_lut_max = min(max_water, max(lut_params.h2o_min, p95 + margin))
+        # This logic ensures range[1] - range[0] > spacing
+        if (np.abs(h2o_lut_max - h2o_lut_min)) < lut_params.h2o_spacing_min:
+            h2o_lut_min = max(lut_params.h2o_min, p50 - (0.5 * lut_params.h2o_spacing))
+            h2o_lut_max = min(
+                max_water, max(lut_params.h2o_min, p50 + (0.5 * lut_params.h2o_spacing))
+            )
+
+        lut_params.h2o_range[0] = h2o_lut_min
+        lut_params.h2o_range[1] = h2o_lut_max
 
     h2o_lut_grid = lut_params.get_grid(
         lut_params.h2o_range[0],
@@ -755,6 +765,10 @@ def apply_oe(
         lut_params.h2o_spacing,
         lut_params.h2o_spacing_min,
     )
+    # There must be an H2O LUT grid
+    assert (
+        h2o_lut_grid is not None
+    ), "H2O range < H2O spacing_min. Config must have H2O LUT grid"
 
     logging.info("Full (non-aerosol) LUTs:")
     logging.info(f"Elevation: {elevation_lut_grid}")
