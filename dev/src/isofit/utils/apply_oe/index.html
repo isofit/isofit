@@ -6270,10 +6270,10 @@
             <span class="n">elevation_lut_grid</span><span class="p">[</span><span class="n">elevation_lut_grid</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">elevation_lut_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">elevation_lut_grid</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elevation_lut_grid</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">elevation_lut_grid</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="n">mean_elevation_km</span> <span class="o">=</span> <span class="n">elevation_lut_grid</span><span class="p">[</span>
                     <span class="mi">0</span>
                 <span class="p">]</span>  <span class="c1"># should be 0, but just in case</span>
+                <span class="n">elevation_lut_grid</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="s2">&quot;Scene contains target lut grid elements &lt; 0 km, and uses 6s (via&quot;</span>
                 <span class="s2">&quot; sRTMnet).  6s does not support targets below sea level in km units. &quot;</span>
