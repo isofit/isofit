@@ -409,6 +409,12 @@ class GlintModelSurface(MultiComponentSurface):
     def fresnel_rf(self, vza):
         """Calculates reflectance factor of sky radiance based on the
         Fresnel equation for unpolarized light as a function of view zenith angle (vza).
+
+        There is some discussion to whether the vza or sza is the appropriate angle to use here.
+        We follow Gege WASI-2D (2014) implementation. Following Gege's suggestion: when working
+        within radiance units, view zenith is the relevant angle. Gao and Li (2021) are working
+        in irradiance units, where their implementation is integrating across observation
+        angles, and the sza is the relevant angle for averaged reflectances.
         """
         if vza > 0.0:
             n_w = 1.33  # refractive index of water
