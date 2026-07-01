@@ -535,10 +535,10 @@ def apply_oe(
             elevation_lut_grid[elevation_lut_grid < 0] = 0
             elevation_lut_grid = np.unique(elevation_lut_grid)
             if len(elevation_lut_grid) == 1:
-                elevation_lut_grid = None
                 mean_elevation_km = elevation_lut_grid[
                     0
                 ]  # should be 0, but just in case
+                elevation_lut_grid = None
             logging.info(
                 "Scene contains target lut grid elements < 0 km, and uses 6s (via"
                 " sRTMnet).  6s does not support targets below sea level in km units. "
