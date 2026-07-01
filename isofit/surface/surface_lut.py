@@ -88,6 +88,10 @@ class LUTSurface(Surface):
         # Change this if you don't want to analytical solve for all the full statevector elements.
         self.analytical_iv_idx = np.arange(len(self.statevec_names))
 
+    def update_heuristic_prior_means(self, x_surface, geom):
+        """Don't update any of the priors. Return xa"""
+        return self.xa(x_surface, geom)
+
     def xa(self, x_surface, geom):
         """Mean of prior distribution."""
 

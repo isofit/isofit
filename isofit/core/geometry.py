@@ -156,13 +156,6 @@ class Geometry:
                     "coszen is not defined and valid solar zenith not found in OBS data."
                 )
 
-        if self.use_universal_coszen:
-            logging.debug(f"The coszen will be universal:   coszen={coszen}")
-        else:
-            logging.info(
-                f"The coszen is pixel dependent and will based on the OBS data"
-            )
-
         if self.coszen is not None:
 
             # Pretend that the surface is flat, regardless of input geometry

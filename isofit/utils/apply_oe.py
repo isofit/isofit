@@ -17,7 +17,7 @@ import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
-from isofit.atmosphere.engines.modtran import ModtranRT
+from isofit.atmosphere.atmosphere import modtran_water_upperbound_polynomials
 from isofit.core import isofit, units
 from isofit.core.common import envi_header
 from isofit.debug.resource_tracker import FileResources
@@ -112,6 +112,7 @@ def apply_oe(
     retrieve_co2=False,
     eof_path=None,
     terrain_style="dem",
+    per_pixel_heuristic_prior=False,
 ):
     """
     Applies OE over a flightline using an atmospheric radiative transfer engine. This executes
@@ -310,7 +311,7 @@ def apply_oe(
             )
 
     # Load in water column upper bound polynomials
-    modtran_polynomials_dict = ModtranRT.modtran_water_upperbound_polynomials()
+    modtran_polynomials_dict = modtran_water_upperbound_polynomials()
     if atmosphere_type not in modtran_polynomials_dict:
         keys = ", ".join(modtran_polynomials_dict.keys())
         raise ValueError(
@@ -670,6 +671,7 @@ def apply_oe(
         "multipart_transmittance": multipart_transmittance,
         "segmentation_size": segmentation_size,
         "terrain_style": terrain_style,
+        "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
     }
     if presolve:
         # write modtran presolve template
@@ -962,6 +964,7 @@ def apply_oe(
 @click.option("--retrieve_co2", is_flag=True, default=False)
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
+@click.option("--per_pixel_heuristic_prior", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

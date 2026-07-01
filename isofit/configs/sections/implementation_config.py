@@ -83,6 +83,13 @@ class ImplementationConfig(BaseConfigSection):
         with increased memory costs.
         """
 
+        self._per_pixel_heuristic_prior_type = bool
+        self.per_pixel_heuristic_prior = False
+        """bool: define prior mean setting scheme.
+        True -> use per-pixel heuristic
+        False -> Use image-wide "unverisal" value
+        """
+
         self._debug_mode_type = bool
         self.debug_mode = False
         """bool: A flag to run the code in debug mode, which circumvents ray.

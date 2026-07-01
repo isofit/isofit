@@ -17,7 +17,10 @@ from scipy.io import loadmat
 from spectral.io import envi
 
 from isofit import __version__
-from isofit.atmosphere.engines.modtran import ModtranRT
+from isofit.atmosphere.atmosphere import (
+    modtran_aot_lowerbound_polynomials,
+    modtran_water_upperbound_polynomials,
+)
 from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.core.multistate import SurfaceMapping
@@ -412,9 +415,7 @@ class LUTConfig:
 
         # Set defaults, will override based on settings
         # Units of g / m2
-        modtran_max_water = ModtranRT.modtran_water_upperbound_polynomials()[
-            atmosphere_type
-        ](0)
+        modtran_max_water = modtran_water_upperbound_polynomials()[atmosphere_type](0)
         self.h2o_range = [0.2, modtran_max_water]
 
         # Units of degrees
@@ -442,9 +443,7 @@ class LUTConfig:
         self.aerosol_2_spacing_min = 0
 
         # Units of AOD
-        modtran_min_aerosol = ModtranRT.modtran_aot_lowerbound_polynomials()[
-            atmosphere_type
-        ](0)
+        modtran_min_aerosol = modtran_aot_lowerbound_polynomials()[atmosphere_type](0)
         self.aerosol_0_range = [modtran_min_aerosol, 1]
         self.aerosol_1_range = [modtran_min_aerosol, 1]
         self.aerosol_2_range = [modtran_min_aerosol, 1]
@@ -702,6 +701,7 @@ def build_config(
     presolve: bool = False,
     terrain_style: str = "flat",
     max_slope: float = 20.0,
+    per_pixel_heuristic_prior: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -818,6 +818,7 @@ def build_config(
                 presolve=presolve,
                 pressure_elevation=pressure_elevation,
                 retrieve_co2=retrieve_co2,
+                per_pixel_heuristic_prior=per_pixel_heuristic_prior,
                 relative_azimuth_lut_grid=relative_azimuth_lut_grid,
                 to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid,
                 to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
@@ -838,6 +839,7 @@ def build_config(
             inversion_windows=inversion_windows,
             n_cores=n_cores,
             debug=debug,
+            per_pixel_heuristic_prior=per_pixel_heuristic_prior,
         ),
         "input": input_config,
         "output": output_config,
@@ -1477,6 +1479,7 @@ def make_atmosphere_config(
     presolve: bool = False,
     pressure_elevation: bool = False,
     retrieve_co2: bool = False,
+    per_pixel_heuristic_prior: bool = False,
     relative_azimuth_lut_grid: np.array = None,
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
@@ -1730,7 +1733,7 @@ def make_atmosphere_config(
 
     # Now do statevector
     statekeys = ["H2OSTR"]
-    statesigmas = [100.0]
+    statesigmas = [1.0 if per_pixel_heuristic_prior else 100.0]
     statescale = [1]
     if pressure_elevation and presolve is False:
         statekeys.append("surface_elevation_km")
@@ -1902,6 +1905,7 @@ def make_implementation_config(
     inversion_windows: list = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     n_cores: int = -1,
     debug: bool = False,
+    per_pixel_heuristic_prior: bool = False,
 ):
 
     return {
@@ -1909,6 +1913,7 @@ def make_implementation_config(
         "ray_address": ray_ip_head,
         "inversion": {"windows": inversion_windows},
         "n_cores": n_cores,
+        "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
         "debug_mode": debug,
         "isofit_version": __version__,
     }

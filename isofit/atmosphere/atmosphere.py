@@ -31,7 +31,7 @@ import numpy as np
 
 from isofit.configs import Config
 from isofit.core import common, units
-from isofit.core.common import svd_inv_sqrt
+from isofit.core.common import json_load_ascii, svd_inv_sqrt
 from isofit.core.geometry import Geometry
 from isofit.luts.reader import Reader
 
@@ -131,6 +131,11 @@ class BaseAtmosphere(Reader):
         self.lut_names = list(self.lut_grid)
         self.statevec_names = self.config.statevector.get_element_names()
 
+        possible_h2o_names = ["H2OSTR", "h2o"]
+        self.h2o_i = [
+            i for i, v in enumerate(self.statevec_names) if v in possible_h2o_names
+        ]
+
         # Configure and exit flag
         self.configure_and_exit = self.config.configure_and_exit
 
@@ -207,6 +212,17 @@ class BaseAtmosphere(Reader):
         self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
             self.Sa_normalized
         )
+
+        if self.config.template_file:
+            self.atmosphere_type = json_load_ascii(self.config.template_file)[
+                "MODTRAN"
+            ][0]["MODTRANINPUT"]["ATMOSPHERE"].get("M1", "ATM_MIDLAT_SUMMER")
+        else:
+            self.atmosphere_type = "ATM_MIDLAT_SUMMER"
+
+        self.h2o_bounds_polynomial = modtran_water_upperbound_polynomials()[
+            self.atmosphere_type
+        ]
 
         # Uncertainty
         self.bvec = self.config.unknowns.get_element_names()
@@ -292,8 +308,16 @@ class BaseAtmosphere(Reader):
             Logger.error(error)
             raise AttributeError(error)
 
-    def xa(self):
-        """Pull the priors from each of the individual RTs."""
+    def update_heuristic_prior_means(self, x_atmosphere, geom):
+        xa = self.prior_mean.copy()
+        xa[self.h2o_i] = x_atmosphere[self.h2o_i]
+
+        return xa
+
+    def xa(self, x_atmosphere, geom):
+        """
+        Use the image-wide prior mean
+        """
         return self.prior_mean
 
     def Sa(self):
@@ -558,3 +582,80 @@ class BaseAtmosphere(Reader):
         """
         pairs = zip(self.lut_names, x_RT)
         return " ".join([f"{name}={val:5.3f}" for name, val in pairs])
+
+
+def modtran_water_upperbound_polynomials() -> dict:
+    """Polynomials as a function of ground altitude (km) to estimate upperbound of water column vapor (g/cm2). Generated from MODTRAN.
+
+    Returns:
+        dict: 3rd degree polynomials to estimate upperbound of water column vapor
+    """
+
+    # Capping polynomial to not allow negative, or increasing trend, at very high ground altitudes (>6km).
+    min_value = 0.25
+
+    polynomials = {
+        "ATM_TROPICAL": lambda x: np.maximum(
+            6.74256 + (-2.37052 * x) + (0.313829 * x**2) + (-0.0159003 * x**3),
+            min_value,
+        ),
+        "ATM_MIDLAT_SUMMER": lambda x: np.maximum(
+            5.350046 + (-1.839548 * x) + (2.296582e-01 * x**2) + (-1.020594e-02 * x**3),
+            min_value,
+        ),
+        "ATM_MIDLAT_WINTER": lambda x: np.maximum(
+            1.371226 + (-0.442087 * x) + (4.485325e-02 * x**2) + (-1.130163e-03 * x**3),
+            min_value,
+        ),
+        "ATM_SUBARC_SUMMER": lambda x: np.maximum(
+            3.121272 + (-1.171145 * x) + (1.704094e-01 * x**2) + (-9.701062e-03 * x**3),
+            min_value,
+        ),
+        "ATM_SUBARC_WINTER": lambda x: np.maximum(
+            0.630406 + (-0.176336 * x) + (8.286409e-03 * x**2) + (8.138824e-04 * x**3),
+            min_value,
+        ),
+        "ATM_US_STANDARD_1976": lambda x: np.maximum(
+            2.869655 + (-1.227473 * x) + (2.039059e-01 * x**2) + (-1.274801e-02 * x**3),
+            min_value,
+        ),
+    }
+
+    return polynomials
+
+
+def modtran_aot_lowerbound_polynomials() -> dict:
+    """Polynomials as a function of ground altitude (km) to estimate lowerbound of AOT at 550nm. Generated from MODTRAN.
+
+    Returns:
+        dict: 3rd degree polynomials to estimate lowerbound of AOT
+    """
+
+    polynomials = {
+        "ATM_TROPICAL": lambda x: 0.042090
+        + (-0.003120 * x)
+        + (4.462979e-18 * x**2)
+        + (-4.260469e-19 * x**3),
+        "ATM_MIDLAT_SUMMER": lambda x: 0.042090
+        + (-0.003120 * x)
+        + (4.462979e-18 * x**2)
+        + (-4.260469e-19 * x**3),
+        "ATM_MIDLAT_WINTER": lambda x: 0.024748
+        + (-0.001654 * x)
+        + (-5.083805e-07 * x**2)
+        + (7.252007e-08 * x**3),
+        "ATM_SUBARC_SUMMER": lambda x: 0.042090
+        + (-0.003120 * x)
+        + (4.462979e-18 * x**2)
+        + (-4.260469e-19 * x**3),
+        "ATM_SUBARC_WINTER": lambda x: 0.024748
+        + (-0.001654 * x)
+        + (-5.083805e-07 * x**2)
+        + (7.252007e-08 * x**3),
+        "ATM_US_STANDARD_1976": lambda x: 0.042090
+        + (-0.003120 * x)
+        + (4.462979e-18 * x**2)
+        + (-4.260469e-19 * x**3),
+    }
+
+    return polynomials
