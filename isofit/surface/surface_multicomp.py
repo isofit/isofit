@@ -50,6 +50,9 @@ class MultiComponentSurface(Surface):
 
         self.n_comp = len(self.component_means)
         self.wl = self.model_dict["wl"][0]
+        self.fwhm = (
+            self.model_dict["fwhm"][0] if len(self.model_dict.get("fwhm", [])) else []
+        )
         self.n_wl = len(self.wl)
 
         # Set up normalization method

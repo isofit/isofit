@@ -61,7 +61,7 @@ class ForwardModel:
     noise for the purpose of weighting the measurement information
     against the prior."""
 
-    def __init__(self, full_config: Config, cache_atmosphere: Atmosphere = None):
+    def __init__(self, full_config: Config, cache_atmosphere: Atmosphere = False):
         # load in the full config (in case of inter-module dependencies) and
         # then designate the current config
         self.full_config = full_config

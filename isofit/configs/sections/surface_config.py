@@ -123,6 +123,9 @@ class SurfaceConfig(BaseConfigSection):
         This can avoid runaway results at low cos_i values where diffuse radiance dominates.
         """
 
+        self._refractive_index_path_type = str
+        self.refractive_index_path = ""
+
         self.set_config_options(sub_configdic)
 
     def _check_config_validity(self) -> List[str]:
