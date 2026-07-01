@@ -5481,13 +5481,18 @@ value, which makes the AOE inner loop inversion possible.</p>
 <span class="mkapi-document-toggle" title="Toggle all docs">
 <i class="fa-regular fa-square-minus"></i>
 </span>
-</span><span class="mkapi-object-kind">staticmethod</span>
+</span><span class="mkapi-object-kind">method</span>
 <span class="mkapi-object-parent">
 <a href="./#isofit.surface.surface_glint_model.GlintModelSurface" title="isofit.surface.surface_glint_model.GlintModelSurface">GlintModelSurface</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.surface.surface_glint_model.GlintModelSurface.fresnel_rf" title="isofit.surface.surface_glint_model.GlintModelSurface.fresnel_rf">fresnel_rf</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">vza</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>Calculates reflectance factor of sky radiance based on the
 Fresnel equation for unpolarized light as a function of view zenith angle (vza).</p>
+<p>There is some discussion to whether the vza or sza is the appropriate angle to use here.
+We follow Gege WASI-2D (2014) implementation. Following Gege's suggestion: when working
+within radiance units, view zenith is the relevant angle. Gao and Li (2021) are working
+in irradiance units, where their implementation is integrating across observation
+angles, and the sza is the relevant angle for averaged reflectances.</p>
 </div>
 
 

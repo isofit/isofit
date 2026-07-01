@@ -6955,7 +6955,17 @@
 <span class="normal">1950</span>
 <span class="normal">1951</span>
 <span class="normal">1952</span>
-<span class="normal">1953</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1953</span>
+<span class="normal">1954</span>
+<span class="normal">1955</span>
+<span class="normal">1956</span>
+<span class="normal">1957</span>
+<span class="normal">1958</span>
+<span class="normal">1959</span>
+<span class="normal">1960</span>
+<span class="normal">1961</span>
+<span class="normal">1962</span>
+<span class="normal">1963</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick and Niklas Bohn</span>
 <span class="c1">#</span>
@@ -7785,7 +7795,6 @@
                 <span class="n">surface_class_subs_path</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">surface_class_subs_path</span><span class="p">,</span>
                 <span class="n">surface_working_paths</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">surface_working_paths</span><span class="p">,</span>
                 <span class="n">surface_category</span><span class="o">=</span><span class="n">surface_category</span><span class="p">,</span>
-                <span class="n">pressure_elevation</span><span class="o">=</span><span class="n">pressure_elevation</span><span class="p">,</span>
                 <span class="n">use_superpixels</span><span class="o">=</span><span class="n">use_superpixels</span><span class="p">,</span>
                 <span class="n">terrain_style</span><span class="o">=</span><span class="n">terrain_style</span><span class="p">,</span>
                 <span class="n">max_slope</span><span class="o">=</span><span class="n">max_slope</span><span class="p">,</span>
@@ -8732,10 +8741,10 @@
     <span class="n">surface_class_subs_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">surface_working_paths</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">surface_category</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;multicomponent_surface&quot;</span><span class="p">,</span>
-    <span class="n">pressure_elevation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">use_superpixels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">terrain_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;flat&quot;</span><span class="p">,</span>
     <span class="n">max_slope</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
+    <span class="n">surface_refractive_index_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="c1"># Initialize config dict</span>
     <span class="n">surface_config_dict</span> <span class="o">=</span> <span class="p">{</span>
@@ -8801,6 +8810,17 @@
                     <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="n">surface_mat</span><span class="p">[</span><span class="s2">&quot;prior_sigma&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
                     <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="n">surface_mat</span><span class="p">[</span><span class="s2">&quot;scale&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
                 <span class="p">}</span>
+
+    <span class="c1"># Add refractive index path if specified</span>
+    <span class="k">if</span> <span class="n">surface_refractive_index_path</span><span class="p">:</span>
+        <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;refractive_index_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">surface_refractive_index_path</span>
+
+    <span class="k">elif</span> <span class="p">(</span><span class="n">surface_category</span> <span class="o">==</span> <span class="s2">&quot;glint_model_surface&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+        <span class="s2">&quot;glint_model_surface&quot;</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">surface_config_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Surfaces&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="p">):</span>
+        <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;refractive_index_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;h2o_real_refractive_index.txt&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">surface_config_dict</span>
 

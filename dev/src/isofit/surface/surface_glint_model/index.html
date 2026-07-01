@@ -5250,7 +5250,38 @@
 <span class="normal">400</span>
 <span class="normal">401</span>
 <span class="normal">402</span>
-<span class="normal">403</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5274,7 +5305,8 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">block_diag</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">eps</span><span class="p">,</span> <span class="n">svd_inv_sqrt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">eps</span><span class="p">,</span> <span class="n">resample_spectrum</span><span class="p">,</span> <span class="n">svd_inv_sqrt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">env</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.surface.surface</span><span class="w"> </span><span class="kn">import</span> <span class="n">DefaultState</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.surface.surface_multicomp</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiComponentSurface</span>
 
@@ -5354,6 +5386,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Sa_inv_glint</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Sa_inv_sqrt_glint</span> <span class="o">=</span> <span class="n">svd_inv_sqrt</span><span class="p">(</span>
             <span class="n">Cov</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">Cov</span><span class="p">))</span>
         <span class="p">)</span>
+        <span class="c1"># Check for fwhm, if not in surface -&gt; use instrument</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">):</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">full_config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">wavelength_file</span><span class="p">)</span>
+
+            <span class="c1"># Assume that fwhm is the second dim, and that wl file has multi-dim</span>
+            <span class="k">assert</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span>
+
+            <span class="n">fwhm</span> <span class="o">=</span> <span class="n">q</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="n">fwhm</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">micron_to_nm</span><span class="p">(</span><span class="n">fwhm</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span> <span class="o">=</span> <span class="n">fwhm</span>
+
+        <span class="c1"># Refractive index file</span>
+        <span class="c1"># [:, 0] - wavelength (nm)</span>
+        <span class="c1"># [:, 2] - refractive index</span>
+        <span class="n">real_ref_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">refractive_index_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">real_ref_idx</span> <span class="o">=</span> <span class="n">resample_spectrum</span><span class="p">(</span>
+            <span class="n">real_ref_idx</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">real_ref_idx</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span>
+        <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">update_heuristic_prior_means</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_glint_model.GlintModelSurface.update_heuristic_prior_means"><a href="../../../../api/isofit/surface/surface_glint_model/#isofit.surface.surface_glint_model.GlintModelSurface.update_heuristic_prior_means" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the sun glint prior to match initial guess (x_surface&quot;&quot;&quot;</span>
@@ -5415,7 +5466,7 @@
             <span class="p">]</span>
         <span class="p">)</span>
 
-        <span class="c1"># hard-coded glint bounds from experience #TODO - get from config</span>
+        <span class="c1"># glint_est is calc. in RFL-space. Makes sense that rfl &lt; 1.0</span>
         <span class="n">bounds_glint_est</span> <span class="o">=</span> <span class="p">[</span>
             <span class="mi">0</span><span class="p">,</span>
             <span class="mf">5.0</span><span class="p">,</span>
@@ -5430,7 +5481,13 @@
         <span class="c1"># Get estimate for g_dd and g_dsf parameters</span>
         <span class="c1"># Set sky glint to a static number; use prior mean.</span>
         <span class="n">g_dsf_est</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_ind</span><span class="p">]</span>
-        <span class="n">g_dd_est</span> <span class="o">=</span> <span class="n">glint_est</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">fresnel_rf</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">observer_zenith</span><span class="p">)</span>
+
+        <span class="c1"># Reference wavelength</span>
+        <span class="n">ref_wl</span> <span class="o">=</span> <span class="mi">1050</span>  <span class="c1"># Choices 1050 nm, 1640 nm</span>
+        <span class="n">g_dd_est</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">glint_est</span>
+            <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">fresnel_rf</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">observer_zenith</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">-</span> <span class="n">ref_wl</span><span class="p">))]</span>
+        <span class="p">)</span>
 
         <span class="c1"># Updating self.init will set the prior mean (xa) to this value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sun_glint_ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">g_dd_est</span>
@@ -5632,17 +5689,22 @@
             <span class="n">x_surface</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sky_glint_ind</span><span class="p">],</span>
         <span class="p">)</span>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fresnel_rf</span><span class="p">(</span><span class="n">vza</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_glint_model.GlintModelSurface.fresnel_rf"><a href="../../../../api/isofit/surface/surface_glint_model/#isofit.surface.surface_glint_model.GlintModelSurface.fresnel_rf" title="Go to docs">[docs]</a></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fresnel_rf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vza</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_glint_model.GlintModelSurface.fresnel_rf"><a href="../../../../api/isofit/surface/surface_glint_model/#isofit.surface.surface_glint_model.GlintModelSurface.fresnel_rf" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates reflectance factor of sky radiance based on the</span>
 <span class="sd">        Fresnel equation for unpolarized light as a function of view zenith angle (vza).</span>
+
+<span class="sd">        There is some discussion to whether the vza or sza is the appropriate angle to use here.</span>
+<span class="sd">        We follow Gege WASI-2D (2014) implementation. Following Gege&#39;s suggestion: when working</span>
+<span class="sd">        within radiance units, view zenith is the relevant angle. Gao and Li (2021) are working</span>
+<span class="sd">        in irradiance units, where their implementation is integrating across observation</span>
+<span class="sd">        angles, and the sza is the relevant angle for averaged reflectances.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">vza</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
             <span class="n">n_w</span> <span class="o">=</span> <span class="mf">1.33</span>  <span class="c1"># refractive index of water</span>
             <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">vza</span><span class="p">)</span>
 
             <span class="c1"># calculate angle of refraction using Snell′s law</span>
-            <span class="n">theta_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_w</span><span class="p">)</span>
+            <span class="n">theta_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">real_ref_idx</span><span class="p">)</span>
 
             <span class="c1"># reflectance factor of sky radiance based on the Fresnel equation for unpolarized light</span>
             <span class="n">rho_ls</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>

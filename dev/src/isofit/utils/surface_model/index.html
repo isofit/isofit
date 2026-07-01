@@ -5288,7 +5288,18 @@
 <span class="normal">532</span>
 <span class="normal">533</span>
 <span class="normal">534</span>
-<span class="normal">535</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5433,17 +5444,27 @@
     <span class="n">selection_metric</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;selection_metric&quot;</span><span class="p">,</span> <span class="s2">&quot;Euclidean&quot;</span><span class="p">)</span>
 
     <span class="c1"># load wavelengths file, and change units to nm if needed</span>
+    <span class="n">fwhm</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">wavelength_file</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.hdr&quot;</span><span class="p">:</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">wavelength_file</span><span class="p">)</span>
         <span class="n">wl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]])</span>
+        <span class="n">fwhm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fwhm&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Assumes</span>
+        <span class="c1"># [:, 0] - Wavelength</span>
+        <span class="c1"># [:, 1] - fwhm</span>
         <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">wavelength_file</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span>
         <span class="n">wl</span> <span class="o">=</span> <span class="n">q</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">fwhm</span> <span class="o">=</span> <span class="n">q</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">wl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
         <span class="n">wl</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">micron_to_nm</span><span class="p">(</span><span class="n">wl</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fwhm</span><span class="p">):</span>
+            <span class="n">fwhm</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">micron_to_nm</span><span class="p">(</span><span class="n">fwhm</span><span class="p">)</span>
+
     <span class="n">nchan</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">wl</span><span class="p">)</span>
 
     <span class="c1"># build global reference windows</span>
@@ -5459,6 +5480,7 @@
         <span class="s2">&quot;normalize&quot;</span><span class="p">:</span> <span class="n">normalize</span><span class="p">,</span>
         <span class="s2">&quot;selection_metric&quot;</span><span class="p">:</span> <span class="n">selection_metric</span><span class="p">,</span>
         <span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="n">wl</span><span class="p">,</span>
+        <span class="s2">&quot;fwhm&quot;</span><span class="p">:</span> <span class="n">fwhm</span><span class="p">,</span>
         <span class="s2">&quot;means&quot;</span><span class="p">:</span> <span class="p">[],</span>
         <span class="s2">&quot;covs&quot;</span><span class="p">:</span> <span class="p">[],</span>
         <span class="s2">&quot;attribute_means&quot;</span><span class="p">:</span> <span class="p">[],</span>
