@@ -4680,6 +4680,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.surface.surface_lut.LUTSurface.update_heuristic_prior_means" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_heuristic_prior_means
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.surface.surface_lut.LUTSurface.xa" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5176,7 +5187,11 @@
 <span class="normal">282</span>
 <span class="normal">283</span>
 <span class="normal">284</span>
-<span class="normal">285</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2020 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5265,6 +5280,10 @@
 
         <span class="c1"># Change this if you don&#39;t want to analytical solve for all the full statevector elements.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">analytical_iv_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_heuristic_prior_means</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.update_heuristic_prior_means"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.update_heuristic_prior_means" title="Go to docs">[docs]</a></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Don&#39;t update any of the priors. Return xa&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">xa</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.xa"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.xa" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Mean of prior distribution.&quot;&quot;&quot;</span>

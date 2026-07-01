@@ -4846,7 +4846,14 @@
 <span class="normal">123</span>
 <span class="normal">124</span>
 <span class="normal">125</span>
-<span class="normal">126</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -4929,6 +4936,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">max_hash_table_size</span> <span class="o">=</span> <span class="mi">50</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;int: The maximum size of inversion hash tables.  Can provide speedups with redundant surfaces, but comes</span>
 <span class="sd">        with increased memory costs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_per_pixel_heuristic_prior_type</span> <span class="o">=</span> <span class="nb">bool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">per_pixel_heuristic_prior</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: define prior mean setting scheme.</span>
+<span class="sd">        True -&gt; use per-pixel heuristic</span>
+<span class="sd">        False -&gt; Use image-wide &quot;unverisal&quot; value</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_debug_mode_type</span> <span class="o">=</span> <span class="nb">bool</span>

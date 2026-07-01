@@ -2086,6 +2086,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.clip_bounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clip_bounds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.core.forward.ForwardModel.out_of_bounds" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2097,10 +2108,43 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.core.forward.ForwardModel.xa" class="md-nav__link">
+  <a href="#isofit.core.forward.ForwardModel.update_heuristic_prior_means" class="md-nav__link">
     <span class="md-ellipsis">
       
-        xa
+        update_heuristic_prior_means
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.heuristic_bounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        heuristic_bounds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.xa_heuristic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        xa_heuristic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.xa_static" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        xa_static
       
     </span>
   </a>
@@ -5003,6 +5047,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.clip_bounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clip_bounds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.core.forward.ForwardModel.out_of_bounds" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5014,10 +5069,43 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.core.forward.ForwardModel.xa" class="md-nav__link">
+  <a href="#isofit.core.forward.ForwardModel.update_heuristic_prior_means" class="md-nav__link">
     <span class="md-ellipsis">
       
-        xa
+        update_heuristic_prior_means
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.heuristic_bounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        heuristic_bounds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.xa_heuristic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        xa_heuristic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.xa_static" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        xa_static
       
     </span>
   </a>
@@ -5458,12 +5546,33 @@ MUST MATCH ORDER FROM ABOVE ASSIGNMENT</p>
 <div class="mkapi-section-content">
 <ul class="mkapi-item-list">
 <li>
+<p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.clip_bounds" title="isofit.core.forward.ForwardModel.clip_bounds">clip_bounds</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Clip state vector against bounds.
+eps shifts bounds by epsilon to not pin
+boundary returned val at boundary. Used when clipping prior mean.
+Use a relative espilon to scale with statevecor value.</p>
+</li>
+<li>
 <p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.out_of_bounds" title="isofit.core.forward.ForwardModel.out_of_bounds">out_of_bounds</a></span>
  <span class="mkapi-dash">&mdash;</span>
 Check if state vector is within bounds.</p>
 </li>
 <li>
-<p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.xa" title="isofit.core.forward.ForwardModel.xa">xa</a></span>
+<p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.update_heuristic_prior_means" title="isofit.core.forward.ForwardModel.update_heuristic_prior_means">update_heuristic_prior_means</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Save the pixel-specific prior to the geometry object</p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.heuristic_bounds" title="isofit.core.forward.ForwardModel.heuristic_bounds">heuristic_bounds</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Save pixel-specific bounds. Currently only implemented for H2O</p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.xa_heuristic" title="isofit.core.forward.ForwardModel.xa_heuristic">xa_heuristic</a></span></p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.xa_static" title="isofit.core.forward.ForwardModel.xa_static">xa_static</a></span>
  <span class="mkapi-dash">&mdash;</span>
 Calculate the prior mean of the state vector (the concatenation
 of state vectors for the surface, atmosphere, and instrument).</p>
@@ -5589,6 +5698,26 @@ Unpack the state vector in appropriate index ordering.</p>
 </ul>
 </div>
 </div>
+<p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.clip_bounds">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+
+<a href="../../../../src/isofit/core/forward/#isofit.core.forward.ForwardModel.clip_bounds" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">staticmethod</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.core.forward.ForwardModel" title="isofit.core.forward.ForwardModel">ForwardModel</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.core.forward.ForwardModel.clip_bounds" title="isofit.core.forward.ForwardModel.clip_bounds">clip_bounds</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x</span><span class="mkapi-comma">, </span><span class="mkapi-arg">bounds</span><span class="mkapi-comma">, </span><span class="mkapi-arg">inds_free</span><span class="mkapi-equal">=</span><span class="mkapi-default">slice(None)</span><span class="mkapi-comma">, </span><span class="mkapi-arg">eps</span><span class="mkapi-equal">=</span><span class="mkapi-default">1e-05</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document">
+<p>Clip state vector against bounds.
+eps shifts bounds by epsilon to not pin
+boundary returned val at boundary. Used when clipping prior mean.
+Use a relative espilon to scale with statevecor value.</p>
+</div>
 <p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.out_of_bounds">
 <span class="mkapi-object-link">
 <span class="mkapi-parent-toggle" title="Toggle class names">
@@ -5606,19 +5735,68 @@ Unpack the state vector in appropriate index ordering.</p>
 <div class="mkapi-document">
 <p>Check if state vector is within bounds.</p>
 </div>
-<p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.xa">
+<p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.update_heuristic_prior_means">
 <span class="mkapi-object-link">
 <span class="mkapi-parent-toggle" title="Toggle class names">
 <i class="fa-solid fa-square-plus"></i>
 </span>
 
-<a href="../../../../src/isofit/core/forward/#isofit.core.forward.ForwardModel.xa" title="Go to source">source</a>
+<a href="../../../../src/isofit/core/forward/#isofit.core.forward.ForwardModel.update_heuristic_prior_means" title="Go to source">source</a>
 <span class="mkapi-document-toggle" title="Toggle all docs">
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span><span class="mkapi-object-kind">method</span>
 <span class="mkapi-object-parent">
-<a href="./#isofit.core.forward.ForwardModel" title="isofit.core.forward.ForwardModel">ForwardModel</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.core.forward.ForwardModel.xa" title="isofit.core.forward.ForwardModel.xa">xa</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-paren">)</span></span>
+<a href="./#isofit.core.forward.ForwardModel" title="isofit.core.forward.ForwardModel">ForwardModel</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.core.forward.ForwardModel.update_heuristic_prior_means" title="isofit.core.forward.ForwardModel.update_heuristic_prior_means">update_heuristic_prior_means</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document">
+<p>Save the pixel-specific prior to the geometry object</p>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.heuristic_bounds">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+
+<a href="../../../../src/isofit/core/forward/#isofit.core.forward.ForwardModel.heuristic_bounds" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">method</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.core.forward.ForwardModel" title="isofit.core.forward.ForwardModel">ForwardModel</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.core.forward.ForwardModel.heuristic_bounds" title="isofit.core.forward.ForwardModel.heuristic_bounds">heuristic_bounds</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">geom</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document">
+<p>Save pixel-specific bounds. Currently only implemented for H2O</p>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.xa_heuristic">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+
+<a href="../../../../src/isofit/core/forward/#isofit.core.forward.ForwardModel.xa_heuristic" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">method</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.core.forward.ForwardModel" title="isofit.core.forward.ForwardModel">ForwardModel</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.core.forward.ForwardModel.xa_heuristic" title="isofit.core.forward.ForwardModel.xa_heuristic">xa_heuristic</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document"></div>
+<p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.xa_static">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+
+<a href="../../../../src/isofit/core/forward/#isofit.core.forward.ForwardModel.xa_static" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">method</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.core.forward.ForwardModel" title="isofit.core.forward.ForwardModel">ForwardModel</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.core.forward.ForwardModel.xa_static" title="isofit.core.forward.ForwardModel.xa_static">xa_static</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>Calculate the prior mean of the state vector (the concatenation

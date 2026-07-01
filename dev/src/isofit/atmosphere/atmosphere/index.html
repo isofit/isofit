@@ -4735,6 +4735,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.atmosphere.atmosphere.BaseAtmosphere.update_heuristic_prior_means" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_heuristic_prior_means
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.atmosphere.atmosphere.BaseAtmosphere.xa" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4835,6 +4846,28 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.atmosphere.atmosphere.modtran_water_upperbound_polynomials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        modtran_water_upperbound_polynomials
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.atmosphere.atmosphere.modtran_aot_lowerbound_polynomials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        modtran_aot_lowerbound_polynomials
+      
+    </span>
+  </a>
   
 </li>
         
@@ -5440,7 +5473,108 @@
 <span class="normal">557</span>
 <span class="normal">558</span>
 <span class="normal">559</span>
-<span class="normal">560</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span>
+<span class="normal">617</span>
+<span class="normal">618</span>
+<span class="normal">619</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span>
+<span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
+<span class="normal">639</span>
+<span class="normal">640</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5473,7 +5607,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">common</span><span class="p">,</span> <span class="n">units</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">svd_inv_sqrt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">json_load_ascii</span><span class="p">,</span> <span class="n">svd_inv_sqrt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geometry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.luts.reader</span><span class="w"> </span><span class="kn">import</span> <span class="n">Reader</span>
 
@@ -5573,6 +5707,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">get_element_names</span><span class="p">()</span>
 
+        <span class="n">possible_h2o_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">,</span> <span class="s2">&quot;h2o&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h2o_i</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">)</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">possible_h2o_names</span>
+        <span class="p">]</span>
+
         <span class="c1"># Configure and exit flag</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">configure_and_exit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">configure_and_exit</span>
 
@@ -5649,6 +5788,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Sa_inv_normalized</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Sa_inv_sqrt_normalized</span> <span class="o">=</span> <span class="n">svd_inv_sqrt</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Sa_normalized</span>
         <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type</span> <span class="o">=</span> <span class="n">json_load_ascii</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">)[</span>
+                <span class="s2">&quot;MODTRAN&quot;</span>
+            <span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;M1&quot;</span><span class="p">,</span> <span class="s2">&quot;ATM_MIDLAT_SUMMER&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type</span> <span class="o">=</span> <span class="s2">&quot;ATM_MIDLAT_SUMMER&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">h2o_bounds_polynomial</span> <span class="o">=</span> <span class="n">modtran_water_upperbound_polynomials</span><span class="p">()[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type</span>
+        <span class="p">]</span>
 
         <span class="c1"># Uncertainty</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bvec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">get_element_names</span><span class="p">()</span>
@@ -5734,8 +5884,16 @@
             <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.atmosphere.BaseAtmosphere.xa"><a href="../../../../api/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.BaseAtmosphere.xa" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pull the priors from each of the individual RTs.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_heuristic_prior_means</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.atmosphere.BaseAtmosphere.update_heuristic_prior_means"><a href="../../../../api/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.BaseAtmosphere.update_heuristic_prior_means" title="Go to docs">[docs]</a></div>
+        <span class="n">xa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_mean</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">xa</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_atmosphere</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">xa</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.atmosphere.BaseAtmosphere.xa"><a href="../../../../api/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.BaseAtmosphere.xa" title="Go to docs">[docs]</a></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Use the image-wide prior mean</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_mean</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">Sa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.atmosphere.BaseAtmosphere.Sa"><a href="../../../../api/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.BaseAtmosphere.Sa" title="Go to docs">[docs]</a></div>
@@ -6000,6 +6158,83 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">pairs</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">,</span> <span class="n">x_RT</span><span class="p">)</span>
         <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">5.3f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">])</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">modtran_water_upperbound_polynomials</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.atmosphere.atmosphere.modtran_water_upperbound_polynomials"><a href="../../../../api/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.modtran_water_upperbound_polynomials" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Polynomials as a function of ground altitude (km) to estimate upperbound of water column vapor (g/cm2). Generated from MODTRAN.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: 3rd degree polynomials to estimate upperbound of water column vapor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Capping polynomial to not allow negative, or increasing trend, at very high ground altitudes (&gt;6km).</span>
+    <span class="n">min_value</span> <span class="o">=</span> <span class="mf">0.25</span>
+
+    <span class="n">polynomials</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;ATM_TROPICAL&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+            <span class="mf">6.74256</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">2.37052</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.313829</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.0159003</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+            <span class="n">min_value</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;ATM_MIDLAT_SUMMER&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+            <span class="mf">5.350046</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.839548</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.296582e-01</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.020594e-02</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+            <span class="n">min_value</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;ATM_MIDLAT_WINTER&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+            <span class="mf">1.371226</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.442087</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">4.485325e-02</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.130163e-03</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+            <span class="n">min_value</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;ATM_SUBARC_SUMMER&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+            <span class="mf">3.121272</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.171145</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.704094e-01</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">9.701062e-03</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+            <span class="n">min_value</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;ATM_SUBARC_WINTER&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+            <span class="mf">0.630406</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.176336</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">8.286409e-03</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">8.138824e-04</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+            <span class="n">min_value</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;ATM_US_STANDARD_1976&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+            <span class="mf">2.869655</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.227473</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.039059e-01</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.274801e-02</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+            <span class="n">min_value</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">polynomials</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">modtran_aot_lowerbound_polynomials</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.atmosphere.atmosphere.modtran_aot_lowerbound_polynomials"><a href="../../../../api/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.modtran_aot_lowerbound_polynomials" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Polynomials as a function of ground altitude (km) to estimate lowerbound of AOT at 550nm. Generated from MODTRAN.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: 3rd degree polynomials to estimate lowerbound of AOT</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">polynomials</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;ATM_TROPICAL&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">0.042090</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.003120</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="mf">4.462979e-18</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">4.260469e-19</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+        <span class="s2">&quot;ATM_MIDLAT_SUMMER&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">0.042090</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.003120</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="mf">4.462979e-18</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">4.260469e-19</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+        <span class="s2">&quot;ATM_MIDLAT_WINTER&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">0.024748</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.001654</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">5.083805e-07</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="mf">7.252007e-08</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+        <span class="s2">&quot;ATM_SUBARC_SUMMER&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">0.042090</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.003120</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="mf">4.462979e-18</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">4.260469e-19</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+        <span class="s2">&quot;ATM_SUBARC_WINTER&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">0.024748</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.001654</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">5.083805e-07</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="mf">7.252007e-08</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+        <span class="s2">&quot;ATM_US_STANDARD_1976&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">0.042090</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.003120</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="mf">4.462979e-18</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mf">4.260469e-19</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">polynomials</span>
 </code></pre></div></td></tr></table></div>
 
 

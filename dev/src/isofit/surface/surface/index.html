@@ -4691,6 +4691,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.surface.surface.Surface.update_heuristic_prior_means" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_heuristic_prior_means
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.surface.surface.Surface.xa" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5011,7 +5022,11 @@
 <span class="normal">150</span>
 <span class="normal">151</span>
 <span class="normal">152</span>
-<span class="normal">153</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5100,6 +5115,10 @@
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;rwl&quot;</span><span class="p">):</span>
             <span class="n">p</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rwl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfl</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rfl</span> <span class="o">=</span> <span class="n">p</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_heuristic_prior_means</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.update_heuristic_prior_means"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.update_heuristic_prior_means" title="Go to docs">[docs]</a></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Don&#39;t update any of the reflectance priors. Return xa&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">xa</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.xa"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.xa" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Mean of prior state vector distribution calculated at state x.&quot;&quot;&quot;</span>

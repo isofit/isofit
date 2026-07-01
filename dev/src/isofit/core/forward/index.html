@@ -4680,6 +4680,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.clip_bounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clip_bounds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.core.forward.ForwardModel.out_of_bounds" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4691,10 +4702,43 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.core.forward.ForwardModel.xa" class="md-nav__link">
+  <a href="#isofit.core.forward.ForwardModel.update_heuristic_prior_means" class="md-nav__link">
     <span class="md-ellipsis">
       
-        xa
+        update_heuristic_prior_means
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.heuristic_bounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        heuristic_bounds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.xa_heuristic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        xa_heuristic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.xa_static" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        xa_static
       
     </span>
   </a>
@@ -5882,7 +5926,57 @@
 <span class="normal">911</span>
 <span class="normal">912</span>
 <span class="normal">913</span>
-<span class="normal">914</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">914</span>
+<span class="normal">915</span>
+<span class="normal">916</span>
+<span class="normal">917</span>
+<span class="normal">918</span>
+<span class="normal">919</span>
+<span class="normal">920</span>
+<span class="normal">921</span>
+<span class="normal">922</span>
+<span class="normal">923</span>
+<span class="normal">924</span>
+<span class="normal">925</span>
+<span class="normal">926</span>
+<span class="normal">927</span>
+<span class="normal">928</span>
+<span class="normal">929</span>
+<span class="normal">930</span>
+<span class="normal">931</span>
+<span class="normal">932</span>
+<span class="normal">933</span>
+<span class="normal">934</span>
+<span class="normal">935</span>
+<span class="normal">936</span>
+<span class="normal">937</span>
+<span class="normal">938</span>
+<span class="normal">939</span>
+<span class="normal">940</span>
+<span class="normal">941</span>
+<span class="normal">942</span>
+<span class="normal">943</span>
+<span class="normal">944</span>
+<span class="normal">945</span>
+<span class="normal">946</span>
+<span class="normal">947</span>
+<span class="normal">948</span>
+<span class="normal">949</span>
+<span class="normal">950</span>
+<span class="normal">951</span>
+<span class="normal">952</span>
+<span class="normal">953</span>
+<span class="normal">954</span>
+<span class="normal">955</span>
+<span class="normal">956</span>
+<span class="normal">957</span>
+<span class="normal">958</span>
+<span class="normal">959</span>
+<span class="normal">960</span>
+<span class="normal">961</span>
+<span class="normal">962</span>
+<span class="normal">963</span>
+<span class="normal">964</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6042,6 +6136,28 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model_discrepancy</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="k">if</span> <span class="n">full_config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">per_pixel_heuristic_prior</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xa_heuristic</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xa_static</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clip_bounds</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">inds_free</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.clip_bounds"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.clip_bounds" title="Go to docs">[docs]</a></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clip state vector against bounds.</span>
+<span class="sd">        eps shifts bounds by epsilon to not pin</span>
+<span class="sd">        boundary returned val at boundary. Used when clipping prior mean.</span>
+<span class="sd">        Use a relative espilon to scale with statevecor value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">low</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">high</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+        <span class="n">rel_eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">eps</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">low</span><span class="p">[</span><span class="n">check</span><span class="p">]</span> <span class="o">=</span> <span class="n">low</span><span class="p">[</span><span class="n">check</span><span class="p">]</span> <span class="o">+</span> <span class="n">rel_eps</span><span class="p">[</span><span class="n">check</span><span class="p">]</span>
+        <span class="n">high</span><span class="p">[</span><span class="n">check</span><span class="p">]</span> <span class="o">=</span> <span class="n">high</span><span class="p">[</span><span class="n">check</span><span class="p">]</span> <span class="o">-</span> <span class="n">rel_eps</span><span class="p">[</span><span class="n">check</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">inds_free</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="n">low</span><span class="p">[</span><span class="n">inds_free</span><span class="p">],</span> <span class="n">a_max</span><span class="o">=</span><span class="n">high</span><span class="p">[</span><span class="n">inds_free</span><span class="p">])</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">out_of_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.out_of_bounds"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.out_of_bounds" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if state vector is within bounds.&quot;&quot;&quot;</span>
 
@@ -6052,7 +6168,35 @@
             <span class="n">x_atmosphere</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">bound_lwr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">]</span> <span class="o">+</span> <span class="n">eps</span> <span class="o">*</span> <span class="mf">2.0</span><span class="p">)</span>
         <span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.xa"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.xa" title="Go to docs">[docs]</a></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_heuristic_prior_means</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.update_heuristic_prior_means"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.update_heuristic_prior_means" title="Go to docs">[docs]</a></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the pixel-specific prior to the geometry object&quot;&quot;&quot;</span>
+        <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x_surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">update_heuristic_prior_means</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">],</span> <span class="n">geom</span><span class="p">)</span>
+        <span class="n">x_atmosphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">update_heuristic_prior_means</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">],</span> <span class="n">geom</span>
+        <span class="p">)</span>
+        <span class="c1"># No implimentation for Instrument</span>
+
+        <span class="c1"># Should be persist out of this function scope</span>
+        <span class="n">geom</span><span class="o">.</span><span class="n">xa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">x_instrument</span><span class="p">])</span>
+
+        <span class="k">return</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">heuristic_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.heuristic_bounds"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.heuristic_bounds" title="Go to docs">[docs]</a></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save pixel-specific bounds. Currently only implemented for H2O&quot;&quot;&quot;</span>
+        <span class="c1"># Would like to avoid if statement here</span>
+        <span class="n">low_bound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">high_bound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">:</span>
+            <span class="n">high_bound</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_bounds_polynomial</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">surface_elevation_km</span><span class="p">)</span> <span class="o">-</span> <span class="n">eps</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">low_bound</span><span class="p">,</span> <span class="n">high_bound</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">xa_heuristic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.xa_heuristic"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.xa_heuristic" title="Go to docs">[docs]</a></div>
+        <span class="k">return</span> <span class="n">geom</span><span class="o">.</span><span class="n">xa</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">xa_static</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.xa_static"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.xa_static" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the prior mean of the state vector (the concatenation</span>
 <span class="sd">        of state vectors for the surface, atmosphere, and instrument).</span>
 
@@ -6060,9 +6204,9 @@
 <span class="sd">        this is so we can calculate the local prior.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">x_surface</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span>
+        <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">xa_surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">xa</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-        <span class="n">xa_atmosphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">xa</span><span class="p">()</span>
+        <span class="n">xa_atmosphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">xa</span><span class="p">(</span><span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
         <span class="n">xa_instrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">xa</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">xa_surface</span><span class="p">,</span> <span class="n">xa_atmosphere</span><span class="p">,</span> <span class="n">xa_instrument</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 

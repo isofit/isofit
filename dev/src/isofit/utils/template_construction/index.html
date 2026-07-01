@@ -6950,7 +6950,12 @@
 <span class="normal">1945</span>
 <span class="normal">1946</span>
 <span class="normal">1947</span>
-<span class="normal">1948</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1948</span>
+<span class="normal">1949</span>
+<span class="normal">1950</span>
+<span class="normal">1951</span>
+<span class="normal">1952</span>
+<span class="normal">1953</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick and Niklas Bohn</span>
 <span class="c1">#</span>
@@ -6969,7 +6974,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">spectral.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.atmosphere.engines.modtran</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModtranRT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.atmosphere.atmosphere</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">modtran_aot_lowerbound_polynomials</span><span class="p">,</span>
+    <span class="n">modtran_water_upperbound_polynomials</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span><span class="p">,</span> <span class="n">expand_path</span><span class="p">,</span> <span class="n">json_load_ascii</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.multistate</span><span class="w"> </span><span class="kn">import</span> <span class="n">SurfaceMapping</span>
@@ -7364,9 +7372,7 @@
 
         <span class="c1"># Set defaults, will override based on settings</span>
         <span class="c1"># Units of g / m2</span>
-        <span class="n">modtran_max_water</span> <span class="o">=</span> <span class="n">ModtranRT</span><span class="o">.</span><span class="n">modtran_water_upperbound_polynomials</span><span class="p">()[</span>
-            <span class="n">atmosphere_type</span>
-        <span class="p">](</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">modtran_max_water</span> <span class="o">=</span> <span class="n">modtran_water_upperbound_polynomials</span><span class="p">()[</span><span class="n">atmosphere_type</span><span class="p">](</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">h2o_range</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">modtran_max_water</span><span class="p">]</span>
 
         <span class="c1"># Units of degrees</span>
@@ -7394,9 +7400,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_2_spacing_min</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="c1"># Units of AOD</span>
-        <span class="n">modtran_min_aerosol</span> <span class="o">=</span> <span class="n">ModtranRT</span><span class="o">.</span><span class="n">modtran_aot_lowerbound_polynomials</span><span class="p">()[</span>
-            <span class="n">atmosphere_type</span>
-        <span class="p">](</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">modtran_min_aerosol</span> <span class="o">=</span> <span class="n">modtran_aot_lowerbound_polynomials</span><span class="p">()[</span><span class="n">atmosphere_type</span><span class="p">](</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_0_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">modtran_min_aerosol</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_1_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">modtran_min_aerosol</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_2_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">modtran_min_aerosol</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
@@ -7654,6 +7658,7 @@
     <span class="n">presolve</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">terrain_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;flat&quot;</span><span class="p">,</span>
     <span class="n">max_slope</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
+    <span class="n">per_pixel_heuristic_prior</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Write an isofit config file for the main solve, using the specified pathnames and all given info</span>
 
@@ -7770,6 +7775,7 @@
                 <span class="n">presolve</span><span class="o">=</span><span class="n">presolve</span><span class="p">,</span>
                 <span class="n">pressure_elevation</span><span class="o">=</span><span class="n">pressure_elevation</span><span class="p">,</span>
                 <span class="n">retrieve_co2</span><span class="o">=</span><span class="n">retrieve_co2</span><span class="p">,</span>
+                <span class="n">per_pixel_heuristic_prior</span><span class="o">=</span><span class="n">per_pixel_heuristic_prior</span><span class="p">,</span>
                 <span class="n">relative_azimuth_lut_grid</span><span class="o">=</span><span class="n">relative_azimuth_lut_grid</span><span class="p">,</span>
                 <span class="n">to_sensor_zenith_lut_grid</span><span class="o">=</span><span class="n">to_sensor_zenith_lut_grid</span><span class="p">,</span>
                 <span class="n">to_sun_zenith_lut_grid</span><span class="o">=</span><span class="n">to_sun_zenith_lut_grid</span><span class="p">,</span>
@@ -7790,6 +7796,7 @@
             <span class="n">inversion_windows</span><span class="o">=</span><span class="n">inversion_windows</span><span class="p">,</span>
             <span class="n">n_cores</span><span class="o">=</span><span class="n">n_cores</span><span class="p">,</span>
             <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span>
+            <span class="n">per_pixel_heuristic_prior</span><span class="o">=</span><span class="n">per_pixel_heuristic_prior</span><span class="p">,</span>
         <span class="p">),</span>
         <span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="n">input_config</span><span class="p">,</span>
         <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output_config</span><span class="p">,</span>
@@ -8429,6 +8436,7 @@
     <span class="n">presolve</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">pressure_elevation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">retrieve_co2</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">per_pixel_heuristic_prior</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">relative_azimuth_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">to_sensor_zenith_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">to_sun_zenith_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8682,7 +8690,7 @@
 
     <span class="c1"># Now do statevector</span>
     <span class="n">statekeys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">]</span>
-    <span class="n">statesigmas</span> <span class="o">=</span> <span class="p">[</span><span class="mf">100.0</span><span class="p">]</span>
+    <span class="n">statesigmas</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">per_pixel_heuristic_prior</span> <span class="k">else</span> <span class="mf">100.0</span><span class="p">]</span>
     <span class="n">statescale</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">pressure_elevation</span> <span class="ow">and</span> <span class="n">presolve</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
         <span class="n">statekeys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">)</span>
@@ -8854,6 +8862,7 @@
     <span class="n">inversion_windows</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">350.0</span><span class="p">,</span> <span class="mf">1360.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1410</span><span class="p">,</span> <span class="mf">1800.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1970.0</span><span class="p">,</span> <span class="mf">2500.0</span><span class="p">]],</span>
     <span class="n">n_cores</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
     <span class="n">debug</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">per_pixel_heuristic_prior</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
 
     <span class="k">return</span> <span class="p">{</span>
@@ -8861,6 +8870,7 @@
         <span class="s2">&quot;ray_address&quot;</span><span class="p">:</span> <span class="n">ray_ip_head</span><span class="p">,</span>
         <span class="s2">&quot;inversion&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;windows&quot;</span><span class="p">:</span> <span class="n">inversion_windows</span><span class="p">},</span>
         <span class="s2">&quot;n_cores&quot;</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">,</span>
+        <span class="s2">&quot;per_pixel_heuristic_prior&quot;</span><span class="p">:</span> <span class="n">per_pixel_heuristic_prior</span><span class="p">,</span>
         <span class="s2">&quot;debug_mode&quot;</span><span class="p">:</span> <span class="n">debug</span><span class="p">,</span>
         <span class="s2">&quot;isofit_version&quot;</span><span class="p">:</span> <span class="n">__version__</span><span class="p">,</span>
     <span class="p">}</span>

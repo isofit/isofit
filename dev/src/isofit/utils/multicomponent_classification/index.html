@@ -5294,7 +5294,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">isofit.utils.template_construction</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tmpl</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit</span><span class="w"> </span><span class="kn">import</span> <span class="n">ray</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span><span class="p">,</span> <span class="n">resample_spectrum</span><span class="p">,</span> <span class="n">svd_inv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span><span class="p">,</span> <span class="n">load_esd</span><span class="p">,</span> <span class="n">resample_spectrum</span><span class="p">,</span> <span class="n">svd_inv</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">IO</span><span class="p">,</span> <span class="n">initialize_output</span><span class="p">,</span> <span class="n">write_bil_chunk</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geometry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.multistate</span><span class="w"> </span><span class="kn">import</span> <span class="n">SurfaceMapping</span>
@@ -5385,7 +5385,7 @@
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">component</span> <span class="o">=</span> <span class="n">Component</span><span class="p">(</span><span class="n">model_dict</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">esd</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">load_esd</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">esd</span> <span class="o">=</span> <span class="n">load_esd</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span> <span class="o">=</span> <span class="n">dayofyear</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="n">wl</span>
