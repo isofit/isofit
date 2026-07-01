@@ -675,6 +675,24 @@ class IO:
                     self.full_statevec,
                 )
 
+            # Special case for LUTSurface with several endmembers using softmax
+            # Transformation is valid for state, but uncertainty needs work.
+            # TODO for now this will output fill_value for uncertainty.
+            if fm.is_lut_surface:
+                if fm.surface.solve_mixed_pixel:
+                    idx_endmembers = np.array(fm.full_idx)[fm.surface.idx_em_rfls]
+                    if "estimated_state_file" in self.output_datasets:
+                        s = fill_statevector(
+                            state_est, fm.full_idx, fm.full_miss, self.full_statevec
+                        )
+                        s[idx_endmembers] = fm.surface.softmax(s[idx_endmembers])
+                        to_write["estimated_state_file"] = s
+
+                    if "posterior_uncertainty_file" in self.output_datasets:
+                        to_write["posterior_uncertainty_file"][
+                            idx_endmembers
+                        ] = fill_value
+
             ############ Now proceed to the calcs where they may be some overlap
 
             if any(

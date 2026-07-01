@@ -24,6 +24,7 @@ from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.luts.reader import inspect_lut_dimensions
 from isofit.utils.surface_model import surface_model
+from isofit.luts.reader import load_prebuilt_surface
 
 
 class Pathnames:
@@ -576,6 +577,12 @@ def check_surface_model(
     """
     if os.path.isfile(surface_path):
         if surface_path.endswith(".mat"):
+
+            if surface_category == "lut_surface":
+                raise ValueError(
+                    "Apply OE using lut_surface can only be run from a .json surface file."
+                )
+
             # check wavelength grid of surface model if provided
             model_dict = loadmat(surface_path)
             wl_surface = model_dict["wl"][0]
@@ -1782,6 +1789,13 @@ def make_surface_config(
         "multi_surface_flag": False,
     }
 
+    # Check if we are running LUTSurface
+    surface_lut_file = None
+    if surface_category == "lut_surface":
+        surface_lut_file = loadmat(surface_working_paths[surface_category])[
+            "surface_lut_file"
+        ][0]
+
     # Check to see if a classification file is being propogated
     # If so, use multisurface
     if surface_class_working_path:
@@ -1814,6 +1828,7 @@ def make_surface_config(
                 "surface_int": int(i),
                 "surface_file": surface_path,
                 "surface_category": surface_category,
+                "surface_lut_file": surface_lut_file,
                 "terrain_style": terrain_style,
                 "max_slope": max_slope,
             }
@@ -1822,6 +1837,7 @@ def make_surface_config(
     else:
         surface_config_dict["surface_file"] = surface_working_paths[surface_category]
         surface_config_dict["surface_category"] = surface_category
+        surface_config_dict["surface_lut_file"] = surface_lut_file
         surface_config_dict["terrain_style"] = terrain_style
         surface_config_dict["max_slope"] = max_slope
 
@@ -1829,6 +1845,7 @@ def make_surface_config(
     for category, path in surface_working_paths.items():
         surface_mat = loadmat(path)
         statevec_names = surface_mat.get("statevec_names", [])
+
         if len(statevec_names):
             surface_config_dict["statevector"] = surface_config_dict.get(
                 "statevector", {}
@@ -1841,6 +1858,33 @@ def make_surface_config(
                     "prior_sigma": surface_mat["prior_sigma"][0][i],
                     "scale": surface_mat["scale"][0][i],
                 }
+
+        # Add to the statevector for special case of LUTSurface and
+        # user has not provided all prior information in surface mat
+        if surface_lut_file and category == "lut_surface":
+
+            # If it did not get generated above we need to run this line again
+            if len(statevec_names) == 0:
+                surface_config_dict["statevector"] = surface_config_dict.get(
+                    "statevector", {}
+                )
+
+            # Read the LUT Surface (without creating the Vect Interpolators)
+            _, _, lut_params = load_prebuilt_surface(
+                surface_lut_file=surface_lut_file,
+                terrain_style=terrain_style,
+                statevector_only=True,
+            )
+            lut_data = lut_params["lut_statevector_data"]
+            for i, name in enumerate(lut_data["statevec_names"]):
+                if name not in surface_config_dict["statevector"]:
+                    surface_config_dict["statevector"][name] = {
+                        "bounds": [float(b) for b in lut_data["bounds"][i]],
+                        "init": float(lut_data["init"][0][i]),
+                        "prior_mean": float(lut_data["prior_mean"][0][i]),
+                        "prior_sigma": float(lut_data["prior_sigma"][0][i]),
+                        "scale": float(lut_data["scale"][0][i]),
+                    }
 
     return surface_config_dict
 

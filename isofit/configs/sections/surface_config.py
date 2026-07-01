@@ -34,6 +34,7 @@ from isofit.surface.surface_glint_model import (
     DefaultSunGlintPrior,
 )
 from isofit.surface.surface_thermal import DefaultSurfTempKPrior
+from isofit.luts.reader import load_prebuilt_surface
 
 
 class SurfaceStateVectorConfig(StateVectorConfig):
@@ -92,6 +93,9 @@ class SurfaceConfig(BaseConfigSection):
 
         self._wavelength_file_type = str
         self.wavelength_file = None
+
+        self._surface_lut_file_type = str
+        self.surface_lut_file = None
 
         self._select_on_init_type = bool
         self.select_on_init = True
@@ -201,10 +205,14 @@ class SurfaceConfig(BaseConfigSection):
             model_dict = loadmat(f)
             for i, name in enumerate(model_dict.get("statevec_names", [])):
                 for key in DefaultState._fields:
-                    if not (
-                        np.all(statevec[name][key] == model_dict[key].squeeze()[i])
-                    ):
-                        mismatch[key] = name
+                    if len(model_dict.get("statevec_names", [])) == 1:
+                        if not (np.all(statevec[name][key] == model_dict[key][i])):
+                            mismatch[key] = name
+                    else:
+                        if not (
+                            np.all(statevec[name][key] == model_dict[key].squeeze()[i])
+                        ):
+                            mismatch[key] = name
 
         if len(mismatch):
             message = (
