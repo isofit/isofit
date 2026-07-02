@@ -5638,7 +5638,27 @@
 <span class="normal">766</span>
 <span class="normal">767</span>
 <span class="normal">768</span>
-<span class="normal">769</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">769</span>
+<span class="normal">770</span>
+<span class="normal">771</span>
+<span class="normal">772</span>
+<span class="normal">773</span>
+<span class="normal">774</span>
+<span class="normal">775</span>
+<span class="normal">776</span>
+<span class="normal">777</span>
+<span class="normal">778</span>
+<span class="normal">779</span>
+<span class="normal">780</span>
+<span class="normal">781</span>
+<span class="normal">782</span>
+<span class="normal">783</span>
+<span class="normal">784</span>
+<span class="normal">785</span>
+<span class="normal">786</span>
+<span class="normal">787</span>
+<span class="normal">788</span>
+<span class="normal">789</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Manages the reading and subsetting of look-up tables (LUTs)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -5654,7 +5674,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">netCDF4</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dataset</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">common</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">common</span><span class="p">,</span> <span class="n">units</span>
 
 <span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -6172,9 +6192,29 @@
 <span class="sd">    &gt;&gt;&gt; load(path, subset).unstack().dims</span>
 <span class="sd">    Frozen({&#39;AOT550&#39;: 3, &#39;H2OSTR&#39;: 10, &#39;wl&#39;: 285})</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
     <span class="n">xropen</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span>
     <span class="k">if</span> <span class="n">mf</span><span class="p">:</span>
         <span class="n">xropen</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">mfopen_dataset</span>
+
+    <span class="c1"># Convert dicts of {dim: None, ...} to None</span>
+    <span class="k">if</span> <span class="n">subset</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">subset</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+        <span class="n">subset</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Special case that doesn&#39;t require defining the entire grid subsetting strategy</span>
+    <span class="k">if</span> <span class="n">load</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">subset</span><span class="p">:</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;With no subset defined and load enabled, disabling default chunking for performance&quot;</span>
+            <span class="p">)</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">elif</span> <span class="n">path</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">and</span> <span class="n">path</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span> <span class="o">&lt;</span> <span class="n">units</span><span class="o">.</span><span class="n">byte_string_to_float</span><span class="p">(</span><span class="s2">&quot;4gb&quot;</span><span class="p">):</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;LUT store detected less than 4gb and load enabled, disabling default chunking for performance&quot;</span>
+            <span class="p">)</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="n">ds</span> <span class="o">=</span> <span class="n">xropen</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="n">chunks</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
