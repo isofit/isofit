@@ -14,7 +14,7 @@ import xarray as xr
 from netCDF4 import Dataset
 
 from isofit import __version__
-from isofit.core import common
+from isofit.core import common, units
 
 Logger = logging.getLogger(__name__)
 
@@ -532,9 +532,29 @@ def load(
     >>> load(path, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
+    path = Path(path)
+
     xropen = xr.open_dataset
     if mf:
         xropen = xr.mfopen_dataset
+
+    # Convert dicts of {dim: None, ...} to None
+    if subset and not any(subset.values()):
+        subset = None
+
+    # Special case that doesn't require defining the entire grid subsetting strategy
+    if load:
+        if not subset:
+            Logger.debug(
+                "With no subset defined and load enabled, disabling default chunking for performance"
+            )
+            chunks = None
+
+        elif path.is_file() and path.stat().st_size < units.byte_string_to_float("4gb"):
+            Logger.debug(
+                "LUT store detected less than 4gb and load enabled, disabling default chunking for performance"
+            )
+            chunks = None
 
     ds = xropen(path, chunks=chunks, **kwargs)
 
