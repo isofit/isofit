@@ -478,7 +478,7 @@ class ForwardModel:
         # Assumptions: no atmospheric attenuation, and reflectance is isotropic over the field of view
         # NOTE for now, a flat slope is assumed, such that terrain view is,
         # v_t = (1 + cos_slope) / 2 - skyview = (1 + 1)/2  - skyview = 1 - skyview
-        t = self.terrain_rereflection(geom)
+        t = self.terrain_rereflection(rho_dif_dif=rho_dif_dif, geom=geom)
         L_dir_dir *= t
         L_dif_dir *= t
         L_dir_dif *= t
@@ -593,16 +593,16 @@ class ForwardModel:
         return np.zeros_like(L_tot)
 
     def terrain_rereflection_heterogeneous(
-        self, geom, skyview_factor_bg=1.0, cos_slope=1.0, cos_slope_bg=1.0
+        self, rho_dif_dif, geom, skyview_factor_bg=1.0, cos_slope=1.0, cos_slope_bg=1.0
     ):
         """Isotropic scattering from nearby terrain."""
         v_t = (1 + cos_slope) / 2 - geom.skyview_factor
         v_t_avg = (1 + cos_slope_bg) / 2 - skyview_factor_bg
-        t = 1 + ((geom.bg_rfl * v_t) / (1 - geom.bg_rfl * v_t_avg))
+        t = 1 + ((rho_dif_dif * v_t) / (1 - rho_dif_dif * v_t_avg))
         return t
 
     def terrain_rereflection_homogeneous(
-        self, geom, skyview_factor_bg=1.0, cos_slope=1.0, cos_slope_bg=1.0
+        self, rho_dif_dif, geom, skyview_factor_bg=1.0, cos_slope=1.0, cos_slope_bg=1.0
     ):
         """Terrain scattering is ignored in the case dir_dir=dir_dif=dif_dir=dif_dif."""
         return 1.0
