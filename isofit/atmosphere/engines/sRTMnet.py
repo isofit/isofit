@@ -179,6 +179,27 @@ class SRTMnetModel(torch.nn.Module):
             )
             return out_r
 
+    def resample_dict_batch(resample_dict: dict, batch_slice: slice) -> dict:
+        """Handle batching for the resample dict.  Right now, only coszen
+        might need to be batched.
+
+        Args:
+            resample_dict (dict): dictionary containing resampling parameters
+            batch_slice (slice): slice object for the current batch
+        Returns:
+            dict: resample_dict with batch_slice applied to emulator_coszen
+        """
+        if resample_dict is None:
+            return None
+
+        batch_resample_dict = dict(resample_dict)
+        coszen = batch_resample_dict.get("emulator_coszen")
+
+        if np.ndim(coszen) > 0:
+            batch_resample_dict["emulator_coszen"] = coszen[batch_slice]
+
+        return batch_resample_dict
+
     @torch.inference_mode()
     def predict(
         self,
@@ -234,8 +255,9 @@ class SRTMnetModel(torch.nn.Module):
 
         for i in range(0, n, batch_size):
             product = None
+            batch_slice = slice(i, min(i + batch_size, n))
+            batch_resample_dict = self.resample_dict_batch(resample_dict, batch_slice)
             for _key, key in enumerate(self.weights.keys()):
-                batch_slice = slice(i, min(i + batch_size, n))
                 batch = x_tensor[_key][batch_slice].to(self.device)
 
                 out = self(batch, key)
@@ -252,7 +274,7 @@ class SRTMnetModel(torch.nn.Module):
                         self.batch_resample(
                             out,
                             convert_to_rdn=(key == "rhoatm"),
-                            resample_dict=resample_dict,
+                            resample_dict=batch_resample_dict,
                         )
                     )
 
@@ -269,26 +291,26 @@ class SRTMnetModel(torch.nn.Module):
                             self.batch_resample(
                                 out[:, _ckey * nc : (_ckey + 1) * nc],
                                 convert_to_rdn=False,
-                                resample_dict=resample_dict,
+                                resample_dict=batch_resample_dict,
                             )
                         )
 
             if is_paired:  # only happens with 6c
-                if resample_dict is not None:
-                    coszen = resample_dict["emulator_coszen"]
+                if batch_resample_dict is not None:
+                    coszen = batch_resample_dict["emulator_coszen"]
                     if np.ndim(coszen) == 1:
                         coszen = coszen[:, np.newaxis]
                     product = units.transm_to_rdn(
                         product,
                         coszen,
-                        resample_dict["emulator_sol_irr"],
+                        batch_resample_dict["emulator_sol_irr"],
                     )
                     product = resample_spectrum(
                         product,
-                        resample_dict["emu_wl"],
-                        resample_dict["wl"],
-                        resample_dict["fwhm"],
-                        H=resample_dict["emulator_H"],
+                        batch_resample_dict["emu_wl"],
+                        batch_resample_dict["wl"],
+                        batch_resample_dict["fwhm"],
+                        H=batch_resample_dict["emulator_H"],
                     )
                 outdict[self.product_name].append(product)
 
