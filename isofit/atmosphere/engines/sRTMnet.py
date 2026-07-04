@@ -179,7 +179,7 @@ class SRTMnetModel(torch.nn.Module):
             )
             return out_r
 
-    def resample_dict_batch(resample_dict: dict, batch_slice: slice) -> dict:
+    def resample_dict_batch(self, resample_dict: dict, batch_slice: slice) -> dict:
         """Handle batching for the resample dict.  Right now, only coszen
         might need to be batched.
 
