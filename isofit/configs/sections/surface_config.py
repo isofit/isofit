@@ -156,7 +156,7 @@ class SurfaceConfig(BaseConfigSection):
                 )
             )
 
-        valid_metrics = ["Euclidean", "SGA"]
+        valid_metrics = ["Euclidean", "SGA", "NormSGA"]
         if self.selection_metric not in valid_metrics:
             errors.append(f"surface->selection_metric must be one of: {valid_metrics}")
 
