@@ -99,7 +99,7 @@ class SurfaceConfig(BaseConfigSection):
         The state is preserved in the geometry object so that this object stays stateless"""
 
         self._selection_metric_type = str
-        self.selection_metric = "Euclidean"
+        self.selection_metric = "NormSGA"
 
         self._statevector_type = SurfaceStateVectorConfig
         self.statevector: StateVectorConfig = SurfaceStateVectorConfig({})
