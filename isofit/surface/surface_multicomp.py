@@ -66,9 +66,7 @@ class MultiComponentSurface(Surface):
         else:
             raise ValueError("Unrecognized Normalization: %s\n" % self.normalize)
 
-        self.selection_metric = self.model_dict.get(
-            "selection_metric", config.selection_metric
-        )
+        self.selection_metric = config.selection_metric
         self.select_on_init = config.select_on_init
 
         # Reference values are used for normalizing the reflectances.
