@@ -66,9 +66,7 @@ class MultiComponentSurface(Surface):
         else:
             raise ValueError("Unrecognized Normalization: %s\n" % self.normalize)
 
-        self.selection_metric = self.model_dict.get(
-            "selection_metric", config.selection_metric
-        )
+        self.selection_metric = config.selection_metric
         self.select_on_init = config.select_on_init
 
         # Reference values are used for normalizing the reflectances.
@@ -148,6 +146,8 @@ class MultiComponentSurface(Surface):
         # Only support euclidean distance comparrison for now
         if self.selection_metric == "SGA":
             mds = self.spectral_gradient_angle(lamb_ref, np.array(self.mus))
+        elif self.selection_metric == "NormSGA":
+            mds = self.normalized_spectral_gradient_angle(lamb_ref, np.array(self.mus))
         elif self.selection_metric == "Euclidean":
             mds = self.euclidean_distance(
                 lamb_ref,
@@ -390,4 +390,20 @@ class MultiComponentSurface(Surface):
 
         return self.spectral_angle_distance(
             gradient(self.wl[self.idx_ref], lamb_ref), grads
+        )
+
+    def normalized_spectral_gradient_angle(self, lamb_ref, mus):
+        def gradient(wl, val, sigma=2):
+            val = gaussian_filter1d(val, sigma=sigma)
+            return np.gradient(val, wl)
+
+        def gradient_norm(x):
+            return (x - np.min(x)) / (np.max(x) - np.min(x))
+
+        grads = np.array(
+            [gradient_norm(gradient(self.wl[self.idx_ref], mu)) for mu in mus]
+        )
+
+        return self.spectral_angle_distance(
+            gradient_norm(gradient(self.wl[self.idx_ref], lamb_ref)), grads
         )

@@ -99,7 +99,7 @@ class SurfaceConfig(BaseConfigSection):
         The state is preserved in the geometry object so that this object stays stateless"""
 
         self._selection_metric_type = str
-        self.selection_metric = "Euclidean"
+        self.selection_metric = "SGA"
 
         self._statevector_type = SurfaceStateVectorConfig
         self.statevector: StateVectorConfig = SurfaceStateVectorConfig({})
@@ -156,7 +156,7 @@ class SurfaceConfig(BaseConfigSection):
                 )
             )
 
-        valid_metrics = ["Euclidean", "SGA"]
+        valid_metrics = ["Euclidean", "SGA", "NormSGA"]
         if self.selection_metric not in valid_metrics:
             errors.append(f"surface->selection_metric must be one of: {valid_metrics}")
 
