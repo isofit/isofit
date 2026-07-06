@@ -41,22 +41,119 @@ from isofit.luts.writer import Writer
 Logger = logging.getLogger(__name__)
 
 
+class ResidualBlock(torch.nn.Module):
+    """PyTorch equivalent of the Keras residual_block."""
+
+    def __init__(self, in_units, units):
+        super().__init__()
+        self.dense1 = torch.nn.Linear(in_units, units)
+        self.ln1 = torch.nn.LayerNorm(units)
+        self.dense2 = torch.nn.Linear(units, units)
+        self.ln2 = torch.nn.LayerNorm(units)
+
+        if in_units != units:
+            self.shortcut = torch.nn.Linear(in_units, units)
+        else:
+            self.shortcut = torch.nn.Identity()
+
+    def forward(self, x):
+        s = self.shortcut(x)
+        x = self.dense1(x)
+        x = self.ln1(x)
+        x = torch.nn.functional.mish(x)
+        x = self.dense2(x)
+        x = self.ln2(x)
+        x = x + s
+        x = torch.nn.functional.mish(x)
+        return x
+
+
+# ResNetMLP
+class MLP_PCA(torch.nn.Module):
+    """PyTorch equivalent of the Keras nn_model_pca architecture."""
+
+    def __init__(self, in_features, out_features):
+        super(MLP_PCA, self).__init__()
+        self.dense_in = torch.nn.Linear(in_features, 2048)
+        self.ln_in = torch.nn.LayerNorm(2048)
+
+        self.blocks = torch.nn.ModuleList()
+        in_units = 2048
+        for size in [2048, 2048, 1024, 1024]:
+            self.blocks.append(ResidualBlock(in_units, size))
+            in_units = size
+
+        self.dense_out = torch.nn.Linear(in_units, out_features)
+
+    def load_weights(self, dense_weights, ln_weights):
+        """Sequentially populates the PyTorch modules with extracted weights."""
+        d_idx, l_idx = 0, 0
+
+        # Initial projection
+        self.dense_in.weight.data = torch.tensor(dense_weights[d_idx][0])
+        self.dense_in.bias.data = torch.tensor(dense_weights[d_idx][1])
+        d_idx += 1
+        self.ln_in.weight.data = torch.tensor(ln_weights[l_idx][0])
+        self.ln_in.bias.data = torch.tensor(ln_weights[l_idx][1])
+        l_idx += 1
+
+        # Residual Blocks
+        for block in self.blocks:
+            block.dense1.weight.data = torch.tensor(dense_weights[d_idx][0])
+            block.dense1.bias.data = torch.tensor(dense_weights[d_idx][1])
+            d_idx += 1
+            block.ln1.weight.data = torch.tensor(ln_weights[l_idx][0])
+            block.ln1.bias.data = torch.tensor(ln_weights[l_idx][1])
+            l_idx += 1
+
+            block.dense2.weight.data = torch.tensor(dense_weights[d_idx][0])
+            block.dense2.bias.data = torch.tensor(dense_weights[d_idx][1])
+            d_idx += 1
+            block.ln2.weight.data = torch.tensor(ln_weights[l_idx][0])
+            block.ln2.bias.data = torch.tensor(ln_weights[l_idx][1])
+            l_idx += 1
+
+            if hasattr(block.shortcut, "weight"):
+                block.shortcut.weight.data = torch.tensor(dense_weights[d_idx][0])
+                block.shortcut.bias.data = torch.tensor(dense_weights[d_idx][1])
+                d_idx += 1
+
+        # Final projection
+        self.dense_out.weight.data = torch.tensor(dense_weights[d_idx][0])
+        self.dense_out.bias.data = torch.tensor(dense_weights[d_idx][1])
+
+    def forward(self, x):
+        """Passes input through the ResNet MLP layers."""
+        x = self.dense_in(x)
+        x = self.ln_in(x)
+        x = torch.nn.functional.mish(x)
+
+        for block in self.blocks:
+            x = block(x)
+
+        x = self.dense_out(x)
+        return x
+
+
 class SRTMnetModel(torch.nn.Module):
     def __init__(self, input_file: str, key: str = None, n_cores: int = 1):
-        """Initializes the SRTMnet model by loading weights and biases from an HDF5 file.
-        This new version uses torch, but gives the same results as the
-        sRTMnet original (tensorflow) and previous isofit (numpy) implementations.
+        """Initializes the SRTMnet model using either the unified .6c HDF5 file
+        (with or without PCA) or the legacy 3c formatting.
 
         Args:
-            input_file (str, optional): Path to the file containing model weights.
-            key (str, optional): Key to select specific weights in the file (6c format). If '3c', read all (sRTMnet 3c format).
+            input_file (str): Path to the model weights file.
+            key (str, optional): Key to select specific models.
             n_cores (int, optional): Number of CPU cores to use if using cpu.
         """
         super().__init__()
 
-        # some keys, we'll legit go through uniquely.  Some, we must go through in pairs
+        self.models = torch.nn.ModuleDict()
         self.weights = torch.nn.ModuleDict()
         self.biases = torch.nn.ModuleDict()
+        self.pca_components = {}
+        self.pca_means = {}
+        self.uses_pca = {}
+
         if key == "dir-dir":
             self.component_keys = ["transm_down_dir", "transm_up_dir"]
             self.product_name = key
@@ -74,43 +171,98 @@ class SRTMnetModel(torch.nn.Module):
         else:
             self.component_keys = [key]
 
-        if key != "3c":  # 6c model
-            with h5py.File(input_file, "r") as model:
-                for ckey in self.component_keys:
-                    w_list, b_list = [], []
-                    w_group = model[f"weights_{ckey}"]
-                    b_group = model[f"biases_{ckey}"]
+        def extract_idx(name):
+            parts = name.split("_")
+            if parts[-1].isdigit():
+                return int(parts[-1])
+            return 0
 
-                    for layer in w_group.keys():
-                        w_list.append(
-                            torch.nn.Parameter(
-                                torch.tensor(w_group[layer][:], dtype=torch.float32)
-                            )
-                        )
-                        b_list.append(
-                            torch.nn.Parameter(
-                                torch.tensor(b_group[layer][:], dtype=torch.float32)
-                            )
-                        )
-                    # Register as parameters - could (perhaps should) use buffers
-                    self.weights[ckey] = torch.nn.ParameterList(w_list)
-                    self.biases[ckey] = torch.nn.ParameterList(b_list)
-        else:  # 3c model
-            with h5py.File(input_file, "r") as model:
+        # Load from the provided file
+        with h5py.File(input_file, "r") as f:
+            if key == "3c":
+                self.active_keys = ["3c"]
+                self.uses_pca["3c"] = False
+
                 w_list, b_list = [], []
-                for n in model["model_weights"].keys():
-                    if "dense" in n:
-                        group = model["model_weights"][n][n]
-                        if "kernel:0" in group:
-                            w = group["kernel:0"][:]
-                            b = group["bias:0"][:]
-                        else:
-                            w = group["kernel"][:]
-                            b = group["bias"][:]
-                        w_list.append(torch.tensor(w, dtype=torch.float32))
-                        b_list.append(torch.tensor(b, dtype=torch.float32))
-            self.weights["3c"] = torch.nn.ParameterList(w_list)
-            self.biases["3c"] = torch.nn.ParameterList(b_list)
+
+                # Safely sort the dense layer names for legacy HDF5 compatibility
+                dense_names = [n for n in f["model_weights"].keys() if "dense" in n]
+                dense_names.sort(key=extract_idx)
+
+                for n in dense_names:
+                    group = f["model_weights"][n][n]
+                    if "kernel:0" in group:
+                        w = group["kernel:0"][:]
+                        b = group["bias:0"][:]
+                    else:
+                        w = group["kernel"][:]
+                        b = group["bias"][:]
+                    w_list.append(torch.tensor(w, dtype=torch.float32))
+                    b_list.append(torch.tensor(b, dtype=torch.float32))
+
+                self.weights["3c"] = torch.nn.ParameterList(w_list)
+                self.biases["3c"] = torch.nn.ParameterList(b_list)
+
+            else:
+                self.active_keys = self.component_keys
+                for ckey in self.component_keys:
+                    # Check if PCA components exist to determine the network architecture
+                    if f"pca_components_{ckey}" in f:
+                        self.uses_pca[ckey] = True
+
+                        # 1. Parse Neural Network Structural Weights
+                        dense_w = []
+                        dw_grp = f[f"dense_weights_{ckey}"]
+                        db_grp = f[f"dense_biases_{ckey}"]
+                        for i in range(len(dw_grp.keys())):
+                            dense_w.append(
+                                (dw_grp[f"layer_{i}"][:], db_grp[f"layer_{i}"][:])
+                            )
+
+                        ln_w = []
+                        lg_grp = f[f"ln_gamma_{ckey}"]
+                        lb_grp = f[f"ln_beta_{ckey}"]
+                        for i in range(len(lg_grp.keys())):
+                            ln_w.append(
+                                (lg_grp[f"layer_{i}"][:], lb_grp[f"layer_{i}"][:])
+                            )
+
+                        # 2. Parse PCA Components
+                        self.pca_components[ckey] = f[f"pca_components_{ckey}"][:]
+                        self.pca_means[ckey] = f[f"pca_mean_{ckey}"][:]
+
+                        # 3. Instantiate and populate PyTorch architecture
+                        in_features = dense_w[0][0].shape[1]
+                        out_features = dense_w[-1][0].shape[0]
+
+                        model = MLP_PCA(in_features, out_features)
+                        model.load_weights(dense_w, ln_w)
+
+                        self.models[ckey] = model
+                    else:
+                        # Fallback to the legacy 6c architecture
+                        self.uses_pca[ckey] = False
+                        w_list, b_list = [], []
+                        w_group = f[f"weights_{ckey}"]
+                        b_group = f[f"biases_{ckey}"]
+
+                        layer_names = list(w_group.keys())
+                        layer_names.sort(key=extract_idx)
+
+                        for layer in layer_names:
+                            w_list.append(
+                                torch.nn.Parameter(
+                                    torch.tensor(w_group[layer][:], dtype=torch.float32)
+                                )
+                            )
+                            b_list.append(
+                                torch.nn.Parameter(
+                                    torch.tensor(b_group[layer][:], dtype=torch.float32)
+                                )
+                            )
+
+                        self.weights[ckey] = torch.nn.ParameterList(w_list)
+                        self.biases[ckey] = torch.nn.ParameterList(b_list)
 
         # Determine device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -121,47 +273,45 @@ class SRTMnetModel(torch.nn.Module):
         self.eval()
 
         if self.device.type == "cpu":
-            # This seems to work well despite global OMP / MKL options, though some systmes may need
-            # those to be set differently
             torch.set_num_threads(n_cores)
 
-    def forward(self, x: torch.Tensor, key: str):
-        """Forward model structure
-        Args:
-            x (torch.Tensor): batched input data
-            key (str): key to select which weights/biases to use
+    def forward(self, x: torch.Tensor, key: str, use_pca: bool = None):
+        """Passes input through the appropriate MLP structure.
 
-        Returns:
-            torch.Tensor: batched emulated data
+        Args:
+            x (torch.Tensor): Batched input data.
+            key (str): Component key to select which weights/biases to use.
+            use_pca (bool, optional): Explicit override switch. If None, auto-detects
+                                      based on what was loaded from the HDF5 file.
         """
-        # x: (batch, input_dim)
-        # weights: (input_dim, output_dim)
-        # (batch, input_dim) @ (input_dim, output_dim) -> (batch, output_dim)
-        for i, (W, b) in enumerate(zip(self.weights[key], self.biases[key])):
-            x = torch.matmul(x, W) + b
-            if i < len(self.weights[key]) - 1:
-                x = torch.nn.functional.leaky_relu(x, negative_slope=0.4)
-        return x
+        # Determine routing behavior
+        if use_pca is None:
+            use_pca = self.uses_pca.get(key, False)
+
+        if key == "3c" or not use_pca:
+            # Linear/LeakyReLU mapping
+            for i, (W, b) in enumerate(zip(self.weights[key], self.biases[key])):
+                x = torch.matmul(x, W) + b
+                if i < len(self.weights[key]) - 1:
+                    x = torch.nn.functional.leaky_relu(x, negative_slope=0.4)
+            return x
+        else:
+            # MLP_PCA version
+            # Note: calling self.models[key](x) automatically invokes MLP_PCA.forward(x)
+            return self.models[key](x)
 
     def batch_resample(
-        self, out: np.ndarray, convert_to_rdn: bool, resample_dict: dict = None
+        self,
+        out: np.ndarray,
+        convert_to_rdn: bool,
+        resample_dict: dict = None,
+        coszen: np.ndarray | float | None = None,
     ):
-        """Resample helpf function
-        Args:
-            out (np.ndarray): output data to resample
-            convert_to_rdn (bool): whether to convert to radiance before resampling
-            resample_dict (dict, optional): dictionary containing resampling parameters
-        Returns:
-            np.ndarray: resampled output data
-        """
-        # Resample the direct product, converting to radiance for rhoatm
+        """Resample helper function."""
         if resample_dict is None:
             return out
         else:
             if convert_to_rdn:
-                coszen = resample_dict["emulator_coszen"]
-                if np.ndim(coszen) == 1:
-                    coszen = coszen[:, np.newaxis]
                 out_r = units.transm_to_rdn(
                     out,
                     coszen,
@@ -179,26 +329,16 @@ class SRTMnetModel(torch.nn.Module):
             )
             return out_r
 
-    def resample_dict_batch(self, resample_dict: dict, batch_slice: slice) -> dict:
-        """Handle batching for the resample dict.  Right now, only coszen
-        might need to be batched.
-
-        Args:
-            resample_dict (dict): dictionary containing resampling parameters
-            batch_slice (slice): slice object for the current batch
-        Returns:
-            dict: resample_dict with batch_slice applied to emulator_coszen
-        """
+    def batch_coszen(self, resample_dict: dict, batch_slice: slice):
+        """Return the active batch view of the emulator coszen values."""
         if resample_dict is None:
             return None
 
-        batch_resample_dict = dict(resample_dict)
-        coszen = batch_resample_dict.get("emulator_coszen")
+        coszen = resample_dict.get("emulator_coszen")
+        if np.ndim(coszen) == 0:
+            return coszen
 
-        if np.ndim(coszen) > 0:
-            batch_resample_dict["emulator_coszen"] = coszen[batch_slice]
-
-        return batch_resample_dict
+        return coszen[batch_slice]
 
     @torch.inference_mode()
     def predict(
@@ -210,38 +350,20 @@ class SRTMnetModel(torch.nn.Module):
         response_offset=None,
         resample_dict=None,
     ):
-        """Predicts model output for either 6c or 3c model.  General model formulation is:
-        x = surrogate_data
-        y = emulator(x) / response_scaler + response_offset + x
-        return < y > resampled to desired wavelengths
+        x_tensor = []
+        for _x in surrogate_data:
+            if isinstance(_x, torch.Tensor):
+                x_tensor.append(_x)
+                continue
 
-        In the case of the 6c model, we also calculate all coupled terms at high spectral resolution,
-        converting to radiance and then convolving.  We leave transmitance and sphalb in
-        'transmittance units', but convert rhoatm to radiance.
+            if isinstance(_x, da.Array):
+                _x = _x.compute()
 
-        In contrast, the 3c model convolves directly in transmittance units.  This is undesireable,
-        but we have left for historical consistency.  Ideally, user will shift to the 6c model.
-
-        Args:
-            surrogate_data: input data as numpy or dask array
-            surrogate_data_emulator_wl: input data at emulator wavelengths (interpolated surrogate)
-            batch_size (int, optional): Size of batch to process. Defaults to 4096.
-            response_scaler (list, optional): list of scalers for each output component. Defaults to None.
-            response_offset (list, optional): list of offsets for each output component. Defaults to None
-            resample_dict (dict, optional): dictionary containing resampling parameters. Defaults to None.
-
-        Returns:
-            np.array: emulated output
-        """
-        # Handle numpy input
-        x_tensor = [
-            _x.compute() if isinstance(_x, da.Array) else _x for _x in surrogate_data
-        ]
-        x_tensor = [torch.as_tensor(_x, dtype=torch.float32) for _x in x_tensor]
+            x_tensor.append(torch.as_tensor(_x, dtype=torch.float32))
         n = x_tensor[0].shape[0]
 
         outdict = {}
-        for key in self.weights.keys():
+        for key in self.active_keys:
             if key != "3c":
                 outdict[key] = []
             else:
@@ -249,36 +371,45 @@ class SRTMnetModel(torch.nn.Module):
                 outdict["rhoatm"] = []
                 outdict["sphalb"] = []
 
-        is_paired = len(self.weights.keys()) > 1
+        is_paired = len(self.active_keys) > 1 and "3c" not in self.active_keys
         if is_paired:
             outdict[self.product_name] = []
 
         for i in range(0, n, batch_size):
             product = None
             batch_slice = slice(i, min(i + batch_size, n))
-            batch_resample_dict = self.resample_dict_batch(resample_dict, batch_slice)
-            for _key, key in enumerate(self.weights.keys()):
+            batch_coszen = self.batch_coszen(resample_dict, batch_slice)
+            for _key, key in enumerate(self.active_keys):
                 batch = x_tensor[_key][batch_slice].to(self.device)
 
+                # Use automatic routing based on loaded architecture
                 out = self(batch, key)
                 out = out.cpu().numpy()
+
+                # Un-scale outputs
                 if response_scaler is not None:
                     out /= response_scaler[_key]
                 if response_offset is not None:
                     out += response_offset[_key]
+
+                # PCA Inverse Transform (Expands back to 0.1 nm resolution)
+                if key != "3c" and self.uses_pca.get(key, False):
+                    out = np.dot(out, self.pca_components[key]) + self.pca_means[key]
+
+                # Add original surrogate data baseline
                 out += surrogate_data_emulator_wl[_key][batch_slice]
 
-                # Resample the direct product, converting to radiance for rhoatm
+                # Resampling and Pairing logic
                 if key != "3c":
                     outdict[key].append(
                         self.batch_resample(
                             out,
                             convert_to_rdn=(key == "rhoatm"),
-                            resample_dict=batch_resample_dict,
+                            resample_dict=resample_dict,
+                            coszen=batch_coszen,
                         )
                     )
 
-                    # For paired terms, convert to radiance and multiply
                     if is_paired:
                         if product is None:
                             product = out
@@ -291,30 +422,26 @@ class SRTMnetModel(torch.nn.Module):
                             self.batch_resample(
                                 out[:, _ckey * nc : (_ckey + 1) * nc],
                                 convert_to_rdn=False,
-                                resample_dict=batch_resample_dict,
+                                resample_dict=resample_dict,
                             )
                         )
 
-            if is_paired:  # only happens with 6c
-                if batch_resample_dict is not None:
-                    coszen = batch_resample_dict["emulator_coszen"]
-                    if np.ndim(coszen) == 1:
-                        coszen = coszen[:, np.newaxis]
+            if is_paired:
+                if resample_dict is not None:
                     product = units.transm_to_rdn(
                         product,
-                        coszen,
-                        batch_resample_dict["emulator_sol_irr"],
+                        batch_coszen,
+                        resample_dict["emulator_sol_irr"],
                     )
                     product = resample_spectrum(
                         product,
-                        batch_resample_dict["emu_wl"],
-                        batch_resample_dict["wl"],
-                        batch_resample_dict["fwhm"],
-                        H=batch_resample_dict["emulator_H"],
+                        resample_dict["emu_wl"],
+                        resample_dict["wl"],
+                        resample_dict["fwhm"],
+                        H=resample_dict["emulator_H"],
                     )
                 outdict[self.product_name].append(product)
 
-        # Concatenate all outputs from all batches
         for key in outdict.keys():
             outdict[key] = np.concatenate(outdict[key], axis=0)
 
