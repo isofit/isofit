@@ -93,12 +93,9 @@ class LUTSurface(Surface):
         else:
             self.drdn_drfl = self.drdn_drfl_homogeneous_bkg
 
-
     def update_heuristic_prior_means(self, x_surface, geom):
         """Don't update any of the priors. Return xa"""
         return self.xa(x_surface, geom)
-
-
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution."""
