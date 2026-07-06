@@ -1,4 +1,4 @@
-name: isofit_new
+name: isofit_env
 
 channels:
   - conda-forge
