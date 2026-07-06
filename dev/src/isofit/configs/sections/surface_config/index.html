@@ -5062,7 +5062,7 @@
 <span class="sd">        The state is preserved in the geometry object so that this object stays stateless&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_selection_metric_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">selection_metric</span> <span class="o">=</span> <span class="s2">&quot;Euclidean&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selection_metric</span> <span class="o">=</span> <span class="s2">&quot;SGA&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_statevector_type</span> <span class="o">=</span> <span class="n">SurfaceStateVectorConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">statevector</span><span class="p">:</span> <span class="n">StateVectorConfig</span> <span class="o">=</span> <span class="n">SurfaceStateVectorConfig</span><span class="p">({})</span>
@@ -5119,7 +5119,7 @@
                 <span class="p">)</span>
             <span class="p">)</span>
 
-        <span class="n">valid_metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Euclidean&quot;</span><span class="p">,</span> <span class="s2">&quot;SGA&quot;</span><span class="p">]</span>
+        <span class="n">valid_metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Euclidean&quot;</span><span class="p">,</span> <span class="s2">&quot;SGA&quot;</span><span class="p">,</span> <span class="s2">&quot;NormSGA&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection_metric</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_metrics</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;surface-&gt;selection_metric must be one of: </span><span class="si">{</span><span class="n">valid_metrics</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
