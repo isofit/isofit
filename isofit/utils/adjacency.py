@@ -58,9 +58,11 @@ def approx_pixel_size(loc, nodata_value=-9999):
         dx = np.sqrt(np.sum(np.diff(loc[..., :2], axis=1) ** 2, axis=-1))
         dy = np.sqrt(np.sum(np.diff(loc[..., :2], axis=0) ** 2, axis=-1))
 
-    pix_size = 0.5 * (
-        np.nanmean(dx[valid_pixels[:, 1:]]) + np.nanmean(dy[valid_pixels[1:, :]])
-    )
+    # Mask pixels before taking nanmean
+    dx[~valid_pixels[:, 1:] | ~valid_pixels[:, :-1]] = np.nan
+    dy[~valid_pixels[1:, :] | ~valid_pixels[:-1, :]] = np.nan
+
+    pix_size = 0.5 * (np.nanmean(dx) + np.nanmean(dy))
 
     return pix_size
 
