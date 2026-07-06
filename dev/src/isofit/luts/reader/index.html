@@ -5658,7 +5658,12 @@
 <span class="normal">786</span>
 <span class="normal">787</span>
 <span class="normal">788</span>
-<span class="normal">789</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">789</span>
+<span class="normal">790</span>
+<span class="normal">791</span>
+<span class="normal">792</span>
+<span class="normal">793</span>
+<span class="normal">794</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Manages the reading and subsetting of look-up tables (LUTs)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -6194,6 +6199,11 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
+    <span class="c1"># Windows needs to define the engine as the xarray auto-discover breaks</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+        <span class="n">engine</span> <span class="o">=</span> <span class="s2">&quot;zarr&quot;</span>
+
     <span class="n">xropen</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span>
     <span class="k">if</span> <span class="n">mf</span><span class="p">:</span>
         <span class="n">xropen</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">mfopen_dataset</span>
@@ -6216,7 +6226,7 @@
             <span class="p">)</span>
             <span class="n">chunks</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">xropen</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="n">chunks</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">xropen</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="n">chunks</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="n">engine</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="n">status</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ISOFIT status&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;not set&gt;&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">status</span> <span class="o">!=</span> <span class="s2">&quot;success&quot;</span><span class="p">:</span>

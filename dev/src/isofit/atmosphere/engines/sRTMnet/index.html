@@ -5587,7 +5587,8 @@
 <span class="normal">731</span>
 <span class="normal">732</span>
 <span class="normal">733</span>
-<span class="normal">734</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
+<span class="normal">734</span>
+<span class="normal">735</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
 <span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
@@ -5624,7 +5625,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.atmosphere.atmosphere</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAtmosphere</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.atmosphere.engines</span><span class="w"> </span><span class="kn">import</span> <span class="n">SixSRT</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_resample_matrix</span><span class="p">,</span> <span class="n">resample_spectrum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">Track</span><span class="p">,</span> <span class="n">calculate_resample_matrix</span><span class="p">,</span> <span class="n">resample_spectrum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.luts.writer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Writer</span>
 
 <span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -5919,8 +5920,11 @@
         <span class="n">mem</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">mem</span><span class="o">.</span><span class="n">total</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">2.5</span><span class="p">)</span><span class="si">}</span><span class="s2">gb&quot;</span>
         <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attempting to use shard size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># self.shard_size = None</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># Because sRTMnet doesn&#39;t use makeSim and instead processes shards</span>
+        <span class="c1"># sequentially in preSim, have to enable the shard buffer here</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">shard_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">,</span> <span class="n">buffered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">preSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.preSim"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.preSim" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -5986,8 +5990,6 @@
             <span class="n">config</span><span class="p">,</span>
             <span class="n">wl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_wl</span><span class="p">,</span>
             <span class="n">fwhm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_fwhm</span><span class="p">,</span>
-            <span class="c1"># lut_path=self.sim_lut_path,</span>
-            <span class="c1"># lut_grid=self.lut_grid,</span>
             <span class="n">n_cores</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="p">,</span>
             <span class="n">modtran_emulation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">build_interpolators</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
