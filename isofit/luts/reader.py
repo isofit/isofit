@@ -534,6 +534,11 @@ def load(
     """
     path = Path(path)
 
+    # Windows needs to define the engine as the xarray auto-discover breaks
+    engine = None
+    if Path(path).is_dir():
+        engine = "zarr"
+
     xropen = xr.open_dataset
     if mf:
         xropen = xr.mfopen_dataset
@@ -556,7 +561,7 @@ def load(
             )
             chunks = None
 
-    ds = xropen(path, chunks=chunks, **kwargs)
+    ds = xropen(path, chunks=chunks, engine=engine, **kwargs)
 
     status = ds.attrs.get("ISOFIT status", "<not set>")
     if status != "success":

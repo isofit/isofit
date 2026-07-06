@@ -1497,7 +1497,7 @@ def make_atmosphere_config(
 
     lut_dir = lut_directory
     lut_path = (
-        join(lut_dir, "lut.nc")
+        join(lut_dir, "lut.zarr")
         if prebuilt_lut_path is None
         else abspath(prebuilt_lut_path)
     )
