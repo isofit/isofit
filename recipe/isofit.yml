@@ -15,7 +15,7 @@ dependencies:
   - numba
   - numpy>=1.20
   - pre-commit
-  - pytest >= 3.5.1
+  - pytest>=3.5.1
   - python-xxhash>=1.2.0
   - pytorch
   - pyyaml>=5.3.2
