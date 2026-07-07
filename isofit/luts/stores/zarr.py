@@ -69,7 +69,7 @@ def shard_to_coord(group, shards, shape):
     return tuple(slice(s, e) for s, e in zip(start, end))
 
 
-def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
+def calc_shards(grid, wl, chunk, storage="8gb", target_shards=None, scale=1):
     """
     Determine an optimal Zarr sharding strategy for a LUT and group points by shard.
 
@@ -92,11 +92,11 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
         Chunk shape used for Zarr storage. Must align with the full LUT shape
         (wl + grid dimensions).
     storage : str or float, default="8gb"
-        Target storage size per shard. Determines how many chunks should be grouped
-        into a shard.
-    min_shards : int, optional
-        Minimum number of shards to produce. Candidate shardings that
-        result in fewer shards are discarded.
+        Storage size limit per shard. Determines how many chunks should be grouped
+        into a shard while respecting the limit.
+    target_shards : int, optional
+        Target number of shards to produce. The closest sharding strategy to this will
+        be selected.
     scale : int, default=1
         Multiplier applied to the estimated chunk size. Useful when multiple arrays
         are written per chunk to better approximate the actual memory when in buffered
@@ -142,16 +142,32 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
     # Ensure shards don't split chunks
     shards = shards[np.sum(shards % chunk, axis=1) == 0]
 
-    # 1 shard == 1 file, only consider shardings that reach the minimum number of files
-    if min_shards:
-        files = np.prod((shape / shards).astype(int), axis=1)
-        shards = shards[files >= min_shards]
-
     # Chunks per shard
     cpf = np.prod(shards / chunk, axis=1).astype(int)
 
-    # Return the strategy that is closest to the target number of chunks per shard
-    idx = np.abs(cpf - target).argmin()
+    # Storage used by each shard
+    sizes = cpf * space
+
+    # Limit the shard options to the storage limit
+    viable = sizes <= storage
+    if not viable.any():
+        raise ValueError(
+            f"No sharding strategy satisfies the storage limit {storage / 2**30:.2f} GB"
+        )
+
+    shards = shards[viable]
+    cpf = cpf[viable]
+
+    # Number of shard files produced, 1 shard is 1 file
+    files = np.prod((shape / shards).astype(int), axis=1)
+
+    # Choose the strategy closest to the requested number of shards
+    if target_shards is not None:
+        idx = np.abs(files - target_shards).argmin()
+    else:
+        # Fall back to the largest shard (fewest files)
+        idx = (cpf * space)[viable].argmax()
+
     best = shards[idx]
 
     # Split the points into shard groups
@@ -194,7 +210,7 @@ class CreateZarr(Create):
         shards=None,
         buffered=False,
         shard_size=None,
-        min_shards=1,
+        target_shards=None,
         **kwargs,
     ):
         """
@@ -214,8 +230,8 @@ class CreateZarr(Create):
             Target size for each shard. May be either a string like "4gb" or a float
             representing number of bytes. If this parameter is given, the shards array
             will be calculated
-        min_shards : int, optional, default=1
-            Minimum number of shards to create. Useful for ensuring paralleization
+        target_shards : int, optional, default=None
+            Target number of shards to create. Useful for ensuring parallelization
             fully utilizes the available machine
         wl : np.ndarray
             The wavelength array.
@@ -238,7 +254,7 @@ class CreateZarr(Create):
         # TODO: Integrate into config
         self.shards = shards
         self.shard_size = shard_size
-        self.min_shards = min_shards
+        self.target_shards = target_shards
 
         super().__init__(path, *args, mode=mode, **kwargs)
 
@@ -309,7 +325,7 @@ class CreateZarr(Create):
                 self.wl,
                 self.chunks,
                 storage=self.shard_size,
-                min_shards=self.min_shards,
+                target_shards=self.target_shards,
                 scale=len(self.alldim),
             )
 
