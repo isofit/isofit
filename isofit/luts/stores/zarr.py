@@ -258,13 +258,6 @@ class CreateZarr(Create):
 
         super().__init__(path, *args, mode=mode, **kwargs)
 
-        grid = {k: v.tolist() for k, v in self.grid.items()}
-        self.setAttr("lut_grid", grid)
-
-        if self.shards is not None:
-            self.setAttr("shards", self.shards.tolist())
-            self.setAttr("shard order", list(self.sizes))
-
         self.buffer = {}
         if buffered:
             self.reset_buffer()
@@ -329,6 +322,10 @@ class CreateZarr(Create):
                 scale=len(self.alldim),
             )
 
+            self.attrs["shards"] = self.shards.tolist()
+            self.attrs["shard order"] = list(self.sizes)
+
+        self.attrs["lut_grid"] = {k: v.tolist() for k, v in self.grid.items()}
         self.z.attrs.update(self.attrs)
 
         # Coordinates
