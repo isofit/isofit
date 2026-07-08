@@ -105,8 +105,17 @@ def background_reflectance(
     nodata_value=-9999,
 ):
     """Aggregates background reflectance term from the presolve."""
-    R_SAT = 1.0  # assumed adjacency range of satellite [km]
-    MIN_RANGE = 0.2  # assumed min range [km]
+
+    # Assumed adjacency range of satellite [km]
+    R_SAT = 1.0
+
+    # Assumed min adjacency range [km]
+    MIN_RANGE = 0.2
+
+    # Option for scipy.ndimage.uniform_filter. This matters the most for scene edges.
+    # Setting this to 'nearest' is most likely saftest option for now...
+    # We could also think of more custom weighting treatments for borders in future.
+    UNIFORM_FILTER_MODE = "nearest"
 
     conf = configs.create_new_config(paths.h2o_config_path)
 
@@ -193,7 +202,7 @@ def background_reflectance(
     # For now, this applies a uniform window average based on adjacency range.
     kernel_diameter = int(np.ceil(2 * np.max(adj_range) / pixel_size + 1))
     bg_rfl[:, :, :] = uniform_filter(
-        bg_rfl, size=(kernel_diameter, kernel_diameter, 1), mode="nearest"
+        bg_rfl, size=(kernel_diameter, kernel_diameter, 1), mode=UNIFORM_FILTER_MODE
     )
 
     del bg_rfl, loc
