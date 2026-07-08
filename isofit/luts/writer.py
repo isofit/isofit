@@ -140,8 +140,8 @@ class Writer:
         ----------
         shard_size : str, default=None
             Limit the total size of a single shard eg. "4gb"
-        min_shards : int, default=self.n_cores
-            Minimum number of shards in order to maximize system resources with
+        target_shards : int, default=self.n_cores
+            Target number of shards in order to maximize system resources with
             parallelization
         """
         for attr in ("lut_path", "lut_names", "lut_grid", "wl", "lut_keys"):
@@ -151,7 +151,7 @@ class Writer:
                 )
 
         self.lut = None
-        kwargs.setdefault("min_shards", self.n_cores)
+        kwargs.setdefault("target_shards", self.n_cores)
         if not self.configure_and_exit:
             self.lut = create(
                 path=self.lut_path,
@@ -216,7 +216,7 @@ class Writer:
                 "wl": self.lut.wl,
                 "grid": self.lut.grid,
                 "shards": self.lut.shards,
-                "min_shards": self.n_cores,
+                "target_shards": self.n_cores,
             }
         )
 
