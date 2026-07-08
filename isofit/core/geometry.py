@@ -35,7 +35,6 @@ class Geometry:
         self,
         obs: np.array = None,
         loc: np.array = None,
-        dt: datetime = None,
         esd: np.array = None,
         bg_rfl: np.array = None,
         svf: float = 1,
@@ -46,7 +45,6 @@ class Geometry:
         Args:
             obs: Observation metadata array.
             loc: Location metadata array.
-            dt: Date time of observation.
             esd: Earth sun distance array.
             bg_rfl: Background reflectance spectrum.
             svf: Sky view factor.
@@ -61,7 +59,6 @@ class Geometry:
         self.observer_altitude_km = None
         self.surface_elevation_km = None
         self.earth_sun_distance = None
-        self.esd_factor = None
 
         if esd is None:
             logging.warning(
@@ -107,9 +104,6 @@ class Geometry:
                 self.surface_elevation_km
                 + self.path_length_km * np.cos(np.deg2rad(self.observer_zenith))
             )
-
-        if dt is not None:
-            self.esd_factor = self.get_esd_factor(dt)
 
         # Determine how to treat coszen
         self.use_universal_coszen = True
@@ -181,15 +175,3 @@ class Geometry:
             logging.warning(
                 "Unable to determine coszen. Proceeding without will cause errors during the inversion."
             )
-
-    def get_esd_factor(self, date_time: datetime):
-        """Get distance ratio from sun based on time of year, relative to day 1
-        Args:
-            date_time: datetime to search
-
-        Returns:
-            float: ratio of earth sun distnace based on datetime.
-        """
-
-        day_of_year = date_time.timetuple().tm_yday
-        return float(self.earth_sun_distance[day_of_year - 1, 1])
