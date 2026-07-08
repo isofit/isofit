@@ -739,8 +739,6 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             "emulator_sol_irr": self.emulator_sol_irr,
         }
 
-        import multiprocessing
-
         Logger.info(f"Loading and predicting with emulator on {self.n_cores} cores")
 
         if self.component_mode == "3c":
@@ -776,33 +774,6 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         else:
             Logger.debug("Detected 6c emulator file format")
-
-            # This is an array of feature points tacked onto the interpolated 6s values
-            feature_point_names = self.aux["feature_point_names"].astype(str).tolist()
-            add_vector = None
-            if len(feature_point_names) > 0 and feature_point_names[0] != "None":
-                # Populate the 6S parameter values from a modtran template file
-                with open(self.config.template_file, "r") as file:
-                    data = yaml.safe_load(file)["MODTRAN"][0]["MODTRANINPUT"]
-
-                add_vector = np.zeros((self.points.shape[0], len(feature_point_names)))
-                for _fpn, fpn in enumerate(feature_point_names):
-                    if fpn in self.lut_names:
-                        add_vector[:, feature_point_names.index(fpn)] = self.points[
-                            :, self.lut_names.index(fpn)
-                        ]
-                    elif fpn == "H2OSTR":
-                        add_vector[:, _fpn] = 2.5
-                        Logger.warning(f"Using default const H2OSTR of 2.5 g/cm2.")
-                    elif fpn == "AERFRAC_2" or fpn == "AOT550":
-                        add_vector[:, _fpn] = 0.06
-                        Logger.warning(f"Using default const AOD of 0.06.")
-                    elif fpn == "observer_altitude_km":
-                        add_vector[:, _fpn] = data["GEOMETRY"]["H1ALT"]
-                    elif fpn == "surface_elevation_km":
-                        add_vector[:, _fpn] = data["SURFACE"]["GNDALT"]
-                    else:
-                        raise ValueError(f"Feature point {fpn} not found in points")
 
             total_start_time = time.time()
 
