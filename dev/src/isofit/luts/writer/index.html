@@ -5349,8 +5349,8 @@
 <span class="sd">        ----------</span>
 <span class="sd">        shard_size : str, default=None</span>
 <span class="sd">            Limit the total size of a single shard eg. &quot;4gb&quot;</span>
-<span class="sd">        min_shards : int, default=self.n_cores</span>
-<span class="sd">            Minimum number of shards in order to maximize system resources with</span>
+<span class="sd">        target_shards : int, default=self.n_cores</span>
+<span class="sd">            Target number of shards in order to maximize system resources with</span>
 <span class="sd">            parallelization</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;lut_path&quot;</span><span class="p">,</span> <span class="s2">&quot;lut_names&quot;</span><span class="p">,</span> <span class="s2">&quot;lut_grid&quot;</span><span class="p">,</span> <span class="s2">&quot;wl&quot;</span><span class="p">,</span> <span class="s2">&quot;lut_keys&quot;</span><span class="p">):</span>
@@ -5360,7 +5360,7 @@
                 <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">lut</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;min_shards&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;target_shards&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure_and_exit</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lut</span> <span class="o">=</span> <span class="n">create</span><span class="p">(</span>
                 <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_path</span><span class="p">,</span>
@@ -5425,7 +5425,7 @@
                 <span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span>
                 <span class="s2">&quot;grid&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span>
                 <span class="s2">&quot;shards&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">shards</span><span class="p">,</span>
-                <span class="s2">&quot;min_shards&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="p">,</span>
+                <span class="s2">&quot;target_shards&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">)</span>
 

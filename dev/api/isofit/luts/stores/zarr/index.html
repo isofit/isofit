@@ -5276,7 +5276,7 @@ shard).</p>
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span>
-<span class="mkapi-object-name"><a href="./#isofit.luts.stores.zarr.calc_shards" title="isofit.luts.stores.zarr.calc_shards">calc_shards</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">grid</span><span class="mkapi-comma">, </span><span class="mkapi-arg">wl</span><span class="mkapi-comma">, </span><span class="mkapi-arg">chunk</span><span class="mkapi-comma">, </span><span class="mkapi-arg">storage</span><span class="mkapi-equal">=</span><span class="mkapi-default">'8gb'</span><span class="mkapi-comma">, </span><span class="mkapi-arg">min_shards</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">scale</span><span class="mkapi-equal">=</span><span class="mkapi-default">1</span><span class="mkapi-paren">)</span></span>
+<span class="mkapi-object-name"><a href="./#isofit.luts.stores.zarr.calc_shards" title="isofit.luts.stores.zarr.calc_shards">calc_shards</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">grid</span><span class="mkapi-comma">, </span><span class="mkapi-arg">wl</span><span class="mkapi-comma">, </span><span class="mkapi-arg">chunk</span><span class="mkapi-comma">, </span><span class="mkapi-arg">storage</span><span class="mkapi-equal">=</span><span class="mkapi-default">'8gb'</span><span class="mkapi-comma">, </span><span class="mkapi-arg">target_shards</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">scale</span><span class="mkapi-equal">=</span><span class="mkapi-default">1</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>Determine an optimal Zarr sharding strategy for a LUT and group points by shard.</p>
@@ -5316,14 +5316,14 @@ Chunk shape used for Zarr storage. Must align with the full LUT shape
 <li>
 <p><span class="mkapi-item-name">storage</span> : 
 <span class="mkapi-item-type">str or float, default="8gb"</span> <span class="mkapi-dash">&mdash;</span>
-Target storage size per shard. Determines how many chunks should be grouped
-into a shard.</p>
+Storage size limit per shard. Determines how many chunks should be grouped
+into a shard while respecting the limit.</p>
 </li>
 <li>
-<p><span class="mkapi-item-name">min_shards</span> : 
+<p><span class="mkapi-item-name">target_shards</span> : 
 <span class="mkapi-item-type">int, optional</span> <span class="mkapi-dash">&mdash;</span>
-Minimum number of shards to produce. Candidate shardings that
-result in fewer shards are discarded.</p>
+Target number of shards to produce. The closest sharding strategy to this will
+be selected.</p>
 </li>
 <li>
 <p><span class="mkapi-item-name">scale</span> : 
@@ -5364,6 +5364,21 @@ used directly to write shard-aligned data into a Zarr array.</p>
 </li>
 </ul>
 </div>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle raises">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Raises</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type">ValueError</span></p>
+</li>
+</ul>
+</div>
 </div>
 <p class="mkapi-object mkapi-page-source" id="isofit.luts.stores.zarr.CreateZarr">
 <span class="mkapi-object-link">
@@ -5374,7 +5389,7 @@ used directly to write shard-aligned data into a Zarr array.</p>
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span><span class="mkapi-object-kind">class</span>
-<span class="mkapi-object-name"><a href="./#isofit.luts.stores.zarr.CreateZarr" title="isofit.luts.stores.zarr.CreateZarr">CreateZarr</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">path</span><span class="mkapi-comma">, </span><span class="mkapi-star">*</span><span class="mkapi-arg">args</span><span class="mkapi-comma">, </span><span class="mkapi-arg">mode</span><span class="mkapi-equal">=</span><span class="mkapi-default">'w'</span><span class="mkapi-comma">, </span><span class="mkapi-arg">shards</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">buffered</span><span class="mkapi-equal">=</span><span class="mkapi-default">False</span><span class="mkapi-comma">, </span><span class="mkapi-arg">shard_size</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">min_shards</span><span class="mkapi-equal">=</span><span class="mkapi-default">1</span><span class="mkapi-comma">, </span><span class="mkapi-star">**</span><span class="mkapi-arg">kwargs</span><span class="mkapi-paren">)</span></span>
+<span class="mkapi-object-name"><a href="./#isofit.luts.stores.zarr.CreateZarr" title="isofit.luts.stores.zarr.CreateZarr">CreateZarr</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">path</span><span class="mkapi-comma">, </span><span class="mkapi-star">*</span><span class="mkapi-arg">args</span><span class="mkapi-comma">, </span><span class="mkapi-arg">mode</span><span class="mkapi-equal">=</span><span class="mkapi-default">'w'</span><span class="mkapi-comma">, </span><span class="mkapi-arg">shards</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">buffered</span><span class="mkapi-equal">=</span><span class="mkapi-default">False</span><span class="mkapi-comma">, </span><span class="mkapi-arg">shard_size</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">target_shards</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-star">**</span><span class="mkapi-arg">kwargs</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p class="mkapi-bases">Bases :
@@ -5418,9 +5433,9 @@ representing number of bytes. If this parameter is given, the shards array
 will be calculated</p>
 </li>
 <li>
-<p><span class="mkapi-item-name">min_shards</span> : 
-<span class="mkapi-item-type">int, optional, default=1</span> <span class="mkapi-dash">&mdash;</span>
-Minimum number of shards to create. Useful for ensuring paralleization
+<p><span class="mkapi-item-name">target_shards</span> : 
+<span class="mkapi-item-type">int, optional, default=None</span> <span class="mkapi-dash">&mdash;</span>
+Target number of shards to create. Useful for ensuring parallelization
 fully utilizes the available machine</p>
 </li>
 <li>

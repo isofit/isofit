@@ -5658,7 +5658,12 @@
 <span class="normal">791</span>
 <span class="normal">792</span>
 <span class="normal">793</span>
-<span class="normal">794</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
+<span class="normal">794</span>
+<span class="normal">795</span>
+<span class="normal">796</span>
+<span class="normal">797</span>
+<span class="normal">798</span>
+<span class="normal">799</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
 <span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
@@ -6018,11 +6023,16 @@
         <span class="n">mem</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">mem</span><span class="o">.</span><span class="n">total</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">2.5</span><span class="p">)</span><span class="si">}</span><span class="s2">gb&quot;</span>
         <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attempting to use shard size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="c1"># self.shard_size = None</span>
 
         <span class="c1"># Because sRTMnet doesn&#39;t use makeSim and instead processes shards</span>
         <span class="c1"># sequentially in preSim, have to enable the shard buffer here</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">shard_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">,</span> <span class="n">buffered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="n">shard_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">,</span>
+            <span class="n">buffered</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">target_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">preSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.preSim"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.preSim" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

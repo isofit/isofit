@@ -5333,7 +5333,20 @@
 <span class="normal">483</span>
 <span class="normal">484</span>
 <span class="normal">485</span>
-<span class="normal">486</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Zarr implementation for LUTs</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -5404,7 +5417,7 @@
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
 
 <div class="mkapi-source-link" id="isofit.luts.stores.zarr.calc_shards"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.calc_shards" title="Go to docs">[docs]</a></div>
-<span class="k">def</span><span class="w"> </span><span class="nf">calc_shards</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="s2">&quot;8gb&quot;</span><span class="p">,</span> <span class="n">min_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_shards</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="s2">&quot;8gb&quot;</span><span class="p">,</span> <span class="n">target_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Determine an optimal Zarr sharding strategy for a LUT and group points by shard.</span>
 
@@ -5427,11 +5440,11 @@
 <span class="sd">        Chunk shape used for Zarr storage. Must align with the full LUT shape</span>
 <span class="sd">        (wl + grid dimensions).</span>
 <span class="sd">    storage : str or float, default=&quot;8gb&quot;</span>
-<span class="sd">        Target storage size per shard. Determines how many chunks should be grouped</span>
-<span class="sd">        into a shard.</span>
-<span class="sd">    min_shards : int, optional</span>
-<span class="sd">        Minimum number of shards to produce. Candidate shardings that</span>
-<span class="sd">        result in fewer shards are discarded.</span>
+<span class="sd">        Storage size limit per shard. Determines how many chunks should be grouped</span>
+<span class="sd">        into a shard while respecting the limit.</span>
+<span class="sd">    target_shards : int, optional</span>
+<span class="sd">        Target number of shards to produce. The closest sharding strategy to this will</span>
+<span class="sd">        be selected.</span>
 <span class="sd">    scale : int, default=1</span>
 <span class="sd">        Multiplier applied to the estimated chunk size. Useful when multiple arrays</span>
 <span class="sd">        are written per chunk to better approximate the actual memory when in buffered</span>
@@ -5477,16 +5490,32 @@
     <span class="c1"># Ensure shards don&#39;t split chunks</span>
     <span class="n">shards</span> <span class="o">=</span> <span class="n">shards</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">shards</span> <span class="o">%</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
 
-    <span class="c1"># 1 shard == 1 file, only consider shardings that reach the minimum number of files</span>
-    <span class="k">if</span> <span class="n">min_shards</span><span class="p">:</span>
-        <span class="n">files</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">((</span><span class="n">shape</span> <span class="o">/</span> <span class="n">shards</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">shards</span> <span class="o">=</span> <span class="n">shards</span><span class="p">[</span><span class="n">files</span> <span class="o">&gt;=</span> <span class="n">min_shards</span><span class="p">]</span>
-
     <span class="c1"># Chunks per shard</span>
     <span class="n">cpf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">shards</span> <span class="o">/</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
-    <span class="c1"># Return the strategy that is closest to the target number of chunks per shard</span>
-    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">cpf</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+    <span class="c1"># Storage used by each shard</span>
+    <span class="n">sizes</span> <span class="o">=</span> <span class="n">cpf</span> <span class="o">*</span> <span class="n">space</span>
+
+    <span class="c1"># Limit the shard options to the storage limit</span>
+    <span class="n">viable</span> <span class="o">=</span> <span class="n">sizes</span> <span class="o">&lt;=</span> <span class="n">storage</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">viable</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;No sharding strategy satisfies the storage limit </span><span class="si">{</span><span class="n">storage</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GB&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">shards</span> <span class="o">=</span> <span class="n">shards</span><span class="p">[</span><span class="n">viable</span><span class="p">]</span>
+    <span class="n">cpf</span> <span class="o">=</span> <span class="n">cpf</span><span class="p">[</span><span class="n">viable</span><span class="p">]</span>
+
+    <span class="c1"># Number of shard files produced, 1 shard is 1 file</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">((</span><span class="n">shape</span> <span class="o">/</span> <span class="n">shards</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Choose the strategy closest to the requested number of shards</span>
+    <span class="k">if</span> <span class="n">target_shards</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">files</span> <span class="o">-</span> <span class="n">target_shards</span><span class="p">)</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Fall back to the largest shard (fewest files)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">cpf</span> <span class="o">*</span> <span class="n">space</span><span class="p">)[</span><span class="n">viable</span><span class="p">]</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+
     <span class="n">best</span> <span class="o">=</span> <span class="n">shards</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
 
     <span class="c1"># Split the points into shard groups</span>
@@ -5529,7 +5558,7 @@
         <span class="n">shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">buffered</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">shard_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">min_shards</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">target_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -5549,8 +5578,8 @@
 <span class="sd">            Target size for each shard. May be either a string like &quot;4gb&quot; or a float</span>
 <span class="sd">            representing number of bytes. If this parameter is given, the shards array</span>
 <span class="sd">            will be calculated</span>
-<span class="sd">        min_shards : int, optional, default=1</span>
-<span class="sd">            Minimum number of shards to create. Useful for ensuring paralleization</span>
+<span class="sd">        target_shards : int, optional, default=None</span>
+<span class="sd">            Target number of shards to create. Useful for ensuring parallelization</span>
 <span class="sd">            fully utilizes the available machine</span>
 <span class="sd">        wl : np.ndarray</span>
 <span class="sd">            The wavelength array.</span>
@@ -5573,16 +5602,9 @@
         <span class="c1"># TODO: Integrate into config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shards</span> <span class="o">=</span> <span class="n">shards</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span> <span class="o">=</span> <span class="n">shard_size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_shards</span> <span class="o">=</span> <span class="n">min_shards</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_shards</span> <span class="o">=</span> <span class="n">target_shards</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="n">grid</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">&quot;lut_grid&quot;</span><span class="p">,</span> <span class="n">grid</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shards</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">&quot;shards&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shards</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">&quot;shard order&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">buffered</span><span class="p">:</span>
@@ -5644,10 +5666,14 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">chunks</span><span class="p">,</span>
                 <span class="n">storage</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">,</span>
-                <span class="n">min_shards</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_shards</span><span class="p">,</span>
+                <span class="n">target_shards</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">target_shards</span><span class="p">,</span>
                 <span class="n">scale</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alldim</span><span class="p">),</span>
             <span class="p">)</span>
 
+            <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;shards&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shards</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;shard order&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;lut_grid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
 
         <span class="c1"># Coordinates</span>
