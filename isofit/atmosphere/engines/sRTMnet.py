@@ -72,14 +72,14 @@ class ResidualBlock(torch.nn.Module):
 class MLP_PCA(torch.nn.Module):
     """PyTorch equivalent of the Keras nn_model_pca architecture."""
 
-    def __init__(self, in_features, out_features):
+    def __init__(self, in_features, out_features, hidden_sizes):
         super(MLP_PCA, self).__init__()
         self.dense_in = torch.nn.Linear(in_features, 2048)
         self.ln_in = torch.nn.LayerNorm(2048)
 
         self.blocks = torch.nn.ModuleList()
         in_units = 2048
-        for size in [2048, 2048, 1024, 1024]:
+        for size in hidden_sizes:
             self.blocks.append(ResidualBlock(in_units, size))
             in_units = size
 
@@ -153,6 +153,7 @@ class SRTMnetModel(torch.nn.Module):
         self.pca_components = {}
         self.pca_means = {}
         self.uses_pca = {}
+        self.uses_residual_blocks = {}
 
         if key == "dir-dir":
             self.component_keys = ["transm_down_dir", "transm_up_dir"]
@@ -179,9 +180,12 @@ class SRTMnetModel(torch.nn.Module):
 
         # Load from the provided file
         with h5py.File(input_file, "r") as f:
+            file_keys = list(f.keys())
+
             if key == "3c":
                 self.active_keys = ["3c"]
                 self.uses_pca["3c"] = False
+                self.uses_residual_blocks["3c"] = False
 
                 w_list, b_list = [], []
 
@@ -206,9 +210,12 @@ class SRTMnetModel(torch.nn.Module):
             else:
                 self.active_keys = self.component_keys
                 for ckey in self.component_keys:
-                    # Check if PCA components exist to determine the network architecture
-                    if f"pca_components_{ckey}" in f:
-                        self.uses_pca[ckey] = True
+
+                    # Check for newer architecture
+                    has_resnet = f"dense_weights_{ckey}" in file_keys
+
+                    if has_resnet:
+                        self.uses_residual_blocks[ckey] = True
 
                         # 1. Parse Neural Network Structural Weights
                         dense_w = []
@@ -227,21 +234,37 @@ class SRTMnetModel(torch.nn.Module):
                                 (lg_grp[f"layer_{i}"][:], lb_grp[f"layer_{i}"][:])
                             )
 
-                        # 2. Parse PCA Components
-                        self.pca_components[ckey] = f[f"pca_components_{ckey}"][:]
-                        self.pca_means[ckey] = f[f"pca_mean_{ckey}"][:]
+                        # Parse PCA Components if present
+                        if f"pca_components_{ckey}" in file_keys:
+                            comp = f[f"pca_components_{ckey}"][:]
+                            mean = f[f"pca_mean_{ckey}"][:]
 
-                        # 3. Instantiate and populate PyTorch architecture
+                            # Size check ignores the dummy [0] fallback
+                            if comp.size > 1:
+                                self.uses_pca[ckey] = True
+                                self.pca_components[ckey] = comp
+                                self.pca_means[ckey] = mean
+                            else:
+                                self.uses_pca[ckey] = False
+                        else:
+                            self.uses_pca[ckey] = False
+
+                        # 3. Dynamically determine hidden sizes from LayerNorm depths
+                        hidden_sizes = []
+                        for i in range(1, len(ln_w), 2):
+                            hidden_sizes.append(ln_w[i][0].shape[0])
+
                         in_features = dense_w[0][0].shape[1]
                         out_features = dense_w[-1][0].shape[0]
 
-                        model = MLP_PCA(in_features, out_features)
+                        model = MLP_PCA(in_features, out_features, hidden_sizes)
                         model.load_weights(dense_w, ln_w)
 
                         self.models[ckey] = model
                     else:
                         # Fallback to the legacy 6c architecture
                         self.uses_pca[ckey] = False
+                        self.uses_residual_blocks[ckey] = False
                         w_list, b_list = [], []
                         w_group = f[f"weights_{ckey}"]
                         b_group = f[f"biases_{ckey}"]
@@ -284,12 +307,8 @@ class SRTMnetModel(torch.nn.Module):
             use_pca (bool, optional): Explicit override switch. If None, auto-detects
                                       based on what was loaded from the HDF5 file.
         """
-        # Determine routing behavior
-        if use_pca is None:
-            use_pca = self.uses_pca.get(key, False)
-
-        if key == "3c" or not use_pca:
-            # Linear/LeakyReLU mapping
+        if key == "3c" or not self.uses_residual_blocks.get(key, False):
+            # Legacy Linear/LeakyReLU mapping
             for i, (W, b) in enumerate(zip(self.weights[key], self.biases[key])):
                 x = torch.matmul(x, W) + b
                 if i < len(self.weights[key]) - 1:
@@ -297,7 +316,6 @@ class SRTMnetModel(torch.nn.Module):
             return x
         else:
             # MLP_PCA version
-            # Note: calling self.models[key](x) automatically invokes MLP_PCA.forward(x)
             return self.models[key](x)
 
     def batch_resample(
@@ -306,7 +324,7 @@ class SRTMnetModel(torch.nn.Module):
         convert_to_rdn: bool,
         resample_dict: dict = None,
     ):
-        """Resample helpf function
+        """Resample helper function
         Args:
             out (np.ndarray): output data to resample
             convert_to_rdn (bool): whether to convert to radiance before resampling
@@ -425,7 +443,6 @@ class SRTMnetModel(torch.nn.Module):
             for _key, key in enumerate(self.active_keys):
                 batch = x_tensor[_key][batch_slice].to(self.device)
 
-                # Use automatic routing based on loaded architecture
                 out = self(batch, key)
                 out = out.cpu().numpy()
 
@@ -528,7 +545,6 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         # Experimental sRTMnet sharding size
         # Shards may use up to 2x their size of memory, plus some extra
         # so divide by 2.5 for safety
-        # REVIEW: is there a better strategy?
         mem = psutil.virtual_memory()
         self.shard_size = f"{int(mem.total / 2**30 / 2.5)}gb"
         Logger.debug(f"Attempting to use shard size: {self.shard_size}")
