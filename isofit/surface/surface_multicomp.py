@@ -119,6 +119,14 @@ class MultiComponentSurface(Surface):
             self.Sa_inv_normalized.append(Cinv_normalized)
             self.Sa_inv_sqrt_normalized.append(Cinv_sqrt_normalized)
 
+        # Determine surface derivatives depending on definitions for reflectance used
+        if self.use_background_rfl:
+            self.drdn_drfl = self.drdn_drfl_heterogeneous_bgrfl
+            self.evaluate_theta = self.evaluate_theta_heterogeneous_bgrfl
+        else:
+            self.drdn_drfl = self.drdn_drfl_homogeneous_bgrfl
+            self.evaluate_theta = self.evaluate_theta_homogeneous_bgrfl
+
     def component(self, x, geom):
         """We pick a surface model component using a distance metric.
 
@@ -275,10 +283,18 @@ class MultiComponentSurface(Surface):
 
         return np.concatenate((prefix, dlamb, suffix), axis=1)
 
-    def drdn_drfl(self, L_tot, s_alb, rho_dif_dir):
+    def drdn_drfl_heterogeneous_bgrfl(
+        self, L_tot, s_alb, rho_dif_dir, L_dir_dir, L_dir_dif, L_dif_dir, L_dif_dif
+    ):
         """Partial derivative of radiance with respect to
-        surface reflectance"""
+        surface reflectance, treating dir-dif and dif-dif as constants."""
+        return L_dir_dir + (L_dif_dir / (1.0 - s_alb * rho_dif_dir))
 
+    def drdn_drfl_homogeneous_bgrfl(
+        self, L_tot, s_alb, rho_dif_dir, L_dir_dir, L_dir_dif, L_dif_dir, L_dif_dif
+    ):
+        """Partial derivative of radiance with respect to
+        surface reflectance (dir_dir=dir_dif=dif_dir=dif_dif)."""
         return L_tot / ((1.0 - s_alb * rho_dif_dir) ** 2)
 
     def calc_Ls(self, x_surface, geom):
@@ -324,7 +340,15 @@ class MultiComponentSurface(Surface):
         # Dimensions should be (len(RT.wl), len(x_surface))
         # which is correctly handled by the instrument resampling
         drdn_dsurface = np.zeros(drfl_dsurface.shape)
-        drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
+        drdn_drfl = self.drdn_drfl(
+            L_tot,
+            s_alb,
+            rho_dif_dir,
+            L_dir_dir=L_dir_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dir=L_dif_dir,
+            L_dif_dif=L_dif_dif,
+        )
 
         drdn_dsurface[:, : self.n_wl] = np.multiply(
             drdn_drfl[:, np.newaxis], drfl_dsurface[:, : self.n_wl]
@@ -337,9 +361,9 @@ class MultiComponentSurface(Surface):
 
     def analytical_model(
         self,
-        background,
         L_tot,
         geom,
+        s_alb=None,
         L_dir_dir=None,
         L_dir_dif=None,
         L_dif_dir=None,
@@ -347,19 +371,42 @@ class MultiComponentSurface(Surface):
     ):
         """
         Linearization of the surface reflectance terms to use in the
-        AOE inner loop (see Susiluoto, 2025). We set the quadratic
-        spherical albedo term to a constant background, which
-        simplifies the linearization
-        background = s * rho_bg
+        AOE inner loop (see Susiluoto, 2025).
         """
-        # If you ignore multi-scattering
-        theta = L_tot + (L_tot * background / (1 - background))
-        # theta = L_tot
+
+        theta = self.evaluate_theta(
+            s_alb, geom, L_tot, L_dir_dir, L_dir_dif, L_dif_dir, L_dif_dif
+        )
 
         H = np.eye(self.n_wl, self.n_wl)
         H = theta[:, np.newaxis] * H
 
         return H
+
+    def evaluate_theta_homogeneous_bgrfl(
+        self,
+        s_alb,
+        geom,
+        L_tot,
+        L_dir_dir,
+        L_dir_dif,
+        L_dif_dir,
+        L_dif_dif,
+    ):
+        return L_tot + (L_tot * (geom.bg_rfl * s_alb) / (1 - (geom.bg_rfl * s_alb)))
+
+    def evaluate_theta_heterogeneous_bgrfl(
+        self,
+        s_alb,
+        geom,
+        L_tot,
+        L_dir_dir,
+        L_dir_dif,
+        L_dif_dir,
+        L_dif_dif,
+    ):
+
+        return L_dir_dir + L_dif_dir
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""

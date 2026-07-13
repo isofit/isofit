@@ -81,6 +81,8 @@ class Surface:
         if self.wl is not None:
             self.n_wl = len(self.wl)
 
+        self.use_background_rfl = config.use_background_rfl
+
     def resample_reflectance(self):
         """Make sure model wavelengths align with the wavelength file."""
 

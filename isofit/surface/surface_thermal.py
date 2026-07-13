@@ -168,7 +168,15 @@ class ThermalSurface(MultiComponentSurface):
         # Dimensions should be (len(RT.wl), len(x_surface))
         # which is correctly handled by the instrument resampling
         drdn_dsurface = np.zeros(drfl_dsurface.shape)
-        drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
+        drdn_drfl = self.drdn_drfl(
+            L_tot,
+            s_alb,
+            rho_dif_dir,
+            L_dir_dir=L_dir_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dir=L_dif_dir,
+            L_dif_dif=L_dif_dif,
+        )
 
         drdn_dsurface[:, : self.n_wl] = np.multiply(
             drdn_drfl[:, np.newaxis], drfl_dsurface[:, : self.n_wl]

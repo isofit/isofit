@@ -55,6 +55,7 @@ class Pathnames:
         skyview_factor=None,
         subs: bool = False,
         classify_multisurface: bool = False,
+        use_background_rfl: bool = False,
         dn_uncertainty_file: str = None,
         eof_path=None,
     ):
@@ -130,6 +131,17 @@ class Pathnames:
 
         self.surface_template_path = abspath(join(self.data_directory, "surface.mat"))
         self.surface_working_paths = {}
+
+        if use_background_rfl:
+            self.bgrfl_working_path = abspath(
+                join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl"))
+            )
+            self.atm_presolve = abspath(
+                join(self.output_directory, rdn_fname.replace("_rdn", "_atm_presolve"))
+            )
+        else:
+            self.bgrfl_working_path = None
+            self.atm_presolve = None
 
         if copy_input_files is True:
             self.radiance_working_path = abspath(
@@ -217,6 +229,13 @@ class Pathnames:
         else:
             self.svf_working_path = None
             self.svf_subs_path = None
+
+        if use_background_rfl:
+            self.bgrfl_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_bgrfl")
+            )
+        else:
+            self.bgrfl_subs_path = None
 
         self.rdn_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_rdn")
@@ -702,6 +721,7 @@ def build_config(
     terrain_style: str = "flat",
     max_slope: float = 20.0,
     per_pixel_heuristic_prior: bool = False,
+    use_background_rfl: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -734,6 +754,7 @@ def build_config(
         presolve:                             set this up as a presolve configuration
         terrain_style:                        style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
         max_slope:                            maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat
+        use_background_rfl:                   flag to determine which surface derivatives to use in OE
     """
 
     if use_superpixels:
@@ -746,11 +767,13 @@ def build_config(
             state_output_path = paths.h2o_subs_path
             posterior_output_path = None
             rfl_output_path = None
+            bgrfl_input_path = None
 
         else:
             state_output_path = paths.state_subs_path
             posterior_output_path = paths.uncert_subs_path
             rfl_output_path = paths.rfl_subs_path
+            bgrfl_input_path = paths.bgrfl_subs_path
 
     else:
         rdn_input_path = paths.radiance_working_path
@@ -762,22 +785,25 @@ def build_config(
             state_output_path = paths.h2o_working_path
             posterior_output_path = None
             rfl_output_path = None
+            bgrfl_input_path = None
         else:
             state_output_path = paths.state_working_path
             posterior_output_path = paths.uncert_working_path
             rfl_output_path = paths.rfl_working_path
+            bgrfl_input_path = paths.bgrfl_working_path
 
     input_config = make_input_config(
-        rdn_input_path,
-        loc_input_path,
-        obs_input_path,
-        svf_input_path,
-        paths.rdn_factors_path,
+        rdn_input_path=rdn_input_path,
+        loc_input_path=loc_input_path,
+        obs_input_path=obs_input_path,
+        svf_input_path=svf_input_path,
+        rdn_factors_path=paths.rdn_factors_path,
+        bgrfl_path=bgrfl_input_path,
     )
     output_config = make_output_config(
-        state_output_path,
-        posterior_output_path,
-        rfl_output_path,
+        state_output_path=state_output_path,
+        posterior_output_path=posterior_output_path,
+        rfl_output_path=rfl_output_path,
     )
 
     config = {
@@ -831,6 +857,7 @@ def build_config(
                 use_superpixels=use_superpixels,
                 terrain_style=terrain_style,
                 max_slope=max_slope,
+                use_background_rfl=use_background_rfl,
             ),
         },
         "implementation": make_implementation_config(
@@ -1778,6 +1805,7 @@ def make_surface_config(
     terrain_style: str = "flat",
     max_slope: float = 20.0,
     surface_refractive_index_path: str = None,
+    use_background_rfl=False,
 ):
     # Initialize config dict
     surface_config_dict = {
@@ -1818,6 +1846,7 @@ def make_surface_config(
                 "surface_category": surface_category,
                 "terrain_style": terrain_style,
                 "max_slope": max_slope,
+                "use_background_rfl": use_background_rfl,
             }
 
     # Single surface run
@@ -1826,6 +1855,7 @@ def make_surface_config(
         surface_config_dict["surface_category"] = surface_category
         surface_config_dict["terrain_style"] = terrain_style
         surface_config_dict["max_slope"] = max_slope
+        surface_config_dict["use_background_rfl"] = use_background_rfl
 
     # Accumulate statevector
     for category, path in surface_working_paths.items():
@@ -1935,6 +1965,7 @@ def make_input_config(
     obs_input_path: str,
     svf_input_path: str = None,
     rdn_factors_path: str = None,
+    bgrfl_path: str = None,
 ):
     input_config = {}
     input_config["measured_radiance_file"] = rdn_input_path
@@ -1944,6 +1975,8 @@ def make_input_config(
         input_config["skyview_factor_file"] = svf_input_path
     if rdn_factors_path:
         input_config["radiometry_correction_file"] = rdn_factors_path
+    if bgrfl_path:
+        input_config["background_reflectance_file"] = bgrfl_path
 
     return input_config
 

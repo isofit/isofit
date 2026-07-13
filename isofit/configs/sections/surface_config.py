@@ -75,6 +75,9 @@ class SurfaceConfig(BaseConfigSection):
         self._multi_surface_flag_type = bool
         self.multi_surface_flag = False
 
+        self._use_background_rfl_type = bool
+        self.use_background_rfl = False
+
         self._surface_file_type = str
         self.surface_file = None
 
@@ -228,3 +231,18 @@ class SurfaceConfig(BaseConfigSection):
             )
 
         return errors, warnings
+
+    def update_from_subconfig(self, subconfig_dict: dict):
+
+        # Not entirely sure if this is needed/possible, but just to be safe
+        keys_to_ignore = {
+            "multi_surface_flag",
+            "Surfaces",
+            "surface_class_file",
+            "base_surface_class_file",
+            "statevector",
+        }
+
+        for key, value in subconfig_dict.items():
+            if hasattr(self, key) and key not in keys_to_ignore:
+                setattr(self, key, value)
