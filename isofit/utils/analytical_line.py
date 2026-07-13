@@ -32,7 +32,7 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_esd, load_spectrum, load_wavelen
+from isofit.core.common import envi_header, eps, load_esd, load_spectrum, load_wavelen
 from isofit.core.fileio import initialize_output, write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
@@ -77,6 +77,7 @@ def analytical_line(
     output_unc_file: str = None,
     atm_file: str = None,
     skyview_factor_file: str = None,
+    bgrfl_file: str = None,
     loglevel: str = "INFO",
     logfile: str = None,
     initializer: str = "algebraic",
@@ -309,6 +310,7 @@ def analytical_line(
             logfile,
             initializer,
             skyview_factor_file,
+            bgrfl_file,
         ]
         workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
@@ -371,6 +373,7 @@ class Worker(object):
         logfile: str,
         initializer: str,
         skyview_factor_file: str,
+        bgrfl_file: str,
     ):
         """
         Worker class to help run a subset of spectra.
@@ -426,6 +429,14 @@ class Worker(object):
         else:
             self.svf = []
 
+        # Open background rfl file
+        if bgrfl_file:
+            self.bg_rfl = envi.open(envi_header(bgrfl_file)).open_memmap(
+                interleave="bip"
+            )
+        else:
+            self.bg_rfl = []
+
         # Lines and samples
         self.n_lines = self.rdn.shape[0]
         self.n_samples = self.rdn.shape[1]
@@ -462,6 +473,7 @@ class Worker(object):
             self.radiance_correction = None
 
         self.initializer = initializer
+        self.per_pixel_heuristic_prior = config.implementation.per_pixel_heuristic_prior
 
     def run_chunks(self, line_breaks: tuple, fill_value: float = -9999.0) -> None:
         """
@@ -522,6 +534,7 @@ class Worker(object):
                 loc=self.loc[r, c, :],
                 esd=self.esd,
                 svf=self.svf[r, c] if len(self.svf) else 1,
+                bg_rfl=self.bg_rfl[r, c, :] if len(self.bg_rfl) else None,
                 coszen=self.coszen,
                 full_config=self.config,
             )
@@ -586,8 +599,16 @@ class Worker(object):
             else:
                 raise ValueError("No valid initializer given for AOE algorithm")
 
-            # NOTE: this line needs to be here to ensure geom.surf_cmp_init is populated
-            geom.x_surf_init = x0[self.fm.idx_surface]
+            # Update the bounds and set prior to initial (if that is the run
+            if self.per_pixel_heuristic_prior:
+                bounds = self.fm.heuristic_bounds(geom)
+            else:
+                bounds = self.fm.bounds
+
+            x0 = self.fm.clip_bounds(x0, bounds, eps=eps)
+
+            if self.per_pixel_heuristic_prior:
+                self.fm.update_heuristic_prior_means(x0, geom)
 
             states, unc = invert_analytical(
                 self.fm,
@@ -671,6 +692,7 @@ class Worker(object):
 @click.option("--output_rfl_file", help="TODO", type=str, default=None)
 @click.option("--output_unc_file", help="TODO", type=str, default=None)
 @click.option("--skyview_factor_file", help="TODO", type=str, default=None)
+@click.option("--bgrfl_file", help="TODO", type=str, default=None)
 @click.option("--atm_file", help="TODO", type=str, default=None)
 @click.option("--loglevel", help="TODO", type=str, default="INFO")
 @click.option("--logfile", help="TODO", type=str, default=None)

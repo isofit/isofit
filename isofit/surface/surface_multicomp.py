@@ -50,6 +50,9 @@ class MultiComponentSurface(Surface):
 
         self.n_comp = len(self.component_means)
         self.wl = self.model_dict["wl"][0]
+        self.fwhm = (
+            self.model_dict["fwhm"][0] if len(self.model_dict.get("fwhm", [])) else []
+        )
         self.n_wl = len(self.wl)
 
         # Set up normalization method
@@ -63,9 +66,7 @@ class MultiComponentSurface(Surface):
         else:
             raise ValueError("Unrecognized Normalization: %s\n" % self.normalize)
 
-        self.selection_metric = self.model_dict.get(
-            "selection_metric", config.selection_metric
-        )
+        self.selection_metric = config.selection_metric
         self.select_on_init = config.select_on_init
 
         # Reference values are used for normalizing the reflectances.
@@ -118,6 +119,14 @@ class MultiComponentSurface(Surface):
             self.Sa_inv_normalized.append(Cinv_normalized)
             self.Sa_inv_sqrt_normalized.append(Cinv_sqrt_normalized)
 
+        # Determine surface derivatives depending on definitions for reflectance used
+        if self.use_background_rfl:
+            self.drdn_drfl = self.drdn_drfl_heterogeneous_bgrfl
+            self.evaluate_theta = self.evaluate_theta_heterogeneous_bgrfl
+        else:
+            self.drdn_drfl = self.drdn_drfl_homogeneous_bgrfl
+            self.evaluate_theta = self.evaluate_theta_homogeneous_bgrfl
+
     def component(self, x, geom):
         """We pick a surface model component using a distance metric.
 
@@ -145,6 +154,8 @@ class MultiComponentSurface(Surface):
         # Only support euclidean distance comparrison for now
         if self.selection_metric == "SGA":
             mds = self.spectral_gradient_angle(lamb_ref, np.array(self.mus))
+        elif self.selection_metric == "NormSGA":
+            mds = self.normalized_spectral_gradient_angle(lamb_ref, np.array(self.mus))
         elif self.selection_metric == "Euclidean":
             mds = self.euclidean_distance(
                 lamb_ref,
@@ -272,10 +283,18 @@ class MultiComponentSurface(Surface):
 
         return np.concatenate((prefix, dlamb, suffix), axis=1)
 
-    def drdn_drfl(self, L_tot, s_alb, rho_dif_dir):
+    def drdn_drfl_heterogeneous_bgrfl(
+        self, L_tot, s_alb, rho_dif_dir, L_dir_dir, L_dir_dif, L_dif_dir, L_dif_dif
+    ):
         """Partial derivative of radiance with respect to
-        surface reflectance"""
+        surface reflectance, treating dir-dif and dif-dif as constants."""
+        return L_dir_dir + (L_dif_dir / (1.0 - s_alb * rho_dif_dir))
 
+    def drdn_drfl_homogeneous_bgrfl(
+        self, L_tot, s_alb, rho_dif_dir, L_dir_dir, L_dir_dif, L_dif_dir, L_dif_dif
+    ):
+        """Partial derivative of radiance with respect to
+        surface reflectance (dir_dir=dir_dif=dif_dir=dif_dif)."""
         return L_tot / ((1.0 - s_alb * rho_dif_dir) ** 2)
 
     def calc_Ls(self, x_surface, geom):
@@ -321,7 +340,15 @@ class MultiComponentSurface(Surface):
         # Dimensions should be (len(RT.wl), len(x_surface))
         # which is correctly handled by the instrument resampling
         drdn_dsurface = np.zeros(drfl_dsurface.shape)
-        drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
+        drdn_drfl = self.drdn_drfl(
+            L_tot,
+            s_alb,
+            rho_dif_dir,
+            L_dir_dir=L_dir_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dir=L_dif_dir,
+            L_dif_dif=L_dif_dif,
+        )
 
         drdn_dsurface[:, : self.n_wl] = np.multiply(
             drdn_drfl[:, np.newaxis], drfl_dsurface[:, : self.n_wl]
@@ -334,9 +361,9 @@ class MultiComponentSurface(Surface):
 
     def analytical_model(
         self,
-        background,
         L_tot,
         geom,
+        s_alb=None,
         L_dir_dir=None,
         L_dir_dif=None,
         L_dif_dir=None,
@@ -344,19 +371,42 @@ class MultiComponentSurface(Surface):
     ):
         """
         Linearization of the surface reflectance terms to use in the
-        AOE inner loop (see Susiluoto, 2025). We set the quadratic
-        spherical albedo term to a constant background, which
-        simplifies the linearization
-        background = s * rho_bg
+        AOE inner loop (see Susiluoto, 2025).
         """
-        # If you ignore multi-scattering
-        theta = L_tot + (L_tot * background / (1 - background))
-        # theta = L_tot
+
+        theta = self.evaluate_theta(
+            s_alb, geom, L_tot, L_dir_dir, L_dir_dif, L_dif_dir, L_dif_dif
+        )
 
         H = np.eye(self.n_wl, self.n_wl)
         H = theta[:, np.newaxis] * H
 
         return H
+
+    def evaluate_theta_homogeneous_bgrfl(
+        self,
+        s_alb,
+        geom,
+        L_tot,
+        L_dir_dir,
+        L_dir_dif,
+        L_dif_dir,
+        L_dif_dif,
+    ):
+        return L_tot + (L_tot * (geom.bg_rfl * s_alb) / (1 - (geom.bg_rfl * s_alb)))
+
+    def evaluate_theta_heterogeneous_bgrfl(
+        self,
+        s_alb,
+        geom,
+        L_tot,
+        L_dir_dir,
+        L_dir_dif,
+        L_dif_dir,
+        L_dif_dif,
+    ):
+
+        return L_dir_dir + L_dif_dir
 
     def summarize(self, x_surface, geom):
         """Summary of state vector."""
@@ -387,4 +437,20 @@ class MultiComponentSurface(Surface):
 
         return self.spectral_angle_distance(
             gradient(self.wl[self.idx_ref], lamb_ref), grads
+        )
+
+    def normalized_spectral_gradient_angle(self, lamb_ref, mus):
+        def gradient(wl, val, sigma=2):
+            val = gaussian_filter1d(val, sigma=sigma)
+            return np.gradient(val, wl)
+
+        def gradient_norm(x):
+            return (x - np.min(x)) / (np.max(x) - np.min(x))
+
+        grads = np.array(
+            [gradient_norm(gradient(self.wl[self.idx_ref], mu)) for mu in mus]
+        )
+
+        return self.spectral_angle_distance(
+            gradient_norm(gradient(self.wl[self.idx_ref], lamb_ref)), grads
         )

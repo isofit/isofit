@@ -1,0 +1,96 @@
+name: Test Package Distributions
+
+on:
+  schedule:
+    - cron: "0 14 * * 0" # Every Sunday at 14:00 UTC / 06:00 PST
+  workflow_dispatch:
+
+jobs:
+  pip:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+        os:
+          - ubuntu-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install from PyPI using pip
+        run: |
+          pip install isofit
+
+      - name: Verify install
+        shell: bash
+        run: |
+          isofit --help
+
+  uv:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+        os:
+          - ubuntu-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.25"
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+          enable-cache: false
+          no-project: true
+
+      - name: Install from PyPI using uv
+        run: |
+          uv pip install isofit
+
+      - name: Verify install
+        shell: bash
+        run: |
+          isofit --help
+
+  conda:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+        os:
+          - ubuntu-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          activate-environment: isofit
+          python-version: ${{ matrix.python-version }}
+          channels: conda-forge
+
+      - name: Install from conda-forge
+        shell: bash -l {0}
+        run: |
+          conda install -y isofit
+
+      - name: Verify install
+        shell: bash -l {0}
+        run: |
+          isofit --help

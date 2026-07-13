@@ -22,24 +22,25 @@ from __future__ import annotations
 import numpy as np
 from scipy.linalg import block_diag
 
-from isofit.core.common import eps, svd_inv_sqrt
+from isofit.core.common import eps, resample_spectrum, svd_inv_sqrt
+from isofit.data import env
 from isofit.surface.surface import DefaultState
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 DefaultSkyGlintPrior = DefaultState(
-    bounds=[0.0, 100.0],
+    bounds=[0.0, 10.0],
     scale=1.0,
     prior_mean=1 / np.pi,
-    prior_sigma=0.001,
+    prior_sigma=100.0,
     init=1 / np.pi,
 )
 
 DefaultSunGlintPrior = DefaultState(
-    bounds=[0.0, 100.0],
+    bounds=[0.0, 10.0],
     scale=1.0,
     prior_mean=0.02,
-    prior_sigma=0.001,
-    init=0.02,
+    prior_sigma=100.0,
+    init=4.0,
 )
 
 
@@ -102,10 +103,36 @@ class GlintModelSurface(MultiComponentSurface):
         self.Sa_inv_glint, self.Sa_inv_sqrt_glint = svd_inv_sqrt(
             Cov / np.mean(np.diag(Cov))
         )
+        # Check for fwhm, if not in surface -> use instrument
+        if not len(self.fwhm):
+            q = np.loadtxt(full_config.forward_model.instrument.wavelength_file)
+
+            # Assume that fwhm is the second dim, and that wl file has multi-dim
+            assert q.shape[1] > 1
+
+            fwhm = q[:, 1]
+            if q[0, 0] < 100:
+                fwhm = units.micron_to_nm(fwhm)
+            self.fwhm = fwhm
+
+        # Refractive index file
+        # [:, 0] - wavelength (nm)
+        # [:, 2] - refractive index
+        real_ref_idx = np.loadtxt(config.refractive_index_path)
+        self.real_ref_idx = resample_spectrum(
+            real_ref_idx[:, 1], real_ref_idx[:, 0], self.wl, self.fwhm
+        )
+
+    def update_heuristic_prior_means(self, x_surface, geom):
+        """Update the sun glint prior to match initial guess (x_surface"""
+        mu = MultiComponentSurface.update_heuristic_prior_means(self, x_surface, geom)
+        mu[self.sky_glint_ind] = self.sky_glint_mean
+        mu[self.sun_glint_ind] = x_surface[self.sun_glint_ind]
+
+        return mu
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
-
         mu = MultiComponentSurface.xa(self, x_surface, geom)
         mu[self.sky_glint_ind] = self.sky_glint_mean
         mu[self.sun_glint_ind] = self.sun_glint_mean
@@ -146,12 +173,8 @@ class GlintModelSurface(MultiComponentSurface):
         blue_band_1 = np.argmin(np.abs(450 - self.wl))
         blue_band_2 = np.argmin(np.abs(500 - self.wl))
 
-        if np.max(self.wl) >= 2300:
-            glint_band_1 = np.argmin(np.abs(2200 - self.wl))
-            glint_band_2 = np.argmin(np.abs(2300 - self.wl))
-        else:
-            glint_band_1 = np.argmin(np.abs(1000 - self.wl))
-            glint_band_2 = np.argmin(np.abs(1020 - self.wl))
+        glint_band_1 = np.argmin(np.abs(1000 - self.wl))
+        glint_band_2 = np.argmin(np.abs(1020 - self.wl))
 
         glint_est = np.min(
             [
@@ -160,10 +183,10 @@ class GlintModelSurface(MultiComponentSurface):
             ]
         )
 
-        # hard-coded glint bounds from experience #TODO - get from config
+        # glint_est is calc. in RFL-space. Makes sense that rfl < 1.0
         bounds_glint_est = [
             0,
-            1.0,
+            5.0,
         ]
         glint_est = max(
             bounds_glint_est[0] + eps,
@@ -175,10 +198,17 @@ class GlintModelSurface(MultiComponentSurface):
         # Get estimate for g_dd and g_dsf parameters
         # Set sky glint to a static number; use prior mean.
         g_dsf_est = self.init[self.sky_glint_ind]
-        g_dd_est = glint_est / self.fresnel_rf(geom.observer_zenith)
+
+        # Reference wavelength
+        ref_wl = 1050  # Choices 1050 nm, 1640 nm
+        g_dd_est = (
+            glint_est
+            / self.fresnel_rf(geom.observer_zenith)[np.argmin(np.abs(self.wl - ref_wl))]
+        )
 
         # Updating self.init will set the prior mean (xa) to this value
         self.init[self.sun_glint_ind] = g_dd_est
+        geom.sun_glint_init = g_dd_est
 
         # SKY_GLINT g_dsf
         x[self.sky_glint_ind] = g_dsf_est
@@ -288,7 +318,15 @@ class GlintModelSurface(MultiComponentSurface):
         # Dimensions should be (len(RT.wl), len(x_surface))
         # which is correctly handled by the instrument resampling
         drdn_dsurface = np.zeros(drfl_dsurface.shape)
-        drdn_drfl = self.drdn_drfl(L_tot, s_alb, rho_dif_dir)
+        drdn_drfl = self.drdn_drfl(
+            L_tot,
+            s_alb,
+            rho_dif_dir,
+            L_dir_dir=L_dir_dir,
+            L_dir_dif=L_dir_dif,
+            L_dif_dir=L_dif_dir,
+            L_dif_dif=L_dif_dif,
+        )
         drdn_dsurface[:, : self.n_wl] = np.multiply(
             drdn_drfl[:, np.newaxis], drfl_dsurface[:, : self.n_wl]
         )
@@ -316,9 +354,9 @@ class GlintModelSurface(MultiComponentSurface):
 
     def analytical_model(
         self,
-        background,
         L_tot,
         geom,
+        s_alb=None,
         L_dir_dir=None,
         L_dir_dif=None,
         L_dif_dir=None,
@@ -338,9 +376,9 @@ class GlintModelSurface(MultiComponentSurface):
         # gam (sun glint portion)
         # ep (sky glint portion)
         H = super().analytical_model(
-            background,
             L_tot,
             geom,
+            s_alb,
             L_dir_dir,
             L_dir_dif,
             L_dif_dir,
@@ -351,16 +389,14 @@ class GlintModelSurface(MultiComponentSurface):
         # It must match the alphabeitcal order of the glint terms
 
         # Diffuse portion
-        ep = (
-            (L_dif_dir + L_dif_dif) + ((L_tot * background) / (1 - background))
-        ) * rho_ls
+        ep = L_dif_dir * rho_ls
         # If you ignore multi-scattering
         # ep = (L_dif_dir + L_dif_dif) * rho_ls
         ep = np.reshape(ep, (len(ep), 1))
         H = np.append(H, ep, axis=1)
 
         # Direct portion
-        gam = (L_dir_dir + L_dir_dif) * rho_ls
+        gam = L_dir_dir * rho_ls
         gam = np.reshape(gam, (len(gam), 1))
         H = np.append(H, gam, axis=1)
 
@@ -376,17 +412,22 @@ class GlintModelSurface(MultiComponentSurface):
             x_surface[self.sky_glint_ind],
         )
 
-    @staticmethod
-    def fresnel_rf(vza):
+    def fresnel_rf(self, vza):
         """Calculates reflectance factor of sky radiance based on the
         Fresnel equation for unpolarized light as a function of view zenith angle (vza).
+
+        There is some discussion to whether the vza or sza is the appropriate angle to use here.
+        We follow Gege WASI-2D (2014) implementation. Following Gege's suggestion: when working
+        within radiance units, view zenith is the relevant angle. Gao and Li (2021) are working
+        in irradiance units, where their implementation is integrating across observation
+        angles, and the sza is the relevant angle for averaged reflectances.
         """
         if vza > 0.0:
             n_w = 1.33  # refractive index of water
             theta = np.deg2rad(vza)
 
             # calculate angle of refraction using Snell′s law
-            theta_i = np.arcsin(np.sin(theta) / n_w)
+            theta_i = np.arcsin(np.sin(theta) / self.real_ref_idx)
 
             # reflectance factor of sky radiance based on the Fresnel equation for unpolarized light
             rho_ls = 0.5 * np.abs(

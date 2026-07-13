@@ -61,7 +61,7 @@ class ForwardModel:
     noise for the purpose of weighting the measurement information
     against the prior."""
 
-    def __init__(self, full_config: Config, cache_atmosphere: Atmosphere = None):
+    def __init__(self, full_config: Config, cache_atmosphere: Atmosphere = False):
         # load in the full config (in case of inter-module dependencies) and
         # then designate the current config
         self.full_config = full_config
@@ -158,6 +158,35 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
+        if self.surface.use_background_rfl:
+            self.calc_rdn_bgrfl = self.calc_rdn_bgrfl_heterogeneous
+            self.terrain_rereflection = self.terrain_rereflection_heterogeneous
+        else:
+            self.calc_rdn_bgrfl = self.calc_rdn_bgrfl_homogeneous
+            self.terrain_rereflection = self.terrain_rereflection_homogeneous
+
+        if full_config.implementation.per_pixel_heuristic_prior:
+            self.xa = self.xa_heuristic
+        else:
+            self.xa = self.xa_static
+
+    @staticmethod
+    def clip_bounds(x, bounds, inds_free=slice(None), eps=1e-5):
+        """Clip state vector against bounds.
+        eps shifts bounds by epsilon to not pin
+        boundary returned val at boundary. Used when clipping prior mean.
+        Use a relative espilon to scale with statevecor value.
+        """
+        check = bounds[0] != bounds[1]
+        low = bounds[0].astype(float)
+        high = bounds[1].astype(float)
+
+        rel_eps = np.maximum(0, np.minimum(eps * np.maximum(bounds[1], 1.0), 1))
+        low[check] = low[check] + rel_eps[check]
+        high[check] = high[check] - rel_eps[check]
+
+        return np.clip(x[inds_free], a_min=low[inds_free], a_max=high[inds_free])
+
     def out_of_bounds(self, x):
         """Check if state vector is within bounds."""
 
@@ -168,7 +197,35 @@ class ForwardModel:
             x_atmosphere <= (bound_lwr[self.idx_atmosphere] + eps * 2.0)
         )
 
-    def xa(self, x, geom):
+    def update_heuristic_prior_means(self, x, geom):
+        """Save the pixel-specific prior to the geometry object"""
+        x_surface, x_atmosphere, x_instrument = self.unpack(x)
+        x_surface = self.surface.update_heuristic_prior_means(x[self.idx_surface], geom)
+        x_atmosphere = self.atmosphere.update_heuristic_prior_means(
+            x[self.idx_atmosphere], geom
+        )
+        # No implimentation for Instrument
+
+        # Should be persist out of this function scope
+        geom.xa = np.concatenate([x_surface, x_atmosphere, x_instrument])
+
+        return
+
+    def heuristic_bounds(self, geom):
+        """Save pixel-specific bounds. Currently only implemented for H2O"""
+        # Would like to avoid if statement here
+        low_bound = self.bounds[0]
+        high_bound = self.bounds[1]
+        if self.atmosphere.h2o_i:
+            high_bound[self.idx_atmosphere[self.atmosphere.h2o_i]] = (
+                self.atmosphere.h2o_bounds_polynomial(geom.surface_elevation_km) - eps
+            )
+        return (low_bound, high_bound)
+
+    def xa_heuristic(self, x, geom):
+        return geom.xa
+
+    def xa_static(self, x, geom):
         """Calculate the prior mean of the state vector (the concatenation
         of state vectors for the surface, atmosphere, and instrument).
 
@@ -176,9 +233,9 @@ class ForwardModel:
         this is so we can calculate the local prior.
         """
 
-        x_surface = x[self.idx_surface]
+        x_surface, x_atmosphere, x_instrument = self.unpack(x)
         xa_surface = self.surface.xa(x_surface, geom)
-        xa_atmosphere = self.atmosphere.xa()
+        xa_atmosphere = self.atmosphere.xa(x_atmosphere, geom)
         xa_instrument = self.instrument.xa()
         return np.concatenate((xa_surface, xa_atmosphere, xa_instrument), axis=0)
 
@@ -417,6 +474,16 @@ class ForwardModel:
             + ((1 - t_down_dir) * skyview_factor_bg)
         )
 
+        # Re-reflection from nearby surface contributing to at surface signal
+        # Assumptions: no atmospheric attenuation, and reflectance is isotropic over the field of view
+        # NOTE for now, a flat slope is assumed, such that terrain view is,
+        # v_t = (1 + cos_slope) / 2 - skyview = (1 + 1)/2  - skyview = 1 - skyview
+        t = self.terrain_rereflection(rho_dif_dif=rho_dif_dif, geom=geom)
+        L_dir_dir *= t
+        L_dif_dir *= t
+        L_dir_dif *= t
+        L_dif_dif *= t
+
         # Apply equation 11
         # If no rho_dif_dif passed eq_11_term -> 1
         eq_11_term = 1 - (r["sphalb"] * rho_dif_dif)
@@ -508,6 +575,37 @@ class ForwardModel:
         )
 
         return ret
+
+    def calc_rdn_bgrfl_heterogeneous(
+        self, rho_dir_dif, rho_dif_dif, L_dir_dif, L_dif_dif, L_tot, s_alb
+    ):
+        """TOA radiance that is a function of the heterogeneous background reflectance (used in AOE)."""
+        return (
+            (L_dir_dif * rho_dir_dif)
+            + (L_dif_dif * rho_dif_dif)
+            + (L_tot * (s_alb * rho_dif_dif) * rho_dif_dif) / (1 - s_alb * rho_dif_dif)
+        )
+
+    def calc_rdn_bgrfl_homogeneous(
+        self, rho_dir_dif, rho_dif_dif, L_dir_dif, L_dif_dif, L_tot, s_alb
+    ):
+        """TOA radiance that is a function of the background reflectance in homogenous case (used in AOE)."""
+        return np.zeros_like(L_tot)
+
+    def terrain_rereflection_heterogeneous(
+        self, rho_dif_dif, geom, skyview_factor_bg=1.0, cos_slope=1.0, cos_slope_bg=1.0
+    ):
+        """Isotropic scattering from nearby terrain."""
+        v_t = (1 + cos_slope) / 2 - geom.skyview_factor
+        v_t_avg = (1 + cos_slope_bg) / 2 - skyview_factor_bg
+        t = 1 + ((rho_dif_dif * v_t) / (1 - rho_dif_dif * v_t_avg))
+        return t
+
+    def terrain_rereflection_homogeneous(
+        self, rho_dif_dif, geom, skyview_factor_bg=1.0, cos_slope=1.0, cos_slope_bg=1.0
+    ):
+        """Terrain scattering is ignored in the case dir_dir=dir_dif=dif_dir=dif_dif."""
+        return 1.0
 
     def calc_Ls(self, x, geom):
         """Calculate the surface emission."""

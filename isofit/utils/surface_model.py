@@ -143,17 +143,27 @@ def surface_model(
     selection_metric = config.get("selection_metric", "Euclidean")
 
     # load wavelengths file, and change units to nm if needed
+    fwhm = []
     if os.path.splitext(wavelength_file)[-1] == ".hdr":
         ds = envi.open(wavelength_file)
         wl = np.array([float(x) for x in ds.metadata["wavelength"]])
+        fwhm = np.array(ds.metadata.get("fwhm")).astype(float)
     else:
+        # Assumes
+        # [:, 0] - Wavelength
+        # [:, 1] - fwhm
         q = np.loadtxt(wavelength_file)
         if q.shape[1] > 2:
             q = q[:, 1:]
         wl = q[:, 0]
+        if q.shape[1] > 1:
+            fwhm = q[:, 1]
 
     if wl[0] < 100:
         wl = units.micron_to_nm(wl)
+        if len(fwhm):
+            fwhm = units.micron_to_nm(fwhm)
+
     nchan = len(wl)
 
     # build global reference windows
@@ -169,6 +179,7 @@ def surface_model(
         "normalize": normalize,
         "selection_metric": selection_metric,
         "wl": wl,
+        "fwhm": fwhm,
         "means": [],
         "covs": [],
         "attribute_means": [],

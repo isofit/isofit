@@ -98,15 +98,14 @@ def shardWriter(lut, shard, coord, points, simmer, reader):
         lut = create(**lut, mode="a", init=False, buffered=True)
 
     Logger.info(f"Starting shard {shard}")
-    keys = luts["keys"]
 
     for point in points:
         simmer(point)  # Execute the simulation
         data = reader(point)  # Read the simulation results
 
         # Remove non-chunk data
-        chunkless = {k: v for k, v in data.items() if k not in keys.alldim}
-        data = {k: v for k, v in data.items() if k in keys.alldim}
+        chunkless = {k: v for k, v in data.items() if k not in lut.alldim}
+        data = {k: v for k, v in data.items() if k in lut.alldim}
         if data:
             lut.queuePoint(point, data)
 
@@ -133,15 +132,6 @@ class Writer:
     # Optional flag to exit simulations early
     configure_and_exit = False
 
-    def __init__(self, shard_size=None, **_):
-        """
-        Parameters
-        ----------
-        shard_size : str, default=None
-            Limit the total size of a single shard eg. "4gb"
-        """
-        self.shard_size = shard_size
-
     def write(self, **kwargs):
         """
         Initialize a LUT and run simulations
@@ -150,8 +140,8 @@ class Writer:
         ----------
         shard_size : str, default=None
             Limit the total size of a single shard eg. "4gb"
-        min_shards : int, default=self.n_cores
-            Minimum number of shards in order to maximize system resources with
+        target_shards : int, default=self.n_cores
+            Target number of shards in order to maximize system resources with
             parallelization
         """
         for attr in ("lut_path", "lut_names", "lut_grid", "wl", "lut_keys"):
@@ -161,6 +151,7 @@ class Writer:
                 )
 
         self.lut = None
+        kwargs.setdefault("target_shards", self.n_cores)
         if not self.configure_and_exit:
             self.lut = create(
                 path=self.lut_path,
@@ -170,8 +161,7 @@ class Writer:
                 consts=self.consts,
                 onedim=self.onedim,
                 alldim=self.alldim,
-                shard_size=kwargs.get("shard_size"),
-                min_shards=kwargs.get("min_shards", self.n_cores),
+                **kwargs,
             )
 
         self.runSimulations()
@@ -221,12 +211,12 @@ class Writer:
         reader = ray.put(self.readSim)
         kwargs = ray.put(
             {
-                "file": self.lut.file,
+                "path": self.lut.path,
                 "keys": self.lut_keys,
                 "wl": self.lut.wl,
                 "grid": self.lut.grid,
                 "shards": self.lut.shards,
-                "min_shards": self.n_cores,
+                "target_shards": self.n_cores,
             }
         )
 

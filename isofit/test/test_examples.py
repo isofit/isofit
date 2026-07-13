@@ -126,10 +126,13 @@ def test_wavelength_cal(args, kwargs, monkeypatch):
     )
     assert result.exit_code == 0
 
-    shutil.rmtree("output")
-    shutil.rmtree("data")
-    shutil.rmtree("config")
-    shutil.rmtree("input")
+    try:
+        shutil.rmtree("output")
+        shutil.rmtree("data")
+        shutil.rmtree("config")
+        shutil.rmtree("input")
+    except PermissionError:
+        pass
 
 
 @pytest.mark.examples

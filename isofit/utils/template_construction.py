@@ -17,15 +17,15 @@ from scipy.io import loadmat
 from spectral.io import envi
 
 from isofit import __version__
-from isofit.core import units
-from isofit.core.common import (
-    envi_header,
-    expand_path,
-    json_load_ascii,
+from isofit.atmosphere.atmosphere import (
+    modtran_aot_lowerbound_polynomials,
+    modtran_water_upperbound_polynomials,
 )
+from isofit.core import units
+from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
-from isofit.atmosphere.engines.modtran import ModtranRT
+from isofit.luts.reader import inspect_lut_dimensions
 from isofit.utils.surface_model import surface_model
 
 
@@ -55,6 +55,7 @@ class Pathnames:
         skyview_factor=None,
         subs: bool = False,
         classify_multisurface: bool = False,
+        use_background_rfl: bool = False,
         dn_uncertainty_file: str = None,
         eof_path=None,
     ):
@@ -63,6 +64,8 @@ class Pathnames:
             self.fid = split(input_radiance)[-1][:18]
         elif sensor == "av3":
             self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "av4":
+            self.fid = split(input_radiance)[-1][:-8]
         elif sensor == "av5":
             self.fid = split(input_radiance)[-1][:18]
         elif sensor == "avcl":
@@ -128,6 +131,17 @@ class Pathnames:
 
         self.surface_template_path = abspath(join(self.data_directory, "surface.mat"))
         self.surface_working_paths = {}
+
+        if use_background_rfl:
+            self.bgrfl_working_path = abspath(
+                join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl"))
+            )
+            self.atm_presolve = abspath(
+                join(self.output_directory, rdn_fname.replace("_rdn", "_atm_presolve"))
+            )
+        else:
+            self.bgrfl_working_path = None
+            self.atm_presolve = None
 
         if copy_input_files is True:
             self.radiance_working_path = abspath(
@@ -215,6 +229,13 @@ class Pathnames:
         else:
             self.svf_working_path = None
             self.svf_subs_path = None
+
+        if use_background_rfl:
+            self.bgrfl_subs_path = abspath(
+                join(self.input_data_directory, self.fid + "_subs_bgrfl")
+            )
+        else:
+            self.bgrfl_subs_path = None
 
         self.rdn_subs_path = abspath(
             join(self.input_data_directory, self.fid + "_subs_rdn")
@@ -413,9 +434,7 @@ class LUTConfig:
 
         # Set defaults, will override based on settings
         # Units of g / m2
-        modtran_max_water = ModtranRT.modtran_water_upperbound_polynomials()[
-            atmosphere_type
-        ](0)
+        modtran_max_water = modtran_water_upperbound_polynomials()[atmosphere_type](0)
         self.h2o_range = [0.2, modtran_max_water]
 
         # Units of degrees
@@ -443,9 +462,7 @@ class LUTConfig:
         self.aerosol_2_spacing_min = 0
 
         # Units of AOD
-        modtran_min_aerosol = ModtranRT.modtran_aot_lowerbound_polynomials()[
-            atmosphere_type
-        ](0)
+        modtran_min_aerosol = modtran_aot_lowerbound_polynomials()[atmosphere_type](0)
         self.aerosol_0_range = [modtran_min_aerosol, 1]
         self.aerosol_1_range = [modtran_min_aerosol, 1]
         self.aerosol_2_range = [modtran_min_aerosol, 1]
@@ -703,6 +720,8 @@ def build_config(
     presolve: bool = False,
     terrain_style: str = "flat",
     max_slope: float = 20.0,
+    per_pixel_heuristic_prior: bool = False,
+    use_background_rfl: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -735,6 +754,7 @@ def build_config(
         presolve:                             set this up as a presolve configuration
         terrain_style:                        style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
         max_slope:                            maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat
+        use_background_rfl:                   flag to determine which surface derivatives to use in OE
     """
 
     if use_superpixels:
@@ -747,11 +767,13 @@ def build_config(
             state_output_path = paths.h2o_subs_path
             posterior_output_path = None
             rfl_output_path = None
+            bgrfl_input_path = None
 
         else:
             state_output_path = paths.state_subs_path
             posterior_output_path = paths.uncert_subs_path
             rfl_output_path = paths.rfl_subs_path
+            bgrfl_input_path = paths.bgrfl_subs_path
 
     else:
         rdn_input_path = paths.radiance_working_path
@@ -763,22 +785,25 @@ def build_config(
             state_output_path = paths.h2o_working_path
             posterior_output_path = None
             rfl_output_path = None
+            bgrfl_input_path = None
         else:
             state_output_path = paths.state_working_path
             posterior_output_path = paths.uncert_working_path
             rfl_output_path = paths.rfl_working_path
+            bgrfl_input_path = paths.bgrfl_working_path
 
     input_config = make_input_config(
-        rdn_input_path,
-        loc_input_path,
-        obs_input_path,
-        svf_input_path,
-        paths.rdn_factors_path,
+        rdn_input_path=rdn_input_path,
+        loc_input_path=loc_input_path,
+        obs_input_path=obs_input_path,
+        svf_input_path=svf_input_path,
+        rdn_factors_path=paths.rdn_factors_path,
+        bgrfl_path=bgrfl_input_path,
     )
     output_config = make_output_config(
-        state_output_path,
-        posterior_output_path,
-        rfl_output_path,
+        state_output_path=state_output_path,
+        posterior_output_path=posterior_output_path,
+        rfl_output_path=rfl_output_path,
     )
 
     config = {
@@ -819,6 +844,7 @@ def build_config(
                 presolve=presolve,
                 pressure_elevation=pressure_elevation,
                 retrieve_co2=retrieve_co2,
+                per_pixel_heuristic_prior=per_pixel_heuristic_prior,
                 relative_azimuth_lut_grid=relative_azimuth_lut_grid,
                 to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid,
                 to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
@@ -828,10 +854,10 @@ def build_config(
                 surface_class_subs_path=paths.surface_class_subs_path,
                 surface_working_paths=paths.surface_working_paths,
                 surface_category=surface_category,
-                pressure_elevation=pressure_elevation,
                 use_superpixels=use_superpixels,
                 terrain_style=terrain_style,
                 max_slope=max_slope,
+                use_background_rfl=use_background_rfl,
             ),
         },
         "implementation": make_implementation_config(
@@ -839,6 +865,7 @@ def build_config(
             inversion_windows=inversion_windows,
             n_cores=n_cores,
             debug=debug,
+            per_pixel_heuristic_prior=per_pixel_heuristic_prior,
         ),
         "input": input_config,
         "output": output_config,
@@ -866,12 +893,34 @@ def build_config(
     return config
 
 
+def get_aerosol_initial_value(range_min: float, range_max: float) -> float:
+    """Calculate the initial/interpolation value for aerosol parameters.
+    Somewhat arbitrary, but puts the starting value away from the lower bound,
+    but still low (assuming clear sky).
+
+    Args:
+        range_min: minimum value of the aerosol parameter range
+        range_max: maximum value of the aerosol parameter range
+
+    Returns:
+        float: the initial/interpolation value (min + 10% of range)
+    """
+    return (range_max - range_min) / 10.0 + range_min
+
+
 def get_lut_subset(vals):
     """Populate lut_names for the appropriate style of subsetting
 
     Args:
-        vals: the values to use for subsetting
+        vals: the values to use for subsetting (list, array, or dict)
+
+    Returns:
+        dict with either {"interp": value} for single values or
+        {"gte": min, "lte": max} for ranges, or None
     """
+    if isinstance(vals, dict):
+        # Already formatted, return as-is
+        return vals
 
     if vals is not None and len(vals) == 1:
         return {"interp": vals[0]}
@@ -1033,12 +1082,13 @@ def load_climatology(
         )
 
         if aerosol_lut is not None:
+            init_value = get_aerosol_initial_value(alr[0], alr[1])
             aerosol_state_vector["AERFRAC_{}".format(_a)] = {
                 "bounds": [float(alr[0]), float(alr[1])],
                 "scale": 1,
-                "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
-                "prior_sigma": 10.0,
-                "prior_mean": float((alr[1] - alr[0]) / 10.0 + alr[0]),
+                "init": float(init_value),
+                "prior_sigma": 0.1,
+                "prior_mean": float(init_value),
             }
 
             aerosol_lut_grid["AERFRAC_{}".format(_a)] = aerosol_lut.tolist()
@@ -1053,12 +1103,13 @@ def load_climatology(
     if aot_550_lut is not None:
         aerosol_lut_grid["AOT550"] = aot_550_lut.tolist()
         alr = [aerosol_lut_grid["AOT550"][0], aerosol_lut_grid["AOT550"][-1]]
+        init_value = get_aerosol_initial_value(alr[0], alr[1])
         aerosol_state_vector["AOT550"] = {
             "bounds": [float(alr[0]), float(alr[1])],
             "scale": 1,
-            "init": float((alr[1] - alr[0]) / 10.0 + alr[0]),
-            "prior_sigma": 10.0,
-            "prior_mean": float((alr[1] - alr[0]) / 10.0 + alr[0]),
+            "init": float(init_value),
+            "prior_sigma": 0.1,
+            "prior_mean": float(init_value),
         }
 
     logging.info("Loading Climatology")
@@ -1312,6 +1363,12 @@ def sensor_name_to_dt(sensor: str, fid: str):
         # parse flightline ID (AVIRIS-3 assumptions)
         dt = datetime.strptime(fid[3:], "%Y%m%dt%H%M%S")
         inversion_window_update = [[380.0, 1350.0], [1435, 1800.0], [1970.0, 2500.0]]
+    elif sensor == "av4":
+        # parse flightline ID (AVIRIS-4 assumptions)
+        date = fid[5:11]
+        time = fid[-11:-5]
+        dt = str(date) + str(time)
+        dt = datetime.strptime(dt, "%y%m%d%H%M%S")
     elif sensor == "av5":
         # parse flightline ID (AVIRIS-5 assumptions)
         dt = datetime.strptime(fid[3:], "%Y%m%dt%H%M%S")
@@ -1448,6 +1505,7 @@ def make_atmosphere_config(
     presolve: bool = False,
     pressure_elevation: bool = False,
     retrieve_co2: bool = False,
+    per_pixel_heuristic_prior: bool = False,
     relative_azimuth_lut_grid: np.array = None,
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
@@ -1466,7 +1524,7 @@ def make_atmosphere_config(
 
     lut_dir = lut_directory
     lut_path = (
-        join(lut_dir, "lut.nc")
+        join(lut_dir, "lut.zarr")
         if prebuilt_lut_path is None
         else abspath(prebuilt_lut_path)
     )
@@ -1530,33 +1588,178 @@ def make_atmosphere_config(
         else:
             lut_grid[gn] = np.array(gc).tolist()
 
+    # Remove single-value/None dimensions BEFORE reconciliation so
+    # to prevent entry in the heuristic (IE, we need to interpolate)
+    for tr in np.unique(to_remove):
+        lut_grid.pop(tr)
+
     if emulator_base is not None and os.path.splitext(emulator_base)[1] == ".jld2":
         from isofit.atmosphere.engines.kernel_flows import bounds_check
 
         # Should only modify H2OSTR and surface_elevation_km
         bounds_check(lut_grid, emulator_base, modify=True)
 
-    ncds = None
+    lut_names = {}
     if prebuilt_lut_path is not None:
-        ncds = nc.Dataset(prebuilt_lut_path, "r")
-        for gn, gc in lut_grid.items():
-            if gn not in ncds.variables:
-                logging.warning(
-                    f"Key {gn} not found in prebuilt LUT, removing it from LUT."
-                )
-                to_remove.append(gn)
-            else:
-                lut_grid[gn] = get_lut_subset(gc)
+        prebuilt_dimensions = inspect_lut_dimensions(prebuilt_lut_path)
 
-    for tr in np.unique(to_remove):
-        lut_grid.pop(tr)
+        # Read MODTRAN template to get scene-wise mean values for interpolation
+        template_means = {}
+        if modtran_template_path is not None and os.path.exists(modtran_template_path):
+            with open(modtran_template_path, "r") as f:
+                template = json.load(f)
+                if "cases" in template:
+                    template = template["cases"][0]
+                template = template["MODTRAN"][0]["MODTRANINPUT"]
+
+                # Extract geometry parameters from first case
+                geom = template.get("GEOMETRY", {})
+                surf = template.get("SURFACE", {})
+                atm = template.get("ATMOSPHERE", {})
+
+                # Map MODTRAN parameters to isofit dimension names
+                template_means["solar_zenith"] = geom.get("PARM2")
+                template_means["observer_zenith"] = (
+                    180 - geom.get("OBSZEN") if geom.get("OBSZEN") is not None else None
+                )  # Convert from MODTRAN convention
+                template_means["relative_azimuth"] = geom.get("PARM1")
+                template_means["surface_elevation_km"] = surf.get("GNDALT")
+                template_means["CO2"] = atm.get("CO2MX")
+
+                logging.debug(f"Extracted scene means from template: {template_means}")
+
+        # Check for variables in heuristic but not in LUT (fatal error)
+        for dim_name, dim_val in lut_grid.items():
+            if dim_val is not None and len(dim_val) > 1:
+                if dim_name not in prebuilt_dimensions:
+                    raise ValueError(
+                        f"Variable '{dim_name}' is required by the template heuristic but is not "
+                        f"present in the prebuilt LUT at {prebuilt_lut_path}. "
+                        f"Available dimensions in LUT: {list(prebuilt_dimensions.keys())}"
+                    )
+
+        # Process each dimension in the prebuilt LUT
+        for dim_name, lut_grid_points in prebuilt_dimensions.items():
+            if dim_name == "wl":
+                continue
+
+            vmin, vmax = lut_grid_points.min(), lut_grid_points.max()
+
+            # Dimension in LUT but not in heuristic === interpolate
+            if dim_name not in lut_grid or lut_grid[dim_name] is None:
+                # Use scene mean from template if available, otherwise fall back to LUT mean or aerosol formula
+                if dim_name in template_means and template_means[dim_name] is not None:
+                    interp_value = template_means[dim_name]
+                    source = "scene mean from template"
+                elif dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
+                    interp_value = get_aerosol_initial_value(vmin, vmax)
+                    source = "aerosol initial value formula"
+                else:
+                    interp_value = (vmin + vmax) / 2.0
+                    source = "LUT midpoint"
+
+                logging.info(
+                    f"Variable '{dim_name}' is present in prebuilt LUT but not "
+                    f"in heuristic. Will interpolate to {interp_value:.4f} ({source})"
+                )
+                lut_names[dim_name] = {"interp": interp_value}
+
+            # Dimension in both LUT and heuristic === subset
+            else:
+                heuristic_val = lut_grid[dim_name]
+
+                # Skip if already formatted as a dict
+                if isinstance(heuristic_val, dict):
+                    lut_names[dim_name] = (
+                        heuristic_val.copy()
+                    )  # Copy to avoid shared references
+                    continue
+
+                # Get heuristic range
+                if (
+                    isinstance(heuristic_val, (list, np.ndarray))
+                    and len(heuristic_val) > 1
+                ):
+                    heur_min, heur_max = min(heuristic_val), max(heuristic_val)
+
+                    # Constrain heuristic to LUT bounds
+                    constrained_min = max(heur_min, vmin)
+                    constrained_max = min(heur_max, vmax)
+
+                    # Find LUT grid points that encompass the constrained range
+                    lower_candidates = lut_grid_points[
+                        lut_grid_points <= constrained_min
+                    ]
+                    lower_bound = (
+                        lower_candidates.max() if len(lower_candidates) > 0 else vmin
+                    )
+
+                    upper_candidates = lut_grid_points[
+                        lut_grid_points >= constrained_max
+                    ]
+                    upper_bound = (
+                        upper_candidates.min() if len(upper_candidates) > 0 else vmax
+                    )
+
+                    # Get all LUT points in the encompassing range
+                    subset_points = lut_grid_points[
+                        (lut_grid_points >= lower_bound)
+                        & (lut_grid_points <= upper_bound)
+                    ]
+
+                    # We hit this for AOD lower bound all the time,
+                    # so leaving as a warning for now
+                    if heur_min < vmin or heur_max > vmax:
+                        logging.warning(
+                            f"Variable '{dim_name}' heuristic range [{heur_min:.4f}, {heur_max:.4f}] "
+                            f"constrained to LUT range [{vmin:.4f}, {vmax:.4f}]. "
+                            f"Reader will use LUT points that encompass [{constrained_min:.4f}, {constrained_max:.4f}]"
+                        )
+
+                    # Store all encompassing LUT points in lut_grid
+                    lut_grid[dim_name] = subset_points.tolist()
+                    # Set gte and lte to the actual LUT grid boundaries (first and last point)
+                    logging.info(
+                        f"  {dim_name}: Setting lut_grid to {len(subset_points)} LUT points: "
+                        f"[{subset_points[0]:.4f}, ..., {subset_points[-1]:.4f}]"
+                    )
+
+                    # Convert to Python native floats to avoid numpy reference issues
+                    gte_val = float(subset_points[0])
+                    lte_val = float(subset_points[-1])
+
+                    lut_names[dim_name] = {
+                        "gte": gte_val,
+                        "lte": lte_val,
+                        "encompass": True,
+                    }
+                else:
+                    # Single value or no valid range - should interpolate
+                    logging.warning(
+                        f"Dimension '{dim_name}' in both LUT and heuristic but heuristic has "
+                        f"invalid value: {heuristic_val}. Treating as interpolation."
+                    )
+                    if dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
+                        interp_value = get_aerosol_initial_value(vmin, vmax)
+                    else:
+                        interp_value = (vmin + vmax) / 2.0
+                    lut_names[dim_name] = {"interp": interp_value}
 
     atmosphere_config["lut_grid"].update(lut_grid)
-    atmosphere_config["engine"]["lut_names"] = {key: None for key in lut_grid.keys()}
+
+    # Set up lut_names for subsetting
+    if prebuilt_lut_path is not None:
+        # lut_names was already built during reconciliation above
+        atmosphere_config["engine"]["lut_names"] = lut_names
+    else:
+        # For new LUTs being built, lut_names should be None (use all points)
+        atmosphere_config["engine"]["lut_names"] = {
+            key: None for key in lut_grid.keys()
+        }
 
     # Now do statevector
     statekeys = ["H2OSTR"]
-    statesigmas = [100.0]
+    statesigmas = [1.0 if per_pixel_heuristic_prior else 100.0]
     statescale = [1]
     if pressure_elevation and presolve is False:
         statekeys.append("surface_elevation_km")
@@ -1598,10 +1801,11 @@ def make_surface_config(
     surface_class_subs_path: str = None,
     surface_working_paths: dict = None,
     surface_category: str = "multicomponent_surface",
-    pressure_elevation: bool = False,
     use_superpixels: bool = False,
     terrain_style: str = "flat",
     max_slope: float = 20.0,
+    surface_refractive_index_path: str = None,
+    use_background_rfl=False,
 ):
     # Initialize config dict
     surface_config_dict = {
@@ -1642,6 +1846,7 @@ def make_surface_config(
                 "surface_category": surface_category,
                 "terrain_style": terrain_style,
                 "max_slope": max_slope,
+                "use_background_rfl": use_background_rfl,
             }
 
     # Single surface run
@@ -1650,6 +1855,7 @@ def make_surface_config(
         surface_config_dict["surface_category"] = surface_category
         surface_config_dict["terrain_style"] = terrain_style
         surface_config_dict["max_slope"] = max_slope
+        surface_config_dict["use_background_rfl"] = use_background_rfl
 
     # Accumulate statevector
     for category, path in surface_working_paths.items():
@@ -1667,6 +1873,17 @@ def make_surface_config(
                     "prior_sigma": surface_mat["prior_sigma"][0][i],
                     "scale": surface_mat["scale"][0][i],
                 }
+
+    # Add refractive index path if specified
+    if surface_refractive_index_path:
+        surface_config_dict["refractive_index_path"] = surface_refractive_index_path
+
+    elif (surface_category == "glint_model_surface") or (
+        "glint_model_surface" in list(surface_config_dict.get("Surfaces", {}).keys())
+    ):
+        surface_config_dict["refractive_index_path"] = str(
+            env.path("data", "h2o_real_refractive_index.txt")
+        )
 
     return surface_config_dict
 
@@ -1728,6 +1945,7 @@ def make_implementation_config(
     inversion_windows: list = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     n_cores: int = -1,
     debug: bool = False,
+    per_pixel_heuristic_prior: bool = False,
 ):
 
     return {
@@ -1735,6 +1953,7 @@ def make_implementation_config(
         "ray_address": ray_ip_head,
         "inversion": {"windows": inversion_windows},
         "n_cores": n_cores,
+        "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
         "debug_mode": debug,
         "isofit_version": __version__,
     }
@@ -1746,6 +1965,7 @@ def make_input_config(
     obs_input_path: str,
     svf_input_path: str = None,
     rdn_factors_path: str = None,
+    bgrfl_path: str = None,
 ):
     input_config = {}
     input_config["measured_radiance_file"] = rdn_input_path
@@ -1755,6 +1975,8 @@ def make_input_config(
         input_config["skyview_factor_file"] = svf_input_path
     if rdn_factors_path:
         input_config["radiometry_correction_file"] = rdn_factors_path
+    if bgrfl_path:
+        input_config["background_reflectance_file"] = bgrfl_path
 
     return input_config
 

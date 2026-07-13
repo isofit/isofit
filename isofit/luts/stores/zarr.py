@@ -8,8 +8,10 @@ import atexit
 import logging
 import shutil
 from collections.abc import Iterable
+from pathlib import Path
 
 import numpy as np
+import ray
 import xarray as xr
 import zarr
 
@@ -17,6 +19,19 @@ from isofit.core import common
 from isofit.luts.stores import Create
 
 Logger = logging.getLogger(__name__)
+
+
+def is_ray_task():
+    """
+    Utility to check if this environment is a ray task
+    """
+    if not ray.is_initialized():
+        return False
+    try:
+        context = ray.get_runtime_context()
+        return not context.get_task_id()
+    except Exception:
+        return False
 
 
 def cleanup(path):
@@ -54,7 +69,7 @@ def shard_to_coord(group, shards, shape):
     return tuple(slice(s, e) for s, e in zip(start, end))
 
 
-def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
+def calc_shards(grid, wl, chunk, storage="8gb", target_shards=None, scale=1):
     """
     Determine an optimal Zarr sharding strategy for a LUT and group points by shard.
 
@@ -77,14 +92,14 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
         Chunk shape used for Zarr storage. Must align with the full LUT shape
         (wl + grid dimensions).
     storage : str or float, default="8gb"
-        Target storage size per shard. Determines how many chunks should be grouped
-        into a shard.
-    min_shards : int, optional
-        Minimum number of shards to produce. Candidate shardings that
-        result in fewer shards are discarded.
+        Storage size limit per shard. Determines how many chunks should be grouped
+        into a shard while respecting the limit.
+    target_shards : int, optional
+        Target number of shards to produce. The closest sharding strategy to this will
+        be selected.
     scale : int, default=1
         Multiplier applied to the estimated chunk size. Useful when multiple arrays
-        are written per chunk, to better approximate the actual memory when in buffered
+        are written per chunk to better approximate the actual memory when in buffered
         mode.
 
     Returns
@@ -127,16 +142,32 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
     # Ensure shards don't split chunks
     shards = shards[np.sum(shards % chunk, axis=1) == 0]
 
-    # 1 shard == 1 file, only consider shardings that reach the minimum number of files
-    if min_shards:
-        files = np.prod((shape / shards).astype(int), axis=1)
-        shards = shards[files >= min_shards]
-
     # Chunks per shard
     cpf = np.prod(shards / chunk, axis=1).astype(int)
 
-    # Return the strategy that is closest to the target number of chunks per shard
-    idx = np.abs(cpf - target).argmin()
+    # Storage used by each shard
+    sizes = cpf * space
+
+    # Limit the shard options to the storage limit
+    viable = sizes <= storage
+    if not viable.any():
+        raise ValueError(
+            f"No sharding strategy satisfies the storage limit {storage / 2**30:.2f} GB"
+        )
+
+    shards = shards[viable]
+    cpf = cpf[viable]
+
+    # Number of shard files produced, 1 shard is 1 file
+    files = np.prod((shape / shards).astype(int), axis=1)
+
+    # Choose the strategy closest to the requested number of shards
+    if target_shards is not None:
+        idx = np.abs(files - target_shards).argmin()
+    else:
+        # Fall back to the largest shard (fewest files)
+        idx = (cpf * space)[viable].argmax()
+
     best = shards[idx]
 
     # Split the points into shard groups
@@ -155,7 +186,9 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
 
     # Useful information
     Logger.info(f"Number of points: {np.prod(shape):,}")
-    Logger.info(f"Target chunks per file: {target} ({target * space / 2**30:.2f}gb)")
+    Logger.info(
+        f"Target chunks per file: {target} ({target * space / 2**30:.2f}gb) (scale: {scale})"
+    )
     Logger.info(f"Shapes:")
     Logger.info(f"  dimensions: {shape}")
     Logger.info(f"    chunking: {np.array(chunk)}")
@@ -168,14 +201,16 @@ def calc_shards(grid, wl, chunk, storage="8gb", min_shards=None, scale=1):
     return best, groups, coords
 
 
-class CreateZARR(Create):
+class CreateZarr(Create):
     def __init__(
         self,
-        file,
+        path,
         *args,
+        mode="w",
+        shards=None,
         buffered=False,
         shard_size=None,
-        min_shards=1,
+        target_shards=None,
         **kwargs,
     ):
         """
@@ -183,11 +218,21 @@ class CreateZARR(Create):
 
         Parameters
         ----------
-        shards :
-        file : str
-            Filepath for the LUT.
+        path : str
+            Path for the LUT.
         mode : str, default="w"
             File mode to open with
+        shards : np.array, optional, default=None
+            Sharding strategy to use
+        buffered : bool, optional, default=False
+            Create intermediate buffer arrays to store data before flushing
+        shard_size : str | float, optional, default=None
+            Target size for each shard. May be either a string like "4gb" or a float
+            representing number of bytes. If this parameter is given, the shards array
+            will be calculated
+        target_shards : int, optional, default=None
+            Target number of shards to create. Useful for ensuring parallelization
+            fully utilizes the available machine
         wl : np.ndarray
             The wavelength array.
         grid : dict
@@ -203,23 +248,25 @@ class CreateZARR(Create):
         zeros : List[str], optional, default=[]
             List of zero values. Appends to the current Create.zeros list.
         """
-        self.store = zarr.storage.LocalStore(file)
-        self.z = zarr.open_group(store=self.store, mode=self.mode, zarr_format=3)
+        self.store = zarr.storage.LocalStore(path)
+        self.z = zarr.open_group(store=self.store, mode=mode, zarr_format=3)
 
         # TODO: Integrate into config
-        self.shards = None
+        self.shards = shards
         self.shard_size = shard_size
-        self.min_shards = min_shards
+        self.target_shards = target_shards
 
-        super().__init__(file, *args, **kwargs)
+        super().__init__(path, *args, mode=mode, **kwargs)
 
         self.buffer = {}
         if buffered:
-            self.reset_buffer(buffered)
+            self.reset_buffer()
 
         self.data = self.buffer or self.z
 
-        atexit.register(cleanup, self.path)
+        # TODO: Temp disabled, causing crashes
+        # if not is_ray_task():
+        #     atexit.register(cleanup, self.path)
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -235,7 +282,7 @@ class CreateZARR(Create):
         Any
             The value of the item retrieved from the Zarr store
         """
-        return self.zarr[key]
+        return self.data[key]
 
     def __setitem__(self, key: str, value: Any) -> None:
         """
@@ -271,12 +318,14 @@ class CreateZARR(Create):
                 self.wl,
                 self.chunks,
                 storage=self.shard_size,
-                min_shards=self.min_shards,
+                target_shards=self.target_shards,
                 scale=len(self.alldim),
             )
-            self.setAttr("shards", self.shards.tolist())
-            self.setAttr("shard order", list(self.sizes))
 
+            self.attrs["shards"] = self.shards.tolist()
+            self.attrs["shard order"] = list(self.sizes)
+
+        self.attrs["lut_grid"] = {k: v.tolist() for k, v in self.grid.items()}
         self.z.attrs.update(self.attrs)
 
         # Coordinates
@@ -316,14 +365,19 @@ class CreateZARR(Create):
         # Multi dimensional arrays
         dims += list(self.grid)
         shape = list(self.sizes.values())
+        chunks = tuple(self.chunks)
+        shards = None
+        if self.shards is not None:
+            shards = tuple(self.shards.tolist())
+
         for key, vals in self.alldim.items():
             if isinstance(vals, Iterable):
                 array = self.z.create_array(
                     key=key,
                     data=vals,
                     fill_value=None,
-                    chunks=tuple(self.chunks),
-                    shards=tuple(self.shards),
+                    chunks=chunks,
+                    shards=shards,
                     dimension_names=dims,
                 )
             else:
@@ -332,8 +386,8 @@ class CreateZARR(Create):
                     shape=shape,
                     dtype="float64",
                     fill_value=vals,
-                    chunks=self.chunks,
-                    shards=tuple(self.shards),
+                    chunks=chunks,
+                    shards=shards,
                     dimension_names=dims,
                 )
 
@@ -381,7 +435,7 @@ class CreateZARR(Create):
         for key, vals in self.buffer.items():
             self.z[key][slices] = vals
 
-    def reset_buffer(self, buffered):
+    def reset_buffer(self):
         """
         Resets the buffered data to ensure
         """

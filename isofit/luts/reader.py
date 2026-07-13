@@ -7,16 +7,99 @@ from __future__ import annotations
 import io
 import logging
 from pathlib import Path
-from types import SimpleNamespace
+from types import MappingProxyType, SimpleNamespace
 
 import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 
 from isofit import __version__
-from isofit.core import common
+from isofit.core import common, units
 
 Logger = logging.getLogger(__name__)
+
+
+def inspect_lut_dimensions(lut_path: str) -> dict[str, np.ndarray]:
+    """Inspect a prebuilt LUT file to determine available dimensions and their grid points.
+
+    Supports both NetCDF (.nc) and Zarr formats.
+
+    Args:
+        lut_path: Path to the prebuilt LUT file (NetCDF or Zarr store)
+
+    Returns:
+        dict: Mapping dimension names to numpy arrays of grid points
+
+    Examples:
+        >>> dims = inspect_lut_dimensions("lut.nc")
+        >>> dims.keys()
+        dict_keys(['H2OSTR', 'AOT550', 'observer_zenith', 'wl'])
+        >>> dims['H2OSTR']
+        array([0.5, 1.0, 1.5, 2.0, 2.5])
+    """
+    lut_path = Path(lut_path)
+
+    # Detect format based on file extension or directory structure
+    if lut_path.suffix == ".zarr" or (
+        lut_path.is_dir() and not lut_path.suffix == ".nc"
+    ):
+        return _inspect_zarr_dimensions(lut_path)
+    elif lut_path.suffix == ".nc" or lut_path.is_file():
+        return _inspect_netcdf_dimensions(lut_path)
+    else:
+        raise ValueError(
+            f"Cannot determine LUT format for: {lut_path}. "
+            f"Expected .nc file (NetCDF) or .zarr directory (Zarr)."
+        )
+
+
+def _inspect_netcdf_dimensions(lut_path: Path) -> dict[str, np.ndarray]:
+    """Inspect NetCDF LUT dimensions.
+
+    Args:
+        lut_path: Path to the NetCDF LUT file
+
+    Returns:
+        dict: Mapping dimension names to numpy arrays of grid points
+    """
+    lut_dimensions = {}
+
+    with Dataset(lut_path, "r") as ncds:
+        # Iterate through all variables that could be LUT dimensions
+        # These are typically 1-D coordinate variables
+        for var_name in ncds.variables:
+            var = ncds.variables[var_name]
+
+            # Check if this is a coordinate/dimension variable (1-D)
+            if len(var.dimensions) == 1 and var.dimensions[0] == var_name:
+                # This is a dimension variable - store the actual grid points
+                data = var[:]
+                if len(data) > 0:
+                    lut_dimensions[var_name] = np.array(data)
+
+    return lut_dimensions
+
+
+def _inspect_zarr_dimensions(lut_path: Path) -> dict[str, np.ndarray]:
+    """Inspect Zarr LUT dimensions using xarray.
+
+    Args:
+        lut_path: Path to the Zarr LUT store
+
+    Returns:
+        dict: Mapping dimension names to numpy arrays of grid points
+    """
+    lut_dimensions = {}
+
+    # Open zarr store with xarray (don't load data, just inspect)
+    with xr.open_dataset(lut_path, engine="zarr", chunks=None) as ds:
+        # Extract all coordinate dimensions
+        for coord_name in ds.coords:
+            coord_data = ds[coord_name].values
+            if len(coord_data) > 0:
+                lut_dimensions[coord_name] = np.array(coord_data)
+
+    return lut_dimensions
 
 
 def findSlice(dim, val):
@@ -449,11 +532,36 @@ def load(
     >>> load(path, subset).unstack().dims
     Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
     """
+    path = Path(path)
+
+    # Windows needs to define the engine as the xarray auto-discover breaks
+    engine = None
+    if Path(path).is_dir():
+        engine = "zarr"
+
     xropen = xr.open_dataset
     if mf:
         xropen = xr.mfopen_dataset
 
-    ds = xropen(path, chunks=chunks, **kwargs)
+    # Convert dicts of {dim: None, ...} to None
+    if subset and not any(subset.values()):
+        subset = None
+
+    # Special case that doesn't require defining the entire grid subsetting strategy
+    if load:
+        if not subset:
+            Logger.debug(
+                "With no subset defined and load enabled, disabling default chunking for performance"
+            )
+            chunks = None
+
+        elif path.is_file() and path.stat().st_size < units.byte_string_to_float("4gb"):
+            Logger.debug(
+                "LUT store detected less than 4gb and load enabled, disabling default chunking for performance"
+            )
+            chunks = None
+
+    ds = xropen(path, chunks=chunks, engine=engine, **kwargs)
 
     status = ds.attrs.get("ISOFIT status", "<not set>")
     if status != "success":
@@ -615,6 +723,12 @@ class Reader:
 
         # Run the interpolators
         value = {key: lut(point) for key, lut in self.interpolators.items()}
+
+        # Convert both the dict and the values to read-only
+        value = MappingProxyType(value)
+        for v in value.values():
+            if isinstance(v, np.ndarray):
+                v.flags.writeable = False
 
         # Update the cache
         self.cached.point = point

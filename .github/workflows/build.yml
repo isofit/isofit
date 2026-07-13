@@ -22,9 +22,10 @@ on:
   pull_request:
     branches-ignore: ["main", "gh-pages"]
     paths: ["isofit/**", "recipe/*.yml", "pyproject.toml", ".github/**"]
+  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.event.pull_request.head.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -81,9 +82,6 @@ jobs:
           KEY="${{ contains(github.event.pull_request.body || '', '[rebuild-cache]') && format('extras-{0}', github.run_id) || 'extras' }}"
           echo "cache_key=$KEY" >> $GITHUB_OUTPUT
           echo "Cache Key = $KEY"
-
-      - name: Print concurrency group
-        run: echo '${{ github.event.pull_request.head.ref }}'
 
       - name: Cache Extras
         id: cache-extras
@@ -160,6 +158,7 @@ jobs:
 
   # Downstream [on: workflow_run] don't have access to PR num and url, so upload artifact to pass it along
   metadata:
+    if: ${{ github.event.pull_request }}
     runs-on: ubuntu-latest
     steps:
       - name: Save PR Metadata
@@ -176,6 +175,7 @@ jobs:
 
   # Test pip installation
   pip:
+    if: ${{ github.event.pull_request }}
     needs: cache
     uses: ./.github/workflows/test_pip.yml
     with:
@@ -183,6 +183,7 @@ jobs:
 
   # Test $PYTHONPATH installation
   path:
+    if: ${{ github.event.pull_request }}
     needs: cache
     uses: ./.github/workflows/test_path.yml
     with:

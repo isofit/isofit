@@ -35,7 +35,7 @@ import yaml
 from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.atmosphere.engines import SixSRT
 from isofit.core import units
-from isofit.core.common import calculate_resample_matrix, resample_spectrum
+from isofit.core.common import Track, calculate_resample_matrix, resample_spectrum
 from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__name__)
@@ -159,9 +159,12 @@ class SRTMnetModel(torch.nn.Module):
             return out
         else:
             if convert_to_rdn:
+                coszen = resample_dict["emulator_coszen"]
+                if np.ndim(coszen) == 1:
+                    coszen = coszen[:, np.newaxis]
                 out_r = units.transm_to_rdn(
                     out,
-                    resample_dict["emulator_coszen"],
+                    coszen,
                     resample_dict["emulator_sol_irr"],
                 )
             else:
@@ -175,6 +178,27 @@ class SRTMnetModel(torch.nn.Module):
                 H=resample_dict["emulator_H"],
             )
             return out_r
+
+    def resample_dict_batch(self, resample_dict: dict, batch_slice: slice) -> dict:
+        """Handle batching for the resample dict.  Right now, only coszen
+        might need to be batched.
+
+        Args:
+            resample_dict (dict): dictionary containing resampling parameters
+            batch_slice (slice): slice object for the current batch
+        Returns:
+            dict: resample_dict with batch_slice applied to emulator_coszen
+        """
+        if resample_dict is None:
+            return None
+
+        batch_resample_dict = dict(resample_dict)
+        coszen = batch_resample_dict.get("emulator_coszen")
+
+        if np.ndim(coszen) > 0:
+            batch_resample_dict["emulator_coszen"] = coszen[batch_slice]
+
+        return batch_resample_dict
 
     @torch.inference_mode()
     def predict(
@@ -231,8 +255,9 @@ class SRTMnetModel(torch.nn.Module):
 
         for i in range(0, n, batch_size):
             product = None
+            batch_slice = slice(i, min(i + batch_size, n))
+            batch_resample_dict = self.resample_dict_batch(resample_dict, batch_slice)
             for _key, key in enumerate(self.weights.keys()):
-                batch_slice = slice(i, min(i + batch_size, n))
                 batch = x_tensor[_key][batch_slice].to(self.device)
 
                 out = self(batch, key)
@@ -249,7 +274,7 @@ class SRTMnetModel(torch.nn.Module):
                         self.batch_resample(
                             out,
                             convert_to_rdn=(key == "rhoatm"),
-                            resample_dict=resample_dict,
+                            resample_dict=batch_resample_dict,
                         )
                     )
 
@@ -266,23 +291,26 @@ class SRTMnetModel(torch.nn.Module):
                             self.batch_resample(
                                 out[:, _ckey * nc : (_ckey + 1) * nc],
                                 convert_to_rdn=False,
-                                resample_dict=resample_dict,
+                                resample_dict=batch_resample_dict,
                             )
                         )
 
             if is_paired:  # only happens with 6c
-                if resample_dict is not None:
+                if batch_resample_dict is not None:
+                    coszen = batch_resample_dict["emulator_coszen"]
+                    if np.ndim(coszen) == 1:
+                        coszen = coszen[:, np.newaxis]
                     product = units.transm_to_rdn(
                         product,
-                        resample_dict["emulator_coszen"],
-                        resample_dict["emulator_sol_irr"],
+                        coszen,
+                        batch_resample_dict["emulator_sol_irr"],
                     )
                     product = resample_spectrum(
                         product,
-                        resample_dict["emu_wl"],
-                        resample_dict["wl"],
-                        resample_dict["fwhm"],
-                        H=resample_dict["emulator_H"],
+                        batch_resample_dict["emu_wl"],
+                        batch_resample_dict["wl"],
+                        batch_resample_dict["fwhm"],
+                        H=batch_resample_dict["emulator_H"],
                     )
                 outdict[self.product_name].append(product)
 
@@ -331,7 +359,15 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         self.shard_size = f"{int(mem.total / 2**30 / 2.5)}gb"
         Logger.debug(f"Attempting to use shard size: {self.shard_size}")
 
-        super().__init__(*args, **kwargs)
+        # Because sRTMnet doesn't use makeSim and instead processes shards
+        # sequentially in preSim, have to enable the shard buffer here
+        super().__init__(
+            *args,
+            **kwargs,
+            shard_size=self.shard_size,
+            buffered=True,
+            target_shards=None,
+        )
 
     def preSim(self):
         """
@@ -397,8 +433,6 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             config,
             wl=self.sim_wl,
             fwhm=self.sim_fwhm,
-            # lut_path=self.sim_lut_path,
-            # lut_grid=self.lut_grid,
             n_cores=self.n_cores,
             modtran_emulation=True,
             build_interpolators=False,
@@ -518,7 +552,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         resample = sim.interp({"wl": self.aux["emulator_wavelengths"]})
 
         self.emulator_sol_irr = self.sim_sol_irr
-        self.emulator_coszen = self.sim_coszen
+        self.emulator_coszen = self._get_emulator_coszen(sim)
         self.emulator_H = calculate_resample_matrix(self.emu_wl, self.wl, self.fwhm)
 
         # Pack into dictionary for passing convenience to torch
@@ -648,6 +682,37 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             self.rt_mode = "rdn"
             self.lut.setAttr("RT_mode", "rdn")
             self.lut.flush()
+
+    def _get_emulator_coszen(self, sim):
+        """Return the cosine of solar zenith aligned to the stacked point order.
+        When solar_zenith is in the LUT, for radiance conversion we need to pull
+        each points csza, not a universal value. If sza isn't in the lut, just
+        use the value from the sim.
+
+        Args:
+            sim : xarray.Dataset LUT of only the aux_rt_quantities
+        Returns:
+            np.ndarray: cosine of solar zenith aligned to the stacked point order
+
+        """
+        if "solar_zenith" not in self.lut_names:
+            return self.sim_coszen
+
+        solar_zenith_index = self.lut_names.index("solar_zenith")
+
+        if "point" in sim.coords and "solar_zenith" in sim.coords:
+            solar_zenith = np.asarray(sim["solar_zenith"].values)
+            if solar_zenith.ndim == 1 and solar_zenith.shape[0] == sim.sizes["point"]:
+                return np.cos(np.deg2rad(solar_zenith))
+
+        if hasattr(self, "points"):
+            solar_zenith = np.asarray(self.points[:, solar_zenith_index], dtype=float)
+            if solar_zenith.shape[0] == sim.sizes["point"]:
+                return np.cos(np.deg2rad(solar_zenith))
+
+        raise ValueError(
+            "Unable to align solar_zenith LUT coordinates while obtaining coszen array."
+        )
 
     def makeSim(self, point):
         """
