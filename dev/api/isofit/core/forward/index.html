@@ -2229,6 +2229,50 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.calc_rdn_bgrfl_heterogeneous" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_rdn_bgrfl_heterogeneous
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.calc_rdn_bgrfl_homogeneous" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_rdn_bgrfl_homogeneous
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.terrain_rereflection_heterogeneous" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        terrain_rereflection_heterogeneous
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.terrain_rereflection_homogeneous" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        terrain_rereflection_homogeneous
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.core.forward.ForwardModel.calc_Ls" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4450,6 +4494,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../utils/algebraic_line/" class="md-nav__link">
         
   
@@ -5190,6 +5262,50 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.calc_rdn_bgrfl_heterogeneous" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_rdn_bgrfl_heterogeneous
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.calc_rdn_bgrfl_homogeneous" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_rdn_bgrfl_homogeneous
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.terrain_rereflection_heterogeneous" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        terrain_rereflection_heterogeneous
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.terrain_rereflection_homogeneous" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        terrain_rereflection_homogeneous
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.core.forward.ForwardModel.calc_Ls" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5621,6 +5737,26 @@ Physics-based forward model to calculate at-sensor radiance.
 Includes topography, background reflectance, and glint.</p>
 </li>
 <li>
+<p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.calc_rdn_bgrfl_heterogeneous" title="isofit.core.forward.ForwardModel.calc_rdn_bgrfl_heterogeneous">calc_rdn_bgrfl_heterogeneous</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+TOA radiance that is a function of the heterogeneous background reflectance (used in AOE).</p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.calc_rdn_bgrfl_homogeneous" title="isofit.core.forward.ForwardModel.calc_rdn_bgrfl_homogeneous">calc_rdn_bgrfl_homogeneous</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+TOA radiance that is a function of the background reflectance in homogenous case (used in AOE).</p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.terrain_rereflection_heterogeneous" title="isofit.core.forward.ForwardModel.terrain_rereflection_heterogeneous">terrain_rereflection_heterogeneous</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Isotropic scattering from nearby terrain.</p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.terrain_rereflection_homogeneous" title="isofit.core.forward.ForwardModel.terrain_rereflection_homogeneous">terrain_rereflection_homogeneous</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Terrain scattering is ignored in the case dir_dir=dir_dif=dif_dir=dif_dif.</p>
+</li>
+<li>
 <p><span class="mkapi-item-name"><a href="./#isofit.core.forward.ForwardModel.calc_Ls" title="isofit.core.forward.ForwardModel.calc_Ls">calc_Ls</a></span>
  <span class="mkapi-dash">&mdash;</span>
 Calculate the surface emission.</p>
@@ -6036,6 +6172,74 @@ L_dif_dif =&gt; downward diffuse * upward diffuse</p>
 <div class="mkapi-document">
 <p>Physics-based forward model to calculate at-sensor radiance.
 Includes topography, background reflectance, and glint.</p>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.calc_rdn_bgrfl_heterogeneous">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+
+<a href="../../../../src/isofit/core/forward/#isofit.core.forward.ForwardModel.calc_rdn_bgrfl_heterogeneous" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">method</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.core.forward.ForwardModel" title="isofit.core.forward.ForwardModel">ForwardModel</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.core.forward.ForwardModel.calc_rdn_bgrfl_heterogeneous" title="isofit.core.forward.ForwardModel.calc_rdn_bgrfl_heterogeneous">calc_rdn_bgrfl_heterogeneous</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">rho_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_tot</span><span class="mkapi-comma">, </span><span class="mkapi-arg">s_alb</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document">
+<p>TOA radiance that is a function of the heterogeneous background reflectance (used in AOE).</p>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.calc_rdn_bgrfl_homogeneous">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+
+<a href="../../../../src/isofit/core/forward/#isofit.core.forward.ForwardModel.calc_rdn_bgrfl_homogeneous" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">method</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.core.forward.ForwardModel" title="isofit.core.forward.ForwardModel">ForwardModel</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.core.forward.ForwardModel.calc_rdn_bgrfl_homogeneous" title="isofit.core.forward.ForwardModel.calc_rdn_bgrfl_homogeneous">calc_rdn_bgrfl_homogeneous</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">rho_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_tot</span><span class="mkapi-comma">, </span><span class="mkapi-arg">s_alb</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document">
+<p>TOA radiance that is a function of the background reflectance in homogenous case (used in AOE).</p>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.terrain_rereflection_heterogeneous">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+
+<a href="../../../../src/isofit/core/forward/#isofit.core.forward.ForwardModel.terrain_rereflection_heterogeneous" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">method</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.core.forward.ForwardModel" title="isofit.core.forward.ForwardModel">ForwardModel</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.core.forward.ForwardModel.terrain_rereflection_heterogeneous" title="isofit.core.forward.ForwardModel.terrain_rereflection_heterogeneous">terrain_rereflection_heterogeneous</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">rho_dif_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-comma">, </span><span class="mkapi-arg">skyview_factor_bg</span><span class="mkapi-equal">=</span><span class="mkapi-default">1.0</span><span class="mkapi-comma">, </span><span class="mkapi-arg">cos_slope</span><span class="mkapi-equal">=</span><span class="mkapi-default">1.0</span><span class="mkapi-comma">, </span><span class="mkapi-arg">cos_slope_bg</span><span class="mkapi-equal">=</span><span class="mkapi-default">1.0</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document">
+<p>Isotropic scattering from nearby terrain.</p>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.terrain_rereflection_homogeneous">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+
+<a href="../../../../src/isofit/core/forward/#isofit.core.forward.ForwardModel.terrain_rereflection_homogeneous" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">method</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.core.forward.ForwardModel" title="isofit.core.forward.ForwardModel">ForwardModel</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.core.forward.ForwardModel.terrain_rereflection_homogeneous" title="isofit.core.forward.ForwardModel.terrain_rereflection_homogeneous">terrain_rereflection_homogeneous</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">rho_dif_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-comma">, </span><span class="mkapi-arg">skyview_factor_bg</span><span class="mkapi-equal">=</span><span class="mkapi-default">1.0</span><span class="mkapi-comma">, </span><span class="mkapi-arg">cos_slope</span><span class="mkapi-equal">=</span><span class="mkapi-default">1.0</span><span class="mkapi-comma">, </span><span class="mkapi-arg">cos_slope_bg</span><span class="mkapi-equal">=</span><span class="mkapi-default">1.0</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document">
+<p>Terrain scattering is ignored in the case dir_dir=dir_dif=dif_dir=dif_dif.</p>
 </div>
 <p class="mkapi-object mkapi-page-source" id="isofit.core.forward.ForwardModel.calc_Ls">
 <span class="mkapi-object-link">

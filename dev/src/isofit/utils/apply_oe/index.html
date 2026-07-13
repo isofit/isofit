@@ -4083,6 +4083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../api/isofit/utils/algebraic_line/" class="md-nav__link">
         
   
@@ -5733,7 +5761,70 @@
 <span class="normal"> 999</span>
 <span class="normal">1000</span>
 <span class="normal">1001</span>
-<span class="normal">1002</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1002</span>
+<span class="normal">1003</span>
+<span class="normal">1004</span>
+<span class="normal">1005</span>
+<span class="normal">1006</span>
+<span class="normal">1007</span>
+<span class="normal">1008</span>
+<span class="normal">1009</span>
+<span class="normal">1010</span>
+<span class="normal">1011</span>
+<span class="normal">1012</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span>
+<span class="normal">1015</span>
+<span class="normal">1016</span>
+<span class="normal">1017</span>
+<span class="normal">1018</span>
+<span class="normal">1019</span>
+<span class="normal">1020</span>
+<span class="normal">1021</span>
+<span class="normal">1022</span>
+<span class="normal">1023</span>
+<span class="normal">1024</span>
+<span class="normal">1025</span>
+<span class="normal">1026</span>
+<span class="normal">1027</span>
+<span class="normal">1028</span>
+<span class="normal">1029</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span>
+<span class="normal">1032</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span>
+<span class="normal">1043</span>
+<span class="normal">1044</span>
+<span class="normal">1045</span>
+<span class="normal">1046</span>
+<span class="normal">1047</span>
+<span class="normal">1048</span>
+<span class="normal">1049</span>
+<span class="normal">1050</span>
+<span class="normal">1051</span>
+<span class="normal">1052</span>
+<span class="normal">1053</span>
+<span class="normal">1054</span>
+<span class="normal">1055</span>
+<span class="normal">1056</span>
+<span class="normal">1057</span>
+<span class="normal">1058</span>
+<span class="normal">1059</span>
+<span class="normal">1060</span>
+<span class="normal">1061</span>
+<span class="normal">1062</span>
+<span class="normal">1063</span>
+<span class="normal">1064</span>
+<span class="normal">1065</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: David R Thompson and Philip G. Brodrick</span>
 <span class="c1">#</span>
@@ -5766,6 +5857,7 @@
     <span class="n">segment</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.utils.skyview</span><span class="w"> </span><span class="kn">import</span> <span class="n">skyview</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.utils.adjacency</span><span class="w"> </span><span class="kn">import</span> <span class="n">background_reflectance</span>
 
 <span class="n">EPS</span> <span class="o">=</span> <span class="mf">1e-6</span>
 <span class="n">CHUNKSIZE</span> <span class="o">=</span> <span class="mi">256</span>
@@ -5845,6 +5937,7 @@
     <span class="n">skyview_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">resources</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">retrieve_co2</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">use_background_rfl</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">eof_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">terrain_style</span><span class="o">=</span><span class="s2">&quot;dem&quot;</span><span class="p">,</span>
     <span class="n">per_pixel_heuristic_prior</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -5988,6 +6081,8 @@
 <span class="sd">        Enables the system resource tracker. Must also have the log_file set.</span>
 <span class="sd">    retrieve_co2 : bool, default=False</span>
 <span class="sd">        Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.</span>
+<span class="sd">    use_background_rfl : bool, default=False</span>
+<span class="sd">        Flag to calculate background reflectance based on presolve. Presolve must also be turned on.</span>
 <span class="sd">    eof_path : str, default=None</span>
 <span class="sd">        Add 1 or 2 Empirical Orthogonal Functions to the state vector.  File is a 1-2 column text file</span>
 <span class="sd">        with one number per instrument channel.</span>
@@ -6006,7 +6101,7 @@
 <span class="sd">    N. Carmon, and R.O. Green. Generalized radiative transfer emulation for imaging spectroscopy reflectance</span>
 <span class="sd">    retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">use_superpixels</span> <span class="o">=</span> <span class="n">empirical_line</span> <span class="ow">or</span> <span class="n">analytical_line</span>
+    <span class="n">use_superpixels</span> <span class="o">=</span> <span class="n">empirical_line</span> <span class="ow">or</span> <span class="n">analytical_line</span> <span class="ow">or</span> <span class="n">use_background_rfl</span>
     <span class="n">use_multisurface</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">classify_multisurface</span> <span class="ow">or</span> <span class="n">surface_class_file</span> <span class="k">else</span> <span class="kc">False</span>
 
     <span class="c1"># Determine if we run in multipart-transmittance (4c) mode</span>
@@ -6044,6 +6139,11 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;If num_neighbors has multiple elements, only --analytical_line is valid&quot;</span>
             <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_background_rfl</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">multipart_transmittance</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;ApplyOE must use multi-part transmittance to enable heterogeneous background reflectance.&quot;</span>
+        <span class="p">)</span>
 
     <span class="c1"># Load in water column upper bound polynomials</span>
     <span class="n">modtran_polynomials_dict</span> <span class="o">=</span> <span class="n">modtran_water_upperbound_polynomials</span><span class="p">()</span>
@@ -6168,12 +6268,19 @@
         <span class="n">skyview_factor</span><span class="o">=</span><span class="n">skyview_factor</span><span class="p">,</span>
         <span class="n">subs</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">analytical_line</span> <span class="ow">or</span> <span class="n">empirical_line</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">classify_multisurface</span><span class="o">=</span><span class="n">classify_multisurface</span><span class="p">,</span>
+        <span class="n">use_background_rfl</span><span class="o">=</span><span class="n">use_background_rfl</span><span class="p">,</span>
         <span class="n">dn_uncertainty_file</span><span class="o">=</span><span class="n">dn_uncertainty_file</span><span class="p">,</span>
         <span class="n">eof_path</span><span class="o">=</span><span class="n">eof_path</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">paths</span><span class="o">.</span><span class="n">make_directories</span><span class="p">()</span>
     <span class="n">paths</span><span class="o">.</span><span class="n">stage_files</span><span class="p">()</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;...file/directory setup complete&quot;</span><span class="p">)</span>
+
+    <span class="n">remove_bgrfl_file</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">use_background_rfl</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">presolve</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">exists</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">bgrfl_working_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Background reflectance can only be computed if presolve is turned on.&quot;</span>
+        <span class="p">)</span>
 
     <span class="c1"># Based on the sensor type, get appropriate year/month/day info from initial condition.</span>
     <span class="c1"># We&#39;ll adjust for line length and UTC day overrun later</span>
@@ -6407,6 +6514,7 @@
         <span class="s2">&quot;segmentation_size&quot;</span><span class="p">:</span> <span class="n">segmentation_size</span><span class="p">,</span>
         <span class="s2">&quot;terrain_style&quot;</span><span class="p">:</span> <span class="n">terrain_style</span><span class="p">,</span>
         <span class="s2">&quot;per_pixel_heuristic_prior&quot;</span><span class="p">:</span> <span class="n">per_pixel_heuristic_prior</span><span class="p">,</span>
+        <span class="s2">&quot;use_background_rfl&quot;</span><span class="p">:</span> <span class="n">use_background_rfl</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">presolve</span><span class="p">:</span>
         <span class="c1"># write modtran presolve template</span>
@@ -6578,10 +6686,41 @@
             <span class="n">config_params</span><span class="p">[</span><span class="s2">&quot;co2_lut_grid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lut_params</span><span class="o">.</span><span class="n">co2_range</span>
             <span class="n">config_params</span><span class="p">[</span><span class="s2">&quot;retrieve_co2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
+        <span class="c1"># Super pixels set to False now after presolve if not using AOE</span>
+        <span class="c1"># This is here to allow presolve and bg_rfl to use superpixel speed up.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">analytical_line</span> <span class="ow">or</span> <span class="n">empirical_line</span><span class="p">):</span>
+            <span class="n">config_params</span><span class="p">[</span><span class="s2">&quot;use_superpixels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">use_superpixels</span> <span class="o">=</span> <span class="kc">False</span>
+
         <span class="n">tmpl</span><span class="o">.</span><span class="n">build_config</span><span class="p">(</span>
             <span class="n">h2o_lut_grid</span><span class="o">=</span><span class="n">h2o_lut_grid</span><span class="p">,</span>
             <span class="o">**</span><span class="n">config_params</span><span class="p">,</span>
         <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">presolve</span> <span class="ow">and</span> <span class="n">use_background_rfl</span><span class="p">:</span>
+            <span class="c1"># Only create background reflectance if it doesn&#39;t already exist in /data</span>
+            <span class="c1"># NOTE this may be useful for our single pixel pytests</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">exists</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">bgrfl_working_path</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                <span class="n">use_superpixels</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">exists</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">bgrfl_subs_path</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Preparing background reflectance...&quot;</span><span class="p">)</span>
+                <span class="n">background_reflectance</span><span class="p">(</span>
+                    <span class="n">input_radiance</span><span class="o">=</span><span class="n">input_radiance</span><span class="p">,</span>
+                    <span class="n">input_loc</span><span class="o">=</span><span class="n">input_loc</span><span class="p">,</span>
+                    <span class="n">input_obs</span><span class="o">=</span><span class="n">input_obs</span><span class="p">,</span>
+                    <span class="n">paths</span><span class="o">=</span><span class="n">paths</span><span class="p">,</span>
+                    <span class="n">mean_altitude_km</span><span class="o">=</span><span class="n">mean_altitude_km</span><span class="p">,</span>
+                    <span class="n">mean_elevation_km</span><span class="o">=</span><span class="n">mean_elevation_km</span><span class="p">,</span>
+                    <span class="n">smoothing_sigma</span><span class="o">=</span><span class="n">atm_sigma</span><span class="p">,</span>
+                    <span class="n">use_slic_rfls</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">use_superpixels</span><span class="o">=</span><span class="n">use_superpixels</span><span class="p">,</span>
+                    <span class="n">nodata_value</span><span class="o">=-</span><span class="mi">9999</span><span class="p">,</span>
+                    <span class="n">chunksize</span><span class="o">=</span><span class="n">CHUNKSIZE</span><span class="p">,</span>
+                    <span class="n">logging_level</span><span class="o">=</span><span class="n">logging_level</span><span class="p">,</span>
+                    <span class="n">log_file</span><span class="o">=</span><span class="n">log_file</span><span class="p">,</span>
+                    <span class="n">n_cores</span><span class="o">=</span><span class="n">n_cores</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">remove_bgrfl_file</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">if</span> <span class="n">config_only</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;`config_only` enabled, exiting early&quot;</span><span class="p">)</span>
@@ -6638,6 +6777,7 @@
                 <span class="n">output_rfl_file</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">rfl_working_path</span><span class="p">,</span>
                 <span class="n">output_unc_file</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">uncert_working_path</span><span class="p">,</span>
                 <span class="n">skyview_factor_file</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">svf_working_path</span><span class="p">,</span>
+                <span class="n">bgrfl_file</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">bgrfl_working_path</span><span class="p">,</span>
                 <span class="n">loglevel</span><span class="o">=</span><span class="n">logging_level</span><span class="p">,</span>
                 <span class="n">logfile</span><span class="o">=</span><span class="n">log_file</span><span class="p">,</span>
                 <span class="n">n_atm_neighbors</span><span class="o">=</span><span class="n">nneighbors</span><span class="p">,</span>
@@ -6645,6 +6785,19 @@
                 <span class="n">smoothing_sigma</span><span class="o">=</span><span class="n">atm_sigma</span><span class="p">,</span>
                 <span class="n">segmentation_size</span><span class="o">=</span><span class="n">segmentation_size</span><span class="p">,</span>
             <span class="p">)</span>
+    <span class="c1"># Remove any other large temporary files created during ApplyOE</span>
+    <span class="k">if</span> <span class="n">remove_bgrfl_file</span><span class="p">:</span>
+        <span class="n">bgrfl_files_to_remove</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">paths</span><span class="o">.</span><span class="n">bgrfl_working_path</span><span class="p">,</span>
+            <span class="n">envi_header</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">bgrfl_working_path</span><span class="p">),</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">use_superpixels</span><span class="p">:</span>
+            <span class="n">bgrfl_files_to_remove</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">paths</span><span class="o">.</span><span class="n">bgrfl_subs_path</span><span class="p">,</span> <span class="n">envi_header</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">bgrfl_subs_path</span><span class="p">)]</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">bgrfl_files_to_remove</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span>
     <span class="n">ray</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
@@ -6697,6 +6850,7 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--skyview_factor&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="s2">&quot;--resources&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--retrieve_co2&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--use_background_rfl&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--eof_path&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--terrain_style&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;dem&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">&quot;dem&quot;</span><span class="p">,</span> <span class="s2">&quot;flat&quot;</span><span class="p">]))</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--per_pixel_heuristic_prior&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>

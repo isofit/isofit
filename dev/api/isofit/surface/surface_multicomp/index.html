@@ -3665,10 +3665,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl" class="md-nav__link">
+  <a href="#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_heterogeneous_bgrfl" class="md-nav__link">
     <span class="md-ellipsis">
       
-        drdn_drfl
+        drdn_drfl_heterogeneous_bgrfl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_homogeneous_bgrfl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drdn_drfl_homogeneous_bgrfl
       
     </span>
   </a>
@@ -3724,6 +3735,28 @@
     <span class="md-ellipsis">
       
         analytical_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_homogeneous_bgrfl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_theta_homogeneous_bgrfl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_heterogeneous_bgrfl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_theta_heterogeneous_bgrfl
       
     </span>
   </a>
@@ -4353,6 +4386,34 @@
     
   
     Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
   
 
     
@@ -5058,10 +5119,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl" class="md-nav__link">
+  <a href="#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_heterogeneous_bgrfl" class="md-nav__link">
     <span class="md-ellipsis">
       
-        drdn_drfl
+        drdn_drfl_heterogeneous_bgrfl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_homogeneous_bgrfl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drdn_drfl_homogeneous_bgrfl
       
     </span>
   </a>
@@ -5117,6 +5189,28 @@
     <span class="md-ellipsis">
       
         analytical_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_homogeneous_bgrfl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_theta_homogeneous_bgrfl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_heterogeneous_bgrfl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_theta_heterogeneous_bgrfl
       
     </span>
   </a>
@@ -5409,10 +5503,16 @@ Partial derivative of Lambertian reflectance with respect to
 state vector, calculated at x_surface.</p>
 </li>
 <li>
-<p><span class="mkapi-item-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl" title="isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl">drdn_drfl</a></span>
+<p><span class="mkapi-item-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_heterogeneous_bgrfl" title="isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_heterogeneous_bgrfl">drdn_drfl_heterogeneous_bgrfl</a></span>
  <span class="mkapi-dash">&mdash;</span>
 Partial derivative of radiance with respect to
-surface reflectance</p>
+surface reflectance, treating dir-dif and dif-dif as constants.</p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_homogeneous_bgrfl" title="isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_homogeneous_bgrfl">drdn_drfl_homogeneous_bgrfl</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Partial derivative of radiance with respect to
+surface reflectance (dir_dir=dir_dif=dif_dir=dif_dif).</p>
 </li>
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.calc_Ls" title="isofit.surface.surface_multicomp.MultiComponentSurface.calc_Ls">calc_Ls</a></span>
@@ -5441,10 +5541,13 @@ full surface vector</p>
 <p><span class="mkapi-item-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.analytical_model" title="isofit.surface.surface_multicomp.MultiComponentSurface.analytical_model">analytical_model</a></span>
  <span class="mkapi-dash">&mdash;</span>
 Linearization of the surface reflectance terms to use in the
-AOE inner loop (see Susiluoto, 2025). We set the quadratic
-spherical albedo term to a constant background, which
-simplifies the linearization
-background = s * rho_bg</p>
+AOE inner loop (see Susiluoto, 2025).</p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_homogeneous_bgrfl" title="isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_homogeneous_bgrfl">evaluate_theta_homogeneous_bgrfl</a></span></p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_heterogeneous_bgrfl" title="isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_heterogeneous_bgrfl">evaluate_theta_heterogeneous_bgrfl</a></span></p>
 </li>
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.summarize" title="isofit.surface.surface_multicomp.MultiComponentSurface.summarize">summarize</a></span>
@@ -5685,23 +5788,41 @@ calculated at x_surface.</p>
 <p>Partial derivative of Lambertian reflectance with respect to
 state vector, calculated at x_surface.</p>
 </div>
-<p class="mkapi-object mkapi-page-source" id="isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl">
+<p class="mkapi-object mkapi-page-source" id="isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_heterogeneous_bgrfl">
 <span class="mkapi-object-link">
 <span class="mkapi-parent-toggle" title="Toggle class names">
 <i class="fa-solid fa-square-plus"></i>
 </span>
 
-<a href="../../../../src/isofit/surface/surface_multicomp/#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl" title="Go to source">source</a>
+<a href="../../../../src/isofit/surface/surface_multicomp/#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_heterogeneous_bgrfl" title="Go to source">source</a>
 <span class="mkapi-document-toggle" title="Toggle all docs">
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span><span class="mkapi-object-kind">method</span>
 <span class="mkapi-object-parent">
-<a href="./#isofit.surface.surface_multicomp.MultiComponentSurface" title="isofit.surface.surface_multicomp.MultiComponentSurface">MultiComponentSurface</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl" title="isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl">drdn_drfl</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">L_tot</span><span class="mkapi-comma">, </span><span class="mkapi-arg">s_alb</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dir</span><span class="mkapi-paren">)</span></span>
+<a href="./#isofit.surface.surface_multicomp.MultiComponentSurface" title="isofit.surface.surface_multicomp.MultiComponentSurface">MultiComponentSurface</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_heterogeneous_bgrfl" title="isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_heterogeneous_bgrfl">drdn_drfl_heterogeneous_bgrfl</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">L_tot</span><span class="mkapi-comma">, </span><span class="mkapi-arg">s_alb</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dif</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>Partial derivative of radiance with respect to
-surface reflectance</p>
+surface reflectance, treating dir-dif and dif-dif as constants.</p>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_homogeneous_bgrfl">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+
+<a href="../../../../src/isofit/surface/surface_multicomp/#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_homogeneous_bgrfl" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">method</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.surface.surface_multicomp.MultiComponentSurface" title="isofit.surface.surface_multicomp.MultiComponentSurface">MultiComponentSurface</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_homogeneous_bgrfl" title="isofit.surface.surface_multicomp.MultiComponentSurface.drdn_drfl_homogeneous_bgrfl">drdn_drfl_homogeneous_bgrfl</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">L_tot</span><span class="mkapi-comma">, </span><span class="mkapi-arg">s_alb</span><span class="mkapi-comma">, </span><span class="mkapi-arg">rho_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dif</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document">
+<p>Partial derivative of radiance with respect to
+surface reflectance (dir_dir=dir_dif=dif_dir=dif_dif).</p>
 </div>
 <p class="mkapi-object mkapi-page-source" id="isofit.surface.surface_multicomp.MultiComponentSurface.calc_Ls">
 <span class="mkapi-object-link">
@@ -5786,15 +5907,42 @@ full surface vector</p>
 </span>
 </span><span class="mkapi-object-kind">method</span>
 <span class="mkapi-object-parent">
-<a href="./#isofit.surface.surface_multicomp.MultiComponentSurface" title="isofit.surface.surface_multicomp.MultiComponentSurface">MultiComponentSurface</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.analytical_model" title="isofit.surface.surface_multicomp.MultiComponentSurface.analytical_model">analytical_model</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">background</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_tot</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dir</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dif</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dir</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dif</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-paren">)</span></span>
+<a href="./#isofit.surface.surface_multicomp.MultiComponentSurface" title="isofit.surface.surface_multicomp.MultiComponentSurface">MultiComponentSurface</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.analytical_model" title="isofit.surface.surface_multicomp.MultiComponentSurface.analytical_model">analytical_model</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">L_tot</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-comma">, </span><span class="mkapi-arg">s_alb</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dir</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dif</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dir</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dif</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p>Linearization of the surface reflectance terms to use in the
-AOE inner loop (see Susiluoto, 2025). We set the quadratic
-spherical albedo term to a constant background, which
-simplifies the linearization
-background = s * rho_bg</p>
+AOE inner loop (see Susiluoto, 2025).</p>
 </div>
+<p class="mkapi-object mkapi-page-source" id="isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_homogeneous_bgrfl">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+
+<a href="../../../../src/isofit/surface/surface_multicomp/#isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_homogeneous_bgrfl" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">method</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.surface.surface_multicomp.MultiComponentSurface" title="isofit.surface.surface_multicomp.MultiComponentSurface">MultiComponentSurface</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_homogeneous_bgrfl" title="isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_homogeneous_bgrfl">evaluate_theta_homogeneous_bgrfl</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">s_alb</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_tot</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dif</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document"></div>
+<p class="mkapi-object mkapi-page-source" id="isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_heterogeneous_bgrfl">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+
+<a href="../../../../src/isofit/surface/surface_multicomp/#isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_heterogeneous_bgrfl" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">method</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.surface.surface_multicomp.MultiComponentSurface" title="isofit.surface.surface_multicomp.MultiComponentSurface">MultiComponentSurface</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_heterogeneous_bgrfl" title="isofit.surface.surface_multicomp.MultiComponentSurface.evaluate_theta_heterogeneous_bgrfl">evaluate_theta_heterogeneous_bgrfl</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">s_alb</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_tot</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dir_dif</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dir</span><span class="mkapi-comma">, </span><span class="mkapi-arg">L_dif_dif</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document"></div>
 <p class="mkapi-object mkapi-page-source" id="isofit.surface.surface_multicomp.MultiComponentSurface.summarize">
 <span class="mkapi-object-link">
 <span class="mkapi-parent-toggle" title="Toggle class names">

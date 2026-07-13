@@ -4083,6 +4083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../api/isofit/utils/algebraic_line/" class="md-nav__link">
         
   
@@ -6965,7 +6993,40 @@
 <span class="normal">1960</span>
 <span class="normal">1961</span>
 <span class="normal">1962</span>
-<span class="normal">1963</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1963</span>
+<span class="normal">1964</span>
+<span class="normal">1965</span>
+<span class="normal">1966</span>
+<span class="normal">1967</span>
+<span class="normal">1968</span>
+<span class="normal">1969</span>
+<span class="normal">1970</span>
+<span class="normal">1971</span>
+<span class="normal">1972</span>
+<span class="normal">1973</span>
+<span class="normal">1974</span>
+<span class="normal">1975</span>
+<span class="normal">1976</span>
+<span class="normal">1977</span>
+<span class="normal">1978</span>
+<span class="normal">1979</span>
+<span class="normal">1980</span>
+<span class="normal">1981</span>
+<span class="normal">1982</span>
+<span class="normal">1983</span>
+<span class="normal">1984</span>
+<span class="normal">1985</span>
+<span class="normal">1986</span>
+<span class="normal">1987</span>
+<span class="normal">1988</span>
+<span class="normal">1989</span>
+<span class="normal">1990</span>
+<span class="normal">1991</span>
+<span class="normal">1992</span>
+<span class="normal">1993</span>
+<span class="normal">1994</span>
+<span class="normal">1995</span>
+<span class="normal">1996</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick and Niklas Bohn</span>
 <span class="c1">#</span>
@@ -7022,6 +7083,7 @@
         <span class="n">skyview_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">subs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">classify_multisurface</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">use_background_rfl</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">dn_uncertainty_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">eof_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
@@ -7097,6 +7159,17 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">surface_template_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_directory</span><span class="p">,</span> <span class="s2">&quot;surface.mat&quot;</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">surface_working_paths</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">use_background_rfl</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bgrfl_working_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
+                <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_directory</span><span class="p">,</span> <span class="n">rdn_fname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_rdn&quot;</span><span class="p">,</span> <span class="s2">&quot;_bgrfl&quot;</span><span class="p">))</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atm_presolve</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
+                <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_directory</span><span class="p">,</span> <span class="n">rdn_fname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_rdn&quot;</span><span class="p">,</span> <span class="s2">&quot;_atm_presolve&quot;</span><span class="p">))</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bgrfl_working_path</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atm_presolve</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="n">copy_input_files</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">radiance_working_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
@@ -7184,6 +7257,13 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">svf_working_path</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">svf_subs_path</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">use_background_rfl</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bgrfl_subs_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
+                <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_data_directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">+</span> <span class="s2">&quot;_subs_bgrfl&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bgrfl_subs_path</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">rdn_subs_path</span> <span class="o">=</span> <span class="n">abspath</span><span class="p">(</span>
             <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_data_directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">+</span> <span class="s2">&quot;_subs_rdn&quot;</span><span class="p">)</span>
@@ -7669,6 +7749,7 @@
     <span class="n">terrain_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;flat&quot;</span><span class="p">,</span>
     <span class="n">max_slope</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
     <span class="n">per_pixel_heuristic_prior</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">use_background_rfl</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Write an isofit config file for the main solve, using the specified pathnames and all given info</span>
 
@@ -7701,6 +7782,7 @@
 <span class="sd">        presolve:                             set this up as a presolve configuration</span>
 <span class="sd">        terrain_style:                        style of terrain to use in the forward model - options are &#39;flat&#39;, &#39;dem&#39;, &#39;solved&#39;</span>
 <span class="sd">        max_slope:                            maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat</span>
+<span class="sd">        use_background_rfl:                   flag to determine which surface derivatives to use in OE</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">use_superpixels</span><span class="p">:</span>
@@ -7713,11 +7795,13 @@
             <span class="n">state_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">h2o_subs_path</span>
             <span class="n">posterior_output_path</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">rfl_output_path</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">bgrfl_input_path</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">state_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">state_subs_path</span>
             <span class="n">posterior_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">uncert_subs_path</span>
             <span class="n">rfl_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">rfl_subs_path</span>
+            <span class="n">bgrfl_input_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">bgrfl_subs_path</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="n">rdn_input_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">radiance_working_path</span>
@@ -7729,22 +7813,25 @@
             <span class="n">state_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">h2o_working_path</span>
             <span class="n">posterior_output_path</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">rfl_output_path</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">bgrfl_input_path</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">state_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">state_working_path</span>
             <span class="n">posterior_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">uncert_working_path</span>
             <span class="n">rfl_output_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">rfl_working_path</span>
+            <span class="n">bgrfl_input_path</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">bgrfl_working_path</span>
 
     <span class="n">input_config</span> <span class="o">=</span> <span class="n">make_input_config</span><span class="p">(</span>
-        <span class="n">rdn_input_path</span><span class="p">,</span>
-        <span class="n">loc_input_path</span><span class="p">,</span>
-        <span class="n">obs_input_path</span><span class="p">,</span>
-        <span class="n">svf_input_path</span><span class="p">,</span>
-        <span class="n">paths</span><span class="o">.</span><span class="n">rdn_factors_path</span><span class="p">,</span>
+        <span class="n">rdn_input_path</span><span class="o">=</span><span class="n">rdn_input_path</span><span class="p">,</span>
+        <span class="n">loc_input_path</span><span class="o">=</span><span class="n">loc_input_path</span><span class="p">,</span>
+        <span class="n">obs_input_path</span><span class="o">=</span><span class="n">obs_input_path</span><span class="p">,</span>
+        <span class="n">svf_input_path</span><span class="o">=</span><span class="n">svf_input_path</span><span class="p">,</span>
+        <span class="n">rdn_factors_path</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">rdn_factors_path</span><span class="p">,</span>
+        <span class="n">bgrfl_path</span><span class="o">=</span><span class="n">bgrfl_input_path</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">output_config</span> <span class="o">=</span> <span class="n">make_output_config</span><span class="p">(</span>
-        <span class="n">state_output_path</span><span class="p">,</span>
-        <span class="n">posterior_output_path</span><span class="p">,</span>
-        <span class="n">rfl_output_path</span><span class="p">,</span>
+        <span class="n">state_output_path</span><span class="o">=</span><span class="n">state_output_path</span><span class="p">,</span>
+        <span class="n">posterior_output_path</span><span class="o">=</span><span class="n">posterior_output_path</span><span class="p">,</span>
+        <span class="n">rfl_output_path</span><span class="o">=</span><span class="n">rfl_output_path</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
@@ -7798,6 +7885,7 @@
                 <span class="n">use_superpixels</span><span class="o">=</span><span class="n">use_superpixels</span><span class="p">,</span>
                 <span class="n">terrain_style</span><span class="o">=</span><span class="n">terrain_style</span><span class="p">,</span>
                 <span class="n">max_slope</span><span class="o">=</span><span class="n">max_slope</span><span class="p">,</span>
+                <span class="n">use_background_rfl</span><span class="o">=</span><span class="n">use_background_rfl</span><span class="p">,</span>
             <span class="p">),</span>
         <span class="p">},</span>
         <span class="s2">&quot;implementation&quot;</span><span class="p">:</span> <span class="n">make_implementation_config</span><span class="p">(</span>
@@ -8745,6 +8833,7 @@
     <span class="n">terrain_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;flat&quot;</span><span class="p">,</span>
     <span class="n">max_slope</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
     <span class="n">surface_refractive_index_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">use_background_rfl</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="c1"># Initialize config dict</span>
     <span class="n">surface_config_dict</span> <span class="o">=</span> <span class="p">{</span>
@@ -8785,6 +8874,7 @@
                 <span class="s2">&quot;surface_category&quot;</span><span class="p">:</span> <span class="n">surface_category</span><span class="p">,</span>
                 <span class="s2">&quot;terrain_style&quot;</span><span class="p">:</span> <span class="n">terrain_style</span><span class="p">,</span>
                 <span class="s2">&quot;max_slope&quot;</span><span class="p">:</span> <span class="n">max_slope</span><span class="p">,</span>
+                <span class="s2">&quot;use_background_rfl&quot;</span><span class="p">:</span> <span class="n">use_background_rfl</span><span class="p">,</span>
             <span class="p">}</span>
 
     <span class="c1"># Single surface run</span>
@@ -8793,6 +8883,7 @@
         <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;surface_category&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">surface_category</span>
         <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;terrain_style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">terrain_style</span>
         <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;max_slope&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_slope</span>
+        <span class="n">surface_config_dict</span><span class="p">[</span><span class="s2">&quot;use_background_rfl&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">use_background_rfl</span>
 
     <span class="c1"># Accumulate statevector</span>
     <span class="k">for</span> <span class="n">category</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">surface_working_paths</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -8902,6 +8993,7 @@
     <span class="n">obs_input_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">svf_input_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rdn_factors_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">bgrfl_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="n">input_config</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">input_config</span><span class="p">[</span><span class="s2">&quot;measured_radiance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rdn_input_path</span>
@@ -8911,6 +9003,8 @@
         <span class="n">input_config</span><span class="p">[</span><span class="s2">&quot;skyview_factor_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">svf_input_path</span>
     <span class="k">if</span> <span class="n">rdn_factors_path</span><span class="p">:</span>
         <span class="n">input_config</span><span class="p">[</span><span class="s2">&quot;radiometry_correction_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rdn_factors_path</span>
+    <span class="k">if</span> <span class="n">bgrfl_path</span><span class="p">:</span>
+        <span class="n">input_config</span><span class="p">[</span><span class="s2">&quot;background_reflectance_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bgrfl_path</span>
 
     <span class="k">return</span> <span class="n">input_config</span>
 

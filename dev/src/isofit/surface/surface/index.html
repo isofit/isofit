@@ -4083,6 +4083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../api/isofit/utils/algebraic_line/" class="md-nav__link">
         
   
@@ -5026,7 +5054,9 @@
 <span class="normal">154</span>
 <span class="normal">155</span>
 <span class="normal">156</span>
-<span class="normal">157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5108,6 +5138,8 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_background_rfl</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">use_background_rfl</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">resample_reflectance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.resample_reflectance"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.resample_reflectance" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Make sure model wavelengths align with the wavelength file.&quot;&quot;&quot;</span>

@@ -4083,6 +4083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../api/isofit/utils/algebraic_line/" class="md-nav__link">
         
   
@@ -5111,12 +5139,7 @@
 <span class="normal">322</span>
 <span class="normal">323</span>
 <span class="normal">324</span>
-<span class="normal">325</span>
-<span class="normal">326</span>
-<span class="normal">327</span>
-<span class="normal">328</span>
-<span class="normal">329</span>
-<span class="normal">330</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">325</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5389,13 +5412,8 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">isurface</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Multi-surface flag used, but no valid multi-surface config&quot;</span><span class="p">)</span>
 
-    <span class="n">surface_category</span> <span class="o">=</span> <span class="n">isurface</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surface_category&quot;</span><span class="p">)</span>
-    <span class="n">surface_file</span> <span class="o">=</span> <span class="n">isurface</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surface_file&quot;</span><span class="p">)</span>
-    <span class="n">glint_model</span> <span class="o">=</span> <span class="n">isurface</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;glint_model&quot;</span><span class="p">)</span>
-
-    <span class="n">config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">surface_category</span> <span class="o">=</span> <span class="n">surface_category</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">surface_file</span> <span class="o">=</span> <span class="n">surface_file</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">glint_model</span> <span class="o">=</span> <span class="n">glint_model</span>
+    <span class="c1"># Iterate through the kwargs in the Surfaces sub dict</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">update_from_subconfig</span><span class="p">(</span><span class="n">isurface</span><span class="p">)</span>
 
     <span class="c1"># Experimental: added statevector elements</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">isurface</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rt_statevector_elements&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>

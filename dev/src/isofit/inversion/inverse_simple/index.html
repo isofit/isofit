@@ -4083,6 +4083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../api/isofit/utils/algebraic_line/" class="md-nav__link">
         
   
@@ -5354,7 +5382,15 @@
 <span class="normal">576</span>
 <span class="normal">577</span>
 <span class="normal">578</span>
-<span class="normal">579</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5617,6 +5653,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
         <span class="k">else</span> <span class="n">rho_dif_dir</span>
     <span class="p">)</span>
+    <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="o">=</span> <span class="n">rho_dif_dif</span>
 
     <span class="c1"># Get all the atmosphere quantities</span>
     <span class="n">r</span><span class="p">,</span> <span class="n">L_tot</span><span class="p">,</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dif</span> <span class="o">=</span> <span class="p">(</span>
@@ -5625,10 +5662,17 @@
 
     <span class="c1"># Path radiance and spherical albedo</span>
     <span class="n">L_atm</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">get_L_atm</span><span class="p">(</span><span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-    <span class="n">s</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span>
+    <span class="n">s_alb</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span>
 
-    <span class="c1"># Background conditions equal to the superpixel reflectance</span>
-    <span class="n">bg</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">rho_dif_dir</span>
+    <span class="c1"># Estimation of background radiance (background terms assumed rho_dir_dif ~= rho_dif_dif)</span>
+    <span class="n">L_bg</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">calc_rdn_bgrfl</span><span class="p">(</span>
+        <span class="n">rho_dir_dif</span><span class="o">=</span><span class="n">rho_dif_dif</span><span class="p">,</span>
+        <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif</span><span class="p">,</span>
+        <span class="n">L_dir_dif</span><span class="o">=</span><span class="n">L_dir_dif</span><span class="p">,</span>
+        <span class="n">L_dif_dif</span><span class="o">=</span><span class="n">L_dif_dif</span><span class="p">,</span>
+        <span class="n">L_tot</span><span class="o">=</span><span class="n">L_tot</span><span class="p">,</span>
+        <span class="n">s_alb</span><span class="o">=</span><span class="n">s_alb</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="c1"># Get superpixel EOF shift if used</span>
     <span class="n">eof_offset</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">eof_offset</span><span class="p">(</span><span class="n">sub_instrument</span><span class="p">)</span>
@@ -5642,9 +5686,9 @@
 
     <span class="c1"># The H matrix does not change as a function of x-vector</span>
     <span class="n">H</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">analytical_model</span><span class="p">(</span>
-        <span class="n">bg</span><span class="p">,</span>
         <span class="n">L_tot</span><span class="o">=</span><span class="n">L_tot</span><span class="p">,</span>
         <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span>
+        <span class="n">s_alb</span><span class="o">=</span><span class="n">s_alb</span><span class="p">,</span>
         <span class="n">L_dir_dir</span><span class="o">=</span><span class="n">L_dir_dir</span><span class="p">,</span>
         <span class="n">L_dir_dif</span><span class="o">=</span><span class="n">L_dir_dif</span><span class="p">,</span>
         <span class="n">L_dif_dir</span><span class="o">=</span><span class="n">L_dif_dir</span><span class="p">,</span>
@@ -5681,7 +5725,7 @@
         <span class="n">LI_rcond</span> <span class="o">=</span> <span class="n">dpotrf</span><span class="p">(</span><span class="n">P_rcond</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">C_rcond</span> <span class="o">=</span> <span class="n">dpotri</span><span class="p">(</span><span class="n">LI_rcond</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="n">y</span> <span class="o">=</span> <span class="n">meas</span><span class="p">[</span><span class="n">winidx</span><span class="p">]</span> <span class="o">-</span> <span class="n">L_atm</span><span class="p">[</span><span class="n">winidx</span><span class="p">]</span> <span class="o">-</span> <span class="n">eof_offset</span><span class="p">[</span><span class="n">winidx</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">meas</span><span class="p">[</span><span class="n">winidx</span><span class="p">]</span> <span class="o">-</span> <span class="n">L_atm</span><span class="p">[</span><span class="n">winidx</span><span class="p">]</span> <span class="o">-</span> <span class="n">eof_offset</span><span class="p">[</span><span class="n">winidx</span><span class="p">]</span> <span class="o">-</span> <span class="n">L_bg</span><span class="p">[</span><span class="n">winidx</span><span class="p">]</span>
         <span class="n">xk</span> <span class="o">=</span> <span class="n">dsymv</span><span class="p">(</span>
             <span class="mi">1</span><span class="p">,</span>
             <span class="n">C_rcond</span><span class="p">,</span>

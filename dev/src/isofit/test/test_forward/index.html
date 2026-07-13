@@ -4083,6 +4083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../api/isofit/utils/algebraic_line/" class="md-nav__link">
         
   
@@ -5014,7 +5042,11 @@
 <span class="normal">214</span>
 <span class="normal">215</span>
 <span class="normal">216</span>
-<span class="normal">217</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">MagicMock</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">MagicMock</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
@@ -5200,6 +5232,8 @@
     <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">geom</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">geom</span><span class="o">.</span><span class="n">skyview_factor</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">fm</span><span class="o">.</span><span class="n">terrain_rereflection</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 
     <span class="n">L_tot</span><span class="p">,</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dif</span> <span class="o">=</span> <span class="n">ForwardModel</span><span class="o">.</span><span class="n">get_L_coupled</span><span class="p">(</span>
         <span class="n">fm</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="o">=</span><span class="mi">0</span>
@@ -5224,6 +5258,8 @@
     <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">geom</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">=</span> <span class="mf">0.5</span>
     <span class="n">geom</span><span class="o">.</span><span class="n">skyview_factor</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">fm</span><span class="o">.</span><span class="n">terrain_rereflection</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 
     <span class="n">L_tot</span><span class="p">,</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dif</span> <span class="o">=</span> <span class="n">ForwardModel</span><span class="o">.</span><span class="n">get_L_coupled</span><span class="p">(</span>
         <span class="n">fm</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="o">=</span><span class="mi">0</span>

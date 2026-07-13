@@ -4083,6 +4083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../../api/isofit/utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../../api/isofit/utils/algebraic_line/" class="md-nav__link">
         
   
@@ -4687,6 +4715,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="SurfaceConfig">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#isofit.configs.sections.surface_config.SurfaceConfig.update_from_subconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_from_subconfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -4961,7 +5006,25 @@
 <span class="normal">227</span>
 <span class="normal">228</span>
 <span class="normal">229</span>
-<span class="normal">230</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5037,6 +5100,9 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_multi_surface_flag_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">multi_surface_flag</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_background_rfl_type</span> <span class="o">=</span> <span class="nb">bool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_background_rfl</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_surface_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">surface_file</span> <span class="o">=</span> <span class="kc">None</span>
@@ -5191,6 +5257,21 @@
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_from_subconfig</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subconfig_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.surface_config.SurfaceConfig.update_from_subconfig"><a href="../../../../../api/isofit/configs/sections/surface_config/#isofit.configs.sections.surface_config.SurfaceConfig.update_from_subconfig" title="Go to docs">[docs]</a></div>
+
+        <span class="c1"># Not entirely sure if this is needed/possible, but just to be safe</span>
+        <span class="n">keys_to_ignore</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;multi_surface_flag&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Surfaces&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;surface_class_file&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;base_surface_class_file&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;statevector&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">subconfig_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keys_to_ignore</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

@@ -4083,6 +4083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../api/isofit/utils/algebraic_line/" class="md-nav__link">
         
   
@@ -5281,7 +5309,13 @@
 <span class="normal">431</span>
 <span class="normal">432</span>
 <span class="normal">433</span>
-<span class="normal">434</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5601,7 +5635,15 @@
         <span class="c1"># Dimensions should be (len(RT.wl), len(x_surface))</span>
         <span class="c1"># which is correctly handled by the instrument resampling</span>
         <span class="n">drdn_dsurface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">drfl_dsurface</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">drdn_drfl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drdn_drfl</span><span class="p">(</span><span class="n">L_tot</span><span class="p">,</span> <span class="n">s_alb</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">)</span>
+        <span class="n">drdn_drfl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drdn_drfl</span><span class="p">(</span>
+            <span class="n">L_tot</span><span class="p">,</span>
+            <span class="n">s_alb</span><span class="p">,</span>
+            <span class="n">rho_dif_dir</span><span class="p">,</span>
+            <span class="n">L_dir_dir</span><span class="o">=</span><span class="n">L_dir_dir</span><span class="p">,</span>
+            <span class="n">L_dir_dif</span><span class="o">=</span><span class="n">L_dir_dif</span><span class="p">,</span>
+            <span class="n">L_dif_dir</span><span class="o">=</span><span class="n">L_dif_dir</span><span class="p">,</span>
+            <span class="n">L_dif_dif</span><span class="o">=</span><span class="n">L_dif_dif</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">drdn_dsurface</span><span class="p">[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span>
             <span class="n">drdn_drfl</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> <span class="n">drfl_dsurface</span><span class="p">[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">]</span>
         <span class="p">)</span>
@@ -5629,9 +5671,9 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">analytical_model</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.surface.surface_glint_model.GlintModelSurface.analytical_model"><a href="../../../../api/isofit/surface/surface_glint_model/#isofit.surface.surface_glint_model.GlintModelSurface.analytical_model" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">background</span><span class="p">,</span>
         <span class="n">L_tot</span><span class="p">,</span>
         <span class="n">geom</span><span class="p">,</span>
+        <span class="n">s_alb</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">L_dir_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">L_dir_dif</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">L_dif_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -5651,9 +5693,9 @@
         <span class="c1"># gam (sun glint portion)</span>
         <span class="c1"># ep (sky glint portion)</span>
         <span class="n">H</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">analytical_model</span><span class="p">(</span>
-            <span class="n">background</span><span class="p">,</span>
             <span class="n">L_tot</span><span class="p">,</span>
             <span class="n">geom</span><span class="p">,</span>
+            <span class="n">s_alb</span><span class="p">,</span>
             <span class="n">L_dir_dir</span><span class="p">,</span>
             <span class="n">L_dir_dif</span><span class="p">,</span>
             <span class="n">L_dif_dir</span><span class="p">,</span>
@@ -5664,16 +5706,14 @@
         <span class="c1"># It must match the alphabeitcal order of the glint terms</span>
 
         <span class="c1"># Diffuse portion</span>
-        <span class="n">ep</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="p">(</span><span class="n">L_dif_dir</span> <span class="o">+</span> <span class="n">L_dif_dif</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">L_tot</span> <span class="o">*</span> <span class="n">background</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">background</span><span class="p">))</span>
-        <span class="p">)</span> <span class="o">*</span> <span class="n">rho_ls</span>
+        <span class="n">ep</span> <span class="o">=</span> <span class="n">L_dif_dir</span> <span class="o">*</span> <span class="n">rho_ls</span>
         <span class="c1"># If you ignore multi-scattering</span>
         <span class="c1"># ep = (L_dif_dir + L_dif_dif) * rho_ls</span>
         <span class="n">ep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ep</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
         <span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">ep</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="c1"># Direct portion</span>
-        <span class="n">gam</span> <span class="o">=</span> <span class="p">(</span><span class="n">L_dir_dir</span> <span class="o">+</span> <span class="n">L_dir_dif</span><span class="p">)</span> <span class="o">*</span> <span class="n">rho_ls</span>
+        <span class="n">gam</span> <span class="o">=</span> <span class="n">L_dir_dir</span> <span class="o">*</span> <span class="n">rho_ls</span>
         <span class="n">gam</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">gam</span><span class="p">,</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gam</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
         <span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">gam</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 

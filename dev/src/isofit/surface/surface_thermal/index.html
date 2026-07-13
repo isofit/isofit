@@ -4083,6 +4083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../api/isofit/utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../api/isofit/utils/algebraic_line/" class="md-nav__link">
         
   
@@ -5002,7 +5030,15 @@
 <span class="normal">185</span>
 <span class="normal">186</span>
 <span class="normal">187</span>
-<span class="normal">188</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5172,7 +5208,15 @@
         <span class="c1"># Dimensions should be (len(RT.wl), len(x_surface))</span>
         <span class="c1"># which is correctly handled by the instrument resampling</span>
         <span class="n">drdn_dsurface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">drfl_dsurface</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">drdn_drfl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drdn_drfl</span><span class="p">(</span><span class="n">L_tot</span><span class="p">,</span> <span class="n">s_alb</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">)</span>
+        <span class="n">drdn_drfl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drdn_drfl</span><span class="p">(</span>
+            <span class="n">L_tot</span><span class="p">,</span>
+            <span class="n">s_alb</span><span class="p">,</span>
+            <span class="n">rho_dif_dir</span><span class="p">,</span>
+            <span class="n">L_dir_dir</span><span class="o">=</span><span class="n">L_dir_dir</span><span class="p">,</span>
+            <span class="n">L_dir_dif</span><span class="o">=</span><span class="n">L_dir_dif</span><span class="p">,</span>
+            <span class="n">L_dif_dir</span><span class="o">=</span><span class="n">L_dif_dir</span><span class="p">,</span>
+            <span class="n">L_dif_dif</span><span class="o">=</span><span class="n">L_dif_dif</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="n">drdn_dsurface</span><span class="p">[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span>
             <span class="n">drdn_drfl</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> <span class="n">drfl_dsurface</span><span class="p">[:,</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">]</span>
