@@ -102,6 +102,44 @@ def _inspect_zarr_dimensions(lut_path: Path) -> dict[str, np.ndarray]:
     return lut_dimensions
 
 
+def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
+    """
+    Subsets a dataset object along a specific dimension in a few supported ways.
+
+    Parameters
+    ----------
+    ds: xr.Dataset
+        Dataset to operate on
+    dim: str
+        Name of the dimension to subset
+    strat: float, int, list, dict, str, None
+        Strategy to subset the given dimension with
+
+    Returns
+    -------
+    xr.Dataset
+        New subset of the input dataset
+    """
+    if isinstance(strat, (float, int, list)):
+        return ds.sel({dim: strat})
+
+    elif isinstance(strat, str):
+        return getattr(ds, strat)(dim)
+
+    elif strat is None:
+        return ds  # Take dimension as-is
+
+    elif isinstance(strat, dict):
+        if "interp" in strat:
+            return ds.interp({dim: strat["interp"]})
+
+        return sel(ds, dim, **strat)
+
+    else:
+        Logger.error(f"Unknown subsetting strategy for type: {type(strat)}")
+        return ds
+
+
 def subsetting(ds, subset):
     """
     Subsets a Dataset
