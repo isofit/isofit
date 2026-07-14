@@ -225,7 +225,8 @@ class BaseAtmosphere(Reader):
             self.atmosphere_type = modtran_input["ATMOSPHERE"].get(
                 "M1", "ATM_MIDLAT_SUMMER"
             )
-            self.dayofyear = int(modtran_input.get("GEOMETRY", {}).get("IDAY"))
+            iday = modtran_input.get("GEOMETRY", {}).get("IDAY")
+            self.dayofyear = int(iday) if iday is not None else None
         else:
             self.atmosphere_type = "ATM_MIDLAT_SUMMER"
 
@@ -257,7 +258,7 @@ class BaseAtmosphere(Reader):
         """
         self.esd_correction = 1.0
 
-        lut_doy = int(self.lut.attrs.get("dayofyear"))
+        lut_doy = self.lut.attrs.get("dayofyear")
 
         # Double check to make sure we have everything we need
         if lut_doy is None:
@@ -274,6 +275,7 @@ class BaseAtmosphere(Reader):
             )
             return
 
+        lut_doy = int(lut_doy)
         if lut_doy == self.dayofyear:
             return
 
