@@ -407,6 +407,14 @@ class ForwardModel:
             L_dir_dif = 0
             L_dif_dif = 0
 
+        # Correct solar-reflected radiances for the Earth Sun Distance mismatch
+        # between the LUT build date and present data.
+        L_tot *= self.atmosphere.esd_correction
+        L_dir_dir *= self.atmosphere.esd_correction
+        L_dif_dir *= self.atmosphere.esd_correction
+        L_dir_dif *= self.atmosphere.esd_correction
+        L_dif_dif *= self.atmosphere.esd_correction
+
         return (
             r,
             L_tot,

@@ -213,10 +213,19 @@ class BaseAtmosphere(Reader):
             self.Sa_normalized
         )
 
+        # Day of year of the scene this run targets, read from the template IDAY.
+        # None when unavailable (e.g. no template, or an engine using a non-MODTRAN
+        # template format). Used both to tag a LUT at build time and to reconcile a
+        # prebuilt LUT's build date against the current scene date.
+        self.dayofyear = None
         if self.config.template_file:
-            self.atmosphere_type = json_load_ascii(self.config.template_file)[
-                "MODTRAN"
-            ][0]["MODTRANINPUT"]["ATMOSPHERE"].get("M1", "ATM_MIDLAT_SUMMER")
+            modtran_input = json_load_ascii(self.config.template_file)["MODTRAN"][0][
+                "MODTRANINPUT"
+            ]
+            self.atmosphere_type = modtran_input["ATMOSPHERE"].get(
+                "M1", "ATM_MIDLAT_SUMMER"
+            )
+            self.dayofyear = int(modtran_input.get("GEOMETRY", {}).get("IDAY"))
         else:
             self.atmosphere_type = "ATM_MIDLAT_SUMMER"
 
@@ -238,7 +247,43 @@ class BaseAtmosphere(Reader):
             **kwargs,
         )
 
+        self.set_esd_correction()
+
         self.get_indices()
+
+    def set_esd_correction(self):
+        """Set esd_correction factor onto self. Presumes that there is only one
+        ESD per scene being processed.
+        """
+        self.esd_correction = 1.0
+
+        lut_doy = int(self.lut.attrs.get("dayofyear"))
+
+        # Double check to make sure we have everything we need
+        if lut_doy is None:
+            Logger.warning(
+                "LUT has no 'dayofyear' attribute; skipping Earth Sun Distance "
+                "correction. Rebuild the LUT to enable it for off-date scenes."
+            )
+            return
+
+        if self.dayofyear is None:
+            Logger.warning(
+                "Current day of year unavailable (no template IDAY); skipping "
+                "Earth-Sun-distance correction."
+            )
+            return
+
+        if lut_doy == self.dayofyear:
+            return
+
+        esd = common.load_esd()
+        self.esd_correction = (esd[lut_doy - 1, 1] / esd[self.dayofyear - 1, 1]) ** 2
+        Logger.info(
+            f"Applying Earth Sun Distance correction to LUT radiances: "
+            f"LUT day of year={lut_doy}, current day of year={self.dayofyear}, "
+            f"factor={self.esd_correction:.6f}"
+        )
 
     def lut_postprocess(self):
         """
@@ -368,7 +413,7 @@ class BaseAtmosphere(Reader):
         else:
             rho_atm = r["rhoatm"]
             L_atm = units.transm_to_rdn(rho_atm, geom.coszen, self.solar_irr)
-        return L_atm
+        return L_atm * self.esd_correction
 
     def get_upward_transm(self, r: dict, geom: Geometry, max_transm: float = 1.05):
         """
