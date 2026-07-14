@@ -235,10 +235,10 @@ def subsetting(ds, subset):
             opts["interp"][dim] = v
         # Subselect
         else:
-            opts["isel"][dim] = slice(
-                ds.indexes[dim].get_indexer([strat["gte"]], method="ffill")[0],
-                ds.indexes[dim].get_indexer([strat["lte"]], method="bfill")[0] + 1,
+            i, j = ds.indexes[dim].get_indexer(
+                [strat["gte"], strat["lte"]], method="ffill"
             )
+            opts["isel"][dim] = slice(i, j + 1)
 
     if opts["isel"]:
         Logger.debug(f"Selecting")
