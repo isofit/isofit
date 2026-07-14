@@ -165,8 +165,9 @@ def calc_shards(grid, wl, chunk, storage="8gb", target_shards=None, scale=1):
     if target_shards is not None:
         idx = np.abs(files - target_shards).argmin()
     else:
-        # Fall back to the largest shard (fewest files)
-        idx = (cpf * space)[viable].argmax()
+        # Fall back to the largest shard (fewest files). cpf is already
+        # filtered by `viable` above, so index it directly.
+        idx = cpf.argmax()
 
     best = shards[idx]
 
