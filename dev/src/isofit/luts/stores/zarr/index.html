@@ -5374,7 +5374,8 @@
 <span class="normal">496</span>
 <span class="normal">497</span>
 <span class="normal">498</span>
-<span class="normal">499</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">499</span>
+<span class="normal">500</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Zarr implementation for LUTs</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -5541,8 +5542,9 @@
     <span class="k">if</span> <span class="n">target_shards</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">files</span> <span class="o">-</span> <span class="n">target_shards</span><span class="p">)</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Fall back to the largest shard (fewest files)</span>
-        <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">cpf</span> <span class="o">*</span> <span class="n">space</span><span class="p">)[</span><span class="n">viable</span><span class="p">]</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+        <span class="c1"># Fall back to the largest shard (fewest files). cpf is already</span>
+        <span class="c1"># filtered by `viable` above, so index it directly.</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">cpf</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
 
     <span class="n">best</span> <span class="o">=</span> <span class="n">shards</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
 
