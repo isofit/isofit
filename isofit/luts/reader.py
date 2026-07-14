@@ -210,7 +210,7 @@ def subsetting(ds, subset):
     """
     Subsets a Dataset
     """
-    Logger.debug(f"Estimated dataset size: {ds.nbytes / 2**30} GB")
+    Logger.debug(f"Estimated dataset size: {ds.nbytes / 2**30:.2f} GB")
 
     # The strategy dict must contain all coordinate keys in the lut file
     missing = set(ds.coords) - ({"wl"} | set(subset))
@@ -228,23 +228,41 @@ def subsetting(ds, subset):
     opts = {"isel": {}, "interp": {}}
 
     for dim, strat in subset.items():
-        # Interpolation
-        if (v := strat.get("interp")) is not None:
-            i = ds.indexes[dim].get_indexer([v], method="ffill")[0]
-            opts["isel"][dim] = slice(i, i + 1)
-            opts["interp"][dim] = v
-        # Subselect
-        else:
-            i, j = ds.indexes[dim].get_indexer(
-                [strat["gte"], strat["lte"]], method="ffill"
-            )
-            opts["isel"][dim] = slice(i, j + 1)
+        idx = ds.indexes[dim]
+
+        # Exact subset
+        if isinstance(strat, list):
+            isel = opts["isel"][dim] = idx.get_indexer(strat)
+            if -1 in isel:
+                msg = f"Lists in the subset must be an exact subset of the dimension. Invalid selection on {dim}: {idx[isel == -1]}"
+                Logger.error(msg)
+                raise ValueError(msg)
+
+        elif isinstance(strat, dict):
+            # Interpolation
+            if (v := strat.get("interp")) is not None:
+                i = idx.get_indexer([v], method="ffill")[0]
+                j = i + 1
+                if idx[i] != v:
+                    j += 1
+                opts["interp"][dim] = v
+
+            # Encompassing subset
+            else:
+                i = idx.get_indexer([strat["gte"]], method="ffill")[0]
+                j = idx.get_indexer([strat["lte"]], method="bfill")[0]
+                if idx[j] == strat["lte"]:
+                    j += 1
+
+            opts["isel"][dim] = slice(i, j)
+
+    Logger.debug(f"Operations: {opts}")
 
     if opts["isel"]:
         Logger.debug(f"Selecting")
         ds = ds.isel(**opts["isel"])
 
-    Logger.debug(f"Estimated isel size: {ds.nbytes / 2**30} GB")
+    Logger.debug(f"Estimated isel size: {ds.nbytes / 2**30:.2f} GB")
 
     if opts["interp"]:
         Logger.debug("Loading for interp")
@@ -253,7 +271,7 @@ def subsetting(ds, subset):
         Logger.debug("Interpolating")
         ds = ds.interp(**opts["interp"])
 
-    Logger.debug(f"Estimated final size: {ds.nbytes / 2**30} GB")
+    Logger.debug(f"Estimated final size: {ds.nbytes / 2**30:.2f} GB")
 
     # Save this subsetting strategy to the attributes for future reference
     ds.attrs["lut_subset"] = str(subset)
