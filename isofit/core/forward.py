@@ -158,12 +158,11 @@ class ForwardModel:
         else:
             self.model_discrepancy = None
 
+        self.calc_rdn_bgrfl = self.calc_rdn_bgrfl_homogeneous
+        self.terrain_rereflection = self.terrain_rereflection_homogeneous
         if self.surface.use_background_rfl:
             self.calc_rdn_bgrfl = self.calc_rdn_bgrfl_heterogeneous
             self.terrain_rereflection = self.terrain_rereflection_heterogeneous
-        else:
-            self.calc_rdn_bgrfl = self.calc_rdn_bgrfl_homogeneous
-            self.terrain_rereflection = self.terrain_rereflection_homogeneous
 
         if full_config.implementation.per_pixel_heuristic_prior:
             self.xa = self.xa_heuristic
