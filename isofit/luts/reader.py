@@ -202,7 +202,6 @@ def load(
     check: bool = False,
     stack: bool = True,
     load: bool = True,
-    chunks: dict = None,
     **kwargs,
 ):
     """
@@ -221,9 +220,6 @@ def load(
         entirely NaN
     load : bool, default=True
         Loads the final dataset into memory
-    chunks : dict, default={}
-        Chunks parameter for open_dataset, isofit generally wants to have the dataset
-        be chunked by the file's chunks
     **kwargs
         Additional parameters to pass to open_dataset/open_mfdataset
 
@@ -382,11 +378,16 @@ def load(
     """
     path = Path(path)
 
+    # Windows needs to define the engine as the xarray auto-discover breaks
+    engine = None
+    if Path(path).is_dir():
+        engine = "zarr"
+
     xropen = xr.open_dataset
     if mf:
         xropen = xr.mfopen_dataset
 
-    ds = xropen(path, chunks=chunks, **kwargs)
+    ds = xropen(path, engine=engine, **kwargs)
 
     status = ds.attrs.get("ISOFIT status", "<not set>")
     if status != "success":
