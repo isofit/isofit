@@ -102,110 +102,6 @@ def _inspect_zarr_dimensions(lut_path: Path) -> dict[str, np.ndarray]:
     return lut_dimensions
 
 
-def sel(ds, dim, lt=None, lte=None, gt=None, gte=None, encompass=True):
-    """
-    Subselects an xarray Dataset object using .sel
-
-    Parameters
-    ----------
-    ds: xarray.Dataset
-        LUT dataset
-    dim: str
-        Dimension to work on
-    lt: float, default=None
-        Select along this dim coordinates that are valued less than this
-    lte: float, default=None
-        Select along this dim coordinates that are valued less than or equal to this
-    gt: float, default=None
-        Select along this dim coordinates that are valued greater than this
-    gte: float, default=None
-        Select along this dim coordinates that are valued greater than or equal to this
-    encompass: bool, default=True
-        Change the values of gte/lte such that these values are encompassed using the
-        previous/next valid grid point
-
-    Returns
-    -------
-    ds: xarray.Dataset
-        Subsetted dataset
-    """
-    assert None in (
-        lt,
-        lte,
-    ), f"Subsetting `lt` and `lte` are mutually exclusive, please only set one for dim {dim}"
-    assert None in (
-        gt,
-        gte,
-    ), f"Subsetting `gt` and `gte` are mutually exclusive, please only set one for dim {dim}"
-
-    # Which index in a where to select -- if the dim is in reverse order, this needs to swap
-    g, l = -1, 0
-    if ds[dim][0] > ds[dim][-1]:
-        g, l = 0, -1
-
-    if lt is not None:
-        ds = ds.sel({dim: ds[dim] < lt})
-
-    elif lte is not None:
-        if encompass:
-            where = ds[dim].where(ds[dim] > lte).dropna(dim)
-            lte = where[l] if where.size else ds[dim].max()
-            Logger.debug(f"Encompass changed lte value to {lte}")
-
-        ds = ds.sel({dim: ds[dim] <= lte})
-
-    if gt is not None:
-        ds = ds.sel({dim: gt < ds[dim]})
-
-    elif gte is not None:
-        if encompass:
-            where = ds[dim].where(ds[dim] < gte).dropna(dim)
-            gte = where[g] if where.size else ds[dim].min()
-            Logger.debug(f"Encompass changed gte value to {gte}")
-
-        ds = ds.sel({dim: gte <= ds[dim]})
-
-    return ds
-
-
-def sub(ds: xr.Dataset, dim: str, strat) -> xr.Dataset:
-    """
-    Subsets a dataset object along a specific dimension in a few supported ways.
-
-    Parameters
-    ----------
-    ds: xr.Dataset
-        Dataset to operate on
-    dim: str
-        Name of the dimension to subset
-    strat: float, int, list, dict, str, None
-        Strategy to subset the given dimension with
-
-    Returns
-    -------
-    xr.Dataset
-        New subset of the input dataset
-    """
-    if isinstance(strat, (float, int, list)):
-        return ds.sel({dim: strat})
-
-    elif isinstance(strat, str):
-        return getattr(ds, strat)(dim)
-
-    elif strat is None:
-        return ds  # Take dimension as-is
-
-    elif isinstance(strat, dict):
-        if "interp" in strat:
-            return ds.interp({dim: strat["interp"]})
-
-        return sel(ds, dim, **strat)
-
-    else:
-        Logger.error(f"Unknown subsetting strategy for type: {type(strat)}")
-        return ds
-
-
 def subsetting(ds, subset):
     """
     Subsets a Dataset
@@ -306,7 +202,7 @@ def load(
     check: bool = False,
     stack: bool = True,
     load: bool = True,
-    chunks: dict = {},
+    chunks: dict = None,
     **kwargs,
 ):
     """
@@ -486,32 +382,9 @@ def load(
     """
     path = Path(path)
 
-    # Windows needs to define the engine as the xarray auto-discover breaks
-    engine = None
-    if Path(path).is_dir():
-        engine = "zarr"
-
     xropen = xr.open_dataset
     if mf:
         xropen = xr.mfopen_dataset
-
-    # Convert dicts of {dim: None, ...} to None
-    if subset and not any(subset.values()):
-        subset = None
-
-    # Special case that doesn't require defining the entire grid subsetting strategy
-    if load:
-        if not subset:
-            Logger.debug(
-                "With no subset defined and load enabled, disabling default chunking for performance"
-            )
-            chunks = None
-
-        elif path.is_file() and path.stat().st_size < units.byte_string_to_float("4gb"):
-            Logger.debug(
-                "LUT store detected less than 4gb and load enabled, disabling default chunking for performance"
-            )
-            chunks = None
 
     ds = xropen(path, chunks=chunks, engine=engine, **kwargs)
 
@@ -743,4 +616,4 @@ class Reader:
             Subselects using rng[0] <= wl <= rng[1]
         """
         Logger.info(f"Subsetting wavelengths to range: {rng}")
-        self.lut = sub(self.lut, "wl", dict(zip(["gte", "lte"], rng)))
+        self.lut = self.lut.sel(wl=slice(*rng))
