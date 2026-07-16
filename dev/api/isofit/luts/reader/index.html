@@ -3351,50 +3351,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.luts.reader.findSlice" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        findSlice
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.luts.reader.optimizedInterp" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        optimizedInterp
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.luts.reader.sel" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        sel
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.luts.reader.sub" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        sub
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#isofit.luts.reader.subsetting" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4942,50 +4898,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.luts.reader.findSlice" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        findSlice
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.luts.reader.optimizedInterp" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        optimizedInterp
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.luts.reader.sel" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        sel
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.luts.reader.sub" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        sub
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#isofit.luts.reader.subsetting" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5263,28 +5175,6 @@ LUT reader class to manage the reading and manipulation of LUT stores</p>
 Inspect a prebuilt LUT file to determine available dimensions and their grid points.</p>
 </li>
 <li>
-<p><span class="mkapi-item-name"><a href="./#isofit.luts.reader.findSlice" title="isofit.luts.reader.findSlice">findSlice</a></span>
- <span class="mkapi-dash">&mdash;</span>
-Creates a slice for selecting along a dimension such that a value is encompassed by
-the slice.</p>
-</li>
-<li>
-<p><span class="mkapi-item-name"><a href="./#isofit.luts.reader.optimizedInterp" title="isofit.luts.reader.optimizedInterp">optimizedInterp</a></span>
- <span class="mkapi-dash">&mdash;</span>
-Optimizes the interpolation step by subselecting along dimensions first then
-interpolating</p>
-</li>
-<li>
-<p><span class="mkapi-item-name"><a href="./#isofit.luts.reader.sel" title="isofit.luts.reader.sel">sel</a></span>
- <span class="mkapi-dash">&mdash;</span>
-Subselects an xarray Dataset object using .sel</p>
-</li>
-<li>
-<p><span class="mkapi-item-name"><a href="./#isofit.luts.reader.sub" title="isofit.luts.reader.sub">sub</a></span>
- <span class="mkapi-dash">&mdash;</span>
-Subsets a dataset object along a specific dimension in a few supported ways.</p>
-</li>
-<li>
 <p><span class="mkapi-item-name"><a href="./#isofit.luts.reader.subsetting" title="isofit.luts.reader.subsetting">subsetting</a></span>
  <span class="mkapi-dash">&mdash;</span>
 Subsets a Dataset</p>
@@ -5382,243 +5272,6 @@ Mapping dimension names to numpy arrays of grid points</p>
 </ul>
 </div>
 </div>
-<p class="mkapi-object mkapi-page-source" id="isofit.luts.reader.findSlice">
-<span class="mkapi-object-link">
-
-
-<a href="../../../../src/isofit/luts/reader/#isofit.luts.reader.findSlice" title="Go to source">source</a>
-<span class="mkapi-document-toggle" title="Toggle all docs">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-object-name"><a href="./#isofit.luts.reader.findSlice" title="isofit.luts.reader.findSlice">findSlice</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">dim</span><span class="mkapi-comma">, </span><span class="mkapi-arg">val</span><span class="mkapi-paren">)</span></span>
-</p>
-<div class="mkapi-document">
-<p>Creates a slice for selecting along a dimension such that a value is encompassed by
-the slice.</p>
-<p class="mkapi-section">
-<span class="mkapi-object-link">
-<span class="mkapi-section-toggle" title="Toggle parameters">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-section-name">Parameters</span>
-</p>
-<div class="mkapi-section-content">
-<ul class="mkapi-item-list">
-<li>
-<p><span class="mkapi-item-name">dim</span> : 
-<span class="mkapi-item-type">array</span> <span class="mkapi-dash">&mdash;</span>
-Dimension array</p>
-</li>
-<li>
-<p><span class="mkapi-item-name">val</span> : 
-<span class="mkapi-item-type">float, int</span> <span class="mkapi-dash">&mdash;</span>
-Value to be encompassed</p>
-</li>
-</ul>
-</div>
-<p class="mkapi-section">
-<span class="mkapi-object-link">
-<span class="mkapi-section-toggle" title="Toggle returns">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-section-name">Returns</span>
-</p>
-<div class="mkapi-section-content">
-<ul class="mkapi-item-list">
-<li>
-<p><span class="mkapi-item-type">slice</span> <span class="mkapi-dash">&mdash;</span>
-Index slice to encompass the value</p>
-</li>
-</ul>
-</div>
-</div>
-<p class="mkapi-object mkapi-page-source" id="isofit.luts.reader.optimizedInterp">
-<span class="mkapi-object-link">
-
-
-<a href="../../../../src/isofit/luts/reader/#isofit.luts.reader.optimizedInterp" title="Go to source">source</a>
-<span class="mkapi-document-toggle" title="Toggle all docs">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-object-name"><a href="./#isofit.luts.reader.optimizedInterp" title="isofit.luts.reader.optimizedInterp">optimizedInterp</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">ds</span><span class="mkapi-comma">, </span><span class="mkapi-arg">strat</span><span class="mkapi-paren">)</span></span>
-</p>
-<div class="mkapi-document">
-<p>Optimizes the interpolation step by subselecting along dimensions first then
-interpolating</p>
-<p class="mkapi-section">
-<span class="mkapi-object-link">
-<span class="mkapi-section-toggle" title="Toggle parameters">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-section-name">Parameters</span>
-</p>
-<div class="mkapi-section-content">
-<ul class="mkapi-item-list">
-<li>
-<p><span class="mkapi-item-name">strat</span> : 
-<span class="mkapi-item-type">dict</span> <span class="mkapi-dash">&mdash;</span>
-Interpolation stategies to perform in the form of {dim: interpolate_values}</p>
-</li>
-</ul>
-</div>
-<p class="mkapi-section">
-<span class="mkapi-object-link">
-<span class="mkapi-section-toggle" title="Toggle returns">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-section-name">Returns</span>
-</p>
-<div class="mkapi-section-content">
-<ul class="mkapi-item-list">
-<li>
-<p><span class="mkapi-item-type"><span class="mkapi-tooltip" title="xarray">xr</span>.<span class="mkapi-tooltip" title="xarray.core.dataset.Dataset">Dataset</span></span> <span class="mkapi-dash">&mdash;</span>
-Interpolated dataset</p>
-</li>
-</ul>
-</div>
-</div>
-<p class="mkapi-object mkapi-page-source" id="isofit.luts.reader.sel">
-<span class="mkapi-object-link">
-
-
-<a href="../../../../src/isofit/luts/reader/#isofit.luts.reader.sel" title="Go to source">source</a>
-<span class="mkapi-document-toggle" title="Toggle all docs">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-object-name"><a href="./#isofit.luts.reader.sel" title="isofit.luts.reader.sel">sel</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">ds</span><span class="mkapi-comma">, </span><span class="mkapi-arg">dim</span><span class="mkapi-comma">, </span><span class="mkapi-arg">lt</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">lte</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">gt</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">gte</span><span class="mkapi-equal">=</span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">encompass</span><span class="mkapi-equal">=</span><span class="mkapi-default">True</span><span class="mkapi-paren">)</span></span>
-</p>
-<div class="mkapi-document">
-<p>Subselects an xarray Dataset object using .sel</p>
-<p class="mkapi-section">
-<span class="mkapi-object-link">
-<span class="mkapi-section-toggle" title="Toggle parameters">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-section-name">Parameters</span>
-</p>
-<div class="mkapi-section-content">
-<ul class="mkapi-item-list">
-<li>
-<p><span class="mkapi-item-name">ds</span> : 
-<span class="mkapi-item-type">xarray.<span class="mkapi-tooltip" title="xarray.core.dataset.Dataset">Dataset</span></span> <span class="mkapi-dash">&mdash;</span>
-LUT dataset</p>
-</li>
-<li>
-<p><span class="mkapi-item-name">dim</span> : 
-<span class="mkapi-item-type">str</span> <span class="mkapi-dash">&mdash;</span>
-Dimension to work on</p>
-</li>
-<li>
-<p><span class="mkapi-item-name">lt</span> : 
-<span class="mkapi-item-type">float, default=None</span> <span class="mkapi-dash">&mdash;</span>
-Select along this dim coordinates that are valued less than this</p>
-</li>
-<li>
-<p><span class="mkapi-item-name">lte</span> : 
-<span class="mkapi-item-type">float, default=None</span> <span class="mkapi-dash">&mdash;</span>
-Select along this dim coordinates that are valued less than or equal to this</p>
-</li>
-<li>
-<p><span class="mkapi-item-name">gt</span> : 
-<span class="mkapi-item-type">float, default=None</span> <span class="mkapi-dash">&mdash;</span>
-Select along this dim coordinates that are valued greater than this</p>
-</li>
-<li>
-<p><span class="mkapi-item-name">gte</span> : 
-<span class="mkapi-item-type">float, default=None</span> <span class="mkapi-dash">&mdash;</span>
-Select along this dim coordinates that are valued greater than or equal to this</p>
-</li>
-<li>
-<p><span class="mkapi-item-name">encompass</span> : 
-<span class="mkapi-item-type">bool, default=True</span> <span class="mkapi-dash">&mdash;</span>
-Change the values of gte/lte such that these values are encompassed using the
-previous/next valid grid point</p>
-</li>
-</ul>
-</div>
-<p class="mkapi-section">
-<span class="mkapi-object-link">
-<span class="mkapi-section-toggle" title="Toggle returns">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-section-name">Returns</span>
-</p>
-<div class="mkapi-section-content">
-<ul class="mkapi-item-list">
-<li>
-<p><span class="mkapi-item-name">ds</span> : 
-<span class="mkapi-item-type">xarray.<span class="mkapi-tooltip" title="xarray.core.dataset.Dataset">Dataset</span></span> <span class="mkapi-dash">&mdash;</span>
-Subsetted dataset</p>
-</li>
-</ul>
-</div>
-</div>
-<p class="mkapi-object mkapi-page-source" id="isofit.luts.reader.sub">
-<span class="mkapi-object-link">
-
-
-<a href="../../../../src/isofit/luts/reader/#isofit.luts.reader.sub" title="Go to source">source</a>
-<span class="mkapi-document-toggle" title="Toggle all docs">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-object-name"><a href="./#isofit.luts.reader.sub" title="isofit.luts.reader.sub">sub</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">ds</span><span class="mkapi-colon">: </span><span class="mkapi-ann"><span class="mkapi-tooltip" title="xarray">xr</span>.<span class="mkapi-tooltip" title="xarray.core.dataset.Dataset">Dataset</span></span><span class="mkapi-comma">, </span><span class="mkapi-arg">dim</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-comma">, </span><span class="mkapi-arg">strat</span><span class="mkapi-paren">)</span><span class="mkapi-arrow"> → </span><span class="mkapi-return"><span class="mkapi-tooltip" title="xarray">xr</span>.<span class="mkapi-tooltip" title="xarray.core.dataset.Dataset">Dataset</span></span></span>
-</p>
-<div class="mkapi-document">
-<p>Subsets a dataset object along a specific dimension in a few supported ways.</p>
-<p class="mkapi-section">
-<span class="mkapi-object-link">
-<span class="mkapi-section-toggle" title="Toggle parameters">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-section-name">Parameters</span>
-</p>
-<div class="mkapi-section-content">
-<ul class="mkapi-item-list">
-<li>
-<p><span class="mkapi-item-name">ds</span> : 
-<span class="mkapi-item-type"><span class="mkapi-tooltip" title="xarray">xr</span>.<span class="mkapi-tooltip" title="xarray.core.dataset.Dataset">Dataset</span></span> <span class="mkapi-dash">&mdash;</span>
-Dataset to operate on</p>
-</li>
-<li>
-<p><span class="mkapi-item-name">dim</span> : 
-<span class="mkapi-item-type">str</span> <span class="mkapi-dash">&mdash;</span>
-Name of the dimension to subset</p>
-</li>
-<li>
-<p><span class="mkapi-item-name">strat</span> : 
-<span class="mkapi-item-type">float, int, list, dict, str, None</span> <span class="mkapi-dash">&mdash;</span>
-Strategy to subset the given dimension with</p>
-</li>
-</ul>
-</div>
-<p class="mkapi-section">
-<span class="mkapi-object-link">
-<span class="mkapi-section-toggle" title="Toggle returns">
-<i class="fa-regular fa-square-minus"></i>
-</span>
-</span>
-<span class="mkapi-section-name">Returns</span>
-</p>
-<div class="mkapi-section-content">
-<ul class="mkapi-item-list">
-<li>
-<p><span class="mkapi-item-type"><span class="mkapi-tooltip" title="xarray">xr</span>.<span class="mkapi-tooltip" title="xarray.core.dataset.Dataset">Dataset</span></span> <span class="mkapi-dash">&mdash;</span>
-New subset of the input dataset</p>
-</li>
-</ul>
-</div>
-</div>
 <p class="mkapi-object mkapi-page-source" id="isofit.luts.reader.subsetting">
 <span class="mkapi-object-link">
 
@@ -5644,6 +5297,9 @@ New subset of the input dataset</p>
 <ul class="mkapi-item-list">
 <li>
 <p><span class="mkapi-item-type">AttributeError</span></p>
+</li>
+<li>
+<p><span class="mkapi-item-type">ValueError</span></p>
 </li>
 </ul>
 </div>
@@ -5671,7 +5327,7 @@ New subset of the input dataset</p>
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span>
-<span class="mkapi-object-name"><a href="./#isofit.luts.reader.load" title="isofit.luts.reader.load">load</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">path</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-comma">, </span><span class="mkapi-arg">subset</span><span class="mkapi-colon">: </span><span class="mkapi-ann">dict</span><span class="mkapi-equal"> = </span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">mf</span><span class="mkapi-colon">: </span><span class="mkapi-ann">bool</span><span class="mkapi-equal"> = </span><span class="mkapi-default">False</span><span class="mkapi-comma">, </span><span class="mkapi-arg">check</span><span class="mkapi-colon">: </span><span class="mkapi-ann">bool</span><span class="mkapi-equal"> = </span><span class="mkapi-default">False</span><span class="mkapi-comma">, </span><span class="mkapi-arg">stack</span><span class="mkapi-colon">: </span><span class="mkapi-ann">bool</span><span class="mkapi-equal"> = </span><span class="mkapi-default">True</span><span class="mkapi-comma">, </span><span class="mkapi-arg">load</span><span class="mkapi-colon">: </span><span class="mkapi-ann">bool</span><span class="mkapi-equal"> = </span><span class="mkapi-default">True</span><span class="mkapi-comma">, </span><span class="mkapi-arg">chunks</span><span class="mkapi-colon">: </span><span class="mkapi-ann">dict</span><span class="mkapi-equal"> = </span><span class="mkapi-default">{}</span><span class="mkapi-comma">, </span><span class="mkapi-star">**</span><span class="mkapi-arg">kwargs</span><span class="mkapi-paren">)</span></span>
+<span class="mkapi-object-name"><a href="./#isofit.luts.reader.load" title="isofit.luts.reader.load">load</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">path</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-comma">, </span><span class="mkapi-arg">subset</span><span class="mkapi-colon">: </span><span class="mkapi-ann">dict</span><span class="mkapi-equal"> = </span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">mf</span><span class="mkapi-colon">: </span><span class="mkapi-ann">bool</span><span class="mkapi-equal"> = </span><span class="mkapi-default">False</span><span class="mkapi-comma">, </span><span class="mkapi-arg">check</span><span class="mkapi-colon">: </span><span class="mkapi-ann">bool</span><span class="mkapi-equal"> = </span><span class="mkapi-default">False</span><span class="mkapi-comma">, </span><span class="mkapi-arg">stack</span><span class="mkapi-colon">: </span><span class="mkapi-ann">bool</span><span class="mkapi-equal"> = </span><span class="mkapi-default">True</span><span class="mkapi-comma">, </span><span class="mkapi-arg">load</span><span class="mkapi-colon">: </span><span class="mkapi-ann">bool</span><span class="mkapi-equal"> = </span><span class="mkapi-default">True</span><span class="mkapi-comma">, </span><span class="mkapi-star">**</span><span class="mkapi-arg">kwargs</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p class="mkapi-section">
@@ -5711,12 +5367,6 @@ entirely NaN</p>
 <p><span class="mkapi-item-name">load</span> : 
 <span class="mkapi-item-type">bool, default=True</span> <span class="mkapi-dash">&mdash;</span>
 Loads the final dataset into memory</p>
-</li>
-<li>
-<p><span class="mkapi-item-name">chunks</span> : 
-<span class="mkapi-item-type">dict, default={}</span> <span class="mkapi-dash">&mdash;</span>
-Chunks parameter for open_dataset, isofit generally wants to have the dataset
-be chunked by the file's chunks</p>
 </li>
 <li>
 <p><span class="mkapi-item-name">**kwargs</span>
