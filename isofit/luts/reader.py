@@ -14,7 +14,7 @@ import xarray as xr
 from netCDF4 import Dataset
 
 from isofit import __version__
-from isofit.core import common, units
+from isofit.core import common
 
 Logger = logging.getLogger(__name__)
 
