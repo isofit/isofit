@@ -145,7 +145,7 @@ These are accepted through consensus of a quorum of maintainers.  **If you would
 Releases should trigger a new PyPi upload, and subsequently a fresh upload to conda-forge.  Therefore,
 the revised steps for versioning are:
 
-* Submit version number change to setup.cfg in dev
+* Submit version number change to isofit/\_\_init\_\_.py in dev
 * Trigger a PR from dev to main
 * Accept the PR
 * Go to https://github.com/isofit/isofit/releases
