@@ -138,15 +138,11 @@ def subsetting(ds, subset):
             # Interpolation
             if (v := strat.get("interp")) is not None:
                 i = idx.get_indexer([v], method="ffill")[0]
-                j = i + 1
+                sel = i
+                # Only slice and interpolate if v is not gridpoint
                 if idx[i] != v:
-                    j += 1
-
-                # value falls directly on grid point, don't interpolate
-                if j - i == 1:
-                    continue
-
-                opts["interp"][dim] = v
+                    opts["interp"][dim] = v
+                    sel = slice(i, i + 2)
 
             # Encompassing subset
             else:
@@ -154,8 +150,9 @@ def subsetting(ds, subset):
                 j = idx.get_indexer([strat["lte"]], method="bfill")[0]
                 if idx[j] == strat["lte"]:
                     j += 1
+                sel = slice(i, j)
 
-            opts["isel"][dim] = slice(i, j)
+                opts["isel"][dim] = sel
 
     Logger.debug(f"Operations: {opts}")
 
