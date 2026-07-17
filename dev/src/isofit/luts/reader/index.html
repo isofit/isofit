@@ -17,7 +17,7 @@
       
       
       <link rel="icon" href="../../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -25,7 +25,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -5473,7 +5473,9 @@
 <span class="normal">617</span>
 <span class="normal">618</span>
 <span class="normal">619</span>
-<span class="normal">620</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Manages the reading and subsetting of look-up tables (LUTs)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -5613,10 +5615,11 @@
             <span class="c1"># Interpolation</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">:=</span> <span class="n">strat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;interp&quot;</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">i</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">get_indexer</span><span class="p">([</span><span class="n">v</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;ffill&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">j</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">sel</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="c1"># Only slice and interpolate if v is not gridpoint</span>
                 <span class="k">if</span> <span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">v</span><span class="p">:</span>
-                    <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;interp&quot;</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;interp&quot;</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="n">sel</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
 
             <span class="c1"># Encompassing subset</span>
             <span class="k">else</span><span class="p">:</span>
@@ -5624,8 +5627,9 @@
                 <span class="n">j</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">get_indexer</span><span class="p">([</span><span class="n">strat</span><span class="p">[</span><span class="s2">&quot;lte&quot;</span><span class="p">]],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;bfill&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">idx</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">strat</span><span class="p">[</span><span class="s2">&quot;lte&quot;</span><span class="p">]:</span>
                     <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">sel</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
 
-            <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;isel&quot;</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+            <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;isel&quot;</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">sel</span>
 
     <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Operations: </span><span class="si">{</span><span class="n">opts</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -6212,7 +6216,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.expand", "navigation.path"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../javascript/mkapi.js"></script>
       
