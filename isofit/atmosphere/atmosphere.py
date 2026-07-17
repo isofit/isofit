@@ -263,17 +263,10 @@ class BaseAtmosphere(Reader):
         # Double check to make sure we have everything we need
         if lut_doy is None:
             Logger.warning(
-                "LUT has no 'dayofyear' attribute; skipping Earth Sun Distance "
-                "correction. Rebuild the LUT to enable it for off-date scenes."
+                "LUT has no 'dayofyear' attribute; setting to default of 93, "
+                "which is the MODTRAN default reference."
             )
-            return
-
-        if self.dayofyear is None:
-            Logger.warning(
-                "Current day of year unavailable (no template IDAY); skipping "
-                "Earth-Sun-distance correction."
-            )
-            return
+            lut_doy = 93
 
         lut_doy = int(lut_doy)
         if lut_doy == self.dayofyear:
