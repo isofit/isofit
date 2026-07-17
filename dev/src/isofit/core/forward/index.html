@@ -6096,7 +6096,9 @@
 <span class="normal">1009</span>
 <span class="normal">1010</span>
 <span class="normal">1011</span>
-<span class="normal">1012</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1012</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6505,13 +6507,15 @@
             <span class="n">L_dir_dif</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">L_dif_dif</span> <span class="o">=</span> <span class="mi">0</span>
 
+        <span class="c1"># Correct solar-reflected radiances for the Earth Sun Distance mismatch</span>
+        <span class="c1"># between the LUT build date and present data.</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">r</span><span class="p">,</span>
-            <span class="n">L_tot</span><span class="p">,</span>
-            <span class="n">L_dir_dir</span><span class="p">,</span>
-            <span class="n">L_dif_dir</span><span class="p">,</span>
-            <span class="n">L_dir_dif</span><span class="p">,</span>
-            <span class="n">L_dif_dif</span><span class="p">,</span>
+            <span class="n">L_tot</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">esd_correction</span><span class="p">,</span>
+            <span class="n">L_dir_dir</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">esd_correction</span><span class="p">,</span>
+            <span class="n">L_dif_dir</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">esd_correction</span><span class="p">,</span>
+            <span class="n">L_dir_dif</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">esd_correction</span><span class="p">,</span>
+            <span class="n">L_dif_dif</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">esd_correction</span><span class="p">,</span>
         <span class="p">)</span>
 <div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.get_L_coupled"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.get_L_coupled" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_L_coupled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>

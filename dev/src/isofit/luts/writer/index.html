@@ -5235,7 +5235,12 @@
 <span class="normal">357</span>
 <span class="normal">358</span>
 <span class="normal">359</span>
-<span class="normal">360</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Manages the generation of new look-up tables (LUTs)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -5408,6 +5413,11 @@
 <span class="sd">        Executes an engine object to process simulations using the preSim, makeSim, and</span>
 <span class="sd">        postSim functions</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Tag the LUT with its build day-of-year so a prebuilt LUT reused on a</span>
+        <span class="c1"># different scene date can be Earth-Sun-distance corrected downstream</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;dayofyear&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">&quot;dayofyear&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span><span class="p">))</span>
+
         <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running any pre-sim functions&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">pre</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preSim</span><span class="p">():</span>
             <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving pre-sim data to index zero of all dimensions except wl&quot;</span><span class="p">)</span>

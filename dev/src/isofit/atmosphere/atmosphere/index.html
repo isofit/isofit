@@ -4741,6 +4741,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.atmosphere.atmosphere.BaseAtmosphere.set_esd_correction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_esd_correction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.atmosphere.atmosphere.BaseAtmosphere.lut_postprocess" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5602,7 +5613,52 @@
 <span class="normal">658</span>
 <span class="normal">659</span>
 <span class="normal">660</span>
-<span class="normal">661</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span>
+<span class="normal">669</span>
+<span class="normal">670</span>
+<span class="normal">671</span>
+<span class="normal">672</span>
+<span class="normal">673</span>
+<span class="normal">674</span>
+<span class="normal">675</span>
+<span class="normal">676</span>
+<span class="normal">677</span>
+<span class="normal">678</span>
+<span class="normal">679</span>
+<span class="normal">680</span>
+<span class="normal">681</span>
+<span class="normal">682</span>
+<span class="normal">683</span>
+<span class="normal">684</span>
+<span class="normal">685</span>
+<span class="normal">686</span>
+<span class="normal">687</span>
+<span class="normal">688</span>
+<span class="normal">689</span>
+<span class="normal">690</span>
+<span class="normal">691</span>
+<span class="normal">692</span>
+<span class="normal">693</span>
+<span class="normal">694</span>
+<span class="normal">695</span>
+<span class="normal">696</span>
+<span class="normal">697</span>
+<span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span>
+<span class="normal">702</span>
+<span class="normal">703</span>
+<span class="normal">704</span>
+<span class="normal">705</span>
+<span class="normal">706</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5817,12 +5873,27 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">Sa_normalized</span>
         <span class="p">)</span>
 
+        <span class="c1"># Day of year of the scene this run targets, read from the template IDAY.</span>
+        <span class="c1"># When not specified, use the MODTRAN default (93)</span>
+        <span class="c1"># Used both to tag a LUT at build time and to reconcile a</span>
+        <span class="c1"># prebuilt LUT&#39;s build date against the current scene date.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type</span> <span class="o">=</span> <span class="n">json_load_ascii</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">)[</span>
-                <span class="s2">&quot;MODTRAN&quot;</span>
-            <span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;M1&quot;</span><span class="p">,</span> <span class="s2">&quot;ATM_MIDLAT_SUMMER&quot;</span><span class="p">)</span>
+            <span class="n">modtran_input</span> <span class="o">=</span> <span class="n">json_load_ascii</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">)[</span><span class="s2">&quot;MODTRAN&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span>
+                <span class="s2">&quot;MODTRANINPUT&quot;</span>
+            <span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type</span> <span class="o">=</span> <span class="n">modtran_input</span><span class="p">[</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;M1&quot;</span><span class="p">,</span> <span class="s2">&quot;ATM_MIDLAT_SUMMER&quot;</span>
+            <span class="p">)</span>
+            <span class="n">iday</span> <span class="o">=</span> <span class="n">modtran_input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;IDAY&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">iday</span><span class="p">)</span> <span class="k">if</span> <span class="n">iday</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;No template file provided, assuming atm profile: ATM_MIDLAT_SUMMER and&quot;</span>
+                <span class="s2">&quot;default IDAY 93&quot;</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type</span> <span class="o">=</span> <span class="s2">&quot;ATM_MIDLAT_SUMMER&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span> <span class="o">=</span> <span class="mi">93</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">h2o_bounds_polynomial</span> <span class="o">=</span> <span class="n">modtran_water_upperbound_polynomials</span><span class="p">()[</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type</span>
@@ -5842,7 +5913,37 @@
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_esd_correction</span><span class="p">()</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">get_indices</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_esd_correction</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.atmosphere.BaseAtmosphere.set_esd_correction"><a href="../../../../api/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.BaseAtmosphere.set_esd_correction" title="Go to docs">[docs]</a></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set esd_correction factor onto self. Presumes that there is only one</span>
+<span class="sd">        ESD per scene being processed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">esd_correction</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="n">lut_doy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dayofyear&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Double check to make sure we have everything we need</span>
+        <span class="k">if</span> <span class="n">lut_doy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;LUT has no &#39;dayofyear&#39; attribute; setting to default of 93, &quot;</span>
+                <span class="s2">&quot;which is the MODTRAN default reference.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">lut_doy</span> <span class="o">=</span> <span class="mi">93</span>
+
+        <span class="n">lut_doy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lut_doy</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lut_doy</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">esd</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">load_esd</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">esd_correction</span> <span class="o">=</span> <span class="p">(</span><span class="n">esd</span><span class="p">[</span><span class="n">lut_doy</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">esd</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Applying Earth Sun Distance correction to LUT radiances: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;LUT day of year=</span><span class="si">{</span><span class="n">lut_doy</span><span class="si">}</span><span class="s2">, current day of year=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;factor=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">esd_correction</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">lut_postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.atmosphere.BaseAtmosphere.lut_postprocess"><a href="../../../../api/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.BaseAtmosphere.lut_postprocess" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -5972,7 +6073,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">rho_atm</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;rhoatm&quot;</span><span class="p">]</span>
             <span class="n">L_atm</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">transm_to_rdn</span><span class="p">(</span><span class="n">rho_atm</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">solar_irr</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">L_atm</span>
+        <span class="k">return</span> <span class="n">L_atm</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">esd_correction</span>
 <div class="mkapi-source-link" id="isofit.atmosphere.atmosphere.BaseAtmosphere.get_upward_transm"><a href="../../../../api/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.BaseAtmosphere.get_upward_transm" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_upward_transm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">,</span> <span class="n">max_transm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.05</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
