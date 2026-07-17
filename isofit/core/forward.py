@@ -407,13 +407,15 @@ class ForwardModel:
             L_dir_dif = 0
             L_dif_dif = 0
 
+        # Correct solar-reflected radiances for the Earth Sun Distance mismatch
+        # between the LUT build date and present data.
         return (
             r,
-            L_tot,
-            L_dir_dir,
-            L_dif_dir,
-            L_dir_dif,
-            L_dif_dif,
+            L_tot * self.atmosphere.esd_correction,
+            L_dir_dir * self.atmosphere.esd_correction,
+            L_dif_dir * self.atmosphere.esd_correction,
+            L_dir_dif * self.atmosphere.esd_correction,
+            L_dif_dif * self.atmosphere.esd_correction,
         )
 
     def get_L_coupled(self, r: dict, geom: Geometry, rho_dif_dif: np.ndarray = 0):
