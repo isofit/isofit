@@ -152,7 +152,7 @@ def subsetting(ds, subset):
                     j += 1
                 sel = slice(i, j)
 
-                opts["isel"][dim] = sel
+            opts["isel"][dim] = sel
 
     Logger.debug(f"Operations: {opts}")
 
