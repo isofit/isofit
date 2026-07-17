@@ -214,8 +214,8 @@ class BaseAtmosphere(Reader):
         )
 
         # Day of year of the scene this run targets, read from the template IDAY.
-        # None when unavailable (e.g. no template, or an engine using a non-MODTRAN
-        # template format). Used both to tag a LUT at build time and to reconcile a
+        # When not specified, use the MODTRAN default (93)
+        # Used both to tag a LUT at build time and to reconcile a
         # prebuilt LUT's build date against the current scene date.
         self.dayofyear = None
         if self.config.template_file:
@@ -228,7 +228,12 @@ class BaseAtmosphere(Reader):
             iday = modtran_input.get("GEOMETRY", {}).get("IDAY")
             self.dayofyear = int(iday) if iday is not None else None
         else:
+            Logger.warning(
+                "No template file provided, assuming atm profile: ATM_MIDLAT_SUMMER and"
+                "default IDAY 93"
+            )
             self.atmosphere_type = "ATM_MIDLAT_SUMMER"
+            self.dayofyear = 93
 
         self.h2o_bounds_polynomial = modtran_water_upperbound_polynomials()[
             self.atmosphere_type
