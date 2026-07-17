@@ -213,12 +213,27 @@ class BaseAtmosphere(Reader):
             self.Sa_normalized
         )
 
+        # Day of year of the scene this run targets, read from the template IDAY.
+        # When not specified, use the MODTRAN default (93)
+        # Used both to tag a LUT at build time and to reconcile a
+        # prebuilt LUT's build date against the current scene date.
+        self.dayofyear = None
         if self.config.template_file:
-            self.atmosphere_type = json_load_ascii(self.config.template_file)[
-                "MODTRAN"
-            ][0]["MODTRANINPUT"]["ATMOSPHERE"].get("M1", "ATM_MIDLAT_SUMMER")
+            modtran_input = json_load_ascii(self.config.template_file)["MODTRAN"][0][
+                "MODTRANINPUT"
+            ]
+            self.atmosphere_type = modtran_input["ATMOSPHERE"].get(
+                "M1", "ATM_MIDLAT_SUMMER"
+            )
+            iday = modtran_input.get("GEOMETRY", {}).get("IDAY")
+            self.dayofyear = int(iday) if iday is not None else None
         else:
+            Logger.warning(
+                "No template file provided, assuming atm profile: ATM_MIDLAT_SUMMER and"
+                "default IDAY 93"
+            )
             self.atmosphere_type = "ATM_MIDLAT_SUMMER"
+            self.dayofyear = 93
 
         self.h2o_bounds_polynomial = modtran_water_upperbound_polynomials()[
             self.atmosphere_type
@@ -238,7 +253,37 @@ class BaseAtmosphere(Reader):
             **kwargs,
         )
 
+        self.set_esd_correction()
+
         self.get_indices()
+
+    def set_esd_correction(self):
+        """Set esd_correction factor onto self. Presumes that there is only one
+        ESD per scene being processed.
+        """
+        self.esd_correction = 1.0
+
+        lut_doy = self.lut.attrs.get("dayofyear")
+
+        # Double check to make sure we have everything we need
+        if lut_doy is None:
+            Logger.warning(
+                "LUT has no 'dayofyear' attribute; setting to default of 93, "
+                "which is the MODTRAN default reference."
+            )
+            lut_doy = 93
+
+        lut_doy = int(lut_doy)
+        if lut_doy == self.dayofyear:
+            return
+
+        esd = common.load_esd()
+        self.esd_correction = (esd[lut_doy - 1, 1] / esd[self.dayofyear - 1, 1]) ** 2
+        Logger.info(
+            f"Applying Earth Sun Distance correction to LUT radiances: "
+            f"LUT day of year={lut_doy}, current day of year={self.dayofyear}, "
+            f"factor={self.esd_correction:.6f}"
+        )
 
     def lut_postprocess(self):
         """
@@ -368,7 +413,7 @@ class BaseAtmosphere(Reader):
         else:
             rho_atm = r["rhoatm"]
             L_atm = units.transm_to_rdn(rho_atm, geom.coszen, self.solar_irr)
-        return L_atm
+        return L_atm * self.esd_correction
 
     def get_upward_transm(self, r: dict, geom: Geometry, max_transm: float = 1.05):
         """
