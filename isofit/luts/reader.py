@@ -141,6 +141,11 @@ def subsetting(ds, subset):
                 j = i + 1
                 if idx[i] != v:
                     j += 1
+
+                # value falls directly on grid point, don't interpolate
+                if j - i == 1:
+                    continue
+
                 opts["interp"][dim] = v
 
             # Encompassing subset
