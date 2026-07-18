@@ -22,7 +22,7 @@ import multiprocessing
 import time
 
 import numpy as np
-from scipy.linalg import inv
+from scipy.linalg import inv, pinv
 from scipy.ndimage import gaussian_filter
 from scipy.spatial import KDTree
 from spectral.io import envi
@@ -113,6 +113,11 @@ def _run_chunk(
         (n_reference_lines, n_atm_bands)
     )
 
+    if len(nneighbors) != 1 and len(nneighbors) != n_atm_bands:
+        raise ValueError(
+            "nneighbors must be either a single value (for all bands) or a list of values with the same length as the number of atmospheric bands.  If this flag trips, it is safe to restart the same job with the appropriate number of neighbors set."
+        )
+
     # Load segmentation data
     if segmentation_file:
         segmentation_img = envi.open(envi_header(segmentation_file), segmentation_file)
@@ -179,7 +184,7 @@ def _run_chunk(
                         W = np.diag(np.ones(n))  # /uv[use, i])
                         y = yv[use, i : i + 1]
                         try:
-                            bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
+                            bhat[i, :] = (pinv(X.T @ W @ X) @ X.T @ W @ y).T
                         except:
                             bhat[i, :] = 0
 
