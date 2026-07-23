@@ -11,6 +11,7 @@ import numpy as np
 from scipy import ndimage
 from scipy.io import loadmat
 from scipy.linalg import norm
+from scipy.ndimage import gaussian_filter1d
 from spectral import envi
 
 import isofit.utils.template_construction as tmpl
@@ -65,13 +66,33 @@ class Component:
         for ci in range(self.n_comp):
             ref_mu = self.mus[ci]
             ref_mu = (ref_mu - np.min(ref_mu)) / (np.max(ref_mu) - np.min(ref_mu))
-            mds.append(sum(pow(lamb_ref - ref_mu, 2)))
+            # mds.append(sum(pow(lamb_ref - ref_mu, 2)))
+            mds.append(self.spectral_gradient_angle(lamb_ref, ref_mu))
         closest = np.argmin(mds)
 
         surface_category = self.surface_categories[closest].strip()
         surface_idx = SurfaceMapping[surface_category]
 
         return surface_idx
+
+    @staticmethod
+    def spectral_angle_distance(lamb_ref, mus):
+        cos_theta = np.einsum("k,ik->i", lamb_ref, mus) / (
+            np.linalg.norm(lamb_ref) * np.linalg.norm(mus, axis=1)
+        )
+
+        return np.arccos(np.clip(cos_theta, -1.0, 1.0))
+
+    def spectral_gradient_angle(self, lamb_ref, mus):
+        def gradient(wl, val, sigma=2):
+            val = gaussian_filter1d(val, sigma=sigma)
+            return np.gradient(val, wl)
+
+        grads = np.array([gradient(self.wl[self.idx_ref], mu) for mu in mus])
+
+        return self.spectral_angle_distance(
+            gradient(self.wl[self.idx_ref], lamb_ref), grads
+        )
 
 
 @ray.remote(num_cpus=1)

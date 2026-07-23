@@ -39,9 +39,9 @@ def heuristic_atmosphere(
     x_instrument: np.array,
     meas: np.array,
     geom: Geometry,
-    wl_lo: int = 865,
-    wl_center: int = 945,
-    wl_hi: int = 1040,
+    wl_lo: int = 885,
+    wl_center: int = 940,
+    wl_hi: int = 995,
 ):
     """From a given radiance, estimate atmospheric state with band ratios.
     Used to initialize gradient descent inversions.
