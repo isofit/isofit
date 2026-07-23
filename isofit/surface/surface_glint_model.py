@@ -28,11 +28,7 @@ from isofit.surface.surface import DefaultState
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 DefaultSkyGlintPrior = DefaultState(
-    bounds=[0.0, 10.0],
-    scale=1.0,
-    prior_mean=1 / np.pi,
-    prior_sigma=100.0,
-    init=1 / np.pi,
+    bounds=[-1.0, 1.0], scale=1.0, prior_mean=0, prior_sigma=10.0, init=0
 )
 
 DefaultSunGlintPrior = DefaultState(
