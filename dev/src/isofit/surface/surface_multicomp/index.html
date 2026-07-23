@@ -4938,17 +4938,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#isofit.surface.surface_multicomp.MultiComponentSurface.normalized_spectral_gradient_angle" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        normalized_spectral_gradient_angle
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -5436,23 +5425,7 @@
 <span class="normal">437</span>
 <span class="normal">438</span>
 <span class="normal">439</span>
-<span class="normal">440</span>
-<span class="normal">441</span>
-<span class="normal">442</span>
-<span class="normal">443</span>
-<span class="normal">444</span>
-<span class="normal">445</span>
-<span class="normal">446</span>
-<span class="normal">447</span>
-<span class="normal">448</span>
-<span class="normal">449</span>
-<span class="normal">450</span>
-<span class="normal">451</span>
-<span class="normal">452</span>
-<span class="normal">453</span>
-<span class="normal">454</span>
-<span class="normal">455</span>
-<span class="normal">456</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">440</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5608,8 +5581,8 @@
         <span class="c1"># Only support euclidean distance comparrison for now</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection_metric</span> <span class="o">==</span> <span class="s2">&quot;SGA&quot;</span><span class="p">:</span>
             <span class="n">mds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectral_gradient_angle</span><span class="p">(</span><span class="n">lamb_ref</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mus</span><span class="p">))</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection_metric</span> <span class="o">==</span> <span class="s2">&quot;NormSGA&quot;</span><span class="p">:</span>
-            <span class="n">mds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalized_spectral_gradient_angle</span><span class="p">(</span><span class="n">lamb_ref</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mus</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection_metric</span> <span class="o">==</span> <span class="s2">&quot;SpecAngle&quot;</span><span class="p">:</span>
+            <span class="n">mds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectral_angle_distance</span><span class="p">(</span><span class="n">lamb_ref</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mus</span><span class="p">))</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection_metric</span> <span class="o">==</span> <span class="s2">&quot;Euclidean&quot;</span><span class="p">:</span>
             <span class="n">mds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">euclidean_distance</span><span class="p">(</span>
                 <span class="n">lamb_ref</span><span class="p">,</span>
@@ -5891,22 +5864,6 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectral_angle_distance</span><span class="p">(</span>
             <span class="n">gradient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_ref</span><span class="p">],</span> <span class="n">lamb_ref</span><span class="p">),</span> <span class="n">grads</span>
-        <span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">normalized_spectral_gradient_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lamb_ref</span><span class="p">,</span> <span class="n">mus</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_multicomp.MultiComponentSurface.normalized_spectral_gradient_angle"><a href="../../../../api/isofit/surface/surface_multicomp/#isofit.surface.surface_multicomp.MultiComponentSurface.normalized_spectral_gradient_angle" title="Go to docs">[docs]</a></div>
-        <span class="k">def</span><span class="w"> </span><span class="nf">gradient</span><span class="p">(</span><span class="n">wl</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">wl</span><span class="p">)</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">gradient_norm</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-
-        <span class="n">grads</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">gradient_norm</span><span class="p">(</span><span class="n">gradient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_ref</span><span class="p">],</span> <span class="n">mu</span><span class="p">))</span> <span class="k">for</span> <span class="n">mu</span> <span class="ow">in</span> <span class="n">mus</span><span class="p">]</span>
-        <span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectral_angle_distance</span><span class="p">(</span>
-            <span class="n">gradient_norm</span><span class="p">(</span><span class="n">gradient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_ref</span><span class="p">],</span> <span class="n">lamb_ref</span><span class="p">)),</span> <span class="n">grads</span>
         <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
