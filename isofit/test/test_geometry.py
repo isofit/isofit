@@ -75,9 +75,6 @@ def test_default_behavior():
     assert geom.solar_azimuth == None
     assert geom.observer_altitude_km == None
     assert geom.surface_elevation_km == None
-    assert geom.earth_sun_distance == None
-    assert geom.earth_sun_distance_reference.shape == (366, 2)
-    assert np.all(geom.earth_sun_distance_reference[:, 1] == 1.0)
 
 
 def test_geom_clipping(input_obs):

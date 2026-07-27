@@ -19,7 +19,6 @@
 #
 
 import logging
-from datetime import datetime
 
 import numpy as np
 
@@ -35,7 +34,6 @@ class Geometry:
         self,
         obs: np.array = None,
         loc: np.array = None,
-        esd: np.array = None,
         bg_rfl: np.array = None,
         svf: float = 1,
         coszen: float = None,
@@ -45,11 +43,10 @@ class Geometry:
         Args:
             obs: Observation metadata array.
             loc: Location metadata array.
-            esd: Earth sun distance array.
             bg_rfl: Background reflectance spectrum.
             svf: Sky view factor.
             coszen: Cosine of the solar zenith angle for top of atmosphere.
-            config: isofit config.
+            full_config: isofit config.
         """
         # Set some benign defaults...
         self.observer_zenith = None
@@ -58,15 +55,6 @@ class Geometry:
         self.solar_azimuth = None
         self.observer_altitude_km = None
         self.surface_elevation_km = None
-        self.earth_sun_distance = None
-
-        if esd is None:
-            logging.warning(
-                "Earth sun distance not provided. Proceeding without might cause some inaccuracies down the line"
-            )
-            esd = np.ones((366, 2))
-            esd[:, 0] = np.arange(1, 367, 1)
-        self.earth_sun_distance_reference = esd
 
         self.bg_rfl = bg_rfl
         self.cos_i = None
