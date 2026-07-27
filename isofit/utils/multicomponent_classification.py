@@ -63,11 +63,13 @@ class Component:
         lamb_ref = (lamb_ref - np.min(lamb_ref)) / (np.max(lamb_ref) - np.min(lamb_ref))
 
         mds = []
+        ref_mus = []
         for ci in range(self.n_comp):
             ref_mu = self.mus[ci]
             ref_mu = (ref_mu - np.min(ref_mu)) / (np.max(ref_mu) - np.min(ref_mu))
+            ref_mus.append(ref_mu)
             # mds.append(sum(pow(lamb_ref - ref_mu, 2)))
-            mds.append(self.spectral_gradient_angle(lamb_ref, ref_mu))
+        mds = self.spectral_gradient_angle(lamb_ref, np.array(ref_mus))
         closest = np.argmin(mds)
 
         surface_category = self.surface_categories[closest].strip()
