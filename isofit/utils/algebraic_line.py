@@ -30,8 +30,8 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
-from isofit.core.common import envi_header, load_spectrum
-from isofit.core.fileio import IO, write_bil_chunk
+from isofit.core.common import envi_header, load_esd, load_spectrum
+from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
 from isofit.core.geometry import Geometry
 from isofit.inversion.inverse import Inversion
@@ -304,7 +304,7 @@ class Worker(object):
 
         start_line, stop_line = startstop
 
-        esd = IO.load_esd()
+        esd = load_esd()
 
         for r in range(start_line, stop_line):
             output_rfl = (
