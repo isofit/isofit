@@ -324,7 +324,6 @@ class Worker(object):
                 geom = Geometry(
                     obs=obs[r, c, :],
                     loc=loc[r, c, :],
-                    esd=esd,
                     coszen=self.coszen,
                     full_config=self.config,
                 )

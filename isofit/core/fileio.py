@@ -529,7 +529,6 @@ class IO:
         geom = Geometry(
             obs=data["obs_file"],
             loc=data["loc_file"],
-            esd=self.esd,
             bg_rfl=data["background_reflectance_file"],
             svf=data["skyview_factor_file"],
             coszen=self.coszen,

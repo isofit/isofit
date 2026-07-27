@@ -130,9 +130,7 @@ class Worker(object):
         for r in range(start_line, stop_line):
             for c in range(output.shape[1]):
                 meas = self.rdn[r, c, :]
-                geom = Geometry(
-                    obs=self.obs[r, c, :], loc=self.loc[r, c, :], esd=self.esd
-                )
+                geom = Geometry(obs=self.obs[r, c, :], loc=self.loc[r, c, :])
                 coszen = np.cos(np.deg2rad(geom.solar_zenith))
 
                 num = meas * np.pi
