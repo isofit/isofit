@@ -4704,23 +4704,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Geometry">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#isofit.core.geometry.Geometry.get_esd_factor" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_esd_factor
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
       </ul>
@@ -4930,37 +4913,7 @@
 <span class="normal">162</span>
 <span class="normal">163</span>
 <span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">165</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -4981,7 +4934,6 @@
 <span class="c1">#</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
@@ -4997,8 +4949,6 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">loc</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">dt</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">esd</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">bg_rfl</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">svf</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">coszen</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5008,12 +4958,10 @@
 <span class="sd">        Args:</span>
 <span class="sd">            obs: Observation metadata array.</span>
 <span class="sd">            loc: Location metadata array.</span>
-<span class="sd">            dt: Date time of observation.</span>
-<span class="sd">            esd: Earth sun distance array.</span>
 <span class="sd">            bg_rfl: Background reflectance spectrum.</span>
 <span class="sd">            svf: Sky view factor.</span>
 <span class="sd">            coszen: Cosine of the solar zenith angle for top of atmosphere.</span>
-<span class="sd">            config: isofit config.</span>
+<span class="sd">            full_config: isofit config.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Set some benign defaults...</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">observer_zenith</span> <span class="o">=</span> <span class="kc">None</span>
@@ -5022,16 +4970,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">solar_azimuth</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">observer_altitude_km</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">surface_elevation_km</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">earth_sun_distance</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">esd_factor</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="k">if</span> <span class="n">esd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Earth sun distance not provided. Proceeding without might cause some inaccuracies down the line&quot;</span>
-            <span class="p">)</span>
-            <span class="n">esd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">366</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-            <span class="n">esd</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">367</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">earth_sun_distance_reference</span> <span class="o">=</span> <span class="n">esd</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="o">=</span> <span class="n">bg_rfl</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">=</span> <span class="kc">None</span>
@@ -5069,9 +5007,6 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">surface_elevation_km</span>
                 <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_length_km</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">observer_zenith</span><span class="p">))</span>
             <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">dt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">esd_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_esd_factor</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
         <span class="c1"># Determine how to treat coszen</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_universal_coszen</span> <span class="o">=</span> <span class="kc">True</span>
@@ -5143,18 +5078,6 @@
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="s2">&quot;Unable to determine coszen. Proceeding without will cause errors during the inversion.&quot;</span>
             <span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_esd_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date_time</span><span class="p">:</span> <span class="n">datetime</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.geometry.Geometry.get_esd_factor"><a href="../../../../api/isofit/core/geometry/#isofit.core.geometry.Geometry.get_esd_factor" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get distance ratio from sun based on time of year, relative to day 1</span>
-<span class="sd">        Args:</span>
-<span class="sd">            date_time: datetime to search</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            float: ratio of earth sun distnace based on datetime.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">day_of_year</span> <span class="o">=</span> <span class="n">date_time</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">earth_sun_distance</span><span class="p">[</span><span class="n">day_of_year</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 </code></pre></div></td></tr></table></div>
 
 

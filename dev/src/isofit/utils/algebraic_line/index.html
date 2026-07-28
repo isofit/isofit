@@ -5210,8 +5210,7 @@
 <span class="normal">420</span>
 <span class="normal">421</span>
 <span class="normal">422</span>
-<span class="normal">423</span>
-<span class="normal">424</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">423</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5243,8 +5242,8 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit</span><span class="w"> </span><span class="kn">import</span> <span class="n">ray</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs</span><span class="w"> </span><span class="kn">import</span> <span class="n">configs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span><span class="p">,</span> <span class="n">load_spectrum</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">IO</span><span class="p">,</span> <span class="n">write_bil_chunk</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span><span class="p">,</span> <span class="n">load_esd</span><span class="p">,</span> <span class="n">load_spectrum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">write_bil_chunk</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.forward</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForwardModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geometry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.inversion.inverse</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inversion</span>
@@ -5517,7 +5516,7 @@
 
         <span class="n">start_line</span><span class="p">,</span> <span class="n">stop_line</span> <span class="o">=</span> <span class="n">startstop</span>
 
-        <span class="n">esd</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">load_esd</span><span class="p">()</span>
+        <span class="n">esd</span> <span class="o">=</span> <span class="n">load_esd</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_line</span><span class="p">,</span> <span class="n">stop_line</span><span class="p">):</span>
             <span class="n">output_rfl</span> <span class="o">=</span> <span class="p">(</span>
@@ -5537,7 +5536,6 @@
                 <span class="n">geom</span> <span class="o">=</span> <span class="n">Geometry</span><span class="p">(</span>
                     <span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:],</span>
                     <span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:],</span>
-                    <span class="n">esd</span><span class="o">=</span><span class="n">esd</span><span class="p">,</span>
                     <span class="n">coszen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coszen</span><span class="p">,</span>
                     <span class="n">full_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
                 <span class="p">)</span>

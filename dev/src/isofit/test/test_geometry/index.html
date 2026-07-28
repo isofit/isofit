@@ -4953,12 +4953,10 @@
 <span class="normal">125</span>
 <span class="normal">126</span>
 <span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="normal">128</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">MagicMock</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">MagicMock</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geometry</span>
 
@@ -5032,10 +5030,6 @@
     <span class="k">assert</span> <span class="n">geom</span><span class="o">.</span><span class="n">solar_azimuth</span> <span class="o">==</span> <span class="kc">None</span>
     <span class="k">assert</span> <span class="n">geom</span><span class="o">.</span><span class="n">observer_altitude_km</span> <span class="o">==</span> <span class="kc">None</span>
     <span class="k">assert</span> <span class="n">geom</span><span class="o">.</span><span class="n">surface_elevation_km</span> <span class="o">==</span> <span class="kc">None</span>
-    <span class="k">assert</span> <span class="n">geom</span><span class="o">.</span><span class="n">earth_sun_distance</span> <span class="o">==</span> <span class="kc">None</span>
-    <span class="k">assert</span> <span class="n">geom</span><span class="o">.</span><span class="n">esd_factor</span> <span class="o">==</span> <span class="kc">None</span>
-    <span class="k">assert</span> <span class="n">geom</span><span class="o">.</span><span class="n">earth_sun_distance_reference</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">366</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">earth_sun_distance_reference</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_geom_clipping</span><span class="p">(</span><span class="n">input_obs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_geometry.test_geom_clipping"><a href="../../../../api/isofit/test/test_geometry/#isofit.test.test_geometry.test_geom_clipping" title="Go to docs">[docs]</a></div>

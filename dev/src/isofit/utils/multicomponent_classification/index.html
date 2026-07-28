@@ -5303,9 +5303,7 @@
 <span class="normal">452</span>
 <span class="normal">453</span>
 <span class="normal">454</span>
-<span class="normal">455</span>
-<span class="normal">456</span>
-<span class="normal">457</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<span class="normal">455</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">multiprocessing</span>
@@ -5323,7 +5321,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">isofit.utils.template_construction</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tmpl</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit</span><span class="w"> </span><span class="kn">import</span> <span class="n">ray</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span><span class="p">,</span> <span class="n">load_esd</span><span class="p">,</span> <span class="n">resample_spectrum</span><span class="p">,</span> <span class="n">svd_inv</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">IO</span><span class="p">,</span> <span class="n">initialize_output</span><span class="p">,</span> <span class="n">write_bil_chunk</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">initialize_output</span><span class="p">,</span> <span class="n">write_bil_chunk</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geometry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.multistate</span><span class="w"> </span><span class="kn">import</span> <span class="n">SurfaceMapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">env</span>
@@ -5437,9 +5435,7 @@
         <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_line</span><span class="p">,</span> <span class="n">stop_line</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
                 <span class="n">meas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rdn</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:]</span>
-                <span class="n">geom</span> <span class="o">=</span> <span class="n">Geometry</span><span class="p">(</span>
-                    <span class="n">obs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:],</span> <span class="n">loc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:],</span> <span class="n">esd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">esd</span>
-                <span class="p">)</span>
+                <span class="n">geom</span> <span class="o">=</span> <span class="n">Geometry</span><span class="p">(</span><span class="n">obs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:],</span> <span class="n">loc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:])</span>
                 <span class="n">coszen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">solar_zenith</span><span class="p">))</span>
 
                 <span class="n">num</span> <span class="o">=</span> <span class="n">meas</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
