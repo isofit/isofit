@@ -102,6 +102,45 @@ $ uv python pin 3.13
 $ uv sync
 ```
 
+## GPU (optional)
+
+ISOFIT ships an opt-in `torch` backend for the analytical line retrieval, requested with `--backend torch`. It is off by default, and no GPU is needed to install or run ISOFIT: the default `numpy` backend is unaffected by everything below. CUDA is the only supported accelerator. See [Performance](../developers/performance.md) for what the backend does and how it is configured.
+
+`torch >= 2.3` is recommended. ISOFIT itself does not bound the version, but older releases predate parts of the batched linear algebra the backend leans on.
+
+### uv
+
+A bare `$ uv sync` installs the CPU-only torch wheel. That is the correct install for every machine without a CUDA device, and it is what the CPU parity tests run against. For a CUDA build, enable the `cuda` extra and turn off the default `cpu` group:
+
+```
+$ uv sync --extra cuda --no-group cpu
+```
+
+`cpu` and `cuda` are declared as conflicting, so uv refuses to enable both rather than silently resolving to one of them. The `cuda` extra pulls torch from the [cu128 wheel index](https://download.pytorch.org/whl/cu128), so the host driver must be recent enough for CUDA 12.8.
+
+A container recipe is provided in `recipe/Dockerfile.cuda`. It is built by hand and must be run with `--gpus all`.
+
+### pip
+
+Both extras exist under `pip` as well, but they are no-ops there – `pip` has no notion of the wheel index they select, so each simply requests `torch`. Install the CUDA build directly instead:
+
+```
+$ pip install isofit
+$ pip install --index-url https://download.pytorch.org/whl/cu128 --force-reinstall torch
+```
+
+### Conda
+
+`recipe/isofit.yml` lists plain `pytorch`, which resolves to a CPU-only build on most platforms. GPU users should additionally request `pytorch-cuda`, which is what makes conda select a CUDA-enabled `pytorch`:
+
+```
+$ mamba install --name isofit_env -c pytorch -c nvidia pytorch-cuda
+```
+
+???+ warning
+
+    Apple Silicon (`mps`) is **not** a supported target for this backend. Metal Performance Shaders do not implement float64, which the retrieval math requires, so `mps` is useful for plumbing work only – no parity or performance result should be taken from it.
+
 # Downloading Extra Files
 
 Once ISOFIT is installed, the CLI provides an easy way to download additional files that may be useful. These can be acquired via the `isofit download` command, and the current list of downloads we support is available via `isofit download --help`. See [data](../extra_downloads/data.md) for more information.

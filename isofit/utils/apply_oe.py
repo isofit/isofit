@@ -115,6 +115,9 @@ def apply_oe(
     eof_path=None,
     terrain_style="dem",
     per_pixel_heuristic_prior=False,
+    backend="numpy",
+    torch_device="auto",
+    torch_batch_size="auto",
 ):
     """
     Applies OE over a flightline using an atmospheric radiative transfer engine. This executes
@@ -188,7 +191,17 @@ def apply_oe(
     n_cores : int, default=1
         Number of cores to run ISOFIT with. Substantial parallelism is available, and
         full runs will be very slow in serial. Suggested to max this out on the
-        available system
+        available system. Note this does not control GPU worker count when
+        ``backend="torch"``.
+    backend : str, default="numpy"
+        Numerical backend. "numpy" is the standard per-pixel scipy path; "torch"
+        is an opt-in batched backend that can run on a GPU.
+    torch_device : str, default="auto"
+        Device for the torch backend: "auto", "cpu", "mps", "cuda", or "cuda:N".
+        "auto" prefers cuda, then mps, then cpu. Ignored when backend="numpy".
+    torch_batch_size : str, default="auto"
+        Spectra per batched torch call, or "auto" to size from available device
+        memory. Ignored when backend="numpy".
     presolve : int, default=False
         Flag to use a presolve mode to estimate the available atmospheric water range.
         Runs a preliminary inversion over the image with a 1-D LUT of water vapor, and
@@ -689,6 +702,9 @@ def apply_oe(
         "terrain_style": terrain_style,
         "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
         "use_background_rfl": use_background_rfl,
+        "backend": backend,
+        "torch_device": torch_device,
+        "torch_batch_size": torch_batch_size,
     }
     if presolve:
         # write modtran presolve template
@@ -958,6 +974,9 @@ def apply_oe(
                 n_cores=n_cores,
                 smoothing_sigma=atm_sigma,
                 segmentation_size=segmentation_size,
+                backend=backend,
+                torch_device=torch_device,
+                torch_batch_size=torch_batch_size,
             )
     # Remove any other large temporary files created during ApplyOE
     if remove_bgrfl_file:
@@ -1028,6 +1047,24 @@ def apply_oe(
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
 @click.option("--per_pixel_heuristic_prior", is_flag=True, default=False)
+@click.option(
+    "--backend",
+    type=click.Choice(["numpy", "torch"]),
+    default="numpy",
+    help="Numerical backend. 'numpy' is the default per-pixel path; 'torch' is an"
+    " opt-in batched backend that can run on a GPU.",
+)
+@click.option(
+    "--torch_device",
+    default="auto",
+    help="Device for the torch backend: auto, cpu, mps, cuda, or cuda:N."
+    " 'auto' prefers cuda, then mps, then cpu.",
+)
+@click.option(
+    "--torch_batch_size",
+    default="auto",
+    help="Spectra per batched torch call, or 'auto' to size from device memory.",
+)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

@@ -73,6 +73,7 @@ nav:
   - Developers:
     - Contributing: developers/contributing.md
     - Documentation: developers/documentation.md
+    - Performance: developers/performance.md
     - Testing: developers/testing.md
   - Reference:
     - $api/isofit.***
