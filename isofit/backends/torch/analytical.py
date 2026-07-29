@@ -175,7 +175,21 @@ def invert_analytical_batch(
 
         # Data term. Lᵀ·Seps⁻¹·L for diagonal L is an outer-product scaling of
         # Seps⁻¹ restricted to the retrieval windows.
-        blk = (theta_w.unsqueeze(-1) * theta_w.unsqueeze(-2)) * P_sym  # (B, nw, nw)
+        #
+        # The scalar forms ((Lᵀ P) L)ᵀ with P holding only its LOWER triangle,
+        # and takes that triangle in WINDOW index space. Scattering the full
+        # symmetric inverse into STATE index space and taking the triangle there
+        # gives the same answer only when the scatter preserves order, i.e. when
+        # winidx ascends. retrieve_winidx (analytical_line.py:78-83) concatenates
+        # each window's indices in the order the windows are listed in the
+        # config, so a config whose windows are not in ascending wavelength order
+        # produces a non-monotonic winidx -- and then the two disagree by ~3e-02.
+        # Mirroring the scalar's triangle here is exact for either ordering and
+        # bit-identical for the ascending case.
+        P_low = torch.tril(P_sym)
+        blk = (
+            (theta_w.unsqueeze(-1) * theta_w.unsqueeze(-2)) * P_low
+        ).transpose(-1, -2)  # (B, nw, nw)
 
         A = torch.zeros((B, n_surface, n_surface), dtype=dtype, device=device)
         rows = winidx.view(-1, 1).expand(-1, winidx.numel())
@@ -194,7 +208,6 @@ def invert_analytical_batch(
             # dense columns: using P_sym for them is wrong by ~4e-04 in the
             # retrieved state, a plausible-looking answer that silently
             # disagrees. The cross blocks must use the lower triangle only.
-            P_low = torch.tril(P_sym)
             G = extra_columns.index_select(1, winidx)  # (B, nw, n_extra)
 
             # rfl x extra: (Gᵀ P_low D)ᵀ = Dᵀ P_lowᵀ G, and Dᵀ scatters
@@ -202,12 +215,13 @@ def invert_analytical_batch(
             cross = theta_w.unsqueeze(-1) * (P_low.transpose(-1, -2) @ G)
             A[:, winidx, n_wl:] = cross
 
-            # extra x rfl. Below the diagonal, so upper_read_sym discards it;
-            # filled anyway so A is the matrix the scalar forms, not a
-            # half-populated one that only happens to work.
-            A[:, n_wl:, :].index_copy_(
-                2, winidx, (theta_w.unsqueeze(-1) * (P_low @ G)).transpose(-1, -2)
-            )
+            # The extra x rfl block is deliberately NOT filled. It lies below
+            # the diagonal, and upper_read_sym reflects the upper triangle over
+            # it, so anything written here is overwritten before it is read.
+            # (An earlier version filled it "so A is the matrix the scalar
+            # forms"; that was wrong on two counts -- A[:, n_wl:, :] is a copy,
+            # so the index_copy_ never reached A at all, and the scalar's own
+            # P_tilde is not symmetric there either.)
 
             # extra x extra
             A[:, n_wl:, n_wl:] = (G.transpose(-1, -2) @ P_low @ G).transpose(-1, -2)

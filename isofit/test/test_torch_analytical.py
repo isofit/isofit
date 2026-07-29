@@ -308,3 +308,34 @@ def test_extra_surface_states_without_columns_are_rejected():
     d["ts"].n_state = N_WL + 2  # pretend there are extra non-rfl states
     with pytest.raises(NotImplementedError, match="non-reflectance element"):
         _batched(d, 1, -0.01)
+
+
+def test_non_monotonic_winidx_matches_the_scalar():
+    """Retrieval windows listed out of order must still agree.
+
+    ``retrieve_winidx`` (analytical_line.py:78-83) concatenates each window's
+    channel indices in the order the windows appear in
+    ``config.implementation.inversion.windows``. Nothing sorts the result, so a
+    config whose windows are not listed in ascending wavelength order yields a
+    non-monotonic ``winidx``.
+
+    That matters because the scalar takes its ``tril`` in *window* index space
+    while the batched path scatters into *state* index space. The two triangles
+    coincide only when the scatter preserves order. Every fixture in this suite
+    sorts ``winidx``, so the assumption went unnoticed; with a permuted winidx
+    the old code was wrong by ~3e-02 relative.
+    """
+    d = _build(seed=11)
+    n = len(d["winidx"])
+    # Same channels, listed as two windows in descending order.
+    d["winidx"] = np.concatenate([d["winidx"][n // 2 :], d["winidx"][: n // 2]])
+    assert not np.all(np.diff(d["winidx"]) > 0), "fixture is still ascending"
+
+    # Seps is indexed by window position, so permute it to match.
+    order = np.argsort(np.argsort(d["winidx"]))
+    inv = np.argsort(order)
+    d["Seps"] = d["Seps"][:, inv, :][:, :, inv]
+
+    ref_traj, _ = _scalar_reference(d, 1, -0.01)
+    traj, _ = _batched(d, 1, -0.01)
+    np.testing.assert_allclose(traj.numpy(), ref_traj, rtol=RTOL, atol=ATOL)
