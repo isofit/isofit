@@ -139,7 +139,8 @@ class AnalyticalBatchSolver:
 
         Args:
             meas: ``(B, n_chan)`` measured radiance.
-            geoms: Sequence of ``B`` scalar :class:`Geometry` objects.
+            geoms: Sequence of ``B`` scalar :class:`Geometry` objects, or an
+                already-built :class:`BatchedGeometry` for the same pixels.
             x_atmosphere: ``(B, n_atm)`` interpolated atmospheric state.
             sub_state: ``(B, n_state)`` superpixel state, supplying the
                 background reflectance.
@@ -167,18 +168,30 @@ class AnalyticalBatchSolver:
 
         # Background reflectance comes from the superpixel surface state, or the
         # explicit background image when one is supplied.
-        bg = np.stack(
-            [
-                g.bg_rfl
-                if isinstance(getattr(g, "bg_rfl", None), np.ndarray)
-                else sub_state[i][fm.idx_surf_rfl]
-                for i, g in enumerate(geoms)
-            ]
-        )
-        geom = BatchedGeometry.from_geometries(
-            geoms, device=self.device, dtype=self.dtype
-        )
-        geom.bg_rfl = self._t(bg)
+        if isinstance(geoms, BatchedGeometry):
+            geom = geoms
+            if geom.bg_rfl is None:
+                geom.bg_rfl = sub_t.index_select(
+                    1,
+                    torch.as_tensor(
+                        np.asarray(fm.idx_surf_rfl),
+                        dtype=torch.int64,
+                        device=self.device,
+                    ),
+                )
+        else:
+            bg = np.stack(
+                [
+                    g.bg_rfl
+                    if isinstance(getattr(g, "bg_rfl", None), np.ndarray)
+                    else sub_state[i][fm.idx_surf_rfl]
+                    for i, g in enumerate(geoms)
+                ]
+            )
+            geom = BatchedGeometry.from_geometries(
+                geoms, device=self.device, dtype=self.dtype
+            )
+            geom.bg_rfl = self._t(bg)
 
         rho_dif_dif = geom.bg_rfl
 
@@ -423,14 +436,27 @@ class AnalyticalBatchSolver:
         handled = []
         if atm_bvec:
             if atm_bvec == ["H2O_ABSCO"] and "H2OSTR" in fm.atmosphere.statevec_names:
-                col = self._h2o_absco_column(x_atm, geom, rho, rho_dif_dif, Ls, rdn)
-                dense_cols = col.unsqueeze(-1)
-                sb_dense = torch.as_tensor(
-                    np.asarray(fm.atmosphere.bval, dtype=float)[:1] ** 2,
-                    dtype=self.dtype,
-                    device=self.device,
-                )
-                handled = ["H2O_ABSCO"]
+                sb_h2o = float(np.asarray(fm.atmosphere.bval, dtype=float)[0])
+                if sb_h2o == 0.0:
+                    # The column enters Seps only as sb * k k^T, so a zero
+                    # magnitude discards it entirely. Building it would mean an
+                    # extra forward evaluation (or a jvp) per batch whose result
+                    # is multiplied by zero. apply_oe emits {"H2O_ABSCO": 0.0}
+                    # by default (template_construction.py:1556), so this is the
+                    # common case, not an edge case.
+                    Logger.debug(
+                        "H2O_ABSCO uncertainty is 0.0; skipping its Kb column"
+                    )
+                    handled = ["H2O_ABSCO (zero magnitude, skipped)"]
+                else:
+                    col = self._h2o_absco_column(
+                        x_atm, geom, rho, rho_dif_dif, Ls, rdn
+                    )
+                    dense_cols = col.unsqueeze(-1)
+                    sb_dense = torch.as_tensor(
+                        [sb_h2o**2], dtype=self.dtype, device=self.device
+                    )
+                    handled = ["H2O_ABSCO"]
             else:
                 raise NotImplementedError(
                     f"Atmosphere unknowns {atm_bvec} are not supported by the "

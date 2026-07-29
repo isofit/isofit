@@ -1,6 +1,6 @@
 # Performance
 
-ISOFIT's default numerical backend is numpy, and it inverts one pixel at a time. There is also an opt-in `torch` backend that batches the analytical-line retrieval so that many pixels are solved per call, which is what makes a GPU worth using. The numpy path is untouched by any of this: the torch backend is selected only when it is explicitly requested.
+ISOFIT's default numerical backend is numpy, and it inverts one pixel at a time. There is also an opt-in `torch` backend that batches the analytical-line retrieval so that many pixels are solved per call, which is what makes a GPU worth using. The torch backend is selected only when it is explicitly requested, and `apply_oe` writes no `torch_*` config keys unless it is, so default-path configs are unchanged.
 
 Backend | Description
 -|-
@@ -29,9 +29,9 @@ Two rules govern the behavior, and both exist to keep a performance request from
 
 ### Precision
 
-The retrieval math needs float64: it Cholesky-factorizes measurement covariances and takes finite-difference Jacobians with `eps=1e-5`. `torch_dtype: auto` therefore resolves to float64 on `cuda` and `cpu`.
+The retrieval math needs float64: it Cholesky-factorizes measurement covariances and takes finite-difference Jacobians with `eps=1e-5`. `torch_dtype: auto` therefore resolves to float64 on `cuda` and `cpu`. float32 is selectable and measurably faster, but is not recommended — see [float32](#float32) for the numbers.
 
-MPS does not implement float64 at all, so `mps` resolves to float32, and asking for `float64` on `mps` is a configuration error. **MPS is not a supported target.** It is useful for plumbing work on Apple silicon; no parity or performance number should be quoted from it.
+MPS does not implement float64 at all, so `mps` resolves to float32, and asking for `float64` on `mps` is a configuration error rather than a silent downgrade. **MPS is not a supported target.** `auto` still prefers it over CPU on Apple silicon, because that is what makes the local development loop usable, but no parity or performance number should be quoted from it.
 
 ## Configuration
 
@@ -85,26 +85,7 @@ That per-pixel estimate is `8 * (4*ns^2 + 3*nw^2)` bytes, which is a deliberate 
 
 ## Measured performance
 
-The only measured figure available today is a **kernel-level** one:
-
-Measurement | Value
--|-
-`invert_analytical` solve kernel, batch 4096, A100, fp64 | 21,213 px/s
-Same kernel, scalar per-pixel path, one CPU core | 96 px/s
-Speedup vs. a single core | **221x**
-Approximate speedup vs. a fully-loaded 32-core node | **~7x**
-
-Read that table with its caveats attached:
-
-* It measures **the solve kernel only**. It excludes I/O, atmospheric interpolation, the scalar initializer that seeds each pixel, ENVI writes, and ray overhead -- all of which are still on the CPU and none of which got faster.
-* The 221x baseline is **a single core**. The honest comparison for a deployment is against a machine's full core count, which is where the ~7x figure comes from.
-* fp64 throughput varies enormously across GPUs. T4, L4, and A10G class devices throttle fp64 by roughly 1:64 and must never be used to quote fp64 performance.
-
-### Stage-level, measured
-
-Amdahl's law applies with force to the kernel figure above: once the solve is
-221x faster, the remaining scalar work dominates. The stage-level measurement
-says by how much.
+### Stage-level
 
 Scene: `image_cube/medium`, 1000 x 100 x 425 = 100,000 pixels, AVIRIS-NG,
 multicomponent surface, `--presolve --segmentation_size 400
@@ -112,17 +93,125 @@ multicomponent surface, `--presolve --segmentation_size 400
 
 Backend | Hardware | Stage time | Throughput
 -|-|-|-
-`numpy` | 8 CPU cores | 1139.8 s | 88 px/s
-`torch` | 1x A100-40GB | 170.8 s | 585 px/s
-speedup | | **6.67x** |
+`numpy` | 8 CPU cores | 1193.1 s | 84 px/s
+`torch`, per-pixel gather | 1x A100-40GB | 173.9 s | 575 px/s
+`torch`, batched gather | 1x A100-40GB | 57.7 s | 1733 px/s
+speedup | | **20.7x** |
 
 This is the `analytical_line` stage only, invoked directly, with the LUT,
 presolve, OE and atmospheric interpolation already built. It is not a
 whole-pipeline number.
 
-The gap between 221x and 6.67x is the scalar remainder: geometry construction,
-the algebraic initializer, ENVI reads and writes, and ray overhead. Those are
-the next targets, not the solve.
+The two torch rows are the same solve with different gather strategies, and the
+difference between them is the point. Building each pixel's `Geometry` and
+algebraic initial guess one at a time cost more than the retrieval itself:
+batching that work is 3.01x on the stage, and produces **bit-identical** output
+because it is the same arithmetic in the same order, just vectorized. It is on
+by default wherever the configuration supports it.
+
+### Kernel-level
+
+The solve kernel was also timed in isolation, which is what says how much of
+the stage is left to win.
+
+Measurement | Dimensions | Value
+-|-|-
+`invert_analytical` solve kernel, batch 4096, A100, fp64 | nw=200, ns=285 | 21,213 px/s
+Same kernel, scalar per-pixel path, one CPU core | nw=200, ns=285 | 96 px/s
+Speedup vs. a single core | | **221x**
+Same kernel at the medium scene's dimensions, batch 1024, A100, fp64 | nw=285, ns=425 | 6,412 px/s
+
+**The dimensions matter, and the two rows are not interchangeable.** The 221x
+headline was measured on a smaller problem than the medium scene; both Cholesky
+stages are cubic in their dimension, so the scene's larger covariances cost
+substantially more per pixel. Quote the 6,412 px/s row when reasoning about
+this scene.
+
+Doing so: 100,000 pixels at 6,412 px/s is 15.6 s, or **about 27% of the 57.7 s
+stage**. The remaining ~73% is ENVI reads and writes, ray overhead, and the
+LUT/model construction each worker does once -- which is where the next
+tranche of speedup lives, not in the solve.
+
+Two further caveats on the kernel figures:
+
+* They measure **the solve only** -- no I/O, no atmospheric interpolation, no
+  ENVI writes, no ray overhead.
+* The 221x baseline is **a single core**. Against a fully-loaded 32-core node
+  the same kernel figure implies roughly 7x.
+
+### float32
+
+`torch_dtype: float32` is selectable. It is measurably faster and measurably
+less accurate, and the trade is not recommended as a default.
+
+Measured on the A100 at the medium scene's dimensions (nw=285, ns=425), batch
+1024, against fp64 on the same inputs:
+
+Metric | Value
+-|-
+kernel speedup | 1.45x
+kernel time saved on a 100,000 px stage | ~4.9 s of 57.7 s (~8%)
+max abs reflectance difference vs fp64 | 7.69e-06
+mean abs difference | 3.97e-07
+values exceeding one float32 ULP | 93%
+
+The gain is 1.45x rather than the A100's nominal 2:1 fp64:fp32 ratio because
+the solve is partly memory-bound. At the stage level it would take 57.7 s to
+roughly 52.8 s -- 20.7x becomes about 22.6x.
+
+The cost is that 7.69e-06 sits two orders above the fp64 path's 5.96e-08 and
+above what the float32 output format can represent, so it is real error rather
+than precision that was being discarded at write time anyway. Both figures
+still clear a ~1e-3 scientific-equivalence bar; what fp32 forfeits is the
+strongest claim the backend has, agreement below one ULP of the output format.
+
+That measurement used synthetic `Seps` of the form `AA^T + nI`, which are
+deliberately well-conditioned. Real covariances are near-singular often enough
+that ISOFIT ships an eigenvalue-stabilization ladder for them, so 7.69e-06 is
+the optimistic figure. Any future re-evaluation should use a deliberately
+ill-conditioned test.
+
+#### float32 and analytic derivatives interact
+
+One of fp32's three hazards is removed outright by the analytic derivative path
+(`analytic_derivatives`, default off), which is worth recording because it
+changes the conditions under which fp32 could become defensible. Measuring the
+H2O_ABSCO `Kb` column against an fp64 central difference:
+
+dtype | method | max err | mean err | rel err
+-|-|-|-|-
+fp64 | finite difference | 1.51e-07 | 2.25e-08 | 7.1e-07
+fp64 | analytic | 3.38e-11 | 9.00e-12 | 1.6e-10
+fp32 | finite difference | 1.80e-03 | 6.84e-04 | 8.5e-03
+fp32 | analytic | 5.47e-08 | 1.67e-08 | 2.6e-07
+
+Finite differencing in fp32 is unusable: `eps=1e-5` against ~7 significant
+digits is catastrophic cancellation, and the column comes out four orders worse
+than in fp64. The analytic column has no step size, so that failure mode does
+not exist; in fp32 it is ~33,000x more accurate than the fp32 finite
+difference, and better than the finite difference computed in **fp64**, because
+removing the O(eps) truncation buys more than double precision does.
+
+The remaining hazard is untouched, though: the Cholesky of a near-singular
+`Seps` is independent of the derivative, and that is what drives the 7.69e-06
+whole-solve figure above. The combination worth revisiting later is batched
+scalar remainder + analytic derivatives + fp32 on a consumer GPU.
+
+### Across devices
+
+fp64 throughput, not memory, is what varies across GPUs. The same kernel at
+nw=200, ns=285, batch 4096:
+
+GPU | fp64:fp32 ratio | kernel
+-|-|-
+A100-40GB | 1:2 | 21,213 px/s
+L4 | 1:64 | 3,015 px/s
+
+A 7x spread -- less than the ~20x their fp64 FLOPS differ by, so the kernel is
+not purely fp64-bound. At the stage level it matters less than the ratio
+suggests, since the solve is ~27% of the stage; a consumer card with throttled
+fp64 but comparable memory bandwidth should still be worthwhile here. T4, L4,
+and A10G class devices must never be used to quote fp64 performance.
 
 ### Parity on that run
 

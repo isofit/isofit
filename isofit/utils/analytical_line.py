@@ -373,7 +373,10 @@ def analytical_line(
             workers = ray.util.ActorPool(
                 [
                     TorchWorker.options(**remote_opts).remote(
-                        *wargs, opts["torch_device"], opts["torch_batch_size"]
+                        *wargs,
+                        opts["torch_device"],
+                        opts["torch_batch_size"],
+                        opts["torch_dtype"],
                     )
                     for _ in range(n_workers)
                 ]
