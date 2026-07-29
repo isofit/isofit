@@ -47,6 +47,28 @@ from isofit.utils.analytical_line import retrieve_winidx
 Logger = logging.getLogger(__name__)
 
 
+def read_output_block(path: str, start_line: int, stop_line: int) -> np.ndarray:
+    """Read an existing output block so untouched pixels survive.
+
+    The scalar worker seeds each block from what is already on disk
+    (``analytical_line.py:558-585``) rather than from zeros, and that is
+    load-bearing for multistate runs: ``analytical_line.py:315`` builds a fresh
+    worker pool per surface class, and every pool is handed line breaks spanning
+    the whole image (``analytical_line.py:389``). A block therefore covers pixels
+    belonging to other surface classes, which this class must leave alone.
+
+    Starting from ``np.zeros`` instead means the last surface class to write a
+    block erases every earlier class's pixels in it. Single-surface runs -- the
+    ``apply_oe`` default -- have one pool and cannot show the bug, which is why
+    it survived the 100,000-pixel validation.
+    """
+    return (
+        envi.open(envi_header(path))
+        .open_memmap(interleave="bip", writable=False)[start_line:stop_line, ...]
+        .copy()
+    )
+
+
 @ray.remote(num_cpus=1)
 class TorchWorker:
     """Runs the analytical-line retrieval over line blocks, batched on a device."""
@@ -255,10 +277,10 @@ class TorchWorker:
         """Retrieve every pixel in a block of lines."""
         start_line, stop_line = line_break
 
-        output_rfl = np.zeros(
-            (stop_line - start_line, self.n_samples, self.n_rfl_bands)
-        )
-        output_rfl_unc = np.zeros_like(output_rfl)
+        # Seed from disk, not zeros -- see read_output_block. Other surface
+        # classes' pixels live in this block and must survive it.
+        output_rfl = read_output_block(self.rfl_outpath, start_line, stop_line)
+        output_rfl_unc = read_output_block(self.unc_outpath, start_line, stop_line)
 
         index_pairs = self.class_idx_pairs[
             np.where(
