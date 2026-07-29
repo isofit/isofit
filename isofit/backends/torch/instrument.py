@@ -128,7 +128,13 @@ class TorchInstrument:
         diag = nedl**2
 
         if self.dn_uncertainty_embedding:
-            diag = diag + self.dn_additive_uncertainty(meas) ** 2
+            # UNSQUARED, matching Instrument.Sy (instrument.py:305-320), which
+            # adds this straight onto the variance diagonal. The term is in
+            # radiance units, so squaring is arguably what was meant -- but the
+            # contract here is parity with the CPU path as it behaves today, the
+            # same contract that makes whiten_innovation(strict_parity=True) the
+            # default. Raise it upstream rather than diverging quietly.
+            diag = diag + self.dn_additive_uncertainty(meas)
 
         return diag
 

@@ -136,8 +136,9 @@ def sb_diagonal(instrument, meas: torch.Tensor, dtype=None, device=None):
 
     Args:
         instrument: A built :class:`isofit.core.instrument.Instrument`.
-        meas: ``(B, n_chan)`` measured radiance. Only used when the DN-linearity
-            uncertainty is embedded in ``Sb``.
+        meas: ``(B, n_chan)`` measured radiance. Unused today -- the only
+            measurement-dependent term is the ``Sb`` DN-linearity embedding,
+            which raises. Kept so the signature survives supporting it.
 
     Returns:
         ``(n_bvec,)`` when the result is shared across the batch, or
@@ -156,6 +157,17 @@ def sb_diagonal(instrument, meas: torch.Tensor, dtype=None, device=None):
 
     bval = np.array(instrument.bval, dtype=float).copy()
     n_chan = int(instrument.n_chan)
+
+    if getattr(instrument, "dn_uncertainty_embedding", None) == "Sb":
+        # Instrument.Sb (instrument.py:245-255) adds DN_additive_uncertainty**2
+        # to the radiometric block here. Reproducing it would make Sb per-pixel,
+        # which seps_batch's shared-Sb assembly does not carry. Dropping it
+        # instead would understate the observation error and bias the retrieval
+        # -- the failure mode this backend refuses everywhere else.
+        raise NotImplementedError(
+            "dn_uncertainty embedding 'Sb' is not supported by the batched Seps "
+            "(the 'Sy' embedding is). Run with backend='numpy'."
+        )
 
     unknowns = getattr(instrument, "unknowns", None)
     if unknowns:
