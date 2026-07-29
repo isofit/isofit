@@ -91,6 +91,27 @@ class TorchMultiComponentSurface:
             np.stack([np.diag(c) for c in np.asarray(surface.component_covs)])
         )
 
+        # Extra, non-reflectance surface state (the glint model's SKY_GLINT and
+        # SUN_GLINT). GlintModelSurface.Sa block-diags a constant inverse onto
+        # the per-component one (surface_glint_model.py:153-156) and
+        # ForwardModel.Sa then divides the whole thing by scale_surface**2, so
+        # the extra block takes the same scaling as the reflectance block and
+        # can simply be appended to each component's matrix once, here.
+        self.n_extra = self.n_state - self.n_wl
+        self.Sa_inv_extra = None
+        self.extra_prior_var = None
+        self.extra_prior_mean = None
+        if self.n_extra:
+            self._load_extra_prior(surface)
+            padded = torch.zeros(
+                (self.n_comp, self.n_state, self.n_state),
+                dtype=self.dtype,
+                device=self.device,
+            )
+            padded[:, : self.n_wl, : self.n_wl] = self.Sa_inv_normalized
+            padded[:, self.n_wl :, self.n_wl :] = self.Sa_inv_extra
+            self.Sa_inv_normalized = padded
+
         self.wl_ref = self._t(np.asarray(surface.wl)[np.asarray(surface.idx_ref)])
 
         if self.selection_metric == "SGA":
@@ -241,7 +262,50 @@ class TorchMultiComponentSurface:
             (x_surface.shape[0], self.n_state), dtype=self.dtype, device=self.device
         )
         mu[:, self.idx_lamb] = self.component_means.index_select(0, ci) * scale
+        if self.n_extra:
+            # Constant config means, matching GlintModelSurface.xa
+            # (surface_glint_model.py:134-140). Note update_heuristic_prior_means
+            # instead uses the pixel's own SUN_GLINT, which is why
+            # per_pixel_heuristic_prior is refused alongside glint.
+            mu[:, self.n_wl :] = self.extra_prior_mean.unsqueeze(0)
         return mu
+
+    def _load_extra_prior(self, surface):
+        """Pull the non-reflectance prior off a glint-style surface.
+
+        Reads the already-built attributes rather than reconstructing them:
+        ``Sa_inv_glint`` came from ``svd_inv_sqrt``, whose eigenvalue ladder can
+        add a diagonal offset, and recomputing it could silently pick a
+        different rung.
+        """
+        inv = getattr(surface, "Sa_inv_glint", None)
+        if inv is None:
+            raise NotImplementedError(
+                f"surface has {self.n_extra} non-reflectance state element(s) "
+                "but no recognized prior for them (expected Sa_inv_glint). Only "
+                "the glint model is supported. Run with backend='numpy'."
+            )
+        self.Sa_inv_extra = self._t(np.asarray(inv))
+        if self.Sa_inv_extra.shape != (self.n_extra, self.n_extra):
+            raise ValueError(
+                f"Sa_inv_glint is {tuple(self.Sa_inv_extra.shape)}, expected "
+                f"({self.n_extra}, {self.n_extra})"
+            )
+
+        # Ordering is alphabetical by state name, which is how
+        # GlintModelSurface appends them (surface_glint_model.py:57) and how
+        # multistate.py sorts non-rfl names. SKY_GLINT precedes SUN_GLINT.
+        names = list(surface.statevec_names)[self.n_wl :]
+        var = {"SKY_GLINT": surface.sky_glint_sigma, "SUN_GLINT": surface.sun_glint_sigma}
+        mean = {"SKY_GLINT": surface.sky_glint_mean, "SUN_GLINT": surface.sun_glint_mean}
+        missing = [n for n in names if n not in var]
+        if missing:
+            raise NotImplementedError(
+                f"unrecognized non-reflectance surface state {missing}; only "
+                "SKY_GLINT and SUN_GLINT are supported."
+            )
+        self.extra_prior_var = self._t(np.array([float(var[n]) for n in names]))
+        self.extra_prior_mean = self._t(np.array([float(mean[n]) for n in names]))
 
     def prior_scale(self, x_surface: torch.Tensor, ci: torch.Tensor):
         """Per-pixel divisor applied to the normalized prior precision.
@@ -264,7 +328,15 @@ class TorchMultiComponentSurface:
         lamb_ref = self.calc_lamb(x_surface).index_select(1, self.idx_ref)
         norm_sq = self.norm(lamb_ref) ** 2
         mean_diag = self.component_cov_diag.index_select(0, ci).mean(dim=1)
-        return mean_diag * norm_sq
+        if not self.n_extra:
+            return mean_diag * norm_sq
+        # The mean runs over the FULL surface diagonal, which for a glint
+        # surface is n_wl reflectance variances plus the glint variances
+        # (surface_glint_model.py:150-151, forward.py:259-270). Averaging over
+        # n_wl alone mis-weights the whole prior, and does so silently -- unlike
+        # add_Sa_inv, which raises on a shape mismatch.
+        total = mean_diag * norm_sq * self.n_wl + self.extra_prior_var.sum()
+        return total / self.n_state
 
     def add_Sa_inv(
         self, target: torch.Tensor, ci: torch.Tensor, scale: torch.Tensor = None

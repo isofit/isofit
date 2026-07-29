@@ -70,6 +70,7 @@ def invert_analytical_batch(
     diag_uncert: bool = True,
     outside_ret_const: float = -0.01,
     strict_parity: bool = True,
+    extra_columns: torch.Tensor = None,
 ):
     """Conditional MAP surface retrieval for a batch of pixels.
 
@@ -95,6 +96,10 @@ def invert_analytical_batch(
             uses the prior mean instead.
         strict_parity: Reproduce the CPU path's diagonal-only whitening of the
             innovation. See :func:`isofit.backends.torch.linalg.whiten_innovation`.
+        extra_columns: ``(B, n_wl, n_extra)`` dense columns appended to ``H``
+            beyond the reflectance diagonal, for surfaces carrying extra state
+            (the glint model's ``SKY_GLINT``/``SUN_GLINT``). ``None`` is the
+            reflectance-only case and takes the pure diagonal path.
 
     Returns:
         ``(trajectory, uncertainty)`` where trajectory is
@@ -113,13 +118,27 @@ def invert_analytical_batch(
         idx_surface = torch.arange(n_surface, dtype=torch.int64, device=device)
 
     iv_idx = torch.arange(n_surface, dtype=torch.int64, device=device)
-    if n_surface != surface.n_wl:
+    n_wl = surface.n_wl
+    n_extra = n_surface - n_wl
+    if n_extra < 0:
+        raise ValueError(f"n_state={n_surface} is smaller than n_wl={n_wl}")
+    if n_extra and extra_columns is None:
         raise NotImplementedError(
-            "invert_analytical_batch currently supports reflectance-only surface "
-            f"states (got n_state={n_surface} vs n_wl={surface.n_wl}). Surfaces "
-            "with extra non-reflectance elements, such as the glint model, add "
-            "dense columns to L that the diagonal fast path does not handle."
+            f"surface state is {n_surface} wide against n_wl={n_wl}, so it "
+            f"carries {n_extra} non-reflectance element(s), but no extra_columns "
+            "were supplied. Those add dense columns to L that the diagonal fast "
+            "path does not cover."
         )
+    if extra_columns is not None:
+        if n_extra == 0:
+            raise ValueError(
+                "extra_columns given for a reflectance-only surface state"
+            )
+        if extra_columns.shape[1:] != (n_wl, n_extra):
+            raise ValueError(
+                f"extra_columns must be (B, {n_wl}, {n_extra}), got "
+                f"{tuple(extra_columns.shape)}"
+            )
 
     x = x0.clone()
     trajectory = torch.empty((B, num_iter + 1, n_state), dtype=dtype, device=device)
@@ -156,6 +175,36 @@ def invert_analytical_batch(
         cols = winidx.view(1, -1).expand(winidx.numel(), -1)
         A[:, rows, cols] = blk
 
+        if n_extra:
+            # Bordered (arrowhead) blocks for the extra dense columns of L.
+            #
+            # TRIANGLE WARNING. The scalar computes P_tilde = ((Lᵀ P) L)ᵀ where
+            # P came from dpotri(C, 1) and so holds ONLY its lower triangle
+            # (verified by running it). For a purely diagonal L the full
+            # symmetric inverse happens to give an identical answer -- which is
+            # why the block above uses P_sym and matches the CPU path to
+            # 5.96e-08 on a real scene. That coincidence does NOT extend to the
+            # dense columns: using P_sym for them is wrong by ~4e-04 in the
+            # retrieved state, a plausible-looking answer that silently
+            # disagrees. The cross blocks must use the lower triangle only.
+            P_low = torch.tril(P_sym)
+            G = extra_columns.index_select(1, winidx)  # (B, nw, n_extra)
+
+            # rfl x extra: (Gᵀ P_low D)ᵀ = Dᵀ P_lowᵀ G, and Dᵀ scatters
+            # theta_w * (...) back to the window positions.
+            cross = theta_w.unsqueeze(-1) * (P_low.transpose(-1, -2) @ G)
+            A[:, winidx, n_wl:] = cross
+
+            # extra x rfl. Below the diagonal, so upper_read_sym discards it;
+            # filled anyway so A is the matrix the scalar forms, not a
+            # half-populated one that only happens to work.
+            A[:, n_wl:, :].index_copy_(
+                2, winidx, (theta_w.unsqueeze(-1) * (P_low @ G)).transpose(-1, -2)
+            )
+
+            # extra x extra
+            A[:, n_wl:, n_wl:] = (G.transpose(-1, -2) @ P_low @ G).transpose(-1, -2)
+
         # Prior precision, gathered per component and un-normalized.
         surface.add_Sa_inv(A, ci, scale=scale)
 
@@ -169,6 +218,12 @@ def invert_analytical_batch(
         z = whiten_innovation(P_sym, y, strict_parity=strict_parity)
         rhs = torch.zeros((B, n_surface), dtype=dtype, device=device)
         rhs.index_add_(1, winidx, theta_w * z)
+        if n_extra:
+            # Lᵀ z for the dense columns is simply their inner product with z.
+            rhs[:, n_wl:] = (
+                extra_columns.index_select(1, winidx).transpose(-1, -2)
+                @ z.unsqueeze(-1)
+            ).squeeze(-1)
 
         prprod = torch.zeros((B, n_surface), dtype=dtype, device=device)
         prprod = _prior_product(surface, ci, xa_surface, scale, prprod)

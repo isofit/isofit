@@ -297,9 +297,14 @@ def test_strict_parity_is_the_default_and_matches_cpu():
 # --- guardrails --------------------------------------------------------------------
 
 
-def test_non_reflectance_surface_states_are_rejected():
-    """Glint-style surfaces add dense L columns the fast path does not cover."""
+def test_extra_surface_states_without_columns_are_rejected():
+    """Extra non-reflectance state needs its dense L columns supplied.
+
+    Refusing is still the right behavior when a caller declares extra surface
+    state but does not hand over the columns that describe it -- solving
+    without them would silently treat those states as unobserved.
+    """
     d = _build(seed=8)
     d["ts"].n_state = N_WL + 2  # pretend there are extra non-rfl states
-    with pytest.raises(NotImplementedError, match="reflectance-only"):
+    with pytest.raises(NotImplementedError, match="non-reflectance element"):
         _batched(d, 1, -0.01)
