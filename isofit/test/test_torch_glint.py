@@ -709,17 +709,45 @@ def test_worker_gating_consults_the_surface():
 
 
 def test_solver_refuses_per_pixel_heuristic_prior():
-    """The solve uses surface.xa and never fm.xa, so the heuristic is ignored."""
-    import inspect
+    """The solve uses surface.xa and never fm.xa, so the heuristic is ignored.
 
+    Constructed for real rather than grepped: a substring check passes even if
+    the branch is unreachable or the exception is swallowed.
+    """
     from isofit.backends.torch.driver import AnalyticalBatchSolver
 
-    src = inspect.getsource(AnalyticalBatchSolver.__init__)
-    assert "per_pixel_heuristic_prior" in src, (
-        "solver does not check per_pixel_heuristic_prior; it would silently use "
-        "the component-mean prior instead of the per-pixel heuristic"
-    )
-    assert "NotImplementedError" in src, "the check must refuse, not warn"
+    fm, _, d = _glint_fm()
+    fm.full_config.implementation.per_pixel_heuristic_prior = True
+
+    with pytest.raises(NotImplementedError, match="per_pixel_heuristic_prior"):
+        AnalyticalBatchSolver(
+            fm, d["winidx"], device="cpu", dtype=torch.float64, num_iter=1
+        )
+
+
+def test_solver_accepts_the_default_prior():
+    """The refusal must be conditional -- the common case has to still build.
+
+    Without this, refusing unconditionally would satisfy the test above.
+    """
+    from isofit.backends.torch.driver import AnalyticalBatchSolver
+
+    fm, _, d = _glint_fm()
+    fm.full_config.implementation.per_pixel_heuristic_prior = False
+
+    # It should get past the guard; anything after that is this mock's problem,
+    # so only the guard's exception type is disqualifying.
+    try:
+        AnalyticalBatchSolver(
+            fm, d["winidx"], device="cpu", dtype=torch.float64, num_iter=1
+        )
+    except NotImplementedError as exc:
+        if "per_pixel_heuristic_prior" in str(exc):
+            raise AssertionError(
+                "solver refuses per_pixel_heuristic_prior unconditionally"
+            ) from exc
+    except Exception:
+        pass
 
 
 def test_the_solve_never_consults_fm_xa():
@@ -926,3 +954,51 @@ def test_non_rfl_state_and_uncertainty_are_not_swapped():
         "output_non_rfl_unc is not written from non_rfl_unc_block: "
         f"{sources.get('output_non_rfl_unc')}"
     )
+
+
+# --- the regime production actually runs in ---------------------------------------
+
+
+def test_realistic_glint_prior_is_data_dominated_and_survives():
+    """At the real prior magnitudes the arrowhead corner is nearly unconstrained.
+
+    The fixture above uses SKY_SIGMA/SUN_SIGMA of 0.04/0.09, which makes the
+    glint prior *dominate* its corner. The shipped PRISM surface has
+    ``prior_sigma = 100``, squared to 1e4 (surface_glint_model.py:96,99), and
+    ``prior_scale`` sums those variances into its numerator -- so the glint
+    prior precision collapses to roughly ``Sa_inv_glint / (2e4 / n_state)``,
+    order 1e-2, and the corner is set almost entirely by the data.
+
+    That is the regime where the triangle-mangled arrowhead can lose positive
+    definiteness. This pins two things: that the collapse happens, and that a
+    non-PD pixel is isolated rather than taking the batch down with it.
+    """
+    from isofit.backends.torch.linalg import chol_inv_full
+    from isofit.backends.torch.surface import TorchGlintSurface
+
+    ts, d = _glint_surface(seed=21)
+    real_sigma = 1e4
+    ts.extra_prior_var = torch.tensor(
+        [real_sigma, real_sigma], dtype=torch.float64
+    )
+
+    x_surface = torch.as_tensor(d["x0"][:, :N_STATE_SURF])
+    geom = BatchedGeometry(
+        {"observer_zenith": np.full(B, 20.0), "coszen": np.full(B, 0.8)}
+    )
+    ci = ts.component(x_surface, geom)
+    scale = ts.prior_scale(x_surface, ci)
+
+    # Sa_inv_glint / scale is what actually reaches the corner.
+    corner = float(ts.Sa_inv_extra.diagonal().max()) / float(scale.min())
+    assert corner < 1.0, (
+        f"glint prior precision is {corner:.3g}; at sigma=1e4 it should collapse "
+        "to order 1e-2, leaving the corner data-dominated"
+    )
+
+    # And an indefinite pixel must not abort its neighbours.
+    good = torch.eye(4, dtype=torch.float64).expand(3, 4, 4).clone()
+    good[1, 2, 3] = good[1, 3, 2] = 5.0        # symmetric, indefinite
+    out = chol_inv_full(good)
+    assert out.shape == (3, 4, 4)
+    assert chol_inv_full.last_failed.tolist() == [False, True, False]
