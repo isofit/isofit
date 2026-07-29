@@ -117,6 +117,20 @@ def _check_surface_is_geometry_independent(surface) -> None:
         )
 
 
+def surface_is_batchable(surface) -> tuple:
+    """Whether the batched algebraic initializer can reproduce this surface.
+
+    Returns ``(ok, reason)``. The validator below raises, which is right when a
+    caller explicitly asked for the batched gather; callers that merely default
+    to it need to fall back quietly instead, so they probe with this first.
+    """
+    try:
+        _check_surface_is_geometry_independent(surface)
+    except NotImplementedError as exc:
+        return False, str(exc).split(". ")[0]
+    return True, ""
+
+
 class BatchedInterp1d:
     """``scipy.interpolate.interp1d(x, y, fill_value='extrapolate')`` for a batch.
 

@@ -98,6 +98,25 @@ class AnalyticalBatchSolver:
         self.strict_parity = strict_parity
         self.analytic_derivatives = analytic_derivatives
 
+        # per_pixel_heuristic_prior swaps ForwardModel.xa for xa_heuristic
+        # (forward.py:168-169), which derives the prior mean from each pixel's
+        # own state and geometry. The batched solve calls surface.xa directly
+        # (analytical.py:163) and never consults fm.xa, so it would quietly use
+        # the component-mean prior instead -- a different retrieval, not a
+        # slower one. Refuse rather than diverge. Note this is independent of
+        # batched_gather: turning that off does not restore the right prior.
+        if getattr(
+            getattr(fm, "full_config", None), "implementation", None
+        ) is not None and getattr(
+            fm.full_config.implementation, "per_pixel_heuristic_prior", False
+        ):
+            raise NotImplementedError(
+                "per_pixel_heuristic_prior is not supported by the batched "
+                "backend: the solve uses the surface's component-mean prior and "
+                "would silently ignore the per-pixel heuristic. Run with "
+                "backend='numpy'."
+            )
+
         self.radiance = TorchRadiance(fm, device=self.device, dtype=dtype)
         # A glint surface carries two extra state elements and needs the
         # subclass that knows how to build their linearization columns.

@@ -225,9 +225,22 @@ class TorchWorker:
         # then on-where-supported. Configurations it cannot reproduce exactly
         # fall back to the per-pixel gather; an EXPLICIT request for one of them
         # raises instead, so a deliberate choice is never silently downgraded.
+        # The surface itself can rule out the batched initializer -- a glint
+        # surface's calc_rfl depends on the per-pixel view angle and its
+        # fit_params mutates shared state. Probe rather than construct: the
+        # constructor raises, which is right for an explicit request but would
+        # turn a defaulted-on gather into a crash.
+        from isofit.backends.torch.initializer import surface_is_batchable
+
+        surface_ok, surface_reason = (
+            surface_is_batchable(fm.surface)
+            if self.initializer == "algebraic"
+            else (True, "")
+        )
         supported = (
             self.initializer in ("algebraic", "superpixel")
             and not self.per_pixel_heuristic_prior
+            and surface_ok
         )
         env = os.environ.get("ISOFIT_TORCH_BATCHED_GATHER")
         explicit = batched_gather is not None or env is not None
@@ -239,13 +252,18 @@ class TorchWorker:
             requested = supported
 
         if requested and not supported:
-            reason = (
-                f"initializer={self.initializer!r} is not 'algebraic' or "
-                "'superpixel'"
-                if self.initializer not in ("algebraic", "superpixel")
-                else "per_pixel_heuristic_prior derives per-pixel bounds and "
-                "prior means that live on the scalar Geometry"
-            )
+            if self.initializer not in ("algebraic", "superpixel"):
+                reason = (
+                    f"initializer={self.initializer!r} is not 'algebraic' or "
+                    "'superpixel'"
+                )
+            elif self.per_pixel_heuristic_prior:
+                reason = (
+                    "per_pixel_heuristic_prior derives per-pixel bounds and "
+                    "prior means that live on the scalar Geometry"
+                )
+            else:
+                reason = surface_reason
             if explicit:
                 raise NotImplementedError(
                     f"batched_gather was requested but is unsupported: {reason}."
@@ -282,6 +300,18 @@ class TorchWorker:
         output_rfl = read_output_block(self.rfl_outpath, start_line, stop_line)
         output_rfl_unc = read_output_block(self.unc_outpath, start_line, stop_line)
 
+        # Non-reflectance surface state (the glint model's SKY_GLINT and
+        # SUN_GLINT). analytical_line only creates these cubes when the surface
+        # actually has such states, so the paths are None otherwise.
+        output_non_rfl = output_non_rfl_unc = None
+        if self.non_rfl_outpath:
+            output_non_rfl = read_output_block(
+                self.non_rfl_outpath, start_line, stop_line
+            )
+            output_non_rfl_unc = read_output_block(
+                self.non_rfl_unc_outpath, start_line, stop_line
+            )
+
         index_pairs = self.class_idx_pairs[
             np.where(
                 (self.class_idx_pairs[:, 0] >= start_line)
@@ -295,7 +325,10 @@ class TorchWorker:
             gathered = self._gather_per_pixel(index_pairs)
 
         if gathered is None:
-            self._write(start_line, stop_line, output_rfl, output_rfl_unc)
+            self._write(
+                start_line, stop_line, output_rfl, output_rfl_unc,
+                output_non_rfl, output_non_rfl_unc,
+            )
             return
 
         rows, cols, meas_all, geoms, atm_all, sub_all, x0_all = gathered
@@ -326,17 +359,29 @@ class TorchWorker:
 
             rfl_block = full_state[:, self.full_idx_surf_rfl]
             unc_block = full_unc[:, self.full_idx_surf_rfl]
+            if output_non_rfl is not None:
+                sl = slice(
+                    self.n_rfl_bands, self.n_rfl_bands + self.n_non_rfl_bands
+                )
+                non_rfl_block = full_state[:, sl]
+                non_rfl_unc_block = full_unc[:, sl]
             for k in range(hi - lo):
                 r, c = rows[lo + k], cols[lo + k]
                 output_rfl[r - start_line, c, :] = rfl_block[k]
                 output_rfl_unc[r - start_line, c, :] = unc_block[k]
+                if output_non_rfl is not None:
+                    output_non_rfl[r - start_line, c, :] = non_rfl_block[k]
+                    output_non_rfl_unc[r - start_line, c, :] = non_rfl_unc_block[k]
 
         self.completed_spectra += len(rows)
         Logger.info(
             f"Analytical line writing lines: {start_line} to {stop_line}. "
             f"Surface: {self.surface_class_str}"
         )
-        self._write(start_line, stop_line, output_rfl, output_rfl_unc)
+        self._write(
+            start_line, stop_line, output_rfl, output_rfl_unc,
+            output_non_rfl, output_non_rfl_unc,
+        )
 
     def _gather_per_pixel(self, index_pairs):
         """Gather a block one pixel at a time (the default).
@@ -522,7 +567,10 @@ class TorchWorker:
             self.fm.update_heuristic_prior_means(x0, geom)
         return x0
 
-    def _write(self, start_line, stop_line, output_rfl, output_rfl_unc):
+    def _write(
+        self, start_line, stop_line, output_rfl, output_rfl_unc,
+        output_non_rfl=None, output_non_rfl_unc=None,
+    ):
         """Write the block, matching the scalar worker's BIL layout.
 
         ``output_rfl`` is accumulated BIP-shaped ``(lines, samples, bands)`` and
@@ -546,3 +594,20 @@ class TorchWorker:
             start_line,
             (self.n_lines, self.n_rfl_bands, self.n_samples),
         )
+
+        # Non-reflectance surface state, mirroring analytical_line.py:738-750.
+        # Without this the glint terms are solved and then discarded: the
+        # cubes are created by analytical_line and left at their fill value.
+        if self.non_rfl_outpath and output_non_rfl is not None:
+            write_bil_chunk(
+                np.swapaxes(output_non_rfl, 1, 2),
+                self.non_rfl_outpath,
+                start_line,
+                (self.n_lines, self.n_non_rfl_bands, self.n_samples),
+            )
+            write_bil_chunk(
+                np.swapaxes(output_non_rfl_unc, 1, 2),
+                self.non_rfl_unc_outpath,
+                start_line,
+                (self.n_lines, self.n_non_rfl_bands, self.n_samples),
+            )

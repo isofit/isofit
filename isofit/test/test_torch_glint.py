@@ -593,3 +593,158 @@ def test_driver_default_bg_rfl_carries_the_sky_glint_term():
         "the diffuse reflectance equals the raw state, so this fixture cannot "
         "distinguish the two bg_rfl strategies"
     )
+
+
+# --- guards ----------------------------------------------------------------------
+
+
+def test_glint_surface_is_not_batchable_by_the_algebraic_initializer():
+    """Probe must reject glint: calc_rfl is geometry-dependent, fit_params mutates."""
+    from isofit.backends.torch.initializer import surface_is_batchable
+    from isofit.surface.surface_glint_model import GlintModelSurface
+    from isofit.surface.surface_multicomp import MultiComponentSurface
+
+    class _MC(MultiComponentSurface):
+        def __init__(self):
+            pass
+
+    class _GL(GlintModelSurface):
+        def __init__(self):
+            pass
+
+    ok, _ = surface_is_batchable(_MC())
+    assert ok, "the multicomponent surface must stay batchable"
+
+    ok, reason = surface_is_batchable(_GL())
+    assert not ok, "a glint surface must not be batchable"
+    assert reason, "rejection must carry a reason for the fallback log"
+
+
+def test_probe_does_not_raise():
+    """The probe must return, not raise -- a defaulted-on gather would crash.
+
+    ``batched_gather`` defaults ON wherever it looks supported, and the
+    initializer's constructor raises. Without a non-raising probe, a glint run
+    using the default algebraic initializer dies instead of falling back.
+    """
+    from isofit.backends.torch.initializer import surface_is_batchable
+    from isofit.surface.surface_glint_model import GlintModelSurface
+
+    class _GL(GlintModelSurface):
+        def __init__(self):
+            pass
+
+    ok, reason = surface_is_batchable(_GL())  # must not raise
+    assert (ok, bool(reason)) == (False, True)
+
+
+def test_worker_gating_consults_the_surface():
+    """The gate must include the surface, not just initializer and prior flag."""
+    import ast
+    import inspect
+
+    from isofit.utils import analytical_line_torch as mod
+
+    tree = ast.parse(inspect.getsource(mod))
+    assigns = [
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Assign)
+        and any(isinstance(t, ast.Name) and t.id == "supported" for t in n.targets)
+    ]
+    assert assigns, "worker does not compute a `supported` gate"
+    src = ast.unparse(assigns[0].value)
+    assert "surface_ok" in src, (
+        f"the batched-gather gate ignores the surface ({src!r}); a glint run "
+        "would reach the initializer constructor and raise"
+    )
+
+
+def test_solver_refuses_per_pixel_heuristic_prior():
+    """The solve uses surface.xa and never fm.xa, so the heuristic is ignored."""
+    import inspect
+
+    from isofit.backends.torch.driver import AnalyticalBatchSolver
+
+    src = inspect.getsource(AnalyticalBatchSolver.__init__)
+    assert "per_pixel_heuristic_prior" in src, (
+        "solver does not check per_pixel_heuristic_prior; it would silently use "
+        "the component-mean prior instead of the per-pixel heuristic"
+    )
+    assert "NotImplementedError" in src, "the check must refuse, not warn"
+
+
+def test_the_solve_never_consults_fm_xa():
+    """Documents *why* the refusal above is needed, and fails if that changes.
+
+    If the batched solve ever starts honouring ``fm.xa``, the refusal becomes
+    unnecessary and this test should be removed along with it.
+    """
+    import inspect
+
+    from isofit.backends.torch import analytical as analytical_mod
+
+    src = inspect.getsource(analytical_mod)
+    assert "surface.xa(" in src, "the solve no longer calls surface.xa"
+    assert "fm.xa" not in src, (
+        "the solve now references fm.xa; if it honours xa_heuristic, drop the "
+        "per_pixel_heuristic_prior refusal in driver.py"
+    )
+
+
+def test_worker_writes_the_non_reflectance_cube():
+    """The glint states must reach disk, not just be solved.
+
+    ``analytical_line`` creates ``_surf_non_rfl`` and its uncertainty cube
+    whenever the surface has non-reflectance states (analytical_line.py:262-286)
+    and the scalar worker fills them (analytical_line.py:707-750). The torch
+    worker stored the paths and never wrote them, so SKY_GLINT and SUN_GLINT
+    were computed and discarded, leaving the cubes at their fill value.
+    """
+    import ast
+    import inspect
+
+    from isofit.utils import analytical_line_torch as mod
+
+    cls = getattr(mod.TorchWorker, "__ray_actor_class__", mod.TorchWorker)
+    write_src = inspect.getsource(cls._write)
+    assert "non_rfl_outpath" in write_src, "_write never writes the non-rfl cube"
+    assert "n_non_rfl_bands" in write_src, (
+        "_write does not use the non-rfl band count for the chunk shape"
+    )
+
+    # The write must be guarded, since the cubes only exist for surfaces that
+    # have non-reflectance states.
+    tree = ast.parse(write_src.lstrip())
+    guarded = [
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.If) and "non_rfl_outpath" in ast.unparse(n.test)
+    ]
+    assert guarded, "the non-rfl write is unguarded; it would fail for surfaces without it"
+
+    run_src = inspect.getsource(cls.run_chunks)
+    assert "output_non_rfl" in run_src, (
+        "run_chunks never populates a non-rfl block, so nothing would be written"
+    )
+    assert "n_non_rfl_bands" in run_src, (
+        "run_chunks does not slice the non-reflectance states out of the full "
+        "state vector"
+    )
+    # And the block must actually be filled, not merely allocated.
+    run_tree = ast.parse(run_src.lstrip())
+    filled = [
+        n
+        for n in ast.walk(run_tree)
+        if isinstance(n, ast.Assign)
+        and any(
+            isinstance(t, ast.Subscript)
+            and isinstance(t.value, ast.Name)
+            and t.value.id in ("output_non_rfl", "output_non_rfl_unc")
+            for t in n.targets
+        )
+    ]
+    assert len(filled) >= 2, (
+        "run_chunks allocates the non-rfl blocks but never assigns into them, "
+        f"so an all-fill cube would be written (found {len(filled)} assignments)"
+    )
