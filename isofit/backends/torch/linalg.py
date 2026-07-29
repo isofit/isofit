@@ -62,8 +62,36 @@ def chol_inv_full(S: torch.Tensor) -> torch.Tensor:
         symmetric inverse; callers that need to mimic a one-triangle read must
         do so explicitly.
     """
-    L = torch.linalg.cholesky(S)
+    L, info = torch.linalg.cholesky_ex(S)
+    failed = info != 0
+    if bool(failed.any()):
+        # torch.linalg.cholesky raises for the WHOLE batch when any element is
+        # not positive definite, which would discard thousands of good pixels
+        # for one bad one. The scalar path cannot fail this way: it discards
+        # LAPACK's info (``dpotrf(P_rcond)[0]`` at inverse_simple.py:333) and
+        # continues with whatever is in the factor, so a non-PD pixel there
+        # yields garbage rather than an exception.
+        #
+        # Reproducing uninitialized LAPACK output is neither possible nor
+        # desirable. Isolate the failures instead: the surviving pixels keep
+        # their real answer, and the caller can mark the rest.
+        n_failed = int(failed.sum())
+        Logger.warning(
+            f"Cholesky failed for {n_failed} of {S.shape[0]} pixels "
+            "(matrix not positive definite). Their output is not meaningful; "
+            "the scalar backend silently returns garbage for the same pixels."
+        )
+        # Substitute the identity so the batched factorization completes; the
+        # affected pixels are reported through `chol_inv_full.last_failed`.
+        eye = torch.eye(S.shape[-1], dtype=S.dtype, device=S.device)
+        L = torch.where(failed.view(-1, 1, 1), eye, L)
+    chol_inv_full.last_failed = failed
     return torch.cholesky_inverse(L)
+
+
+#: Per-pixel mask from the most recent :func:`chol_inv_full` call. Set on every
+#: call so a caller can attribute failures without changing the return type.
+chol_inv_full.last_failed = None
 
 
 def upper_read_sym(X: torch.Tensor) -> torch.Tensor:

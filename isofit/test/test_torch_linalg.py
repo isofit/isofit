@@ -252,3 +252,52 @@ def test_full_analytical_chain_matches_lapack_sequence():
     got = (C_rcond_t @ rhs.unsqueeze(-1)).squeeze(-1)[0].numpy()
 
     np.testing.assert_allclose(got, ref, rtol=1e-8, atol=1e-10)
+
+
+def test_chol_inv_full_isolates_a_non_pd_pixel():
+    """One bad pixel must not discard the rest of the batch.
+
+    ``torch.linalg.cholesky`` raises for the whole batch when any element is not
+    positive definite. At production batch sizes that throws away thousands of
+    good pixels for one bad one -- and the scalar path cannot fail this way: it
+    discards LAPACK's ``info`` (``dpotrf(P_rcond)[0]``, inverse_simple.py:333)
+    and continues, so a non-PD pixel there yields garbage rather than an error.
+
+    This can be reached with a glint surface and a non-diagonal ``Seps`` (a
+    model-discrepancy term), where the triangle-mangled arrowhead is no longer
+    guaranteed positive definite.
+    """
+    from isofit.backends.torch.linalg import chol_inv_full
+
+    good = torch.eye(4, dtype=torch.float64).expand(3, 4, 4).clone()
+    batch = good.clone()
+    # Symmetric but indefinite.
+    batch[1] = torch.tensor(
+        [[1.0, 2, 3, 4], [2, 1, 4, 5], [3, 4, 1, 6], [4, 5, 6, 1]],
+        dtype=torch.float64,
+    )
+
+    out = chol_inv_full(batch)  # must not raise
+
+    assert out.shape == (3, 4, 4)
+    mask = chol_inv_full.last_failed
+    assert mask is not None and mask.tolist() == [False, True, False]
+
+    eye = torch.eye(4, dtype=torch.float64)
+    for i in (0, 2):
+        assert torch.allclose(out[i], eye), (
+            f"pixel {i} was corrupted by its neighbour's failure"
+        )
+
+
+def test_chol_inv_full_reports_no_failures_on_a_clean_batch():
+    """The mask must be cleared each call, not left stale from a previous one."""
+    from isofit.backends.torch.linalg import chol_inv_full
+
+    bad = torch.tensor([[[1.0, 2.0], [2.0, 1.0]]], dtype=torch.float64)
+    chol_inv_full(bad)
+    assert bool(chol_inv_full.last_failed.any())
+
+    good = torch.eye(2, dtype=torch.float64).expand(2, 2, 2).clone()
+    chol_inv_full(good)
+    assert not bool(chol_inv_full.last_failed.any()), "stale failure mask"
