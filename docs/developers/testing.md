@@ -48,11 +48,7 @@ Marker | Requirement | How to run
 
 `torch_cpu` is the leg that runs in continuous integration: it is an entry in the pytest matrix of `.github/workflows/test_pip.yml`, alongside `unmarked`, `slow`, and `examples`. It needs no GPU and no CUDA-enabled torch build, so it gates the backend's correctness on every pull request.
 
-`gpu` tests carry a `skipif` with a named reason, so a machine without a device reports skips rather than a silent pass. To run them without local hardware, `scripts/modal/isofit_gpu.py` mounts the working tree onto a rented GPU:
-
-```
-$ modal run scripts/modal/isofit_gpu.py::gpu_tests --gpu a100
-```
+`gpu` tests carry a `skipif` with a named reason, so a machine without a device reports skips rather than a silent pass. Nothing in continuous integration runs them; they need a machine with a visible CUDA device and a CUDA-enabled torch build.
 
 #### Same-host parity
 
