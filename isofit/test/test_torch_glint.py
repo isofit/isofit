@@ -357,7 +357,16 @@ def test_prior_scale_includes_the_glint_variances():
 
 
 def _scalar_fresnel(vza, real_ref_idx):
-    """Verbatim ``GlintModelSurface.fresnel_rf`` (surface_glint_model.py:415-440)."""
+    """Verbatim ``GlintModelSurface.fresnel_rf`` (surface_glint_model.py:415-440).
+
+    ``vza`` is cast to float32 first because that is what production supplies:
+    ``geom.observer_zenith`` is read straight off an ENVI obs file, so numpy
+    evaluates ``deg2rad`` and ``sin`` at float32 and only promotes on the
+    division by the float64 refractive index. Passing a Python float here
+    instead would exercise a float64 chain that no real scene produces, and the
+    two differ by ~2e-07 relative -- the same order as the glint parity budget.
+    """
+    vza = np.float32(vza)
     if vza > 0.0:
         theta = np.deg2rad(vza)
         theta_i = np.arcsin(np.sin(theta) / real_ref_idx)
@@ -382,13 +391,23 @@ def _glint_surface(seed=0):
     return TorchGlintSurface(d["s"]), d
 
 
+# The scalar evaluates deg2rad and sin at float32 (see _scalar_fresnel), so its
+# own answer carries ~1.2e-07 of relative uncertainty at that step. torch's and
+# numpy's float32 sin differ by about an ulp for large angles, which the
+# tan((theta + theta_i)) term then amplifies. Agreement below the float32 step's
+# own precision is not achievable and would not mean anything.
+FRESNEL_RTOL = 1e-6
+
+
 @pytest.mark.parametrize("vza", [0.0, 1e-6, 5.0, 30.0, 60.0, 85.0])
 def test_fresnel_matches_the_scalar(vza):
     """Including vza = 0, where the scalar expression is 0/0 and branches."""
     ts, d = _glint_surface()
     got = ts.fresnel_rf(torch.tensor([vza], dtype=torch.float64)).numpy()[0]
     want = _scalar_fresnel(vza, d["s"].real_ref_idx)
-    np.testing.assert_allclose(got, np.broadcast_to(want, got.shape), rtol=1e-12)
+    np.testing.assert_allclose(
+        got, np.broadcast_to(want, got.shape), rtol=FRESNEL_RTOL
+    )
 
 
 def test_fresnel_at_normal_incidence_is_finite():
@@ -418,11 +437,11 @@ def test_extra_columns_order_is_sky_then_sun():
     for i in range(B):
         rho_ls = _scalar_fresnel(vza[i], d["s"].real_ref_idx)
         np.testing.assert_allclose(
-            cols[i, :, 0], L_dif_dir[i].numpy() * rho_ls, rtol=1e-12,
+            cols[i, :, 0], L_dif_dir[i].numpy() * rho_ls, rtol=FRESNEL_RTOL,
             err_msg="column 0 must be ep = L_dif_dir * rho_ls (SKY_GLINT)",
         )
         np.testing.assert_allclose(
-            cols[i, :, 1], L_dir_dir[i].numpy() * rho_ls, rtol=1e-12,
+            cols[i, :, 1], L_dir_dir[i].numpy() * rho_ls, rtol=FRESNEL_RTOL,
             err_msg="column 1 must be gam = L_dir_dir * rho_ls (SUN_GLINT)",
         )
 
@@ -459,8 +478,8 @@ def test_calc_rfl_matches_the_scalar_including_bounds(sky, sun):
     got_dir, got_dif = ts.calc_rfl(torch.as_tensor(x), geom)
 
     want_dir, want_dif = _scalar_calc_rfl(x[0], rho_ls, x[0, :N_WL])
-    np.testing.assert_allclose(got_dir.numpy()[0], want_dir, rtol=1e-12)
-    np.testing.assert_allclose(got_dif.numpy()[0], want_dif, rtol=1e-12)
+    np.testing.assert_allclose(got_dir.numpy()[0], want_dir, rtol=FRESNEL_RTOL)
+    np.testing.assert_allclose(got_dif.numpy()[0], want_dif, rtol=FRESNEL_RTOL)
 
 
 def test_calc_rfl_direct_and_diffuse_differ_under_glint():
@@ -598,25 +617,30 @@ def test_driver_default_bg_rfl_carries_the_sky_glint_term():
 # --- guards ----------------------------------------------------------------------
 
 
-def test_glint_surface_is_not_batchable_by_the_algebraic_initializer():
-    """Probe must reject glint: calc_rfl is geometry-dependent, fit_params mutates."""
+def test_batchability_probe_admits_glint_and_still_refuses_others():
+    """Glint is batchable; surfaces without a batched equivalent are not.
+
+    Glint's ``calc_rfl`` does read the geometry, but ``TorchGlintSurface``
+    evaluates it across the batch, so the per-pixel hoist is unnecessary rather
+    than unsound. Its ``fit_params`` writes ``self.init[sun_glint_ind]`` and
+    ``geom.sun_glint_init``, neither of which is ever read back -- see
+    ``test_glint_fit_params_has_no_cross_pixel_state``.
+    """
     from isofit.backends.torch.initializer import surface_is_batchable
     from isofit.surface.surface_glint_model import GlintModelSurface
+    from isofit.surface.surface_lut import LUTSurface
     from isofit.surface.surface_multicomp import MultiComponentSurface
 
-    class _MC(MultiComponentSurface):
-        def __init__(self):
-            pass
+    def _bare(cls):
+        return type("_" + cls.__name__, (cls,), {"__init__": lambda self: None})()
 
-    class _GL(GlintModelSurface):
-        def __init__(self):
-            pass
+    assert surface_is_batchable(_bare(MultiComponentSurface))[0]
+    assert surface_is_batchable(_bare(GlintModelSurface))[0], (
+        "glint should now be batchable"
+    )
 
-    ok, _ = surface_is_batchable(_MC())
-    assert ok, "the multicomponent surface must stay batchable"
-
-    ok, reason = surface_is_batchable(_GL())
-    assert not ok, "a glint surface must not be batchable"
+    ok, reason = surface_is_batchable(_bare(LUTSurface))
+    assert not ok, "the LUT surface has no batched equivalent and must be refused"
     assert reason, "rejection must carry a reason for the fallback log"
 
 
@@ -624,18 +648,42 @@ def test_probe_does_not_raise():
     """The probe must return, not raise -- a defaulted-on gather would crash.
 
     ``batched_gather`` defaults ON wherever it looks supported, and the
-    initializer's constructor raises. Without a non-raising probe, a glint run
-    using the default algebraic initializer dies instead of falling back.
+    initializer's constructor raises. Without a non-raising probe, a surface it
+    cannot handle dies instead of falling back to the per-pixel gather.
     """
     from isofit.backends.torch.initializer import surface_is_batchable
-    from isofit.surface.surface_glint_model import GlintModelSurface
+    from isofit.surface.surface_lut import LUTSurface
 
-    class _GL(GlintModelSurface):
+    class _LT(LUTSurface):
         def __init__(self):
             pass
 
-    ok, reason = surface_is_batchable(_GL())  # must not raise
+    ok, reason = surface_is_batchable(_LT())  # must not raise
     assert (ok, bool(reason)) == (False, True)
+
+
+def test_glint_fit_params_has_no_cross_pixel_state():
+    """The scalar's two writes must not make fit_params order-dependent.
+
+    ``GlintModelSurface.fit_params`` sets ``self.init[sun_glint_ind]`` and
+    ``geom.sun_glint_init``. If either were read back, batching would change
+    results depending on pixel order, and the batched override would be wrong
+    to omit them. ``xa`` uses the separate ``sun_glint_mean`` constant and
+    ``sun_glint_init`` has no reader anywhere, so it is safe -- but that is a
+    property of the scalar code, so pin it here rather than assume it.
+    """
+    from isofit.surface.surface_glint_model import GlintModelSurface
+    from isofit.surface.surface_multicomp import MultiComponentSurface
+
+    src = __import__("inspect").getsource(GlintModelSurface.xa)
+    assert "sun_glint_mean" in src, (
+        "xa no longer uses the constant mean; if it now reads self.init, the "
+        "batched fit_params override must reproduce that write"
+    )
+    assert "self.init" not in src, (
+        "xa now reads self.init, so fit_params' write is load-bearing and the "
+        "batched override is incorrect"
+    )
 
 
 def test_worker_gating_consults_the_surface():

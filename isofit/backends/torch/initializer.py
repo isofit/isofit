@@ -63,6 +63,7 @@ from scipy.interpolate import interp1d
 
 from isofit.core.common import eps
 from isofit.surface.surface import Surface
+from isofit.surface.surface_glint_model import GlintModelSurface
 from isofit.surface.surface_multicomp import MultiComponentSurface
 from isofit.surface.surface_thermal import ThermalSurface
 
@@ -77,6 +78,22 @@ GEOM_INDEPENDENT_CALC_RFL = (
     Surface.calc_rfl,
     MultiComponentSurface.calc_rfl,
 )
+
+#: ``calc_rfl`` implementations that DO read the geometry but for which a
+#: batched equivalent exists, so the per-pixel hoist is unnecessary rather than
+#: unsound. ``GlintModelSurface.calc_rfl`` reads ``geom.observer_zenith``;
+#: :class:`~isofit.backends.torch.surface.TorchGlintSurface` evaluates the same
+#: expression across the batch.
+BATCHED_CALC_RFL = (GlintModelSurface.calc_rfl,)
+
+#: Surfaces whose ``fit_params`` has a batched override below. The scalar
+#: ``GlintModelSurface.fit_params`` writes ``self.init[sun_glint_ind]`` and
+#: ``geom.sun_glint_init``; neither is ever read back -- ``xa`` uses the
+#: separate ``sun_glint_mean`` constant, and ``sun_glint_init`` has no reader
+#: anywhere in the tree. Verified empirically: running it over two pixels in
+#: both orders gives identical results, so there is no cross-pixel state for
+#: batching to break.
+BATCHED_FIT_PARAMS = (GlintModelSurface.fit_params,)
 
 #: Unbound ``calc_Ls`` implementations that ignore ``geom``. ``ThermalSurface``
 #: qualifies because it reaches ``calc_rfl`` only through
@@ -97,7 +114,7 @@ def _check_surface_is_geometry_independent(surface) -> None:
     on the implementation itself.
     """
     cls = type(surface)
-    if cls.calc_rfl not in GEOM_INDEPENDENT_CALC_RFL:
+    if cls.calc_rfl not in GEOM_INDEPENDENT_CALC_RFL + BATCHED_CALC_RFL:
         raise NotImplementedError(
             f"{cls.__name__}.calc_rfl depends on the per-pixel geometry, so the "
             "batched algebraic initializer cannot hoist it out of the batch. "
@@ -109,7 +126,10 @@ def _check_surface_is_geometry_independent(surface) -> None:
             "batched algebraic initializer cannot hoist it out of the batch. "
             "Use the per-pixel initializer (batched_gather=False)."
         )
-    if cls.fit_params is not MultiComponentSurface.fit_params:
+    if (
+        cls.fit_params is not MultiComponentSurface.fit_params
+        and cls.fit_params not in BATCHED_FIT_PARAMS
+    ):
         raise NotImplementedError(
             f"{cls.__name__}.fit_params is not the multicomponent implementation "
             "the batched initializer reproduces. Use the per-pixel initializer "
@@ -270,9 +290,15 @@ class BatchedAlgebraicInitializer:
         x_surface, _, x_instrument = fm.unpack(fm.init.copy())
         self.x_instrument = np.asarray(x_instrument, dtype=float)
 
-        # geom is genuinely unused by the implementations allowed above; passing
-        # None makes any future geometry-reading override fail loudly here.
-        _, rho_init = surface.calc_rfl(x_surface, None)
+        # For the geometry-independent surfaces, geom is genuinely unused and
+        # passing None makes any future geometry-reading override fail loudly.
+        # A glint surface DOES read it, so its rho_init is per-pixel and is
+        # computed inside the batch instead; see _rho_init_for.
+        self.x_surface_init = x_surface
+        if type(surface).calc_rfl in BATCHED_CALC_RFL:
+            rho_init = None
+        else:
+            _, rho_init = surface.calc_rfl(x_surface, None)
         Ls = surface.calc_Ls(x_surface, None)
 
         wl_cal, _ = fm.instrument.calibration(x_instrument)
@@ -281,7 +307,7 @@ class BatchedAlgebraicInitializer:
         # the per-pixel upward transmittance. Constant, so scipy computes it.
         Ls_rt = interp1d(surface.wl, Ls, fill_value="extrapolate")(fm.atmosphere.wl)
 
-        self.rho_init = self._t(rho_init)
+        self.rho_init = None if rho_init is None else self._t(rho_init)
         self.Ls_rt = self._t(Ls_rt)
 
         self.resample = BatchedResampler(
@@ -308,6 +334,38 @@ class BatchedAlgebraicInitializer:
         self.n_surface_state = len(surface.statevec_names)
         self.fit_lo = self._t(bounds[idx_lamb, 0] + 0.001)
         self.fit_hi = self._t(bounds[idx_lamb, 1] - 0.001)
+
+        # --- glint constants, hoisted once (surface_glint_model.py:161-218) -----
+        self.glint = None
+        self.torch_surface = None
+        if hasattr(surface, "sun_glint_ind"):
+            from isofit.backends.torch.surface import TorchGlintSurface
+
+            self.torch_surface = TorchGlintSurface(
+                surface, device=self.device, dtype=self.dtype
+            )
+            wl = np.asarray(surface.wl)
+            # argmin over |target - wl|, exactly as the scalar picks its bands.
+            b1, b2 = (int(np.argmin(np.abs(t - wl))) for t in (450, 500))
+            g1, g2 = (int(np.argmin(np.abs(t - wl))) for t in (1000, 1020))
+            self.glint = {
+                "blue": torch.arange(b1, b2, dtype=torch.int64, device=self.device),
+                "glint": torch.arange(g1, g2, dtype=torch.int64, device=self.device),
+                # bounds_glint_est = [0, 5.0], applied as max(lo+eps, min(hi-eps, x))
+                "lo": self._t(np.array(0.0 + eps)),
+                "hi": self._t(np.array(5.0 - eps)),
+                "ref_band": int(np.argmin(np.abs(wl - 1050))),
+                "sky_ind": int(surface.sky_glint_ind),
+                "sun_ind": int(surface.sun_glint_ind),
+                "sky_init": float(
+                    np.asarray(surface.init, dtype=float)[surface.sky_glint_ind]
+                ),
+            }
+            if not len(self.glint["blue"]) or not len(self.glint["glint"]):
+                raise NotImplementedError(
+                    "the glint estimator's 450-500 nm and 1000-1020 nm band "
+                    "ranges are empty for this instrument's wavelengths"
+                )
 
         # --- clip_bounds, with the batch-wide fm.bounds -------------------------
         low, high = self._clip_bounds_edges(fm.bounds, eps)
@@ -354,6 +412,24 @@ class BatchedAlgebraicInitializer:
 
     # --- invert_algebraic -------------------------------------------------------
 
+    def _rho_init_for(self, geom, batch: int) -> torch.Tensor:
+        """``calc_rfl(x_surface_init, geom)[1]`` for the batch.
+
+        Constant for the geometry-independent surfaces, so it was hoisted into
+        ``__init__`` and is simply broadcast. A glint surface reads the view
+        angle, making it genuinely per-pixel; evaluating it at one pixel's
+        geometry and reusing the answer is what the hoist guard exists to
+        prevent, so it is computed here instead.
+        """
+        if self.rho_init is not None:
+            return self.rho_init.unsqueeze(0)
+
+        x = torch.as_tensor(
+            self.x_surface_init, dtype=self.dtype, device=self.device
+        ).unsqueeze(0).expand(batch, -1)
+        _, rho_dif_dir = self.torch_surface.calc_rfl(x, geom)
+        return rho_dif_dir
+
     def invert_algebraic_batch(self, x_atmosphere: torch.Tensor, meas: torch.Tensor, geom):
         """Algebraic reflectance estimate for a batch of pixels.
 
@@ -373,7 +449,7 @@ class BatchedAlgebraicInitializer:
             scalar function's return.
         """
         bg = getattr(geom, "bg_rfl", None)
-        rho_dif_dif = self.rho_init.unsqueeze(0) if bg is None else bg
+        rho_dif_dif = self._rho_init_for(geom, meas.shape[0]) if bg is None else bg
 
         (
             r,
@@ -445,6 +521,43 @@ class BatchedAlgebraicInitializer:
         x_surface[:, self.idx_lamb] = clipped
         return x_surface
 
+    def fit_params_glint_batch(self, rfl_meas: torch.Tensor, geom) -> torch.Tensor:
+        """Batched ``GlintModelSurface.fit_params`` (surface_glint_model.py:161-218).
+
+        The scalar estimates an additive glint magnitude from the smaller of two
+        band medians, subtracts it before bounding the reflectance, then converts
+        it to a SUN_GLINT magnitude by dividing through the Fresnel factor at a
+        reference wavelength. SKY_GLINT is set to its configured init.
+
+        The scalar's two writes -- ``self.init[sun_glint_ind]`` and
+        ``geom.sun_glint_init`` -- are deliberately not reproduced. Neither is
+        ever read back (``xa`` uses the separate ``sun_glint_mean`` constant),
+        and running the scalar over two pixels in both orders gives identical
+        results, so there is no cross-pixel state to preserve.
+        """
+        gl = self.glint
+        # torch.median returns the LOWER of the two middle elements for an
+        # even-length input; np.median averages them. The scalar uses np.median
+        # over band slices whose length depends on the instrument's sampling, so
+        # the two disagree on any even-length slice. torch.quantile(0.5)
+        # interpolates the same way numpy does.
+        est = torch.minimum(
+            torch.quantile(rfl_meas[:, gl["blue"]], 0.5, dim=1),
+            torch.quantile(rfl_meas[:, gl["glint"]], 0.5, dim=1),
+        )
+        # max(lo + eps, min(hi - eps, est)), Python-builtin semantics as above.
+        upper = torch.where(est < gl["hi"], est, gl["hi"])
+        est = torch.where(upper > gl["lo"], upper, gl["lo"])
+
+        x_surface = self.fit_params_batch(rfl_meas - est.unsqueeze(1))
+
+        rho_ls_ref = self.torch_surface.fresnel_rf(geom.observer_zenith)[
+            :, gl["ref_band"]
+        ]
+        x_surface[:, gl["sky_ind"]] = gl["sky_init"]
+        x_surface[:, gl["sun_ind"]] = est / rho_ls_ref
+        return x_surface
+
     # --- full initial state -----------------------------------------------------
 
     def initial_state(self, x_atmosphere: torch.Tensor, meas: torch.Tensor, geom):
@@ -459,7 +572,10 @@ class BatchedAlgebraicInitializer:
             ``(B, n_state)`` clipped initial state.
         """
         rfl_est, _ = self.invert_algebraic_batch(x_atmosphere, meas, geom)
-        x_surface = self.fit_params_batch(rfl_est)
+        if self.glint is not None:
+            x_surface = self.fit_params_glint_batch(rfl_est, geom)
+        else:
+            x_surface = self.fit_params_batch(rfl_est)
 
         # np.concatenate([rfl_est, x_atmosphere, x_instrument])
         x0 = torch.cat(

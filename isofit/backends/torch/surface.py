@@ -501,11 +501,22 @@ class TorchGlintSurface(TorchMultiComponentSurface):
         Returns:
             ``(B, n_wl)`` reflectance factor.
         """
-        vza = observer_zenith.reshape(-1, 1).to(self.dtype)
-        theta = torch.deg2rad(vza)
+        vza = observer_zenith.reshape(-1, 1)
+
+        # PRECISION, deliberately reproduced. geom.observer_zenith comes off an
+        # ENVI obs file as float32, so numpy evaluates deg2rad and sin at
+        # float32 and only promotes on the division by the float64 refractive
+        # index (surface_glint_model.py:427-430). Doing the whole chain in
+        # float64 here is *more* accurate and diverges from the CPU path by
+        # ~2e-07 relative -- which is the same order as this backend's whole
+        # glint parity budget. Match the scalar instead; the extra accuracy is
+        # not ours to introduce silently.
+        theta32 = torch.deg2rad(vza.to(torch.float32))
+        sin_theta = torch.sin(theta32).to(self.dtype)
+        theta = theta32.to(self.dtype)
 
         # Snell's law against the per-wavelength refractive index.
-        theta_i = torch.arcsin(torch.sin(theta) / self.real_ref_idx.unsqueeze(0))
+        theta_i = torch.arcsin(sin_theta / self.real_ref_idx.unsqueeze(0))
 
         sin_m, sin_p = torch.sin(theta - theta_i), torch.sin(theta + theta_i)
         tan_m, tan_p = torch.tan(theta - theta_i), torch.tan(theta + theta_i)

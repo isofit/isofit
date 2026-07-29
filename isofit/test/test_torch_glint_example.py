@@ -54,12 +54,15 @@ EXAMPLE = "20231110_Prism_Multisurface"
 FLIGHT = "prm20231110t071521"
 CONFIG = f"configs/{FLIGHT}_multi_surface_isofit.json"
 
-# fp64 through two Cholesky stages plus a bordered solve. The reflectance block
-# lands near 1e-8; the glint entries carry larger magnitudes (the reference
-# reaches |35| on this scene, since invert_analytical does not clamp its output)
-# so their absolute error is correspondingly larger at the same relative level.
-RFL_ATOL = 1e-6
-GLINT_RTOL = 1e-5
+# fp64 through two Cholesky stages plus a bordered solve, and nothing else.
+# These were two to five orders looser until the batched fresnel_rf was made to
+# reproduce the scalar's float32 deg2rad/sin chain: that single precision
+# mismatch, not the bordered blocks or the prior, dominated the entire glint
+# parity budget. Measured after the fix: reflectance 2.0e-13, SKY_GLINT 8.4e-13,
+# SUN_GLINT 1.3e-12 against reference values reaching |35|. Kept tight so a
+# regression there cannot hide again.
+RFL_ATOL = 1e-11
+GLINT_RTOL = 1e-10
 
 
 def _example_dir():
@@ -234,3 +237,55 @@ def test_the_glint_states_are_actually_solved(glint_setup):
         "the reference left the glint terms at their initial value, so this "
         "fixture cannot distinguish a working solve from a no-op"
     )
+
+
+def test_batched_glint_initializer_matches_the_scalar(glint_setup):
+    """``fit_params_glint_batch`` vs the real ``GlintModelSurface.fit_params``.
+
+    This is what makes the batched gather usable for glint, and therefore what
+    recovers the ~3x the per-pixel gather costs. The scalar picks its bands with
+    ``argmin(|target - wl|)`` and clamps with Python builtins, so an
+    off-by-one band or a ``torch.clamp`` would diverge here.
+    """
+    import copy
+
+    from isofit.backends.torch.geometry import BatchedGeometry
+    from isofit.backends.torch.initializer import BatchedAlgebraicInitializer
+
+    fm = glint_setup["fm"]
+    solver = glint_setup["solver"]
+
+    init = BatchedAlgebraicInitializer(
+        fm, solver.radiance, device="cpu", dtype=torch.float64
+    )
+    assert init.glint is not None, "the initializer did not detect a glint surface"
+
+    rng = np.random.default_rng(0)
+    rfl = rng.uniform(0.02, 0.5, (len(glint_setup["geoms"]), fm.surface.n_wl))
+
+    geom_batch = BatchedGeometry.from_geometries(
+        glint_setup["geoms"], device="cpu", dtype=torch.float64
+    )
+    got = init.fit_params_glint_batch(torch.as_tensor(rfl), geom_batch).numpy()
+
+    want = np.stack(
+        [
+            fm.surface.fit_params(rfl[i].copy(), copy.deepcopy(glint_setup["geoms"][i]))
+            for i in range(len(glint_setup["geoms"]))
+        ]
+    )
+
+    np.testing.assert_allclose(got, want, rtol=1e-12, atol=1e-12)
+
+    surface = fm.surface
+    assert not np.allclose(
+        want[:, surface.sun_glint_ind], want[0, surface.sun_glint_ind]
+    ) or len(want) == 1, "SUN_GLINT is identical across pixels; fixture is degenerate"
+
+
+def test_glint_gather_is_enabled(glint_setup):
+    """A glint surface must now take the batched gather, not fall back."""
+    from isofit.backends.torch.initializer import surface_is_batchable
+
+    ok, reason = surface_is_batchable(glint_setup["fm"].surface)
+    assert ok, f"glint surface still refused by the batched initializer: {reason}"
