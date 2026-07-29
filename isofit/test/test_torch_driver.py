@@ -180,11 +180,11 @@ def _central_reference(solver, inputs, h=1e-6):
 def _columns(solver, inputs):
     rdn = _rdn(solver, inputs)
     fd = solver._h2o_absco_column_fd(
-        inputs["x_atm"], inputs["geom"], inputs["rho"],
+        inputs["x_atm"], inputs["geom"], inputs["rho"], inputs["rho"],
         inputs["rho_dif_dif"], inputs["Ls"], rdn,
     )
     analytic = solver._h2o_absco_column_analytic(
-        inputs["x_atm"], inputs["geom"], inputs["rho"],
+        inputs["x_atm"], inputs["geom"], inputs["rho"], inputs["rho"],
         inputs["rho_dif_dif"], inputs["Ls"],
     )
     return fd, analytic
@@ -262,7 +262,7 @@ def test_finite_difference_is_the_default():
 
     rdn = _rdn(solver, inputs)
     default = solver._h2o_absco_column(
-        inputs["x_atm"], inputs["geom"], inputs["rho"],
+        inputs["x_atm"], inputs["geom"], inputs["rho"], inputs["rho"],
         inputs["rho_dif_dif"], inputs["Ls"], rdn,
     )
     fd, analytic = _columns(solver, inputs)
@@ -277,7 +277,7 @@ def test_flag_switches_to_the_analytic_column():
 
     rdn = _rdn(solver, inputs)
     selected = solver._h2o_absco_column(
-        inputs["x_atm"], inputs["geom"], inputs["rho"],
+        inputs["x_atm"], inputs["geom"], inputs["rho"], inputs["rho"],
         inputs["rho_dif_dif"], inputs["Ls"], rdn,
     )
     _, analytic = _columns(solver, inputs)

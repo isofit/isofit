@@ -52,7 +52,10 @@ from isofit.backends.torch.forward import TorchRadiance
 from isofit.backends.torch.geometry import BatchedGeometry
 from isofit.backends.torch.instrument import TorchInstrument
 from isofit.backends.torch.seps import sb_diagonal, seps_batch
-from isofit.backends.torch.surface import TorchMultiComponentSurface
+from isofit.backends.torch.surface import (
+    TorchGlintSurface,
+    TorchMultiComponentSurface,
+)
 
 Logger = logging.getLogger(__name__)
 
@@ -96,9 +99,11 @@ class AnalyticalBatchSolver:
         self.analytic_derivatives = analytic_derivatives
 
         self.radiance = TorchRadiance(fm, device=self.device, dtype=dtype)
-        self.surface = TorchMultiComponentSurface(
-            fm.surface, device=self.device, dtype=dtype
-        )
+        # A glint surface carries two extra state elements and needs the
+        # subclass that knows how to build their linearization columns.
+        self.is_glint = hasattr(fm.surface, "sun_glint_ind")
+        surface_cls = TorchGlintSurface if self.is_glint else TorchMultiComponentSurface
+        self.surface = surface_cls(fm.surface, device=self.device, dtype=dtype)
         self.instrument = TorchInstrument(
             fm.instrument, device=self.device, dtype=dtype
         )
@@ -171,14 +176,7 @@ class AnalyticalBatchSolver:
         if isinstance(geoms, BatchedGeometry):
             geom = geoms
             if geom.bg_rfl is None:
-                geom.bg_rfl = sub_t.index_select(
-                    1,
-                    torch.as_tensor(
-                        np.asarray(fm.idx_surf_rfl),
-                        dtype=torch.int64,
-                        device=self.device,
-                    ),
-                )
+                geom.bg_rfl = self._default_bg_rfl(fm, sub_t, geom)
         else:
             bg = np.stack(
                 [
@@ -192,6 +190,18 @@ class AnalyticalBatchSolver:
                 geoms, device=self.device, dtype=self.dtype
             )
             geom.bg_rfl = self._t(bg)
+            if self.is_glint:
+                # The per-geometry fallback above used the raw superpixel
+                # reflectance, which under glint is missing the sky term.
+                supplied = np.array(
+                    [isinstance(getattr(g, "bg_rfl", None), np.ndarray) for g in geoms]
+                )
+                if not supplied.all():
+                    default = self._default_bg_rfl(fm, sub_t, geom)
+                    keep = torch.as_tensor(
+                        supplied, dtype=torch.bool, device=self.device
+                    ).unsqueeze(1)
+                    geom.bg_rfl = torch.where(keep, geom.bg_rfl, default)
 
         rho_dif_dif = geom.bg_rfl
 
@@ -242,15 +252,15 @@ class AnalyticalBatchSolver:
 
         # Modeled radiance at the initial state, needed for the Kb columns that
         # describe uncertainty from unretrieved unknowns.
-        rho = x0_t.index_select(
-            1,
-            torch.as_tensor(
-                np.asarray(fm.idx_surf_rfl), dtype=torch.int64, device=self.device
-            ),
-        )
+        # ForwardModel.Kb takes BOTH reflectance quantities from calc_rfl
+        # (forward.py:765-768). They coincide for a Lambertian surface; under
+        # glint the direct path carries SUN_GLINT and the diffuse SKY_GLINT.
+        x_surface_t = x0_t.index_select(1, self.idx_surface)
+        rho_dir_dir, rho_dif_dir = self.surface.calc_rfl(x_surface_t, geom)
+        rho = rho_dir_dir
         Ls = torch.zeros_like(rho)
         rdn = self.radiance.calc_rdn(
-            rho, rho, rho_dif_dif, rho_dif_dif, Ls,
+            rho, rho_dif_dir, rho_dif_dif, rho_dif_dif, Ls,
             L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif, r, geom,
         )
 
@@ -259,10 +269,15 @@ class AnalyticalBatchSolver:
             x_atm_t,
             geom,
             rho,
+            rho_dif_dir,
             rho_dif_dif,
             Ls,
             rdn,
         )
+
+        extra_columns = None
+        if self.is_glint:
+            extra_columns = self.surface.extra_columns(geom, L_dir_dir, L_dif_dir)
 
         traj, unc = invert_analytical_batch(
             self.surface,
@@ -276,13 +291,28 @@ class AnalyticalBatchSolver:
             eof_offset,
             geom=geom,
             idx_surface=self.idx_surface,
+            extra_columns=extra_columns,
             outside_ret_windows=self.outside_ret_windows,
             num_iter=self.num_iter,
             strict_parity=self.strict_parity,
         )
         return traj[:, -1, :].cpu().numpy(), unc.cpu().numpy()
 
-    def _h2o_absco_column(self, x_atm, geom, rho, rho_dif_dif, Ls, rdn):
+    def _default_bg_rfl(self, fm, sub_t, geom):
+        """Background reflectance when no background image was supplied.
+
+        ``invert_analytical`` defaults it to ``calc_rfl(sub_state, geom)[1]``
+        -- the *diffuse* reflectance quantity (inverse_simple.py:256-264), not
+        the raw reflectance state. For a Lambertian multicomponent surface
+        those are the same spectrum, which is why reading the state directly
+        worked; under glint the diffuse quantity carries the sky-glint term and
+        they differ.
+        """
+        sub_surface = sub_t.index_select(1, self.idx_surface)
+        _, rho_dif_dir = self.surface.calc_rfl(sub_surface, geom)
+        return rho_dif_dir
+
+    def _h2o_absco_column(self, x_atm, geom, rho, rho_dif_dir, rho_dif_dif, Ls, rdn):
         """Kb column for the H2O_ABSCO unknown.
 
         Dispatches to the finite difference (default, bit-comparable with the
@@ -294,11 +324,13 @@ class AnalyticalBatchSolver:
         """
         if self.analytic_derivatives:
             return self._h2o_absco_column_analytic(
-                x_atm, geom, rho, rho_dif_dif, Ls
+                x_atm, geom, rho, rho_dif_dir, rho_dif_dif, Ls
             )
-        return self._h2o_absco_column_fd(x_atm, geom, rho, rho_dif_dif, Ls, rdn)
+        return self._h2o_absco_column_fd(
+            x_atm, geom, rho, rho_dif_dir, rho_dif_dif, Ls, rdn
+        )
 
-    def _h2o_absco_column_fd(self, x_atm, geom, rho, rho_dif_dif, Ls, rdn):
+    def _h2o_absco_column_fd(self, x_atm, geom, rho, rho_dif_dir, rho_dif_dif, Ls, rdn):
         """Finite-difference Kb column for the H2O_ABSCO unknown.
 
         Mirrors :meth:`ForwardModel.drdn_datmosphereb`: perturb the water-vapour
@@ -328,12 +360,12 @@ class AnalyticalBatchSolver:
             x_perturb, geom, rho_dif_dif=rho_dif_dif
         )
         rdne = self.radiance.calc_rdn(
-            rho, rho, rho_dif_dif, rho_dif_dif, Ls,
+            rho, rho_dif_dir, rho_dif_dif, rho_dif_dif, Ls,
             L_tot_p, L_dir_dir_p, L_dif_dir_p, L_dir_dif_p, L_dif_dif_p, r_p, geom,
         )
         return (rdne - rdn) / eps
 
-    def _h2o_absco_column_analytic(self, x_atm, geom, rho, rho_dif_dif, Ls):
+    def _h2o_absco_column_analytic(self, x_atm, geom, rho, rho_dif_dir, rho_dif_dif, Ls):
         """Analytic Kb column for the H2O_ABSCO unknown.
 
         The chain has two links, and they are handled by different machinery
@@ -406,14 +438,14 @@ class AnalyticalBatchSolver:
                 x_atm, geom, rho_dif_dif=rho_dif_dif, r=full
             )
             return self.radiance.calc_rdn(
-                rho, rho, rho_dif_dif, rho_dif_dif, Ls,
+                rho, rho_dif_dir, rho_dif_dif, rho_dif_dif, Ls,
                 L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif, full, geom,
             )
 
         _, column = torch.func.jvp(rdn_of_r, (primals,), (tangents,))
         return column
 
-    def _build_seps(self, meas_t, x_atm, geom, rho, rho_dif_dif, Ls, rdn):
+    def _build_seps(self, meas_t, x_atm, geom, rho, rho_dif_dir, rho_dif_dif, Ls, rdn):
         # NOTE: Sy depends on the MEASUREMENT; the radiometric Kb block depends
         # on the MODELED radiance. They are different arrays -- see seps_batch.
         """Assemble the windowed observation-error covariance for the batch.
@@ -450,7 +482,7 @@ class AnalyticalBatchSolver:
                     handled = ["H2O_ABSCO (zero magnitude, skipped)"]
                 else:
                     col = self._h2o_absco_column(
-                        x_atm, geom, rho, rho_dif_dif, Ls, rdn
+                        x_atm, geom, rho, rho_dif_dir, rho_dif_dif, Ls, rdn
                     )
                     dense_cols = col.unsqueeze(-1)
                     sb_dense = torch.as_tensor(

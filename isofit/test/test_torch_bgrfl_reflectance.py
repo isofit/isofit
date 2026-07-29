@@ -69,7 +69,7 @@ class _SpyRadiance:
         return torch.zeros_like(rho_dir_dir)
 
 
-def _driver_rho_arguments(rho, rho_dif_dif):
+def _driver_rho_arguments(rho, rho_dif_dif, rho_dif_dir=None):
     """What the driver passes, replaying its ``calc_rdn`` call verbatim.
 
     Kept as a literal transcription of the call in
@@ -86,12 +86,18 @@ def _driver_rho_arguments(rho, rho_dif_dif):
     calls = re.findall(r"\.calc_rdn\(\s*\n\s*(.+?),\s*Ls,", source)
     assert calls, "could not locate the driver's calc_rdn calls"
 
+    rho_dif_dir = rho if rho_dif_dir is None else rho_dif_dir
     spy = _SpyRadiance()
     results = []
     for call in calls:
         names = [a.strip() for a in call.split(",")]
         assert len(names) == 4, f"expected 4 reflectance arguments, got {names}"
-        env = {"rho": rho, "rho_dif_dif": rho_dif_dif}
+        env = {
+            "rho": rho,
+            "rho_dir_dir": rho,
+            "rho_dif_dir": rho_dif_dir,
+            "rho_dif_dif": rho_dif_dif,
+        }
         spy.calc_rdn(*[env[n] for n in names], None)
         results.append(dict(spy.seen))
     return results

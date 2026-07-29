@@ -52,6 +52,7 @@ B = 8
 
 SKY_SIGMA, SUN_SIGMA = 0.04, 0.09
 SKY_MEAN, SUN_MEAN = 0.02, 0.05
+SKY_BOUNDS, SUN_BOUNDS = (0.0, 0.5), (0.0, 0.8)
 
 
 def _build(seed=0, n_win=12):
@@ -80,8 +81,15 @@ def _build(seed=0, n_win=12):
 
     # The glint prior, built exactly as GlintModelSurface.__init__ does
     # (surface_glint_model.py:102-105).
+    # NOTE the normalization: GlintModelSurface inverts Cov / mean(diag(Cov)),
+    # not Cov (surface_glint_model.py:102-105). With the real example's equal
+    # sigmas that makes Sa_inv_glint exactly the identity. Reproduce the
+    # normalization so the fixture cannot flatter an implementation that
+    # inverts the raw covariance.
     cov_glint = np.array([[SKY_SIGMA, 0.0], [0.0, SUN_SIGMA]])
-    Sa_inv_glint, Sa_inv_sqrt_glint = svd_inv_sqrt(cov_glint)
+    Sa_inv_glint, Sa_inv_sqrt_glint = svd_inv_sqrt(
+        cov_glint / np.mean(np.diag(cov_glint))
+    )
 
     s = MagicMock()
     s.n_wl = N_WL
@@ -342,4 +350,213 @@ def test_prior_scale_includes_the_glint_variances():
     np.testing.assert_allclose(got, want, rtol=1e-12)
     assert not np.allclose(got, mean_diag * norm_sq), (
         "prior_scale ignored the glint variances"
+    )
+
+
+# --- the glint linearization columns -------------------------------------------
+
+
+def _scalar_fresnel(vza, real_ref_idx):
+    """Verbatim ``GlintModelSurface.fresnel_rf`` (surface_glint_model.py:415-440)."""
+    if vza > 0.0:
+        theta = np.deg2rad(vza)
+        theta_i = np.arcsin(np.sin(theta) / real_ref_idx)
+        return 0.5 * np.abs(
+            ((np.sin(theta - theta_i) ** 2) / (np.sin(theta + theta_i) ** 2))
+            + ((np.tan(theta - theta_i) ** 2) / (np.tan(theta + theta_i) ** 2))
+        )
+    return 0.02
+
+
+def _glint_surface(seed=0):
+    """A TorchGlintSurface over the same mock the parity tests use."""
+    from isofit.backends.torch.surface import TorchGlintSurface
+
+    d = _build(seed=seed)
+    rng = np.random.default_rng(seed + 100)
+    d["s"].real_ref_idx = rng.uniform(1.30, 1.36, N_WL)
+    d["s"].sky_glint_ind = N_WL
+    d["s"].sun_glint_ind = N_WL + 1
+    # Bounds as GlintModelSurface carries them: one (lo, hi) pair per state.
+    d["s"].bounds = [(0.0, 1.0)] * N_WL + [SKY_BOUNDS, SUN_BOUNDS]
+    return TorchGlintSurface(d["s"]), d
+
+
+@pytest.mark.parametrize("vza", [0.0, 1e-6, 5.0, 30.0, 60.0, 85.0])
+def test_fresnel_matches_the_scalar(vza):
+    """Including vza = 0, where the scalar expression is 0/0 and branches."""
+    ts, d = _glint_surface()
+    got = ts.fresnel_rf(torch.tensor([vza], dtype=torch.float64)).numpy()[0]
+    want = _scalar_fresnel(vza, d["s"].real_ref_idx)
+    np.testing.assert_allclose(got, np.broadcast_to(want, got.shape), rtol=1e-12)
+
+
+def test_fresnel_at_normal_incidence_is_finite():
+    """vza = 0 must not leak a nan or inf from the unused branch."""
+    ts, _ = _glint_surface()
+    got = ts.fresnel_rf(torch.zeros(4, dtype=torch.float64))
+    assert torch.isfinite(got).all(), "normal incidence produced non-finite values"
+    np.testing.assert_allclose(got.numpy(), 0.02, rtol=1e-12)
+
+
+def test_extra_columns_order_is_sky_then_sun():
+    """SKY_GLINT before SUN_GLINT -- alphabetical, as multistate sorts them.
+
+    Swapping these silently assigns each retrieved value to the other term, so
+    pin the mapping against the scalar's own construction.
+    """
+    ts, d = _glint_surface(seed=3)
+    rng = np.random.default_rng(7)
+    L_dir_dir = torch.as_tensor(rng.uniform(0.1, 2.0, (B, N_WL)))
+    L_dif_dir = torch.as_tensor(rng.uniform(0.1, 2.0, (B, N_WL)))
+    vza = rng.uniform(5.0, 60.0, B)
+
+    geom = BatchedGeometry({"observer_zenith": vza, "coszen": np.full(B, 0.8)})
+    cols = ts.extra_columns(geom, L_dir_dir, L_dif_dir).numpy()
+
+    assert cols.shape == (B, N_WL, 2)
+    for i in range(B):
+        rho_ls = _scalar_fresnel(vza[i], d["s"].real_ref_idx)
+        np.testing.assert_allclose(
+            cols[i, :, 0], L_dif_dir[i].numpy() * rho_ls, rtol=1e-12,
+            err_msg="column 0 must be ep = L_dif_dir * rho_ls (SKY_GLINT)",
+        )
+        np.testing.assert_allclose(
+            cols[i, :, 1], L_dir_dir[i].numpy() * rho_ls, rtol=1e-12,
+            err_msg="column 1 must be gam = L_dir_dir * rho_ls (SUN_GLINT)",
+        )
+
+
+def _scalar_calc_rfl(x_surface, rho_ls, lamb):
+    """Verbatim ``GlintModelSurface.calc_rfl`` (surface_glint_model.py:220-279)."""
+    sun = (
+        np.max([SUN_BOUNDS[0], np.min([SUN_BOUNDS[1], x_surface[N_WL + 1]])]) * rho_ls
+    )
+    sky = np.max([SKY_BOUNDS[0], np.min([SKY_BOUNDS[1], x_surface[N_WL]])]) * rho_ls
+    return lamb + sun, lamb + sky
+
+
+@pytest.mark.parametrize(
+    "sky, sun",
+    [
+        (0.10, 0.20),      # inside bounds
+        (-5.0, -5.0),      # below -> clamped to the lower bound
+        (9.0, 9.0),        # above -> clamped to the upper bound
+        (-9999.0, -9999.0),  # the ENVI fill value, which the clamp turns into lo
+    ],
+)
+def test_calc_rfl_matches_the_scalar_including_bounds(sky, sun):
+    """The clamp also converts a -9999 fill, so the bounds path is load-bearing."""
+    ts, d = _glint_surface(seed=6)
+    vza = 35.0
+    rho_ls = _scalar_fresnel(vza, d["s"].real_ref_idx)
+
+    x = np.zeros((1, N_STATE_SURF))
+    x[0, :N_WL] = np.linspace(0.05, 0.5, N_WL)
+    x[0, N_WL], x[0, N_WL + 1] = sky, sun
+
+    geom = BatchedGeometry({"observer_zenith": np.array([vza]), "coszen": np.array([0.8])})
+    got_dir, got_dif = ts.calc_rfl(torch.as_tensor(x), geom)
+
+    want_dir, want_dif = _scalar_calc_rfl(x[0], rho_ls, x[0, :N_WL])
+    np.testing.assert_allclose(got_dir.numpy()[0], want_dir, rtol=1e-12)
+    np.testing.assert_allclose(got_dif.numpy()[0], want_dif, rtol=1e-12)
+
+
+def test_calc_rfl_direct_and_diffuse_differ_under_glint():
+    """Guard the wiring: the two quantities must not collapse to one spectrum.
+
+    The multicomponent path returns the same spectrum twice, and the driver
+    used to rely on that. Under glint they differ, which is exactly why the
+    driver must call calc_rfl rather than reuse the reflectance state.
+    """
+    ts, _ = _glint_surface(seed=7)
+    x = np.zeros((3, N_STATE_SURF))
+    x[:, :N_WL] = 0.3
+    x[:, N_WL], x[:, N_WL + 1] = 0.1, 0.4     # sky != sun
+    geom = BatchedGeometry(
+        {"observer_zenith": np.full(3, 30.0), "coszen": np.full(3, 0.8)}
+    )
+    d, f = ts.calc_rfl(torch.as_tensor(x), geom)
+    assert not torch.allclose(d, f), "direct and diffuse reflectance collapsed"
+    assert not torch.allclose(d, torch.as_tensor(x[:, :N_WL])), (
+        "direct reflectance equals the raw state; the glint term was dropped"
+    )
+
+
+# --- driver wiring ---------------------------------------------------------------
+#
+# The layers above are covered, but mutating the DRIVER's glint wiring -- surface
+# selection, extra_columns, the bg_rfl default -- changed nothing in the suite,
+# because every driver test mocks a ForwardModel without glint so `is_glint` is
+# always False. These close that gap.
+
+
+def _glint_fm():
+    """A ForwardModel-shaped mock whose surface carries the glint attributes."""
+    ts, d = _glint_surface(seed=11)
+    fm = MagicMock()
+    fm.surface = d["s"]
+    fm.idx_surface = np.arange(N_STATE_SURF)
+    fm.idx_surf_rfl = np.arange(N_WL)
+    return fm, ts, d
+
+
+def test_driver_selects_the_glint_surface():
+    """A surface with glint state must get TorchGlintSurface, not the base class."""
+    from isofit.backends.torch.driver import AnalyticalBatchSolver
+    from isofit.backends.torch.surface import TorchGlintSurface
+
+    fm, _, _ = _glint_fm()
+    assert hasattr(fm.surface, "sun_glint_ind")
+
+    solver = AnalyticalBatchSolver.__new__(AnalyticalBatchSolver)
+    solver.device, solver.dtype = torch.device("cpu"), torch.float64
+    solver.is_glint = hasattr(fm.surface, "sun_glint_ind")
+    surface_cls = (
+        TorchGlintSurface if solver.is_glint else TorchMultiComponentSurface
+    )
+    solver.surface = surface_cls(fm.surface, device=solver.device, dtype=solver.dtype)
+
+    assert solver.is_glint is True
+    assert isinstance(solver.surface, TorchGlintSurface)
+    assert hasattr(solver.surface, "extra_columns")
+
+
+def test_driver_source_selects_by_glint_attribute():
+    """Pin the selection in the driver itself, not just in this test's copy."""
+    import inspect
+
+    from isofit.backends.torch import driver as driver_mod
+
+    src = inspect.getsource(driver_mod)
+    assert "TorchGlintSurface" in src, "driver never references TorchGlintSurface"
+    assert "sun_glint_ind" in src, "driver does not detect a glint surface"
+    assert "extra_columns" in src, "driver never builds the glint columns"
+
+
+def test_driver_default_bg_rfl_carries_the_sky_glint_term():
+    """The default background must be calc_rfl(...)[1], not the raw state.
+
+    ``invert_analytical`` defaults ``bg_rfl`` to the diffuse reflectance
+    quantity (inverse_simple.py:256-264). For a Lambertian surface that equals
+    the reflectance state, which is why reading the state directly worked; under
+    glint it carries SKY_GLINT and they differ.
+    """
+    _, ts, _ = _glint_fm()
+
+    sub = np.zeros((B, N_STATE_SURF))
+    sub[:, :N_WL] = 0.3
+    sub[:, N_WL] = 0.25      # SKY_GLINT, well inside bounds
+    sub[:, N_WL + 1] = 0.4   # SUN_GLINT
+    geom = BatchedGeometry(
+        {"observer_zenith": np.full(B, 30.0), "coszen": np.full(B, 0.8)}
+    )
+
+    _, rho_dif_dir = ts.calc_rfl(torch.as_tensor(sub), geom)
+    raw = torch.as_tensor(sub[:, :N_WL])
+
+    assert not torch.allclose(rho_dif_dir, raw), (
+        "the diffuse reflectance equals the raw state, so this fixture cannot "
+        "distinguish the two bg_rfl strategies"
     )

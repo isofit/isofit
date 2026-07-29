@@ -307,6 +307,18 @@ class TorchMultiComponentSurface:
         self.extra_prior_var = self._t(np.array([float(var[n]) for n in names]))
         self.extra_prior_mean = self._t(np.array([float(mean[n]) for n in names]))
 
+    def calc_rfl(self, x_surface: torch.Tensor, geom=None):
+        """Direct and diffuse reflectance quantities.
+
+        For a Lambertian multicomponent surface both are the same spectrum
+        (``surface_multicomp.py``); ``TorchGlintSurface`` overrides this.
+
+        Returns:
+            ``(rho_dir_dir, rho_dif_dir)``, each ``(B, n_wl)``.
+        """
+        lamb = self.calc_lamb(x_surface)
+        return lamb, lamb
+
     def prior_scale(self, x_surface: torch.Tensor, ci: torch.Tensor):
         """Per-pixel divisor applied to the normalized prior precision.
 
@@ -454,3 +466,87 @@ def _torch_gradient(values: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
     out[:, 0] = (values[:, 1] - values[:, 0]) / dx[0]
     out[:, -1] = (values[:, -1] - values[:, -2]) / dx[-1]
     return out
+
+
+class TorchGlintSurface(TorchMultiComponentSurface):
+    """Multicomponent surface plus the sun/sky glint terms.
+
+    ``GlintModelSurface`` appends ``SKY_GLINT`` and ``SUN_GLINT`` and gives the
+    linearization two extra dense columns (surface_glint_model.py:355-403)::
+
+        ep  = L_dif_dir * rho_ls     -> SKY_GLINT
+        gam = L_dir_dir * rho_ls     -> SUN_GLINT
+
+    with ``rho_ls`` the Fresnel reflectance factor of sky radiance at the view
+    zenith angle. The column order is alphabetical by state name and must stay
+    that way -- ``multistate.py`` sorts non-reflectance names alphabetically, so
+    swapping them silently assigns each retrieved value to the other term.
+    """
+
+    def __init__(self, surface, device=None, dtype=torch.float64):
+        super().__init__(surface, device=device, dtype=dtype)
+        self.real_ref_idx = self._t(np.asarray(surface.real_ref_idx))
+        self.sky_glint_ind = int(surface.sky_glint_ind)
+        self.sun_glint_ind = int(surface.sun_glint_ind)
+        bounds = np.asarray(surface.bounds, dtype=float)
+        self.sky_bounds = tuple(float(v) for v in bounds[self.sky_glint_ind])
+        self.sun_bounds = tuple(float(v) for v in bounds[self.sun_glint_ind])
+
+    def fresnel_rf(self, observer_zenith: torch.Tensor) -> torch.Tensor:
+        """Fresnel reflectance factor of sky radiance (surface_glint_model.py:415-440).
+
+        Args:
+            observer_zenith: ``(B,)`` view zenith angle in degrees.
+
+        Returns:
+            ``(B, n_wl)`` reflectance factor.
+        """
+        vza = observer_zenith.reshape(-1, 1).to(self.dtype)
+        theta = torch.deg2rad(vza)
+
+        # Snell's law against the per-wavelength refractive index.
+        theta_i = torch.arcsin(torch.sin(theta) / self.real_ref_idx.unsqueeze(0))
+
+        sin_m, sin_p = torch.sin(theta - theta_i), torch.sin(theta + theta_i)
+        tan_m, tan_p = torch.tan(theta - theta_i), torch.tan(theta + theta_i)
+        rho = 0.5 * torch.abs(sin_m**2 / sin_p**2 + tan_m**2 / tan_p**2)
+
+        # The scalar takes a hard branch at vza > 0 and returns the constant to
+        # which the expression converges at normal incidence, where it is 0/0.
+        # Evaluate both sides and select, so no pixel divides by zero.
+        return torch.where(vza > 0.0, rho, torch.full_like(rho, 0.02))
+
+    def calc_rfl(self, x_surface: torch.Tensor, geom=None):
+        """Reflectance with the sun and sky glint terms added separately.
+
+        Mirrors ``GlintModelSurface.calc_rfl`` (surface_glint_model.py:220-279):
+        the two glint magnitudes are clamped to their state bounds -- which also
+        turns a -9999 fill into the lower bound -- scaled by the Fresnel factor,
+        and added to the Lambertian reflectance. The direct path gets SUN_GLINT,
+        the diffuse path SKY_GLINT.
+
+        Returns:
+            ``(rho_dir_dir, rho_dif_dir)``, each ``(B, n_wl)``.
+        """
+        if geom is None:
+            raise ValueError("glint reflectance needs a geometry for the view angle")
+        lamb = self.calc_lamb(x_surface)
+        rho_ls = self.fresnel_rf(geom.observer_zenith)
+
+        sky = torch.clamp(
+            x_surface[:, self.sky_glint_ind], self.sky_bounds[0], self.sky_bounds[1]
+        ).unsqueeze(1)
+        sun = torch.clamp(
+            x_surface[:, self.sun_glint_ind], self.sun_bounds[0], self.sun_bounds[1]
+        ).unsqueeze(1)
+
+        return lamb + sun * rho_ls, lamb + sky * rho_ls
+
+    def extra_columns(self, geom, L_dir_dir, L_dif_dir) -> torch.Tensor:
+        """The two dense ``H`` columns, in SKY_GLINT then SUN_GLINT order.
+
+        Returns:
+            ``(B, n_wl, 2)``.
+        """
+        rho_ls = self.fresnel_rf(geom.observer_zenith)
+        return torch.stack([L_dif_dir * rho_ls, L_dir_dir * rho_ls], dim=-1)
