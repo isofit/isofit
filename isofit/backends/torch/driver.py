@@ -250,7 +250,7 @@ class AnalyticalBatchSolver:
         )
         Ls = torch.zeros_like(rho)
         rdn = self.radiance.calc_rdn(
-            rho, rho, rho, rho_dif_dif, Ls,
+            rho, rho, rho_dif_dif, rho_dif_dif, Ls,
             L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif, r, geom,
         )
 
@@ -328,7 +328,7 @@ class AnalyticalBatchSolver:
             x_perturb, geom, rho_dif_dif=rho_dif_dif
         )
         rdne = self.radiance.calc_rdn(
-            rho, rho, rho, rho_dif_dif, Ls,
+            rho, rho, rho_dif_dif, rho_dif_dif, Ls,
             L_tot_p, L_dir_dir_p, L_dif_dir_p, L_dir_dif_p, L_dif_dif_p, r_p, geom,
         )
         return (rdne - rdn) / eps
@@ -406,7 +406,7 @@ class AnalyticalBatchSolver:
                 x_atm, geom, rho_dif_dif=rho_dif_dif, r=full
             )
             return self.radiance.calc_rdn(
-                rho, rho, rho, rho_dif_dif, Ls,
+                rho, rho, rho_dif_dif, rho_dif_dif, Ls,
                 L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif, full, geom,
             )
 

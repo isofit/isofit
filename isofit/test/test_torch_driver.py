@@ -134,7 +134,14 @@ def _build(multipart=True, use_background_rfl=True, rt_mode="transm", seed=0):
 
 
 def _rdn(solver, inputs, x_atm=None):
-    """Modeled radiance, optionally at a perturbed atmospheric state."""
+    """Modeled radiance, optionally at a perturbed atmospheric state.
+
+    The four reflectance arguments must match the driver's own ``calc_rdn``
+    calls, which in turn match ``ForwardModel.Seps`` (forward.py:659-669):
+    both downward-diffuse terms are the background reflectance. If this drifts
+    from the driver, the finite-difference reference below stops describing the
+    quantity the analytic column computes. See test_torch_bgrfl_reflectance.py.
+    """
     rad = solver.radiance
     x_atm = inputs["x_atm"] if x_atm is None else x_atm
     (
@@ -149,7 +156,7 @@ def _rdn(solver, inputs, x_atm=None):
     )
     rho = inputs["rho"]
     return rad.calc_rdn(
-        rho, rho, rho, inputs["rho_dif_dif"], inputs["Ls"],
+        rho, rho, inputs["rho_dif_dif"], inputs["rho_dif_dif"], inputs["Ls"],
         L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif, r, inputs["geom"],
     )
 
