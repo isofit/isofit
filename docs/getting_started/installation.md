@@ -104,7 +104,25 @@ $ uv sync
 
 ## GPU (optional)
 
-ISOFIT ships an opt-in `torch` backend for the analytical line retrieval, requested with `--backend torch`. It is off by default, and no GPU is needed to install or run ISOFIT: the default `numpy` backend is unaffected by everything below. CUDA is the only supported accelerator. See [Performance](../developers/performance.md) for what the backend does and how it is configured.
+ISOFIT ships an opt-in `torch` backend for the analytical line retrieval, requested with `--backend torch`. It is off by default, and no GPU is needed to install or run ISOFIT: the default `numpy` backend is unaffected by everything below. CUDA is the only supported accelerator.
+
+### Configuration
+
+The backend is configured through the `implementation` section of the ISOFIT
+config; the first three are also flags on `apply_oe` and `analytical_line`.
+Every option is inert unless `backend` is `"torch"`, and setting one anyway
+produces a config warning rather than being silently ignored.
+
+Option | Default | Description
+-|-|-
+`backend` | `"numpy"` | `"numpy"` or `"torch"`.
+`torch_device` | `"auto"` | `"auto"`, `"cpu"`, `"mps"`, `"cuda"`, or `"cuda:N"`. `"auto"` prefers cuda, then mps, then cpu.
+`torch_batch_size` | `"auto"` | Spectra per batched call. `"auto"` sizes the batch against free device memory.
+`torch_dtype` | `"auto"` | `"auto"`, `"float32"`, or `"float64"`. `"auto"` is float64 everywhere except mps, which has no float64. float32 is faster and measurably less accurate.
+`torch_num_gpu_workers` | `null` | GPU worker actors, defaulting to the visible CUDA device count. **`n_cores` does not control this** -- one CUDA context per core would thrash the device.
+
+An explicit device is never silently downgraded: requesting `cuda` on a
+CPU-only torch build raises rather than quietly running twenty times slower.
 
 `torch >= 2.3` is recommended. ISOFIT itself does not bound the version, but older releases predate parts of the batched linear algebra the backend leans on.
 

@@ -39,7 +39,7 @@ $ pytest -m gpu
 
 ### Torch backend parity tests
 
-The optional torch backend (see [Performance](performance.md)) is guarded by parity tests that check its numerical agreement with the existing numpy implementation, module by module.
+The optional torch backend is guarded by parity tests that check its numerical agreement with the existing numpy implementation, module by module.
 
 Marker | Requirement | How to run
 -|-|-
