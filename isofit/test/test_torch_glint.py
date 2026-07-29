@@ -524,15 +524,48 @@ def test_driver_selects_the_glint_surface():
 
 
 def test_driver_source_selects_by_glint_attribute():
-    """Pin the selection in the driver itself, not just in this test's copy."""
+    """Pin the selection in the driver itself, not just in this test's copy.
+
+    Checking only that the names appear is not enough: a mutation that drops
+    the conditional still leaves the import line intact. Parse the assignment
+    and require it to actually branch on the glint flag.
+    """
+    import ast
     import inspect
 
     from isofit.backends.torch import driver as driver_mod
 
-    src = inspect.getsource(driver_mod)
-    assert "TorchGlintSurface" in src, "driver never references TorchGlintSurface"
-    assert "sun_glint_ind" in src, "driver does not detect a glint surface"
-    assert "extra_columns" in src, "driver never builds the glint columns"
+    tree = ast.parse(inspect.getsource(driver_mod))
+    assigns = [
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Assign)
+        and any(
+            isinstance(t, ast.Name) and t.id == "surface_cls" for t in n.targets
+        )
+    ]
+    assert assigns, "driver does not choose a surface class"
+    src = ast.unparse(assigns[0].value)
+    assert isinstance(assigns[0].value, ast.IfExp), (
+        f"surface_cls is unconditional ({src!r}); a glint surface would be "
+        "built with the reflectance-only class"
+    )
+    assert "TorchGlintSurface" in src, f"glint class not selected: {src!r}"
+    assert "is_glint" in src, f"selection does not consult is_glint: {src!r}"
+
+    # And the columns must be built under the same flag.
+    col_assigns = [
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Assign)
+        and any(
+            isinstance(t, ast.Name) and t.id == "extra_columns" for t in n.targets
+        )
+    ]
+    sources = {ast.unparse(n.value) for n in col_assigns}
+    assert any("extra_columns(" in src for src in sources), (
+        f"driver never calls surface.extra_columns; found {sources}"
+    )
 
 
 def test_driver_default_bg_rfl_carries_the_sky_glint_term():
