@@ -289,3 +289,38 @@ def test_glint_gather_is_enabled(glint_setup):
 
     ok, reason = surface_is_batchable(glint_setup["fm"].surface)
     assert ok, f"glint surface still refused by the batched initializer: {reason}"
+
+
+@pytest.mark.parametrize("num_iter", [1, 2, 3])
+def test_parity_holds_across_map_iterations(glint_setup, num_iter):
+    """``Seps`` must be rebuilt from the current state each MAP iteration.
+
+    ``invert_analytical`` evaluates ``fm.Seps(x, meas, geom)`` *inside* its loop
+    (inverse_simple.py:313), and Seps depends on the surface state through the
+    radiometric ``Kb`` block, ``diagflat(rdn(x))`` (instrument.py:354-360). The
+    driver originally built it once from x0, so the two paths solved different
+    problems from the second iteration onward -- measured at 1.97e-01 absolute
+    reflectance here, against a parity budget of 1e-11.
+
+    Nothing in the suite covered this: every multi-iteration test drove the
+    kernel directly with a fixed ``Seps`` tensor handed to both sides, and the
+    only real-ForwardModel test ran at num_iter=1. It is also not glint-specific
+    -- the reflectance-only path was off by 4.84e-02 at num_iter=2.
+    """
+    from isofit.backends.torch.driver import AnalyticalBatchSolver
+
+    setup = dict(glint_setup)
+    setup["solver"] = AnalyticalBatchSolver(
+        setup["fm"], setup["winidx"], device="cpu", dtype=torch.float64,
+        num_iter=num_iter,
+    )
+
+    ref = _scalar(setup, num_iter=num_iter)
+    got = _batched(setup)
+    n_state = setup["fm"].surface.n_state
+
+    d = np.abs(got[:, :n_state] - ref[:, :n_state]).max()
+    assert d < 1e-9, (
+        f"num_iter={num_iter}: max|d| over the surface state = {d:.3e}; "
+        "Seps is probably frozen at x0 again"
+    )

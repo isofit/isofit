@@ -92,10 +92,14 @@ def _driver_rho_arguments(rho, rho_dif_dif, rho_dif_dir=None):
     for call in calls:
         names = [a.strip() for a in call.split(",")]
         assert len(names) == 4, f"expected 4 reflectance arguments, got {names}"
+        # Local names the driver uses for the two calc_rfl quantities. rho_dd /
+        # rho_fd are the per-iteration rebuild's names for the same pair.
         env = {
             "rho": rho,
             "rho_dir_dir": rho,
+            "rho_dd": rho,
             "rho_dif_dir": rho_dif_dir,
+            "rho_fd": rho_dif_dir,
             "rho_dif_dif": rho_dif_dif,
         }
         spy.calc_rdn(*[env[n] for n in names], None)

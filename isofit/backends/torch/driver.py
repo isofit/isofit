@@ -283,6 +283,31 @@ class AnalyticalBatchSolver:
             L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif, r, geom,
         )
 
+        def rebuild_seps(x_surface_now):
+            """Seps at the current surface state, as the scalar recomputes it.
+
+            ``invert_analytical`` evaluates ``fm.Seps(x, meas, geom)`` INSIDE its
+            iteration loop (inverse_simple.py:313), and Seps genuinely depends on
+            the surface state: the radiometric ``Kb`` block is
+            ``diagflat(rdn(x))`` (instrument.py:354-360), so its diagonal carries
+            ``rdn_modeled(x)**2 * sb_radiometric``. Freezing it at x0 makes the
+            two paths solve different problems from the second iteration onward
+            -- measured at ~5e-02 absolute reflectance on a real scene, against a
+            parity budget of 1e-08.
+
+            Only the reflectance quantities and the modeled radiance change: the
+            atmosphere state is untouched by this solve, so ``r`` and the L_*
+            terms are loop-invariant and stay hoisted.
+            """
+            rho_dd, rho_fd = self.surface.calc_rfl(x_surface_now, geom)
+            rdn_now = self.radiance.calc_rdn(
+                rho_dd, rho_fd, rho_dif_dif, rho_dif_dif, Ls,
+                L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif, r, geom,
+            )
+            return self._build_seps(
+                meas_t, x_atm_t, geom, rho_dd, rho_fd, rho_dif_dif, Ls, rdn_now
+            )
+
         Seps = self._build_seps(
             meas_t,
             x_atm_t,
@@ -311,6 +336,7 @@ class AnalyticalBatchSolver:
             geom=geom,
             idx_surface=self.idx_surface,
             extra_columns=extra_columns,
+            seps_fn=rebuild_seps,
             outside_ret_windows=self.outside_ret_windows,
             num_iter=self.num_iter,
             strict_parity=self.strict_parity,

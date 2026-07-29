@@ -71,6 +71,7 @@ def invert_analytical_batch(
     outside_ret_const: float = -0.01,
     strict_parity: bool = True,
     extra_columns: torch.Tensor = None,
+    seps_fn=None,
 ):
     """Conditional MAP surface retrieval for a batch of pixels.
 
@@ -156,8 +157,14 @@ def invert_analytical_batch(
     )
 
     C_rcond = None
-    for _ in range(num_iter):
+    for _iter in range(num_iter):
         x_surface = x.index_select(1, idx_surface)
+
+        if seps_fn is not None and _iter:
+            # The scalar rebuilds Seps from the current state at the top of every
+            # iteration (inverse_simple.py:313). Iteration 0 uses x0, which the
+            # caller already supplied, so only later passes need rebuilding.
+            Seps = seps_fn(x_surface)
 
         ci = surface.component(x_surface, geom)
         xa_surface = surface.xa(x_surface, geom, ci=ci)
@@ -241,7 +248,7 @@ def invert_analytical_batch(
 
         x = x.clone()
         x[:, idx_surface] = x_surface
-        trajectory[:, _ + 1, :] = x
+        trajectory[:, _iter + 1, :] = x
 
     unc = torch.ones((B, n_state), dtype=dtype, device=device)
     if diag_uncert and C_rcond is not None:
