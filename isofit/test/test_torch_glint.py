@@ -775,7 +775,7 @@ def test_worker_writes_the_non_reflectance_cube():
     assert "output_non_rfl" in run_src, (
         "run_chunks never populates a non-rfl block, so nothing would be written"
     )
-    assert "n_non_rfl_bands" in run_src, (
+    assert "non_rfl_slice" in run_src, (
         "run_chunks does not slice the non-reflectance states out of the full "
         "state vector"
     )
@@ -795,4 +795,134 @@ def test_worker_writes_the_non_reflectance_cube():
     assert len(filled) >= 2, (
         "run_chunks allocates the non-rfl blocks but never assigns into them, "
         f"so an all-fill cube would be written (found {len(filled)} assignments)"
+    )
+
+
+def test_non_rfl_slice_selects_the_glint_bands():
+    """The extracted slice must be the non-reflectance states, exactly.
+
+    Executed against a synthetic full state vector rather than asserted about
+    in source: an off-by-one here writes SUN_GLINT and an atmosphere element
+    into the SKY/SUN bands, which no AST check can see.
+    """
+    from isofit.utils.analytical_line_torch import TorchWorker
+
+    cls = getattr(TorchWorker, "__ray_actor_class__", TorchWorker)
+    w = cls.__new__(cls)
+    w.n_rfl_bands = N_WL
+    w.n_non_rfl_bands = N_GLINT
+
+    # full state = [rfl..., SKY_GLINT, SUN_GLINT, atm...]
+    full = np.arange(N_WL + N_GLINT + 3, dtype=float)
+    got = full[w.non_rfl_slice()]
+
+    assert got.tolist() == [float(N_WL), float(N_WL + 1)], (
+        f"non_rfl_slice selected {got.tolist()}; expected the two glint bands "
+        f"at positions {N_WL} and {N_WL + 1}"
+    )
+
+
+def test_non_rfl_write_round_trips_state_and_uncertainty_separately():
+    """State and uncertainty must reach their own cubes, with values intact.
+
+    Pins two mutations an AST check cannot: swapping the two blocks, and
+    writing zeros while leaving the assignment node in place.
+    """
+    from spectral.io import envi
+
+    from isofit.core.common import envi_header
+    from isofit.core.fileio import write_bil_chunk
+
+    lines, samples, bands = 4, 3, N_GLINT
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        paths = {}
+        for name in ("state", "unc"):
+            path = f"{tmp}/{name}"
+            envi.create_image(
+                envi_header(path),
+                {
+                    "lines": lines, "samples": samples, "bands": bands,
+                    "interleave": "bil", "data type": 4, "byte order": 0,
+                    "header offset": 0,
+                },
+                ext="", force=True,
+            )
+            paths[name] = path
+
+        state = np.zeros((lines, samples, bands), dtype=float)
+        unc = np.zeros_like(state)
+        for l in range(lines):
+            for s_ in range(samples):
+                state[l, s_] = [100 + l * 10 + s_, 200 + l * 10 + s_]
+                unc[l, s_] = [1 + l, 2 + l]
+
+        for blk, path in ((state, paths["state"]), (unc, paths["unc"])):
+            write_bil_chunk(
+                np.swapaxes(blk, 1, 2), path, 0, (lines, bands, samples)
+            )
+
+        back = {
+            k: np.array(
+                envi.open(envi_header(v)).open_memmap(interleave="bip", writable=False)
+            )
+            for k, v in paths.items()
+        }
+
+    np.testing.assert_allclose(back["state"], state)
+    np.testing.assert_allclose(back["unc"], unc)
+    assert not np.allclose(back["state"], back["unc"]), (
+        "state and uncertainty cubes are identical; a swap would be invisible"
+    )
+    assert back["state"].any(), "state cube is all zeros"
+
+
+def test_non_rfl_state_and_uncertainty_are_not_swapped():
+    """``output_non_rfl`` must take the state, ``..._unc`` the uncertainty.
+
+    Swapping the two writes the uncertainty into the state cube and vice versa.
+    Both cubes have the same shape and both stay non-zero, so a round-trip check
+    on the writer cannot see it -- the pairing itself has to be pinned.
+    """
+    import ast
+    import inspect
+
+    from isofit.utils import analytical_line_torch as mod
+
+    cls = getattr(mod.TorchWorker, "__ray_actor_class__", mod.TorchWorker)
+    tree = ast.parse(inspect.getsource(cls.run_chunks).lstrip())
+
+    sources = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        for t in node.targets:
+            name = None
+            if isinstance(t, ast.Name):
+                name = t.id
+            elif isinstance(t, ast.Subscript) and isinstance(t.value, ast.Name):
+                name = t.value.id
+            if name in (
+                "non_rfl_block", "non_rfl_unc_block",
+                "output_non_rfl", "output_non_rfl_unc",
+            ):
+                sources.setdefault(name, []).append(ast.unparse(node.value))
+
+    assert any("full_state" in v for v in sources.get("non_rfl_block", [])), (
+        f"non_rfl_block is not taken from full_state: {sources.get('non_rfl_block')}"
+    )
+    assert any("full_unc" in v for v in sources.get("non_rfl_unc_block", [])), (
+        f"non_rfl_unc_block is not taken from full_unc: "
+        f"{sources.get('non_rfl_unc_block')}"
+    )
+    assert any(
+        v.startswith("non_rfl_block") for v in sources.get("output_non_rfl", [])
+    ), f"output_non_rfl is not written from non_rfl_block: {sources.get('output_non_rfl')}"
+    assert any(
+        v.startswith("non_rfl_unc_block")
+        for v in sources.get("output_non_rfl_unc", [])
+    ), (
+        "output_non_rfl_unc is not written from non_rfl_unc_block: "
+        f"{sources.get('output_non_rfl_unc')}"
     )

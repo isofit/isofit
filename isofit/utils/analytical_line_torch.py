@@ -360,9 +360,7 @@ class TorchWorker:
             rfl_block = full_state[:, self.full_idx_surf_rfl]
             unc_block = full_unc[:, self.full_idx_surf_rfl]
             if output_non_rfl is not None:
-                sl = slice(
-                    self.n_rfl_bands, self.n_rfl_bands + self.n_non_rfl_bands
-                )
+                sl = self.non_rfl_slice()
                 non_rfl_block = full_state[:, sl]
                 non_rfl_unc_block = full_unc[:, sl]
             for k in range(hi - lo):
@@ -566,6 +564,16 @@ class TorchWorker:
         if self.per_pixel_heuristic_prior:
             self.fm.update_heuristic_prior_means(x0, geom)
         return x0
+
+    def non_rfl_slice(self) -> slice:
+        """Where the non-reflectance surface states sit in the full state vector.
+
+        They follow the reflectance block, matching the scalar worker's
+        ``full_state_est[self.n_rfl_bands : self.n_rfl_bands + self.n_non_rfl_bands]``
+        (analytical_line.py:708-713). Named so it can be tested against real
+        band layouts rather than asserted about in source.
+        """
+        return slice(self.n_rfl_bands, self.n_rfl_bands + self.n_non_rfl_bands)
 
     def _write(
         self, start_line, stop_line, output_rfl, output_rfl_unc,
