@@ -547,12 +547,6 @@ def load_prebuilt_surface(
             raise ValueError(
                 f"Variable:{name.lower()} in the statevector is not supported."
             )
-        if name.startswith("FRACTIONAL_"):
-            continue
-        if name not in lut_names:
-            raise ValueError(
-                f"Statevector:{name} not found in LUT dimensions: {lut_names}"
-            )
 
     itp_hd = None
     itp_dd = None
