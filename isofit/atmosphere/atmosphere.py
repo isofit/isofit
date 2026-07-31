@@ -515,57 +515,59 @@ class BaseAtmosphere(Reader):
         # This includes direct + diffuse down, but only direct up transmittance
         L_toa_1 = case_1["grnd_rflt"]
 
-        # Transforming back to at-surface radiance
-        # Since L_toa_dir_1 and L_toa_1 only contain direct upward transmittance,
-        # we can safely divide by transm_up_dir without needing transm_up_dif
-        # Direct at-surface radiance for case 1 (only direct down transmittance)
-        L_down_dir_1 = L_toa_dir_1 / rfl_1 / transm_up_dir
-        # Total at-surface radiance for case 1 (direct + diffuse down transmittance)
-        L_down_1 = L_toa_1 / rfl_1 / transm_up_dir
+        # TP7 especially floods this with divide by zero errors but can mostly be ignored
+        with np.errstate(divide="ignore", invalid="ignore"):
 
-        # Total at-surface radiance for case 2 (direct + diffuse down transmittance)
-        L_down_2 = case_2["grnd_rflt"] / rfl_2 / transm_up_dir
+            # Transforming back to at-surface radiance
+            # Since L_toa_dir_1 and L_toa_1 only contain direct upward transmittance,
+            # we can safely divide by transm_up_dir without needing transm_up_dif
+            # Direct at-surface radiance for case 1 (only direct down transmittance)
+            L_down_dir_1 = L_toa_dir_1 / rfl_1 / transm_up_dir
+            # Total at-surface radiance for case 1 (direct + diffuse down transmittance)
+            L_down_1 = L_toa_1 / rfl_1 / transm_up_dir
 
-        # Atmospheric path radiance for case 1
-        L_path_1 = case_1["path_rdn"]
-        # Atmospheric path radiance for case 2
-        L_path_2 = case_2["path_rdn"]
+            # Total at-surface radiance for case 2 (direct + diffuse down transmittance)
+            L_down_2 = case_2["grnd_rflt"] / rfl_2 / transm_up_dir
 
-        # Total reflected radiance at surface (before upward atmospheric transmission) for case 1
-        L_surf_1 = rfl_1 * L_down_1
-        # Total reflected radiance at surface (before upward atmospheric transmission) for case 2
-        L_surf_2 = rfl_2 * L_down_2
-        # Atmospheric path radiance for non-reflective surface (case 0)
-        L_path_0 = ((L_surf_2 * L_path_1) - (L_surf_1 * L_path_2)) / (
-            L_surf_2 - L_surf_1
-        )
+            # Atmospheric path radiance for case 1
+            L_path_1 = case_1["path_rdn"]
+            # Atmospheric path radiance for case 2
+            L_path_2 = case_2["path_rdn"]
 
-        # Diffuse upward transmittance
-        transm_up_dif = (L_path_1 - L_path_0) / L_surf_1
+            # Total reflected radiance at surface (before upward atmospheric transmission) for case 1
+            L_surf_1 = rfl_1 * L_down_1
+            # Total reflected radiance at surface (before upward atmospheric transmission) for case 2
+            L_surf_2 = rfl_2 * L_down_2
+            # Atmospheric path radiance for non-reflective surface (case 0)
+            L_path_0 = ((L_surf_2 * L_path_1) - (L_surf_1 * L_path_2)) / (
+                L_surf_2 - L_surf_1
+            )
 
-        # Spherical albedo
-        salb = (L_down_1 - L_down_2) / (L_surf_1 - L_surf_2)
-        salb_num = L_down_1 - L_down_2
-        salb_denom = L_surf_1 - L_surf_2
-        salb = salb_num / salb_denom
+            # Diffuse upward transmittance
+            transm_up_dif = (L_path_1 - L_path_0) / L_surf_1
 
-        # Avoid division by very small numbers.  This threshold is semi-arbitrary,
-        # but seems to work reasonably
-        salb[np.abs(salb_denom) < 0.001] = 0
+            # Spherical albedo
+            salb_num = L_down_1 - L_down_2
+            salb_denom = L_surf_1 - L_surf_2
+            salb = salb_num / salb_denom
 
-        if modtran_tp7:
-            case_0["rhoatm"] = L_path_0 / L_solar
+            # Avoid division by very small numbers.  This threshold is semi-arbitrary,
+            # but seems to work reasonably
+            salb[np.abs(salb_denom) < 0.001] = 0
 
-        # Total at-surface radiance for non-reflective surface (case 0)
-        # Only add contribution from atmospheric spherical albedo
-        L_down_0 = L_down_1 * (1 - rfl_1 * salb)
-        # Diffuse at-surface radiance for non-reflective surface (case 0)
-        L_down_dif_0 = L_down_0 - L_down_dir_1
+            if modtran_tp7:
+                case_0["rhoatm"] = L_path_0 / L_solar
 
-        # Direct downward transmittance
-        transm_down_dir = L_down_dir_1 / widths / L_solar
-        # Diffuse downward transmittance
-        transm_down_dif = L_down_dif_0 / widths / L_solar
+            # Total at-surface radiance for non-reflective surface (case 0)
+            # Only add contribution from atmospheric spherical albedo
+            L_down_0 = L_down_1 * (1 - rfl_1 * salb)
+            # Diffuse at-surface radiance for non-reflective surface (case 0)
+            L_down_dif_0 = L_down_0 - L_down_dir_1
+
+            # Direct downward transmittance
+            transm_down_dir = L_down_dir_1 / widths / L_solar
+            # Diffuse downward transmittance
+            transm_down_dif = L_down_dif_0 / widths / L_solar
 
         # Return some keys from the first part plus the new calculated keys
         pass_forward = [
