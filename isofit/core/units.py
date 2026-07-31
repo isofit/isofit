@@ -95,6 +95,34 @@ def wavenumber_to_nm(wavenumber):
     return nm
 
 
+def modtran_rdn_in_nm(rdn, wvn):
+    """
+    Convert irradiance wavenumber to wavelength. Steps:
+
+        1. Wavelength (λ) and wavenumber (v) are related by λ = 1/v.
+            To get λ in nanometers, use λ_nm = 10^7 / v.
+        2. Differential relation: dλ = -1/v^2 dv. In nanometers: dλ_nm = -10^7 / v^2 dv.
+        3. Conversion Formula: I_λ = I_v * |dv/dλ_nm|.
+            Since dλ_nm/dv = -10^7 / v^2, the conversion factor is |dv/dλ_nm| = v^2 / 10^7.
+        4. Apply conversion for each wavenumber (v) to obtain irradiance in W cm^-2 / nm.
+            I_λ_nm = I_v_cm^-1 * (v^2 / 10^7)
+        Note: This formula considers the squared relationship between v and λ and unit conversion from cm to nm.
+
+    Parameters
+    ----------
+    rdn : float
+        Irradiance in W cm^-2 / cm^-1.
+    wvn : float
+        Wavenumber in cm^-1.
+
+    Returns
+    -------
+    float
+        Irradiance in W cm^-2 / nm.
+    """
+    return rdn * (wvn**2 / 10**7)
+
+
 def nm_to_wavenumber(nm):
     """
     Function to convert nm to wavenumber.
