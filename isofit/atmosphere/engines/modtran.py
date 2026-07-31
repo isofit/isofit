@@ -213,7 +213,9 @@ class ModtranRT(BaseAtmosphere, Writer):
 
         return chn
 
-    def load_tp7(self, file_path: str, num_albedos: int, num_models: int):
+    def load_tp7(
+        self, file_path: str, num_albedos: int, num_models: int, coszen: float
+    ):
         """Read a MODTRAN TP7 file and return the data as a dictionary, one entry
         for each case in the file.  Don't do anything but read the data; all the data.
 
@@ -225,6 +227,8 @@ class ModtranRT(BaseAtmosphere, Writer):
             Number of unique albedos
         num_models: int
             Number of models per albedo
+        coszen: float
+            cosine of the solar zenith angle (TOA)
 
         Returns
         -------
@@ -355,7 +359,24 @@ class ModtranRT(BaseAtmosphere, Writer):
 
             case_output_dict[_i] = output_dict
 
-        return case_output_dict
+            # Only need to run two_albedo method if we have multiple cases
+            # still at this point.  Note that at this time, merge_multiresolution_cases
+            # is set up to NEED to run through two_albedo_method, but this might
+            # not always be the case.
+            if len(case_output_dict) == 2:
+                params = self.two_albedo_method(
+                    case_0=case_output_dict[
+                        0
+                    ],  # TODO double check we don't actually use the zero case
+                    case_1=case_output_dict[0],
+                    case_2=case_output_dict[1],
+                    coszen=coszen,
+                    rfl_1=self.albedos[1],
+                    rfl_2=self.albedos[2],
+                    modtran_tp7=True,
+                )
+
+        return params
 
     @staticmethod
     def load_tp6(file):
@@ -513,15 +534,8 @@ class ModtranRT(BaseAtmosphere, Writer):
                 file_path=f"{file}.csv",
                 num_albedos=len(self.albedos[1:]),
                 num_models=len(self.simulation_wavelength_regions),
+                coszen=coszen,
             )
-            # Only need to run two_albedo method if we have multiple cases
-            # still at this point.  Note that at this time, merge_multiresolution_cases
-            # is set up to NEED to run through two_albedo_method, but this might
-            # not always be the case.
-            if len(params) == 2:
-                params = self.two_albedo_method(
-                    *params.values(), coszen, *self.test_rfls
-                )
         else:
             params = self.load_chn(file=f"{file}.chn", coszen=coszen, header=5)
         params["solzen"] = solzen
