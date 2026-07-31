@@ -454,7 +454,12 @@ def load_prebuilt_surface(
     endmember_names = list(endmembers.keys())
 
     # Create matrix for linear mixture
-    endmember_matrix = np.column_stack([endmembers[name] for name in endmember_names])
+    if len(endmember_names) > 0:
+        endmember_matrix = np.column_stack(
+            [endmembers[name] for name in endmember_names]
+        )
+    else:
+        endmember_matrix = np.array([])
 
     # Create each of the fractional parts of the statevector
     if len(endmember_names) > 0:

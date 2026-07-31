@@ -1911,7 +1911,7 @@ def make_surface_config(
             _, _, lut_params = load_prebuilt_surface(
                 surface_lut_file=surface_lut_file,
                 terrain_style=terrain_style,
-                statevector_only=True,
+                build_interpolators=False,
             )
             lut_data = lut_params["lut_statevector_data"]
             for i, name in enumerate(lut_data["statevec_names"]):
