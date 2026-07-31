@@ -34,7 +34,6 @@ from isofit.surface.surface_glint_model import (
     DefaultSunGlintPrior,
 )
 from isofit.surface.surface_thermal import DefaultSurfTempKPrior
-from isofit.luts.reader import load_prebuilt_surface
 
 
 class SurfaceStateVectorConfig(StateVectorConfig):
