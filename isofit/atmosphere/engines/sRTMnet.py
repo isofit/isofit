@@ -28,6 +28,7 @@ from pathlib import Path
 import dask.array as da
 import h5py
 import numpy as np
+import psutil
 import torch
 import yaml
 
@@ -436,6 +437,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             modtran_emulation=True,
             build_interpolators=False,
             postprocess=False,
+            shard_size=self.shard_size,
             load_kwargs={"load": False},
         )
 
