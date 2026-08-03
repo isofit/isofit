@@ -27,11 +27,12 @@ Logger = logging.getLogger(__name__)
 # {wgs} = arg8  = wavelength grid spacing (nm)
 # {co2} = arg9  = xco2 (ppm)
 # {ch4} = arg10 = xch4 (ppm)
-# Example: ./emit.exe 35 0 0 2.0 0.1 58.0 0.0 0.1 400.0 1.9
-# {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4}
-#   35     0     0   2.0   0.1  58.0   0.0   0.1  400.0  1.9
+# {out} = arg11 = output file path
+# Example: ./emit_radiance.exe 35 0 0 2.0 0.1 58.0 0.0 0.1 400.0 1.9 emit_outputs_11args.dat
+#          {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4}
+#            35     0     0   2.0   0.1  58.0   0.0   0.1  400.0  1.9
 CMD = """\
-./emit.exe {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4}\
+./{exe} {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4} {out}\
 """
 
 
@@ -46,9 +47,8 @@ class VLIDORT(BaseAtmosphere, Writer):
         "CO2",
     }
 
-    def __init__(self, *args, save_sim=True, **kwargs):
-        self.save_sim = save_sim
-        super().__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
 
     def preSim(self):
         if missing := self.required - set(self.lut_names):
@@ -64,7 +64,13 @@ class VLIDORT(BaseAtmosphere, Writer):
         self.sims = Path(self.config.sim_path)
         self.sims.mkdir(parents=True, exist_ok=True)
 
-        self.queue = self.spoof()
+        self.exe = Path(self.config.engine_base_dir) / "MASTERS"
+
+        return  # TODO: Finish implementing the pre-run
+
+        PRE = """\
+        ./emit_hitdump.exe {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4} {out}\
+        """
 
     def makeSim(self, point, **_):
         name = self.point_to_filename(point)
@@ -73,44 +79,37 @@ class VLIDORT(BaseAtmosphere, Writer):
             Logger.debug(
                 f"Sim data file for this point already exists, skipping. Point = {name}"
             )
-            return {"file": file}
-
-        temp = self.queue.get()
-        os.chdir(temp)
+            return
 
         dims = dict(zip(self.lut_names, point))
         vals = {
+            "exe": "emit_radiance.exe",
             "sza": dims["solar_zenith"],
             "vza": dims["observer_zenith"],
             "rza": dims["relative_azimuth"],
             "pwv": dims["H2OSTR"],
             "aod": dims["AOT550"],
             "vel": 58.0,  # Required to be 58.0 per Vijay
-            # "sel": dims["surface_elevation_km"], # This doesn't work with any nonzero value?
+            "sel": dims[
+                "surface_elevation_km"
+            ],  # This doesn't work with any nonzero value?
             "sel": 0.0,
             "wgs": self.wl_spacing,
             "co2": dims["CO2"],
             "ch4": 0.0,  # REVIEW
+            "out": file,
         }
         cmd = CMD.format(**vals)
 
         subprocess.run(
             cmd.split(" "),
-            cwd=temp,
+            cwd=self.exe,
             check=True,
         )
 
-        if self.save_sim:
-            data = temp / "fort.40"
-            shutil.move(data, file)
-
-            return {"file": file}
-
-        return {"temp": temp}
-
-    def readSim(self, point, temp=None, file=None):
-        if not file:
-            file = temp / "fort.40"
+    def readSim(self, point):
+        name = self.point_to_filename(point)
+        file = self.sims / name
 
         lines = file.read_text().splitlines()
         parse = []
@@ -133,54 +132,4 @@ class VLIDORT(BaseAtmosphere, Writer):
         ]
         data = dict(zip(cols, data.T))
 
-        if temp:
-            self.queue.put(temp)
-
         return data
-
-    def postSim(self):
-        shutil.rmtree(self.root, ignore_errors=True)
-
-    def spoof(self):
-        """
-        VLIDORT is hardcoded to write to the output file fort.40
-        This tricks it into writing to different locations by using softlinks since
-        VLIDORT uses relative pathing. By doing so, we can enable parallelism.
-
-        Parameters
-        ----------
-        n : int
-            Number of temp directories to create.
-        dir : str
-            Directory of VLIDORT to symlink to
-        """
-        # Root temp directory
-        self.root = Path(
-            tempfile.mkdtemp(
-                prefix="vlidort_",
-            )
-        )
-
-        tmps = Queue()
-        base = Path(self.config.engine_base_dir)
-        full = list(base.glob("*"))
-        part = list((base / "MASTERS").glob("*"))
-
-        # Create pool dirs
-        for i in range(self.n_cores):
-            path = self.root / f"tmp_{i}"
-
-            path.mkdir(parents=True, exist_ok=True)
-            for obj in full:
-                if obj.name == "MASTERS":
-                    continue
-                (path / obj.name).symlink_to(obj)
-
-            path /= "MASTERS"
-            path.mkdir(parents=True, exist_ok=True)
-            for obj in part:
-                (path / obj.name).symlink_to(obj)
-
-            tmps.put(path)
-
-        return tmps
