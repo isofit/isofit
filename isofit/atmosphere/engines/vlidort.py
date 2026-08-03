@@ -90,9 +90,7 @@ class VLIDORT(BaseAtmosphere, Writer):
             "pwv": dims["H2OSTR"],
             "aod": dims["AOT550"],
             "vel": 58.0,  # Required to be 58.0 per Vijay
-            "sel": dims[
-                "surface_elevation_km"
-            ],  # This doesn't work with any nonzero value?
+            "sel": dims["surface_elevation_km"],
             "sel": 0.0,
             "wgs": self.wl_spacing,
             "co2": dims["CO2"],
