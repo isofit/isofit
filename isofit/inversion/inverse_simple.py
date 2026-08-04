@@ -350,6 +350,7 @@ def invert_analytical(
         x[fm.idx_surface] = x_surface
         trajectory[n + 1, :] = x
 
+    A = np.eye(C_rcond.shape) - (C_rcond @ Sa_inv)
     if diag_uncert:
         if len(C_rcond):
             full_unc = np.ones(len(x))
@@ -358,9 +359,9 @@ def invert_analytical(
             full_unc = np.ones(len(x))
             full_unc[iv_idx] = [-9999 for i in x[iv_idx]]
 
-        return trajectory, full_unc
+        return trajectory, full_unc, np.diag(A)
     else:
-        return trajectory, C_rcond
+        return trajectory, C_rcond, A
 
 
 def invert_simple(fm: ForwardModel, meas: np.array, geom: Geometry):

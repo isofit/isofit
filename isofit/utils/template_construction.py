@@ -766,12 +766,14 @@ def build_config(
         if presolve:
             state_output_path = paths.h2o_subs_path
             posterior_output_path = None
+            averaging_kernel_output_path = None
             rfl_output_path = None
             bgrfl_input_path = None
 
         else:
             state_output_path = paths.state_subs_path
             posterior_output_path = paths.uncert_subs_path
+            averaging_kernel_output_path = paths.averaging_kernel_subs_path
             rfl_output_path = paths.rfl_subs_path
             bgrfl_input_path = paths.bgrfl_subs_path
 
@@ -784,11 +786,13 @@ def build_config(
         if presolve:
             state_output_path = paths.h2o_working_path
             posterior_output_path = None
+            averaging_kernel_output_path = None
             rfl_output_path = None
             bgrfl_input_path = None
         else:
             state_output_path = paths.state_working_path
             posterior_output_path = paths.uncert_working_path
+            averaging_kernel_output_path = paths.averaging_kernel_working_path
             rfl_output_path = paths.rfl_working_path
             bgrfl_input_path = paths.bgrfl_working_path
 
@@ -803,6 +807,7 @@ def build_config(
     output_config = make_output_config(
         state_output_path=state_output_path,
         posterior_output_path=posterior_output_path,
+        averaging_kernel_output_path=averaging_kernel_output_path,
         rfl_output_path=rfl_output_path,
     )
 
@@ -1985,12 +1990,15 @@ def make_input_config(
 def make_output_config(
     state_output_path: str,
     posterior_output_path: str = None,
+    averaging_kernel_output_path: str = None,
     rfl_output_path: str = None,
 ):
     output_config = {}
     output_config["estimated_state_file"] = state_output_path
     if posterior_output_path:
         output_config["posterior_uncertainty_file"] = posterior_output_path
+    if averaging_kernel_output_path:
+        output_config["averaging_kernel_file"] = averaging_kernel_output_path
     if rfl_output_path:
         output_config["estimated_reflectance_file"] = rfl_output_path
 

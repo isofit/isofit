@@ -135,6 +135,12 @@ def analytical_line(
         "_subs_state", "_surf_non_rfl_uncert"
     )
 
+    analytical_avg_kernel_path = (
+        output_rfl_file
+        if output_rfl_file
+        else (subs_state_file.replace("_subs_state", "_averaging_kernel"))
+    )
+
     atm_file = (
         atm_file
         if atm_file
@@ -226,6 +232,17 @@ def analytical_line(
         ),
     )
 
+    output_metadata["band names"] = full_statevector
+    avg_kernel_output = initialize_output(
+        output_metadata,
+        analytical_avg_kernel_path,
+        (rdns[0], len(full_statevector), rdns[1]),
+        bands=f"{len(full_statevector)}",
+        description=(
+            f"L2A Analytical per-pixel diagonal of  the averaging kernal matrix (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
+        ),
+    )
+
     # If there are more idx in surface than rfl, there are non_rfl surface states
     if len(full_idx_surface) > len(full_idx_surf_rfl):
         n_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
@@ -303,6 +320,7 @@ def analytical_line(
             lbl_file,
             rfl_output,
             unc_output,
+            avg_kernel_output,
             non_rfl_output,
             non_rfl_unc_output,
             num_iter,
@@ -366,6 +384,7 @@ class Worker(object):
         lbl_file: str,
         rfl_output: str,
         unc_output: str,
+        avg_kernel_output: str,
         non_rfl_output: str,
         non_rfl_unc_output: str,
         num_iter: int,
@@ -444,6 +463,7 @@ class Worker(object):
         # output paths
         self.rfl_outpath = rfl_output
         self.unc_outpath = unc_output
+        self.avg_kernel_outpath = avg_kernel_output
         self.non_rfl_outpath = non_rfl_output
         self.non_rfl_unc_outpath = non_rfl_unc_output
 
@@ -491,6 +511,12 @@ class Worker(object):
 
         output_rfl_unc = (
             envi.open(envi_header(self.unc_outpath))
+            .open_memmap(interleave="bip", writable=False)[start_line:stop_line, ...]
+            .copy()
+        )
+
+        output_avg_kernel = (
+            envi.open(envi_header(self.avg_kernel_outpath))
             .open_memmap(interleave="bip", writable=False)[start_line:stop_line, ...]
             .copy()
         )
@@ -609,7 +635,7 @@ class Worker(object):
             if self.per_pixel_heuristic_prior:
                 self.fm.update_heuristic_prior_means(x0, geom)
 
-            states, unc = invert_analytical(
+            states, unc, averaging_kernel = invert_analytical(
                 self.fm,
                 self.winidx,
                 meas,
@@ -626,9 +652,17 @@ class Worker(object):
             output_rfl[r - start_line, c, :] = full_state_est[self.full_idx_surf_rfl]
 
             full_unc_est = fill_statevector(
-                unc, self.fm.full_idx, self.fm.full_miss, self.full_statevector
+                averaging_kernel,
+                self.fm.full_idx,
+                self.fm.full_miss,
+                self.full_statevector,
             )
             output_rfl_unc[r - start_line, c, :] = full_unc_est[self.full_idx_surf_rfl]
+
+            full_avg_kernel_est = fill_statevector(
+                unc, self.fm.full_idx, self.fm.full_miss, self.full_statevector
+            )
+            output_avg_kernel[r - start_line, c, :] = full_avg_kernel_est
 
             full_state_est[len(self.full_idx_surf_rfl) : self.n_non_rfl_bands]
             # Save the non_rfl portion
@@ -661,6 +695,14 @@ class Worker(object):
             self.unc_outpath,
             start_line,
             (self.n_lines, self.n_rfl_bands, self.n_samples),
+        )
+
+        # Save averaging kernel
+        write_bil_chunk(
+            np.swapaxes(output_avg_kernel, 1, 2),
+            self.avg_kernel_outpath,
+            start_line,
+            (self.n_lines, self.fm.nstate, self.n_samples),
         )
 
         if self.non_rfl_outpath:

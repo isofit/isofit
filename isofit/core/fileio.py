@@ -620,6 +620,7 @@ class IO:
                 "radiometry_correction_file": data_bad,
                 "spectral_calibration_file": data_bad,
                 "posterior_uncertainty_file": state_bad,
+                "averaging_kernel_file": state_bad,
             }
 
         else:
@@ -671,10 +672,17 @@ class IO:
                 )
                 to_write["spectral_calibration_file"] = cal
 
+            S_hat, K, G, A = iv.calc_posterior(state_est, geom, meas)
             if "posterior_uncertainty_file" in self.output_datasets:
-                S_hat, K, G = iv.calc_posterior(state_est, geom, meas)
                 to_write["posterior_uncertainty_file"] = fill_statevector(
                     np.sqrt(np.diag(S_hat)),
+                    fm.full_idx,
+                    fm.full_miss,
+                    self.full_statevec,
+                )
+            if "averaging_kernel_file" in self.output_datasets:
+                to_write["averaging_kernel_file"] = fill_statevector(
+                    np.diag(A),
                     fm.full_idx,
                     fm.full_miss,
                     self.full_statevec,
