@@ -532,7 +532,6 @@ class Worker(object):
             geom = Geometry(
                 obs=self.obs[r, c, :],
                 loc=self.loc[r, c, :],
-                esd=self.esd,
                 svf=self.svf[r, c] if len(self.svf) else 1,
                 bg_rfl=self.bg_rfl[r, c, :] if len(self.bg_rfl) else None,
                 coszen=self.coszen,
