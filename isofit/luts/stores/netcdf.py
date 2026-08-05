@@ -49,6 +49,7 @@ class CreateNetCDF(Create):
         *args,
         compression: str = "zlib",
         complevel: int = None,
+        run_cleanup: bool = True,
         **kwargs,
     ):
         """
@@ -178,7 +179,7 @@ class CreateNetCDF(Create):
         unknowns : set
             Set of unknown keys
         """
-        unknowns = set()
+        unknowns = set(nc)
         with Dataset(self.path, "a") as ds:
             for point, data in self.hold:
                 for key, vals in data.items():

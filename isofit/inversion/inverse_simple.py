@@ -350,7 +350,9 @@ def invert_analytical(
         x[fm.idx_surface] = x_surface
         trajectory[n + 1, :] = x
 
-    A = np.eye(C_rcond.shape) - (C_rcond @ Sa_inv)
+    A = np.eye(C_rcond.shape[0]) - (C_rcond @ Sa_inv)
+    n = len(fm.idx_atmosphere) + len(fm.idx_instrument)
+    A = np.pad(A, (0, n), mode="constant", constant_values=-9999.0)
     if diag_uncert:
         if len(C_rcond):
             full_unc = np.ones(len(x))
@@ -359,7 +361,7 @@ def invert_analytical(
             full_unc = np.ones(len(x))
             full_unc[iv_idx] = [-9999 for i in x[iv_idx]]
 
-        return trajectory, full_unc, np.diag(A)
+        return trajectory, full_unc, A
     else:
         return trajectory, C_rcond, A
 

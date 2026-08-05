@@ -43,6 +43,7 @@ from isofit.core.geometry import Geometry
 from isofit.core.multistate import fill_statevector
 from isofit.data import env
 from isofit.inversion.inverse_simple import invert_algebraic
+from isofit.luts.stores import create
 
 ### Variables ###
 Logger = logging.getLogger(__file__)
@@ -66,6 +67,12 @@ max_frames_size = 100
 
 
 ### Classes ###
+class Keys:
+    consts = {}
+    onedim = {}
+    alldim = {}
+
+
 class SpectrumFile:
     """A buffered file object that contains configuration information about formatting, etc."""
 
@@ -360,7 +367,15 @@ class InputData:
 class IO:
     """..."""
 
-    def __init__(self, config: Config, forward: ForwardModel, full_statevec: list = []):
+    def __init__(
+        self,
+        config: Config,
+        forward: ForwardModel,
+        full_statevec: list = [],
+        full_idx_surf_nonrfl: list = [],
+        full_idx_atmosphere: list = [],
+        full_idx_instrument: list = [],
+    ):
         """Initialization specifies retrieval subwindows for calculating
         measurement cost distributions."""
 
@@ -429,6 +444,21 @@ class IO:
                 band_names = wl_names * 5
             else:
                 band_names = "{}"
+
+            # Special case for the averageing kernel file
+            if element_name == "averaging_kernel_file":
+                self.output_datasets[element_name] = initialize_averaging_kernel(
+                    element,
+                    full_statevec,
+                    full_idx_surf_nonrfl,
+                    full_idx_atmosphere,
+                    full_idx_instrument,
+                    self.n_rows,
+                    self.n_cols,
+                    init=False,
+                    mode="a",
+                )
+                continue
 
             n_bands = len(band_names)
             self.output_datasets[element_name] = SpectrumFile(
@@ -547,6 +577,9 @@ class IO:
 
         for file_dictionary in [self.input_datasets, self.output_datasets]:
             for name, fi in file_dictionary.items():
+                if name == "averaging_kernel_file":
+                    fi.flush()
+                    continue
                 fi.flush_buffers()
         self.reads = 0
         self.writes = 0
@@ -569,6 +602,10 @@ class IO:
         """
 
         for product in self.output_datasets:
+            # special zarr case for averaging kernel file
+            if product == "averaging_kernel_file":
+                self.output_datasets[product].queuePoint([row, col], output[product])
+                continue
             logging.debug("IO: Writing " + product)
             self.output_datasets[product].write_spectrum(row, col, output[product])
 
@@ -681,12 +718,27 @@ class IO:
                     self.full_statevec,
                 )
             if "averaging_kernel_file" in self.output_datasets:
-                to_write["averaging_kernel_file"] = fill_statevector(
+                _diag_A = fill_statevector(
                     np.diag(A),
                     fm.full_idx,
                     fm.full_miss,
                     self.full_statevec,
                 )
+                output = {"A_i_i": _diag_A}
+                save_idx = np.hstack(
+                    [fm.idx_surf_nonrfl, fm.idx_atmosphere, fm.idx_instrument]
+                )
+                for i in save_idx:
+                    output[f"A_{fm.statevec[i]}_i"] = fill_statevector(
+                        A[i, :], fm.full_idx, fm.full_miss, self.full_statevec
+                    )
+
+                for i in save_idx:
+                    output[f"A_i_{fm.statevec[i]}"] = fill_statevector(
+                        A[:, i], fm.full_idx, fm.full_miss, self.full_statevec
+                    )
+
+                to_write["averaging_kernel_file"] = output
 
             ############ Now proceed to the calcs where they may be some overlap
 
@@ -815,12 +867,21 @@ class IO:
             to_write = self.build_output(states, self.current_input_data, fm, iv)
         else:
             to_write = self.build_output(states, input_data, fm, iv)
+
         self.write_datasets(
             row, col, to_write, states, flush_immediately=flush_immediately
         )
 
     @staticmethod
-    def initialize_output_files(config, n_rows, n_cols, full_statevector):
+    def initialize_output_files(
+        config,
+        n_rows,
+        n_cols,
+        full_statevector,
+        full_idx_surf_nonrfl,
+        full_idx_atmosphere,
+        full_idx_instrument,
+    ):
         wl_init, fwhm_init = load_wavelen(
             config.forward_model.instrument.wavelength_file
         )
@@ -831,6 +892,18 @@ class IO:
         for element, element_header, element_name in zip(
             *config.output.get_output_files()
         ):
+            if element_name == "averaging_kernel_file":
+                cls = initialize_averaging_kernel(
+                    element,
+                    full_statevector,
+                    full_idx_surf_nonrfl,
+                    full_idx_atmosphere,
+                    full_idx_instrument,
+                    n_rows,
+                    n_cols,
+                )
+                continue
+
             band_names, ztitle, zrange = element_header
 
             if band_names == "statevector":
@@ -906,3 +979,46 @@ def initialize_output(output_metadata, outpath, out_shape, **kwargs):
     del out_file
 
     return outpath
+
+
+def initialize_averaging_kernel(
+    path,
+    full_statevector,
+    full_idx_surf_nonrfl,
+    full_idx_atmosphere,
+    full_idx_instrument,
+    n_rows,
+    n_cols,
+    mode="w",
+    init=True,
+):
+    grid = {
+        "rows": [i for i in range(n_rows)],
+        "columns": [i for i in range(n_cols)],
+    }
+    keys = Keys()
+    keys.alldim["A_i_i"] = np.nan
+    for i in full_idx_surf_nonrfl:
+        keys.alldim[f"A_{full_statevector[i]}_i"] = np.nan
+        keys.alldim[f"A_i_{full_statevector[i]}"] = np.nan
+    for i in full_idx_atmosphere:
+        keys.alldim[f"A_{full_statevector[i]}_i"] = np.nan
+        keys.alldim[f"A_i_{full_statevector[i]}"] = np.nan
+    for i in full_idx_instrument:
+        keys.alldim[f"A_{full_statevector[i]}_i"] = np.nan
+        keys.alldim[f"A_i_{full_statevector[i]}"] = np.nan
+
+    lens = [len(v) for v in grid.values()]
+    shape = [len(full_statevector)] + lens
+    # shape = [1] + lens
+    cls = create(
+        path,
+        keys=keys,
+        grid=grid,
+        mode=mode,
+        wl=np.array(full_statevector),
+        chunks=shape,
+        init=init,
+    )
+
+    return cls

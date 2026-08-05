@@ -58,6 +58,7 @@ class Pathnames:
         use_background_rfl: bool = False,
         dn_uncertainty_file: str = None,
         eof_path=None,
+        output_averaging_kernel: bool = False,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -119,6 +120,16 @@ class Pathnames:
         self.uncert_working_path = abspath(
             join(self.output_directory, rdn_fname.replace("_rdn", "_uncert"))
         )
+        if output_averaging_kernel:
+            self.averaging_kernel_working_path = abspath(
+                join(
+                    self.output_directory,
+                    rdn_fname.replace("_rdn", "_averaging_kernel.zarr"),
+                )
+            )
+        else:
+            self.averaging_kernel_working_path = ""
+
         self.lbl_working_path = abspath(
             join(self.output_directory, rdn_fname.replace("_rdn", "_lbl"))
         )
@@ -260,6 +271,14 @@ class Pathnames:
         self.uncert_subs_path = abspath(
             join(self.output_directory, self.fid + "_subs_uncert")
         )
+
+        if output_averaging_kernel:
+            self.averaging_kernel_subs_path = abspath(
+                join(self.output_directory, self.fid + "_subs_averaging_kernel.zarr")
+            )
+        else:
+            self.averaging_kernel_subs_path = ""
+
         self.h2o_subs_path = abspath(
             join(self.output_directory, self.fid + "_subs_h2o")
         )
