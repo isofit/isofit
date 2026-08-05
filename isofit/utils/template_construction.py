@@ -905,7 +905,8 @@ def get_aerosol_initial_value(range_min: float, range_max: float) -> float:
     Returns:
         float: the initial/interpolation value (min + 10% of range)
     """
-    return (range_max - range_min) / 10.0 + range_min
+    return 0.05
+    # return (range_max - range_min) / 10.0 + range_min
 
 
 def get_lut_subset(vals):

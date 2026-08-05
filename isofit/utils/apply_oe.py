@@ -30,8 +30,8 @@ from isofit.utils import (
     reducers,
     segment,
 )
-from isofit.utils.skyview import skyview
 from isofit.utils.adjacency import background_reflectance
+from isofit.utils.skyview import skyview
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -894,7 +894,7 @@ def apply_oe(
                     log_file=log_file,
                     n_cores=n_cores,
                 )
-                remove_bgrfl_file = True
+                remove_bgrfl_file = False
 
         if config_only:
             logging.info("`config_only` enabled, exiting early")
