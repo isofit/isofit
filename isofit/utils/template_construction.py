@@ -127,8 +127,15 @@ class Pathnames:
                     rdn_fname.replace("_rdn", "_averaging_kernel.zarr"),
                 )
             )
+            self.degrees_of_freedom_path = abspath(
+                join(
+                    self.output_directory,
+                    rdn_fname.replace("_rdn", "_dof"),
+                )
+            )
         else:
             self.averaging_kernel_working_path = ""
+            self.degrees_of_freedom_path = ""
 
         self.lbl_working_path = abspath(
             join(self.output_directory, rdn_fname.replace("_rdn", "_lbl"))

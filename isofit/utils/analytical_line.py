@@ -79,7 +79,7 @@ def analytical_line(
     smoothing_sigma: list = [2],
     output_rfl_file: str = None,
     output_unc_file: str = None,
-    output_avg_kernel_file: str = None,
+    output_dof_file: str = None,
     atm_file: str = None,
     skyview_factor_file: str = None,
     bgrfl_file: str = None,
@@ -231,8 +231,8 @@ def analytical_line(
         ),
     )
 
-    avg_kernel_envi_outputs = {}
-    if output_avg_kernel_file:
+    dof_output = None
+    if output_dof_file:
         output_metadata = {
             "data type": 4,
             "file type": "ENVI Standard",
@@ -245,37 +245,16 @@ def analytical_line(
             "interleave": "bil",
             "description": "Diagonal of averaging kernel matrix",
         }
-        avg_kernel_dir = Path(output_avg_kernel_file).parent / "averaging_kernel"
-        avg_kernel_dir.mkdir(parents=True, exist_ok=True)
 
-        avg_kernel_envi_outputs["A_i_i"] = initialize_output(
+        dof_output = initialize_output(
             output_metadata,
-            str(avg_kernel_dir / "A_i_i"),
+            output_dof_file,
             (rdns[0], len(full_statevector), rdns[1]),
         )
-        save_idx = np.hstack(
-            [
-                full_idx_surf_nonrfl,
-            ]
-        )
-        for i in save_idx:
-            name = f"A_{full_statevector[i]}_i"
-            avg_kernel_envi_outputs[name] = initialize_output(
-                output_metadata,
-                str(avg_kernel_dir / name),
-                (rdns[0], len(full_statevector), rdns[1]),
-                description=f"A matrix row: {full_statevector[i]}",
-            )
-
-            name = f"A_i_{full_statevector[i]}"
-            avg_kernel_envi_outputs[name] = initialize_output(
-                output_metadata,
-                str(avg_kernel_dir / name),
-                (rdns[0], len(full_statevector), rdns[1]),
-                description=f"A matrix column: {full_statevector[i]}",
-            )
 
     # If there are more idx in surface than rfl, there are non_rfl surface states
+    non_rfl_output = None
+    non_rfl_unc_output = None
     if len(full_idx_surface) > len(full_idx_surf_rfl):
         n_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
         output_metadata["band names"] = [
@@ -300,9 +279,6 @@ def analytical_line(
                 f"L2A Analytical per-pixel non_rfl surface retrieval uncertainty  (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
             ),
         )
-    else:
-        non_rfl_output = None
-        non_rfl_unc_output = None
 
     # Ray initialization
     ray_dict = {
@@ -354,7 +330,7 @@ def analytical_line(
             lbl_file,
             rfl_output,
             unc_output,
-            avg_kernel_envi_outputs,
+            dof_output,
             non_rfl_output,
             non_rfl_unc_output,
             num_iter,
@@ -390,25 +366,6 @@ def analytical_line(
 
         del fm
 
-    # TODO Stitch averaging kernel into zarr file if needed
-    if output_avg_kernel_file:
-        variables = {}
-        for name, file in avg_kernel_envi_outputs.items():
-            img = envi.open(envi_header(file)).open_memmap(interleave="source")
-            da = xr.DataArray(
-                np.asarray(img),
-                dims=("x", "band", "y"),
-                coords={"band": full_statevector},
-            )
-            variables[name] = da
-            del img
-
-        ds = xr.Dataset(variables)
-        ds.chunk({"y": -1, "x": -1, "band": -1})
-        ds.to_zarr(output_avg_kernel_file)
-
-        shutil.rmtree(Path(file).parent)
-
     total_time = time.time() - start_time
 
     logging.info(
@@ -440,7 +397,7 @@ class Worker(object):
         lbl_file: str,
         rfl_output: str,
         unc_output: str,
-        avg_kernel_envi_outputs: dict,
+        dof_output: str,
         non_rfl_output: str,
         non_rfl_unc_output: str,
         num_iter: int,
@@ -520,7 +477,7 @@ class Worker(object):
         # output paths
         self.rfl_outpath = rfl_output
         self.unc_outpath = unc_output
-        self.avg_kernel_envi_outpaths = avg_kernel_envi_outputs
+        self.dof_outpath = dof_output
         self.non_rfl_outpath = non_rfl_output
         self.non_rfl_unc_outpath = non_rfl_unc_output
 
@@ -572,10 +529,9 @@ class Worker(object):
             .copy()
         )
 
-        avg_kernel_envi_outputs = {}
-        for name, path in self.avg_kernel_envi_outpaths.items():
-            avg_kernel_envi_outputs[name] = (
-                envi.open(envi_header(path))
+        if self.dof_outpath:
+            output_dof = (
+                envi.open(envi_header(self.dof_outpath))
                 .open_memmap(interleave="bip", writable=False)[
                     start_line:stop_line, ...
                 ]
@@ -721,37 +677,13 @@ class Worker(object):
             output_rfl_unc[r - start_line, c, :] = full_unc_est[self.full_idx_surf_rfl]
 
             # Save averaging kernel
-            if self.avg_kernel_envi_outpaths:
-                _diag_A = fill_statevector(
+            if self.dof_outpath:
+                output_dof[r - start_line, c, :] = fill_statevector(
                     np.diag(A),
                     self.fm.full_idx,
                     self.fm.full_miss,
                     self.full_statevector,
                 )
-                avg_kernel_envi_outputs["A_i_i"][r - start_line, c, :] = _diag_A
-
-                save_idx = np.hstack(
-                    [
-                        self.fm.idx_surf_nonrfl,
-                    ]
-                )
-                for i in save_idx:
-                    avg_kernel_envi_outputs[f"A_{self.fm.statevec[i]}_i"][
-                        r - start_line, c, :
-                    ] = fill_statevector(
-                        A[i, :],
-                        self.fm.full_idx,
-                        self.fm.full_miss,
-                        self.full_statevector,
-                    )
-                    avg_kernel_envi_outputs[f"A_i_{self.fm.statevec[i]}"][
-                        r - start_line, c, :
-                    ] = fill_statevector(
-                        A[:, i],
-                        self.fm.full_idx,
-                        self.fm.full_miss,
-                        self.full_statevector,
-                    )
 
             full_state_est[len(self.full_idx_surf_rfl) : self.n_non_rfl_bands]
             # Save the non_rfl portion
@@ -786,10 +718,10 @@ class Worker(object):
             (self.n_lines, self.n_rfl_bands, self.n_samples),
         )
 
-        for name, output in avg_kernel_envi_outputs.items():
+        if self.dof_outpath:
             write_bil_chunk(
-                np.swapaxes(output, 1, 2),
-                self.avg_kernel_envi_outpaths[name],
+                np.swapaxes(output_dof, 1, 2),
+                self.dof_outpath,
                 start_line,
                 (self.n_lines, len(self.full_statevector), self.n_samples),
             )

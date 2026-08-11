@@ -952,7 +952,7 @@ def apply_oe(
                 working_directory,
                 output_rfl_file=paths.rfl_working_path,
                 output_unc_file=paths.uncert_working_path,
-                output_avg_kernel_file=paths.averaging_kernel_working_path,
+                output_dof_file=paths.degrees_of_freedom_path,
                 skyview_factor_file=paths.svf_working_path,
                 bgrfl_file=paths.bgrfl_working_path,
                 loglevel=logging_level,
