@@ -905,7 +905,7 @@ class ForwardModel:
         (which is very unlikely though).
         """
         if len(self.atmosphere.bvec) == 0:
-            Kb_atmosphere = np.zeros((len(self.atmosphere.wl), 0))
+            Kb_atmosphere = np.zeros(0, (len(self.atmosphere.wl)))
 
         # ToDo: might require modification in case more unknowns are added
         # The following statement captures the case that H2O is not part
