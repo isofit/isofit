@@ -904,14 +904,17 @@ class ForwardModel:
         when water vapor is not part of the statevector
         (which is very unlikely though).
         """
-        if len(self.bvec) == 0:
-            Kb_atmosphere = np.zeros((0, len(self.atmosphere.wl)))
+        if len(self.atmosphere.bvec) == 0:
+            Kb_atmosphere = np.zeros((len(self.atmosphere.wl), 0))
 
         # ToDo: might require modification in case more unknowns are added
         # The following statement captures the case that H2O is not part
         # of the statevector, but might need to be modified as soon as we
         # add more unknowns
-        elif len(self.bvec) > 0 and "H2OSTR" not in self.atmosphere.statevec_names:
+        elif (
+            len(self.atmosphere.bvec) > 0
+            and "H2OSTR" not in self.atmosphere.statevec_names
+        ):
             Kb_atmosphere = np.zeros((1, len(self.atmosphere.wl)))
         else:
             # unknown parameters modeled as random variables per
