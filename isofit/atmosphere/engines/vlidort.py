@@ -57,7 +57,9 @@ class VLIDORT(BaseAtmosphere, Writer):
 
         spacing = np.unique(np.round(np.diff(self.wl), decimals=6))
         if spacing.size > 1:
-            raise ValueError(f"Inconsistent wavelength spacing: {spacing}")
+            Logger.error(f"Inconsistent wavelength spacing: {spacing}")
+            Logger.warning("Using the first value")
+            spacing = spacing[[0]]
 
         (self.wl_spacing,) = spacing
         Logger.debug(f"Detected wavelength spacing: {self.wl_spacing}")
