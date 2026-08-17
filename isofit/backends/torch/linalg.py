@@ -190,6 +190,73 @@ def _chunked_cholesky_inverse(L: torch.Tensor) -> torch.Tensor:
     )
 
 
+#: Relative tolerance for judging a Cholesky factor valid: ||L Lt - S||_max must
+#: be below this times the largest diagonal of S. Corruption seen on gfx1201 is
+#: ~14 orders of magnitude above a good residual, so this threshold is not delicate.
+_CHOL_VERIFY_RTOL = 1e-6
+_CHOL_VERIFY_PASSES = 3
+#: Cap on the L @ L.T verification temporary (bytes). 1 GiB keeps the check
+#: negligible against a 32 GiB card while the pipeline holds its own tensors.
+_CHOL_VERIFY_MAX_BYTES = 1024**3
+
+
+def verified_cholesky_ex(S: torch.Tensor):
+    """``torch.linalg.cholesky_ex`` with the result checked and bad rows re-factored.
+
+    On gfx1201 / ROCm 7.2.4 the batched Cholesky intermittently returns a matrix
+    that is NOT a factor of its input while reporting ``info = 0``. Measured at
+    n=425 float64: ``max|L Lt - S|`` of 2.7e+02 where a good factor gives 5e-12,
+    varying call to call on identical input. The CPU path is bit-deterministic,
+    and rocSOLVER's own ``potrf`` is affected too (worse: 170 vs 21 corrupted
+    matrices over 8 trials at batch 1024), so this is below both implementations.
+
+    Corruption is roughly constant per matrix (~0.3-0.5%) rather than per call,
+    so no batch size avoids it - chunking to 128 or 64 was measured no cleaner
+    and 3.3x slower. Re-factoring only the affected rows does work: across six
+    trials at batch 2048 a single retry pass took 21, 3, 5, 3, 13 and 4 corrupted
+    matrices to zero.
+
+    Returns the same ``(L, info)`` pair as the wrapped call, so it is a drop-in.
+    """
+    L, info = torch.linalg.cholesky_ex(S)
+    scale = S.diagonal(dim1=-2, dim2=-1).abs().amax(-1).clamp_min(1e-300)
+
+    def _residual(L, S):
+        # Chunked so the L @ L.T temporary cannot dominate VRAM. At batch 2048,
+        # n=425, float64 that product alone is 5.5 GiB and OOM'd the run on a
+        # 32 GiB card once the pipeline's own tensors were resident.
+        step = max(1, _CHOL_VERIFY_MAX_BYTES // max(L.shape[-1] * L.shape[-2] * L.element_size(), 1))
+        if step >= L.shape[0]:
+            return (L @ L.transpose(-1, -2) - S).abs().amax(dim=(-2, -1))
+        return torch.cat([
+            (L[i : i + step] @ L[i : i + step].transpose(-1, -2) - S[i : i + step])
+            .abs().amax(dim=(-2, -1))
+            for i in range(0, L.shape[0], step)
+        ])
+
+    for _ in range(_CHOL_VERIFY_PASSES):
+        resid = _residual(L, S)
+        # Only rows the factorization CLAIMED to succeed on can be "corrupt";
+        # genuinely non-PD rows are handled by the caller's offset ladder.
+        corrupt = (resid > _CHOL_VERIFY_RTOL * scale) & (info == 0)
+        n_bad = int(corrupt.sum())
+        if n_bad == 0:
+            return L, info
+        idx = corrupt.nonzero(as_tuple=True)[0]
+        Logger.debug(f"re-factoring {n_bad} corrupted Cholesky rows")
+        L_retry, info_retry = torch.linalg.cholesky_ex(S[idx])
+        L = L.index_copy(0, idx, L_retry)
+        info = info.index_copy(0, idx, info_retry)
+    resid = _residual(L, S)
+    n_left = int((((resid > _CHOL_VERIFY_RTOL * scale) & (info == 0))).sum())
+    if n_left:
+        Logger.warning(
+            f"{n_left} Cholesky rows still invalid after "
+            f"{_CHOL_VERIFY_PASSES} retry passes"
+        )
+    return L, info
+
+
 def chol_inv_full(S: torch.Tensor) -> torch.Tensor:
     """Invert a batch of symmetric positive-definite matrices.
 
@@ -205,7 +272,7 @@ def chol_inv_full(S: torch.Tensor) -> torch.Tensor:
         symmetric inverse; callers that need to mimic a one-triangle read must
         do so explicitly.
     """
-    L, info = torch.linalg.cholesky_ex(S)
+    L, info = verified_cholesky_ex(S)
     failed = info != 0
     if bool(failed.any()):
         # torch.linalg.cholesky raises for the WHOLE batch when any element is
@@ -240,11 +307,22 @@ def chol_inv_full(S: torch.Tensor) -> torch.Tensor:
         n_failed = int(failed.sum())
         eye = torch.eye(S.shape[-1], dtype=S.dtype, device=S.device)
         still = failed.clone()
+        # SCALE THE OFFSET TO THE MATRIX. chol_inv_full is called on two very
+        # differently-scaled matrices: Seps (a measurement covariance, small)
+        # and the posterior A = Sa_inv + P_tilde (an inverse-covariance, large).
+        # svd_inv_sqrt's absolute 1e-6..1e-4 ladder is calibrated for the
+        # former; on the latter it is a no-op far below the rounding noise, so
+        # the retry cannot help. Scaling by the mean diagonal makes the same
+        # relative perturbation apply to both.
+        diag_scale = (
+            S.diagonal(dim1=-2, dim2=-1).abs().mean(dim=-1).clamp_min(1e-300)
+        )
         for inv_eps in (1e-6, 1e-5, 1e-4):
             if not bool(still.any()):
                 break
             idx = still.nonzero(as_tuple=True)[0]
-            L_try, info_try = torch.linalg.cholesky_ex(S[idx] + eye * inv_eps)
+            off = (inv_eps * diag_scale[idx]).view(-1, 1, 1)
+            L_try, info_try = torch.linalg.cholesky_ex(S[idx] + eye * off)
             ok = info_try == 0
             if bool(ok.any()):
                 good_idx = idx[ok]
