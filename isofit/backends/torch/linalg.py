@@ -59,6 +59,121 @@ INV_EPS_LADDER = (1e-6, 1e-5, 1e-4)
 _BATCHED_TRSM_MAX_BYTES = 16 * 1024**2
 
 
+# ---------------------------------------------------------------------------
+# ROCm workaround: batched Cholesky inverse via rocSOLVER potri
+#
+# torch.cholesky_inverse dispatches to rocblas_batched_dtrsm, which fails with
+# HIPBLAS_STATUS_ALLOC_FAILED once batch*n*n*itemsize exceeds ~44 MB on gfx1201
+# (ROCm 7.2.4). At n=425 that caps the batch at 16 (float64) or 32 (float32) --
+# regardless of free VRAM (reproduced with 19.8 GiB free). No environment knob
+# (ROCBLAS_DEVICE_MEMORY_SIZE, ROCBLAS_STREAM_ORDER_ALLOC,
+# TORCH_BLAS_PREFER_HIPBLASLT), linalg backend, or reformulation
+# (cholesky_solve, linalg.solve, solve_triangular) avoids it.
+#
+# rocSOLVER's potri_strided_batched does not use that path and scales cleanly to
+# batch 2048+. It is also the routine the scalar backend already relies on
+# (LAPACK dpotri), so this is the semantically matching primitive, not a hack.
+#
+# Measured, n=425, float64: 28.8 ms/matrix chunked -> 0.32 ms/matrix (90x).
+# ---------------------------------------------------------------------------
+_ROCSOLVER = {"tried": False, "lib": None, "handles": {}}
+
+
+def _rocsolver():
+    """Lazily load rocSOLVER and create a rocBLAS handle. Returns None if unusable."""
+    if _ROCSOLVER["tried"]:
+        return _ROCSOLVER["lib"]
+    _ROCSOLVER["tried"] = True
+    if getattr(torch.version, "hip", None) is None:
+        return None  # CUDA build: torch's own path is fine
+    try:
+        import ctypes
+
+        lib = ctypes.CDLL("librocsolver.so")
+        rb = ctypes.CDLL("librocblas.so")
+        rb.rocblas_create_handle.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
+        # A SEPARATE handle per precision. Sharing one handle across dpotri and
+        # spotri corrupts rocSOLVER state: a float32 call issued after a float64
+        # call on the same handle silently returns NaN (reproduced on ROCm 7.2.4
+        # / gfx1201 -- fp32 alone is fine, fp32-after-fp64 is not).
+        handles = {}
+        for key in (torch.float32, torch.float64):
+            h = ctypes.c_void_p()
+            if rb.rocblas_create_handle(ctypes.byref(h)) != 0:
+                return None
+            handles[key] = h
+        for name in ("rocsolver_dpotri_strided_batched", "rocsolver_spotri_strided_batched"):
+            fn = getattr(lib, name)
+            fn.argtypes = [
+                ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_void_p,
+                ctypes.c_int, ctypes.c_longlong, ctypes.c_void_p, ctypes.c_int,
+            ]
+            fn.restype = ctypes.c_int
+        _ROCSOLVER["lib"] = lib
+        _ROCSOLVER["handles"] = handles
+        Logger.debug("rocSOLVER potri available for batched Cholesky inverse")
+        return lib
+    except Exception as e:  # pragma: no cover - depends on local ROCm install
+        Logger.debug(f"rocSOLVER unavailable ({e}); using chunked torch path")
+        return None
+
+
+_ROCBLAS_FILL_LOWER = 122
+
+
+def _rocsolver_cholesky_inverse(L: torch.Tensor):
+    """Full symmetric inverse from a lower Cholesky factor, via rocSOLVER potri.
+
+    Returns None if rocSOLVER cannot service this call, so the caller can fall back.
+    """
+    lib = _rocsolver()
+    if lib is None or L.ndim != 3 or not L.is_cuda:
+        return None
+    if L.dtype == torch.float64:
+        fn = lib.rocsolver_dpotri_strided_batched
+    elif L.dtype == torch.float32:
+        fn = lib.rocsolver_spotri_strided_batched
+    else:
+        return None
+
+    import ctypes
+
+    b, n, _ = L.shape
+    if b == 0:
+        return L.clone()
+    # rocSOLVER is column-major. A row-major L^T is exactly L in column-major,
+    # so transpose+contiguous hands it a lower-triangular factor as it expects.
+    #
+    # CAREFUL: torch.linalg.cholesky_ex returns L in COLUMN-MAJOR layout, which
+    # makes L.transpose(-1, -2) already contiguous -- so .contiguous() is a no-op
+    # that returns the SAME storage. potri is in-place, so without the explicit
+    # clone below it silently corrupts the caller's L. That produced a correct
+    # result here and garbage (1e9 relative error) in any later consumer of L.
+    work = L.transpose(-1, -2).contiguous()
+    if work.data_ptr() == L.data_ptr():
+        work = work.clone()
+    info = torch.zeros(b, dtype=torch.int32, device=L.device)
+    status = fn(
+        _ROCSOLVER["handles"][L.dtype], _ROCBLAS_FILL_LOWER, n,
+        ctypes.c_void_p(work.data_ptr()), n, n * n,
+        ctypes.c_void_p(info.data_ptr()), b,
+    )
+    if status != 0:
+        Logger.debug(f"rocSOLVER potri returned status {status}; falling back")
+        return None
+    if bool((info != 0).any()):
+        Logger.debug("rocSOLVER potri reported singular factors; falling back")
+        return None
+    # potri wrote the inverse into the same triangle; mirror it to full symmetric.
+    out = work.transpose(-1, -2)
+    result = torch.tril(out) + torch.tril(out, -1).transpose(-1, -2)
+    # Guard: rocSOLVER has been observed returning status 0 with NaN output under
+    # handle-state corruption. Never hand a silently-wrong inverse to a retrieval.
+    if not bool(torch.isfinite(result).all()):
+        Logger.warning("rocSOLVER potri returned non-finite values; falling back")
+        return None
+    return result
+
 def _chunked_cholesky_inverse(L: torch.Tensor) -> torch.Tensor:
     """``torch.cholesky_inverse`` split so each hipBLAS call stays under the limit.
 
@@ -114,6 +229,9 @@ def chol_inv_full(S: torch.Tensor) -> torch.Tensor:
         eye = torch.eye(S.shape[-1], dtype=S.dtype, device=S.device)
         L = torch.where(failed.view(-1, 1, 1), eye, L)
     chol_inv_full.last_failed = failed
+    out = _rocsolver_cholesky_inverse(L)
+    if out is not None:
+        return out
     return _chunked_cholesky_inverse(L)
 
 
