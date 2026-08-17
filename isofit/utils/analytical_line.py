@@ -129,6 +129,19 @@ def analytical_line(
     if n_cores == -1:
         n_cores = multiprocessing.cpu_count()
 
+    # The Click options for these are declared `type=int` (scalars), but
+    # atm_interpolation() treats both as sequences -- it calls len(nneighbors),
+    # indexes nneighbors[0], and indexes gaussian_smoothing_sigma[n]. The Python
+    # signature defaults are lists ([20], [2]), so the function API works, and
+    # apply_oe passes lists too. Only the standalone `isofit analytical_line`
+    # CLI hits the mismatch, where it fails with
+    # "TypeError: object of type 'int' has no len()".
+    # Normalize here so both entry points behave identically.
+    if isinstance(n_atm_neighbors, int):
+        n_atm_neighbors = [n_atm_neighbors]
+    if isinstance(smoothing_sigma, int):
+        smoothing_sigma = [smoothing_sigma]
+
     # Config handling
     if isofit_config is None:
         file = glob(os.path.join(isofit_dir, "config", "") + "*_isofit.json")[0]
