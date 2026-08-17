@@ -45,6 +45,8 @@ jobs:
         run: |
           mkdir results
 
+          RUN=$(isofit path examples)/LakeMary/
+
           for i in default bgrfl; do
             $RUN/${i}.sh --log_file results/${i}.log --resources
             isoplots spfit -p $RUN -o results/${i}.png
