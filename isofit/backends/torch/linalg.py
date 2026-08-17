@@ -47,6 +47,34 @@ Logger = logging.getLogger(__name__)
 INV_EPS_LADDER = (1e-6, 1e-5, 1e-4)
 
 
+#: Maximum bytes of matrix data passed to a single batched hipBLAS call.
+#: ROCm's ``hipblasXtrsmBatched`` fails with ``HIPBLAS_STATUS_ALLOC_FAILED`` once
+#: ``batch * n * n * itemsize`` exceeds roughly 24 MB. This is NOT a VRAM
+#: shortage -- it reproduces with 31 GiB free on a 32 GiB card. Measured on
+#: ROCm 7.2.4 / gfx1201 (Radeon AI PRO R9700), n=425, float64:
+#:     batch 16 -> 22.0 MB  OK
+#:     batch 20 -> 27.6 MB  HIPBLAS_STATUS_ALLOC_FAILED
+#: 16 MiB leaves margin below the observed cliff. CUDA is unaffected, but the
+#: chunking is harmless there: it is the same op over disjoint slices.
+_BATCHED_TRSM_MAX_BYTES = 16 * 1024**2
+
+
+def _chunked_cholesky_inverse(L: torch.Tensor) -> torch.Tensor:
+    """``torch.cholesky_inverse`` split so each hipBLAS call stays under the limit.
+
+    Numerically identical to the unchunked call -- ``cholesky_inverse`` is
+    independent per batch element, so slicing changes nothing but the call size.
+    """
+    batch = L.shape[0]
+    per_matrix = L.shape[-1] * L.shape[-2] * L.element_size()
+    chunk = max(1, _BATCHED_TRSM_MAX_BYTES // max(per_matrix, 1))
+    if chunk >= batch:
+        return torch.cholesky_inverse(L)
+    return torch.cat(
+        [torch.cholesky_inverse(L[i : i + chunk]) for i in range(0, batch, chunk)]
+    )
+
+
 def chol_inv_full(S: torch.Tensor) -> torch.Tensor:
     """Invert a batch of symmetric positive-definite matrices.
 
@@ -86,7 +114,7 @@ def chol_inv_full(S: torch.Tensor) -> torch.Tensor:
         eye = torch.eye(S.shape[-1], dtype=S.dtype, device=S.device)
         L = torch.where(failed.view(-1, 1, 1), eye, L)
     chol_inv_full.last_failed = failed
-    return torch.cholesky_inverse(L)
+    return _chunked_cholesky_inverse(L)
 
 
 #: Per-pixel mask from the most recent :func:`chol_inv_full` call. Set on every
