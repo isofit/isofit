@@ -34,6 +34,7 @@ says so loudly.
 
 from __future__ import annotations
 
+import os
 import logging
 import re
 
@@ -244,7 +245,12 @@ def resolve_batch_size(spec, bytes_per_pixel: int, device, default: int = 512) -
     free, _total = torch.cuda.mem_get_info(index)
 
     # Leave headroom for allocator fragmentation and the LUT already resident.
-    size = int(0.7 * free / bytes_per_pixel)
+    # 0.9 is usable when the caller sets PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,
+    # which removes most fragmentation loss; without it, ~7 GiB of a 32 GiB card was
+    # observed stranded (22.83 GiB allocated, only 1.93 GiB free) and a 2.76 GiB
+    # allocation failed. Override with ISOFIT_TORCH_VRAM_FRACTION.
+    frac = float(os.environ.get("ISOFIT_TORCH_VRAM_FRACTION", "0.9"))
+    size = int(frac * free / bytes_per_pixel)
 
     # Round down to a multiple of 64 for tidier kernel shapes.
     size = max(64, (size // 64) * 64)

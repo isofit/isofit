@@ -165,8 +165,27 @@ def _rocsolver_cholesky_inverse(L: torch.Tensor):
         Logger.debug("rocSOLVER potri reported singular factors; falling back")
         return None
     # potri wrote the inverse into the same triangle; mirror it to full symmetric.
+    #
+    # Done in place, chunked. The obvious form
+    #     torch.tril(out) + torch.tril(out, -1).transpose(-1, -2)
+    # allocates TWO full-size temporaries; at batch 2048, n=425, float64 that is
+    # 5.5 GiB on top of an already-resident pipeline and OOM'd a 32 GiB card.
+    # Writing the strict lower triangle into the strict upper triangle of the
+    # same buffer needs no temporary at all.
     out = work.transpose(-1, -2)
-    result = torch.tril(out) + torch.tril(out, -1).transpose(-1, -2)
+    step = max(
+        1, _CHOL_VERIFY_MAX_BYTES // max(out.shape[-1] * out.shape[-2] * out.element_size(), 1)
+    )
+    for i in range(0, out.shape[0], step):
+        blk = out[i : i + step]
+        lower = blk.tril()
+        blk.copy_(lower)
+        blk.transpose(-1, -2).copy_(
+            torch.where(
+                torch.ones_like(blk, dtype=torch.bool).tril(-1), lower, blk.transpose(-1, -2)
+            )
+        )
+    result = out
     # Guard: rocSOLVER has been observed returning status 0 with NaN output under
     # handle-state corruption. Never hand a silently-wrong inverse to a retrieval.
     if not bool(torch.isfinite(result).all()):
