@@ -102,6 +102,7 @@ class TorchWorker:
         torch_device="auto",
         torch_batch_size="auto",
         torch_dtype="auto",
+        analytic_derivatives=False,
         batched_gather=None,
     ):
         logging.basicConfig(
@@ -183,6 +184,7 @@ class TorchWorker:
             device=self.device,
             dtype=self.dtype,
             num_iter=num_iter,
+            analytic_derivatives=analytic_derivatives,
         )
 
         # Peak device memory per pixel, fp64. Two Cholesky stages (nw x nw for

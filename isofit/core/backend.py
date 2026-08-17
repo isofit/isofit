@@ -194,7 +194,8 @@ def resolve_backend_options(config, backend=None, device=None, batch_size=None):
 
     Returns:
         dict with keys ``backend``, ``torch_device``, ``torch_batch_size``,
-        ``torch_dtype``, and ``torch_num_gpu_workers``.
+        ``torch_dtype``, ``torch_analytic_derivatives``, and
+        ``torch_num_gpu_workers``.
     """
     impl = getattr(config, "implementation", None)
 
@@ -208,6 +209,7 @@ def resolve_backend_options(config, backend=None, device=None, batch_size=None):
         "torch_device": _pick(device, "torch_device", "auto"),
         "torch_batch_size": _pick(batch_size, "torch_batch_size", "auto"),
         "torch_dtype": _pick(None, "torch_dtype", "auto"),
+        "torch_analytic_derivatives": _pick(None, "torch_analytic_derivatives", False),
         "torch_num_gpu_workers": _pick(None, "torch_num_gpu_workers", None),
     }
 

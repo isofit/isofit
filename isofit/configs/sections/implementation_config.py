@@ -124,6 +124,17 @@ class ImplementationConfig(BaseConfigSection):
         when backend is 'numpy'.
         """
 
+        self._torch_analytic_derivatives_type = bool
+        self.torch_analytic_derivatives = False
+        """bool: Build the H2O_ABSCO Kb column analytically (forward-mode AD)
+        instead of by finite difference. The analytic column is MORE accurate --
+        it has no O(eps) truncation error -- so it deliberately breaks bit
+        parity with the CPU path, hence opt-in. It also removes the catastrophic
+        cancellation that makes float32 finite differencing unusable, so it is
+        the intended companion to torch_dtype='float32'.
+        Ignored when backend is 'numpy'.
+        """
+
         self._torch_dtype_type = str
         self.torch_dtype = "auto"
         """str: Floating point precision for the torch backend. Options are
@@ -246,6 +257,7 @@ class ImplementationConfig(BaseConfigSection):
                     ("torch_device", "auto"),
                     ("torch_batch_size", "auto"),
                     ("torch_dtype", "auto"),
+                    ("torch_analytic_derivatives", False),
                     ("torch_num_gpu_workers", None),
                 )
                 if getattr(self, name) != default

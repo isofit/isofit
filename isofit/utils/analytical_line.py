@@ -390,6 +390,7 @@ def analytical_line(
                         opts["torch_device"],
                         opts["torch_batch_size"],
                         opts["torch_dtype"],
+                        opts["torch_analytic_derivatives"],
                     )
                     for _ in range(n_workers)
                 ]
