@@ -27,7 +27,7 @@ from isofit.surface.surface import Surface
 from isofit.core.units import micron_to_nm
 from isofit.core.common import VectorInterpolator
 
-
+# Local keys for loading in prebuilt-LUT
 KEYS = [
     "wl",
     "statevec_names",
@@ -44,6 +44,32 @@ KEYS = [
     "raa_idx",
     "cos_i_idx",
 ]
+
+# Diffuse-Direct Key
+R_HD_ALIASES = [
+    "rho_diffuse_direct",
+    "rho_dif_dir",
+    "rho_hd",
+    "r_diffuse_direct",
+    "r_dif_dir",
+    "r_hd",
+    "rfl",
+    "reflectance",
+    "rho",
+]
+
+# Direct-Direct Key
+R_DD_ALIASES = [
+    "rho_direct_direct",
+    "rho_dir_dir",
+    "rho_dd",
+    "r_direct_direct",
+    "r_dir_dir",
+    "r_dd",
+]
+
+# Wavelength Key
+WL_ALIASES = ["wvl", "wl", "wavelength"]
 
 
 class LUTSurface(Surface):
@@ -79,7 +105,7 @@ class LUTSurface(Surface):
 
     ```python
         # Example structure for xarray dataset for LUTSurface
-        shape = (len(sza_list), len(vza_list), len(raa_list), len(grain_list), len(WL_NM))
+        shape = (len(sza_list), len(vza_list), len(raa_list), len(grain_list), len(wl_nanometers))
         ds = xr.Dataset(
             {
                 "rho_dir_dir": (["solar_zenith", "observer_zenith", "relative_azimuth", "grain_radius", "wl"],
@@ -87,14 +113,14 @@ class LUTSurface(Surface):
                 "rho_dif_dir": (["solar_zenith", "observer_zenith", "relative_azimuth", "grain_radius", "wl"],
                                 np.full(shape, np.nan, dtype=np.float32)),
                 "statevec_names": (["n_state"], statevec_names),
-                "endmember_conifer": (["wl"], soil_spectrum)
+                "endmember_conifer": (["wl"], conifer_rfl)
             },
             coords={
                 "solar_zenith": sza_list,
                 "observer_zenith": vza_list,
                 "relative_azimuth": raa_list,
                 "grain_radius": grain_list,
-                "wl": WL_NM,
+                "wl": wl_nanometers,
             }
         )
     ```
@@ -424,14 +450,17 @@ def load_prebuilt_surface(
     """
     lut_params = {}
 
-    # NOTE assumes xarray
+    # NOTE assumes xarray, load in with lowercase for keys
     with xr.open_dataset(surface_lut_file) as ds:
-        data = {k: ds[k].values for k in ds.data_vars}
-        for k in ds.coords:
-            data[k] = ds[k].values
-        lut_names = [str(n) for n in ds.coords.keys() if n != "wl"]
+        data = {
+            str(k).lower(): ds[k].values for k in list(ds.data_vars) + list(ds.coords)
+        }
+
+        wl_key = next((k for k in WL_ALIASES if k in data), "wl")
+        wl = data[wl_key]
+
+        lut_names = [str(n) for n in ds.coords if str(n).lower() != wl_key]
         lut_grid = [ds[n].values.astype(np.float32) for n in lut_names]
-        wl = ds["wl"].values
 
     # Ensure wavelength are in nanometers
     if wl[0] < 300.0:
@@ -552,12 +581,17 @@ def load_prebuilt_surface(
     itp_dd = None
 
     if build_interpolators:
-        data_hd = data["rho_dif_dir"]
-        data_dd = data.get("rho_dir_dir")
+
+        data_hd = next(data[a] for a in R_HD_ALIASES if a in data)
+        data_dd = next((data[a] for a in R_DD_ALIASES if a in data), None)
+
+        # hd is required, dd is optional
         itp_hd = VectorInterpolator(lut_grid, data_hd.astype(np.float32))
         if data_dd is not None:
             itp_dd = VectorInterpolator(lut_grid, data_dd.astype(np.float32))
 
-    lut_params.update({k: locals()[k] for k in KEYS})
+    # define locals first before looping through updates
+    local_vars = locals()
+    lut_params.update({k: local_vars[k] for k in KEYS})
 
     return itp_hd, itp_dd, lut_params
