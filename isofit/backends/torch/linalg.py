@@ -37,6 +37,7 @@ Two things live here that are easy to get subtly wrong:
 from __future__ import annotations
 
 import logging
+import os
 
 import torch
 
@@ -48,14 +49,21 @@ INV_EPS_LADDER = (1e-6, 1e-5, 1e-4)
 
 
 #: Maximum bytes of matrix data passed to a single batched hipBLAS call.
-#: ROCm's ``hipblasXtrsmBatched`` fails with ``HIPBLAS_STATUS_ALLOC_FAILED`` once
-#: ``batch * n * n * itemsize`` exceeds roughly 24 MB. This is NOT a VRAM
-#: shortage -- it reproduces with 31 GiB free on a 32 GiB card. Measured on
-#: ROCm 7.2.4 / gfx1201 (Radeon AI PRO R9700), n=425, float64:
-#:     batch 16 -> 22.0 MB  OK
-#:     batch 20 -> 27.6 MB  HIPBLAS_STATUS_ALLOC_FAILED
-#: 16 MiB leaves margin below the observed cliff. CUDA is unaffected, but the
-#: chunking is harmless there: it is the same op over disjoint slices.
+#: ``hipblasXtrsmBatched`` returns ``HIPBLAS_STATUS_ALLOC_FAILED`` once the batch
+#: needs more scratch than the handle's FIXED workspace -- not when VRAM is short.
+#: It reproduces with 31 GiB free on a 32 GiB card. Reported as ROCm/ROCm#6624 and
+#: pytorch/pytorch#193890.
+#:
+#: The cliff tracks the workspace size, so it is configurable. Measured on
+#: ROCm 7.2.4 / gfx1201, n=425, float64, highest batch that succeeds:
+#:     16 MiB workspace       -> < 16
+#:     32 MiB (torch default) -> 16      <- why this constant is 16 MiB
+#:     64 MiB                 -> 32
+#:     128 MiB                -> 64
+#: Raising ``CUBLAS_WORKSPACE_CONFIG`` (e.g. ``:16384:8``) moves it, and this
+#: constant could rise with it. A rocBLAS handle left to manage its own memory
+#: never fails at all. CUDA is unaffected, but the chunking is harmless there:
+#: it is the same op over disjoint slices.
 _BATCHED_TRSM_MAX_BYTES = 16 * 1024**2
 
 
@@ -93,9 +101,16 @@ def _rocsolver():
         rb = ctypes.CDLL("librocblas.so")
         rb.rocblas_create_handle.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
         # A SEPARATE handle per precision. Sharing one handle across dpotri and
-        # spotri corrupts rocSOLVER state: a float32 call issued after a float64
-        # call on the same handle silently returns NaN (reproduced on ROCm 7.2.4
-        # / gfx1201 -- fp32 alone is fine, fp32-after-fp64 is not).
+        # spotri was observed to return NaN from a float32 call issued after a
+        # float64 one (ROCm 7.2.4 / gfx1201 -- fp32 alone fine, fp32-after-fp64
+        # not).
+        #
+        # That is very likely the same defect as ROCm/rocm-libraries#10960: potri
+        # leaves part of its TRMM operand holding stale workspace, and TRMM reads
+        # it. With one shared handle the leftovers are float64 bytes reinterpreted
+        # as float32, which land on NaN/Inf far more often than same-precision
+        # leftovers would. Separate handles do not fix the defect, they just make
+        # the garbage less poisonous, so keep them until the fix is in a release.
         handles = {}
         for key in (torch.float32, torch.float64):
             h = ctypes.c_void_p()
@@ -124,23 +139,26 @@ _ROCBLAS_FILL_LOWER = 122
 def _rocsolver_cholesky_inverse(L: torch.Tensor):
     """Full symmetric inverse from a lower Cholesky factor, via rocSOLVER potri.
 
-    Returns None if rocSOLVER cannot service this call, so the caller can fall back.
+    Returns ``(inverse, bad_rows)``. ``bad_rows`` is a per-pixel bool mask marking
+    rows whose inverse came back non-finite; the caller MUST re-compute those
+    before use. Returns ``(None, None)`` when rocSOLVER cannot service the call at
+    all, so the caller can fall back wholesale.
     """
     lib = _rocsolver()
     if lib is None or L.ndim != 3 or not L.is_cuda:
-        return None
+        return None, None
     if L.dtype == torch.float64:
         fn = lib.rocsolver_dpotri_strided_batched
     elif L.dtype == torch.float32:
         fn = lib.rocsolver_spotri_strided_batched
     else:
-        return None
+        return None, None
 
     import ctypes
 
     b, n, _ = L.shape
     if b == 0:
-        return L.clone()
+        return L.clone(), torch.zeros(0, dtype=torch.bool, device=L.device)
     # rocSOLVER is column-major. A row-major L^T is exactly L in column-major,
     # so transpose+contiguous hands it a lower-triangular factor as it expects.
     #
@@ -160,10 +178,10 @@ def _rocsolver_cholesky_inverse(L: torch.Tensor):
     )
     if status != 0:
         Logger.debug(f"rocSOLVER potri returned status {status}; falling back")
-        return None
+        return None, None
     if bool((info != 0).any()):
         Logger.debug("rocSOLVER potri reported singular factors; falling back")
-        return None
+        return None, None
     # potri wrote the inverse into the same triangle; mirror it to full symmetric.
     #
     # Done in place, chunked. The obvious form
@@ -186,12 +204,21 @@ def _rocsolver_cholesky_inverse(L: torch.Tensor):
             )
         )
     result = out
-    # Guard: rocSOLVER has been observed returning status 0 with NaN output under
-    # handle-state corruption. Never hand a silently-wrong inverse to a retrieval.
-    if not bool(torch.isfinite(result).all()):
-        Logger.warning("rocSOLVER potri returned non-finite values; falling back")
-        return None
-    return result
+    # rocSOLVER potri can return non-finite entries while reporting info == 0.
+    # Cause (ROCm/rocm-libraries#10960): potri builds its TRMM operand in
+    # workspace with a copy that writes only one triangle, then hands that buffer
+    # to TRMM as a GENERAL matrix, so stale workspace data enters the product. It
+    # is invisible in a fresh process, where the workspace happens to be zero, and
+    # appears once it has been reused -- i.e. in exactly this kind of long run.
+    #
+    # Report WHICH rows are affected rather than rejecting the batch. Rejecting
+    # all of it sent thousands of good pixels down the chunked path, which is
+    # capped at ~23 matrices per hipBLAS call (float32, n=425) and so costs ~90
+    # sequential launches per 2048-pixel batch. That fired on essentially every
+    # call and left the GPU ~13% utilised: 191 spectra/s against 1142 once only
+    # the affected rows were redone.
+    bad = ~torch.isfinite(result).all(dim=-1).all(dim=-1)
+    return result, bad
 
 def _chunked_cholesky_inverse(L: torch.Tensor) -> torch.Tensor:
     """``torch.cholesky_inverse`` split so each hipBLAS call stays under the limit.
@@ -210,20 +237,54 @@ def _chunked_cholesky_inverse(L: torch.Tensor) -> torch.Tensor:
 
 
 #: Relative tolerance for judging a Cholesky factor valid: ||L Lt - S||_max must
-#: be below this times the largest diagonal of S. Corruption seen on gfx1201 is
-#: ~14 orders of magnitude above a good residual, so this threshold is not delicate.
-_CHOL_VERIFY_RTOL = 1e-6
+#: be below this times the largest diagonal of S.
+#:
+#: This MUST scale with the working precision. Measured at n=425, batch 512, the
+#: worst relative residual of a HEALTHY factor is:
+#:     float64  3.5e-15      float32  1.8e-06
+#: A single float64-calibrated value of 1e-6 therefore rejects perfectly good
+#: float32 factors, and the retry passes below then churn without ever succeeding
+#: ("N Cholesky rows still invalid after 3 retry passes").
+#:
+#: Separation from real corruption is wide in both precisions: a factor damaged by
+#: ROCm/ROCm#6623 gives ~2.4e+02 against a diagonal scale of ~1.3e+03, i.e. ~0.18
+#: relative -- five orders above the healthy float32 residual. 1e-3 sits comfortably
+#: between the two.
+_CHOL_VERIFY_RTOL = {torch.float64: 1e-6, torch.float32: 1e-3}
+
+
+def _chol_verify_rtol(dtype: torch.dtype) -> float:
+    """Residual tolerance appropriate to `dtype` (see :data:`_CHOL_VERIFY_RTOL`)."""
+    return _CHOL_VERIFY_RTOL.get(dtype, 1e-6)
 _CHOL_VERIFY_PASSES = 3
 #: Cap on the L @ L.T verification temporary (bytes). 1 GiB keeps the check
 #: negligible against a 32 GiB card while the pipeline holds its own tensors.
 _CHOL_VERIFY_MAX_BYTES = 1024**3
+
+#: Set ``ISOFIT_SKIP_CHOLESKY_VERIFY=1`` to return ``torch.linalg.cholesky_ex``
+#: unchecked. The verification below costs roughly 40% of throughput and exists
+#: solely to work around the rocSOLVER ``potf2`` LDS race (ROCm/ROCm#6623): a
+#: missing ``__syncthreads()`` between the block-wide read of the diagonal
+#: element and thread 0's write of its square root. Only set this on a stack
+#: whose rocSOLVER carries that barrier -- every ROCm release through 7.2.4 does
+#: NOT, including the librocsolver.so bundled inside the PyTorch ROCm wheels.
+_SKIP_CHOL_VERIFY = os.environ.get("ISOFIT_SKIP_CHOLESKY_VERIFY", "0").lower() not in (
+    "0",
+    "",
+    "false",
+    "no",
+)
 
 
 def verified_cholesky_ex(S: torch.Tensor):
     """``torch.linalg.cholesky_ex`` with the result checked and bad rows re-factored.
 
     On gfx1201 / ROCm 7.2.4 the batched Cholesky intermittently returns a matrix
-    that is NOT a factor of its input while reporting ``info = 0``. Measured at
+    that is NOT a factor of its input while reporting ``info = 0``. Root cause is
+    a missing ``__syncthreads()`` in rocSOLVER's ``potf2_simple`` between the
+    block-wide read of the diagonal element and thread 0's write of its square
+    root (ROCm/ROCm#6623; fixed upstream by rocm-libraries#3794, backport
+    rocm-libraries#10909). Measured at
     n=425 float64: ``max|L Lt - S|`` of 2.7e+02 where a good factor gives 5e-12,
     varying call to call on identical input. The CPU path is bit-deterministic,
     and rocSOLVER's own ``potrf`` is affected too (worse: 170 vs 21 corrupted
@@ -238,6 +299,8 @@ def verified_cholesky_ex(S: torch.Tensor):
     Returns the same ``(L, info)`` pair as the wrapped call, so it is a drop-in.
     """
     L, info = torch.linalg.cholesky_ex(S)
+    if _SKIP_CHOL_VERIFY:
+        return L, info
     scale = S.diagonal(dim1=-2, dim2=-1).abs().amax(-1).clamp_min(1e-300)
 
     def _residual(L, S):
@@ -257,7 +320,7 @@ def verified_cholesky_ex(S: torch.Tensor):
         resid = _residual(L, S)
         # Only rows the factorization CLAIMED to succeed on can be "corrupt";
         # genuinely non-PD rows are handled by the caller's offset ladder.
-        corrupt = (resid > _CHOL_VERIFY_RTOL * scale) & (info == 0)
+        corrupt = (resid > _chol_verify_rtol(S.dtype) * scale) & (info == 0)
         n_bad = int(corrupt.sum())
         if n_bad == 0:
             return L, info
@@ -267,7 +330,7 @@ def verified_cholesky_ex(S: torch.Tensor):
         L = L.index_copy(0, idx, L_retry)
         info = info.index_copy(0, idx, info_retry)
     resid = _residual(L, S)
-    n_left = int((((resid > _CHOL_VERIFY_RTOL * scale) & (info == 0))).sum())
+    n_left = int((((resid > _chol_verify_rtol(S.dtype) * scale) & (info == 0))).sum())
     if n_left:
         Logger.warning(
             f"{n_left} Cholesky rows still invalid after "
@@ -357,10 +420,33 @@ def chol_inv_full(S: torch.Tensor) -> torch.Tensor:
         if bool(still.any()):
             L = torch.where(still.view(-1, 1, 1), eye, L)
     chol_inv_full.last_failed = failed
-    out = _rocsolver_cholesky_inverse(L)
-    if out is not None:
-        return out
-    return _chunked_cholesky_inverse(L)
+    out, bad = _rocsolver_cholesky_inverse(L)
+    if out is None:
+        return _chunked_cholesky_inverse(L)
+    if bool(bad.any()):
+        # Re-invert only the affected pixels. Same partial-repair shape as
+        # verified_cholesky_ex above, and for the same reason: one bad row must
+        # not cost the whole batch.
+        idx = bad.nonzero(as_tuple=True)[0]
+        Logger.debug(
+            f"rocSOLVER potri returned non-finite values for {int(bad.sum())} of "
+            f"{L.shape[0]} pixels; re-inverting those in float64"
+        )
+        # Repair in float64 rather than by chunking in the original dtype.
+        # In float32 this fires for the majority of pixels on the posterior
+        # solve -- the inverse simply does not fit float32's range -- so the
+        # chunked path was running ~90 sequential hipBLAS calls per batch and
+        # dominated the run. float64 potri is one batched call and does not
+        # overflow. Measured at n=425: float32 went from 191 to 331 spectra/s
+        # with chunked repair, and this removes what remained of that cost.
+        repaired, bad64 = _rocsolver_cholesky_inverse(L[idx].double())
+        if repaired is None or bool(bad64.any()):
+            # float64 potri unavailable or itself unhappy: fall back to the
+            # chunked solve, which is slow but has no range problem.
+            out[idx] = _chunked_cholesky_inverse(L[idx]).to(out.dtype)
+        else:
+            out[idx] = repaired.to(out.dtype)
+    return out
 
 
 #: Per-pixel mask from the most recent :func:`chol_inv_full` call. Set on every
