@@ -268,12 +268,87 @@ _CHOL_VERIFY_MAX_BYTES = 1024**3
 #: element and thread 0's write of its square root. Only set this on a stack
 #: whose rocSOLVER carries that barrier -- every ROCm release through 7.2.4 does
 #: NOT, including the librocsolver.so bundled inside the PyTorch ROCm wheels.
-_SKIP_CHOL_VERIFY = os.environ.get("ISOFIT_SKIP_CHOLESKY_VERIFY", "0").lower() not in (
-    "0",
-    "",
-    "false",
-    "no",
-)
+_SKIP_CHOL_VERIFY_REQUESTED = os.environ.get(
+    "ISOFIT_SKIP_CHOLESKY_VERIFY", "0"
+).lower() not in ("0", "", "false", "no")
+
+
+def _rocsolver_is_known_fixed() -> tuple[bool, str]:
+    """Is the loaded rocSOLVER the patched build we installed?
+
+    Skipping the verification above is only safe on a rocSOLVER carrying the
+    ``potf2`` fix. The realistic way to lose that is a ``pip install``/upgrade of
+    torch, which silently restores the wheel's own bundled -- and affected --
+    ``librocsolver.so``. Nothing else would notice: the corruption is silent and
+    the check that used to catch it would be switched off.
+
+    So compare the library actually mapped into this process against the md5
+    recorded by ``scripts/install-rocsolver.sh`` when it was installed. Any
+    mismatch, or no provenance at all, means we cannot vouch for it.
+
+    Returns ``(ok, reason)``.
+    """
+    if getattr(torch.version, "hip", None) is None:
+        return True, "not a ROCm build"
+    try:
+        import hashlib
+        import re as _re
+
+        path = None
+        with open("/proc/self/maps") as fh:
+            for line in fh:
+                cand = line.rstrip().rsplit(" ", 1)[-1]
+                if "librocsolver" in cand:
+                    path = cand
+                    break
+        if path is None:
+            return False, "librocsolver.so is not mapped into this process"
+
+        prov = os.path.join(os.path.dirname(path), "librocsolver.so.PROVENANCE")
+        if not os.path.exists(prov):
+            return False, f"no provenance file beside {path}"
+
+        want = None
+        with open(prov) as fh:
+            for line in fh:
+                m = _re.match(r"\s*md5\s*:\s*([0-9a-f]{32})", line)
+                if m:
+                    want = m.group(1)
+                    break
+        if want is None:
+            return False, f"provenance at {prov} records no md5"
+
+        h = hashlib.md5()
+        with open(path, "rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 22), b""):
+                h.update(chunk)
+        got = h.hexdigest()
+        if got != want:
+            return False, (
+                f"{path} has md5 {got}, provenance expects {want} -- the library "
+                "has been replaced (a torch reinstall will do this)"
+            )
+        return True, f"matches provenance ({got})"
+    except Exception as e:  # never let the guard itself break a run
+        return False, f"could not verify rocSOLVER ({type(e).__name__}: {e})"
+
+
+if _SKIP_CHOL_VERIFY_REQUESTED:
+    _ok, _why = _rocsolver_is_known_fixed()
+    if not _ok:
+        Logger.error(
+            "ISOFIT_SKIP_CHOLESKY_VERIFY is set, but the loaded rocSOLVER cannot "
+            f"be verified as carrying the potf2 fix: {_why}. Keeping the Cholesky "
+            "verification ON. Skipping it on an affected rocSOLVER silently "
+            "returns non-Cholesky factors with info == 0 (ROCm/ROCm#6623). "
+            "Reinstall the patched library with scripts/install-rocsolver.sh, or "
+            "unset the variable to silence this."
+        )
+    else:
+        Logger.info(f"rocSOLVER verified as patched: {_why}; skipping Cholesky verification")
+    _SKIP_CHOL_VERIFY = _ok
+else:
+    _SKIP_CHOL_VERIFY = False
 
 
 def verified_cholesky_ex(S: torch.Tensor):
