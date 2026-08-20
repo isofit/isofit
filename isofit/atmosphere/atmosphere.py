@@ -449,7 +449,6 @@ class BaseAtmosphere(Reader):
         coszen: float,
         rfl_1: float = 0.1,
         rfl_2: float = 0.5,
-        modtran_tp7: bool = False,
     ) -> dict:
         """
         Calculates split transmittance values from a multipart file using the
@@ -469,8 +468,6 @@ class BaseAtmosphere(Reader):
             surface reflectance for case 1 of the MODTRAN output
         rfl_2: float, defaults=0.5
             surface reflectance for case 2 of the MODTRAN output
-        modtran_tp7: bool, defaults=False
-            Special case where tp7 needs additional processing
 
 
         Returns
@@ -559,10 +556,8 @@ class BaseAtmosphere(Reader):
             # This threshold is also semi-arbitrary but was tested on both chn and tp7 outputs.
             transm_up_dif[np.abs(L_surf_1) < 1e-5] = 0
 
-            if modtran_tp7:
-                case_0["rhoatm"] = L_path_0 / L_solar
-            else:
-                case_0["rhoatm"] = L_path_0 / L_solar / widths
+            # Compute rhoatm always so both tp7 and chn match
+            case_0["rhoatm"] = L_path_0 / L_solar / widths
 
             # Total at-surface radiance for non-reflective surface (case 0)
             # Only add contribution from atmospheric spherical albedo
