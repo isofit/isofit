@@ -874,7 +874,8 @@ class ModtranRT(BaseAtmosphere, Writer):
 
         if self.multipart_transmittance:
             case_count = 0
-            for albedo in self.test_rfls:
+            # Ignoring the zero albedo case because it is unused in 2-albedo method
+            for albedo in self.albedos[1:]:
                 for band_name, wvl_set in zip(
                     self.wavelength_models, self.simulation_wavelength_regions
                 ):
