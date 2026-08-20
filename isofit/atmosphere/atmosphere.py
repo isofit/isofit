@@ -555,8 +555,14 @@ class BaseAtmosphere(Reader):
             # but seems to work reasonably
             salb[np.abs(salb_denom) < 0.001] = 0
 
+            # Similarly for the transm_up_dif case, there are a few cases where needs to be capped.
+            # This threshold is also semi-arbitrary but was tested on both chn and tp7 outputs.
+            transm_up_dif[np.abs(L_surf_1) < 1e-5] = 0
+
             if modtran_tp7:
                 case_0["rhoatm"] = L_path_0 / L_solar
+            else:
+                case_0["rhoatm"] = L_path_0 / L_solar / widths
 
             # Total at-surface radiance for non-reflective surface (case 0)
             # Only add contribution from atmospheric spherical albedo
