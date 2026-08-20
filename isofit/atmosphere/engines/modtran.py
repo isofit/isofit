@@ -243,7 +243,6 @@ class ModtranRT(BaseAtmosphere, Writer):
                 coszen=coszen,
                 rfl_1=self.albedos[1],
                 rfl_2=self.albedos[2],
-                modtran_tp7=False,
             )
 
         return chn
@@ -408,7 +407,6 @@ class ModtranRT(BaseAtmosphere, Writer):
                     coszen=coszen,
                     rfl_1=self.albedos[1],
                     rfl_2=self.albedos[2],
-                    modtran_tp7=True,
                 )
 
         return params
