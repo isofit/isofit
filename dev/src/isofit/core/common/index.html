@@ -6126,14 +6126,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -6167,14 +6167,14 @@
 <span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-5</span>
 
 <span class="c1"># Global variable makes it non-shared mem in ray</span>
-<span class="n">Cache</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;stats&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+<span class="n">Cache</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"stats"</span><span class="p">:</span> <span class="p">{}}</span>
 
 
-<span class="nd">@njit</span><span class="p">(</span><span class="n">inline</span><span class="o">=</span><span class="s2">&quot;always&quot;</span><span class="p">)</span>
+<span class="nd">@njit</span><span class="p">(</span><span class="n">inline</span><span class="o">=</span><span class="s2">"always"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">fast_searchsorted</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.common.fast_searchsorted"><a href="../../../../api/isofit/core/common/#isofit.core.common.fast_searchsorted" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Numba-optimized binary search to find the insertion index of a target value.</span>
-<span class="sd">    Same as np.searchsorted(...,side=&#39;left&#39;), but opptimized</span>
+<span class="sd">    Same as np.searchsorted(...,side='left'), but opptimized</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        array: 1D array of floats, representing a sorted grid dimension (must be</span>
@@ -6184,7 +6184,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        low: integer index indicating the first element greater than or equal</span>
 <span class="sd">             to the target.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">low</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">high</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="k">while</span> <span class="n">low</span> <span class="o">&lt;</span> <span class="n">high</span><span class="p">:</span>
@@ -6200,7 +6200,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_numba_mlg_kernel</span><span class="p">(</span>
     <span class="n">point</span><span class="p">,</span> <span class="n">grid_tuples</span><span class="p">,</span> <span class="n">flat_data</span><span class="p">,</span> <span class="n">strides</span><span class="p">,</span> <span class="n">low_indices</span><span class="p">,</span> <span class="n">deltas</span><span class="p">,</span> <span class="n">num_channels</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Numba-accelerated n-dimensional multilinear interpolator kernel. Performs</span>
 <span class="sd">    linear interpolation across a multi-dimensional look-up table for a single</span>
 <span class="sd">    point, outputting a vector of values.</span>
@@ -6224,7 +6224,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        result: 1D array of floats, the interpolated output vector of length</span>
 <span class="sd">                equal to data.shape[-1].</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">dims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
     <span class="c1"># Bound the search</span>
@@ -6267,22 +6267,22 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">VectorInterpolator</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.common.VectorInterpolator"><a href="../../../../api/isofit/core/common/#isofit.core.common.VectorInterpolator" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Linear look up table interpolator.  Support linear interpolation through radial space by expanding the look</span>
+<span class="w">    </span><span class="sd">"""Linear look up table interpolator.  Support linear interpolation through radial space by expanding the look</span>
 <span class="sd">    up tables with sin and cos dimensions.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        grid_input: list of lists of floats, indicating the gridpoint elements in each grid dimension</span>
 <span class="sd">        data_input: n dimensional array of radiative transfer engine outputs (each dimension size corresponds to the</span>
 <span class="sd">                    given grid_input list length, with the last dimensions equal to the number of sensor channels)</span>
-<span class="sd">        version: version to use: &#39;rg&#39; for scipy RegularGridInterpolator, &#39;mlg&#39; for multilinear grid interpolator,</span>
-<span class="sd">                 &#39;mlg_numba&#39; for numba-accelerated multilinear grid interpolator</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        version: version to use: 'rg' for scipy RegularGridInterpolator, 'mlg' for multilinear grid interpolator,</span>
+<span class="sd">                 'mlg_numba' for numba-accelerated multilinear grid interpolator</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">grid_input</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
         <span class="n">data_input</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
-        <span class="n">version</span><span class="o">=</span><span class="s2">&quot;mlg_numba&quot;</span><span class="p">,</span>
+        <span class="n">version</span><span class="o">=</span><span class="s2">"mlg_numba"</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="c1"># Determine if this a singular unique value, if so just return that directly</span>
         <span class="n">val</span> <span class="o">=</span> <span class="n">data_input</span><span class="p">[(</span><span class="mi">0</span><span class="p">,)</span> <span class="o">*</span> <span class="n">data_input</span><span class="o">.</span><span class="n">ndim</span><span class="p">]</span>
@@ -6303,7 +6303,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
         <span class="c1"># RegularGrid</span>
-        <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;rg&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">"rg"</span><span class="p">:</span>
             <span class="n">grid_aug</span> <span class="o">=</span> <span class="n">grid</span> <span class="o">+</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">itp</span> <span class="o">=</span> <span class="n">RegularGridInterpolator</span><span class="p">(</span>
                 <span class="n">grid_aug</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span>
@@ -6311,7 +6311,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="c1"># Multilinear Grid</span>
-        <span class="k">elif</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;mlg&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">"mlg"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="mi">2</span>
 
             <span class="c1"># None to disable, 0 for unlimited, negatives == 1</span>
@@ -6324,7 +6324,7 @@
             <span class="p">]</span>  <span class="c1"># binwidth arrays for each dimension</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">maxbaseinds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gridtuples</span><span class="p">])</span>
 
-        <span class="k">elif</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;mlg_numba&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">"mlg_numba"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="mi">3</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">grid_tuples</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
                 <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">grid_input</span><span class="p">]</span>
@@ -6354,13 +6354,13 @@
             <span class="bp">self</span><span class="p">(</span><span class="n">dummy_point</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown interpolator version: </span><span class="si">{</span><span class="n">version</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown interpolator version: </span><span class="si">{</span><span class="n">version</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Supports style &#39;rg&#39;</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># If we only have one point, we can&#39;t do any interpolation, so just</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Supports style 'rg'</span>
+<span class="sd">        """</span>
+        <span class="c1"># If we only have one point, we can't do any interpolation, so just</span>
         <span class="c1"># return the original data.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">single_point_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">single_point_data</span>
@@ -6377,9 +6377,9 @@
         <span class="k">return</span> <span class="n">res</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculates the slicing for the cube in _multilinear_grid</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gridtuples</span><span class="p">[</span><span class="n">i</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">point</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
 
         <span class="c1"># Bounds functions</span>
@@ -6395,8 +6395,8 @@
             <span class="k">return</span> <span class="n">delta</span><span class="p">,</span> <span class="nb">slice</span><span class="p">(</span><span class="n">lower</span><span class="p">(),</span> <span class="n">upper</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_multilinear_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Cached version of Jouni&#39;s implementation</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Cached version of Jouni's implementation</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            points: The point being interpolated. If at the limit, the extremal value in</span>
@@ -6404,18 +6404,18 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            cube: np.ndarray</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">deltas</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">points</span><span class="o">.</span><span class="n">size</span>
         <span class="n">idxs</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">points</span><span class="o">.</span><span class="n">size</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">point</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">points</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">{})</span>
-                <span class="n">stats</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">[</span><span class="s2">&quot;stats&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;hit&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;miss&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+                <span class="n">stats</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">[</span><span class="s2">"stats"</span><span class="p">]</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">{</span><span class="s2">"hit"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"miss"</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
 
                 <span class="k">if</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">:</span>
                     <span class="n">data</span> <span class="o">=</span> <span class="n">cache</span><span class="p">[</span><span class="n">point</span><span class="p">]</span>
-                    <span class="n">stats</span><span class="p">[</span><span class="s2">&quot;hit&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">stats</span><span class="p">[</span><span class="s2">"hit"</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Simple FIFO</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span><span class="p">:</span>
@@ -6423,13 +6423,13 @@
 
                     <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lookup</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
                     <span class="n">cache</span><span class="p">[</span><span class="n">point</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
-                    <span class="n">stats</span><span class="p">[</span><span class="s2">&quot;miss&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">stats</span><span class="p">[</span><span class="s2">"miss"</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lookup</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
 
             <span class="n">deltas</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">idxs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
 
-        <span class="n">cube</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gridarrays</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">idxs</span><span class="p">)],</span> <span class="n">order</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">)</span>
+        <span class="n">cube</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gridarrays</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">idxs</span><span class="p">)],</span> <span class="n">order</span><span class="o">=</span><span class="s2">"A"</span><span class="p">)</span>
 
         <span class="c1"># Only linear interpolate sliced dimensions</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">idxs</span><span class="p">):</span>
@@ -6442,10 +6442,10 @@
         <span class="k">return</span> <span class="n">cube</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Passes args to the appropriate interpolation method defined by the version at</span>
 <span class="sd">        object init.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -6454,7 +6454,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_multilinear_grid</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
 
-            <span class="c1"># Ray&#39;s plasma-store makes zero-copy arrays read-only, so  do a check and</span>
+            <span class="c1"># Ray's plasma-store makes zero-copy arrays read-only, so  do a check and</span>
             <span class="c1"># make a local copy on this worker if needed.</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">low_indices_workspace</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">writeable</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">low_indices_workspace</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dims</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
@@ -6472,7 +6472,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">load_wavelen</span><span class="p">(</span><span class="n">wavelength_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.common.load_wavelen"><a href="../../../../api/isofit/core/common/#isofit.core.common.load_wavelen" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a wavelength file, and convert to nanometers if needed.</span>
+<span class="w">    </span><span class="sd">"""Load a wavelength file, and convert to nanometers if needed.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        wavelength_file: file to read wavelengths from</span>
@@ -6480,7 +6480,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        (np.array, np.array): wavelengths, full-width-half-max</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">wavelength_file</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
@@ -6494,7 +6494,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">emissive_radiance</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.core.common.emissive_radiance"><a href="../../../../api/isofit/core/common/#isofit.core.common.emissive_radiance" title="Go to docs">[docs]</a></div>
     <span class="n">emissivity</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">wl</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calcluate the radiance of a surface due to emission.</span>
+<span class="w">    </span><span class="sd">"""Calcluate the radiance of a surface due to emission.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        emissivity: surface emissivity.</span>
@@ -6505,7 +6505,7 @@
 <span class="sd">        np.array: surface upwelling radiance in uW $cm^{-2} sr^{-1} nm^{-nm}$</span>
 <span class="sd">        np.array: partial derivative of radiance with respect to temperature uW $cm^{-2} sr^{-1} nm^{-1} k^{-1}$</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">c_1</span> <span class="o">=</span> <span class="mf">1.88365e32</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
     <span class="n">c_2</span> <span class="o">=</span> <span class="mi">14387690</span>
@@ -6531,7 +6531,7 @@
 
 <div class="mkapi-source-link" id="isofit.core.common.svd_inv"><a href="../../../../api/isofit/core/common/#isofit.core.common.svd_inv" title="Go to docs">[docs]</a></div>
 <span class="k">def</span><span class="w"> </span><span class="nf">svd_inv</span><span class="p">(</span><span class="n">C</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">hashtable</span><span class="p">:</span> <span class="n">OrderedDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_hash_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Matrix inversion, based on decomposition.  Built to be stable, and positive.</span>
+<span class="w">    </span><span class="sd">"""Matrix inversion, based on decomposition.  Built to be stable, and positive.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        C: matrix to invert</span>
@@ -6541,7 +6541,7 @@
 <span class="sd">    Return:</span>
 <span class="sd">        np.array: inverse of C</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">return</span> <span class="n">svd_inv_sqrt</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">hashtable</span><span class="p">,</span> <span class="n">max_hash_size</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
@@ -6549,7 +6549,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">svd_inv_sqrt</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.core.common.svd_inv_sqrt"><a href="../../../../api/isofit/core/common/#isofit.core.common.svd_inv_sqrt" title="Go to docs">[docs]</a></div>
     <span class="n">C</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">hashtable</span><span class="p">:</span> <span class="n">OrderedDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_hash_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Matrix inversion, based on decomposition.  Built to be stable, and positive.</span>
+<span class="w">    </span><span class="sd">"""Matrix inversion, based on decomposition.  Built to be stable, and positive.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        C: matrix to invert</span>
@@ -6559,14 +6559,14 @@
 <span class="sd">    Return:</span>
 <span class="sd">        (np.array, np.array): inverse of C and square root of the inverse of C</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># If we have a hash table, look for the precalculated solution</span>
     <span class="n">h</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">hashtable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># If arrays are in Fortran ordering, they are not hashable.</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">C</span><span class="o">.</span><span class="n">flags</span><span class="p">[</span><span class="s2">&quot;C_CONTIGUOUS&quot;</span><span class="p">]:</span>
-            <span class="n">C</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">C</span><span class="o">.</span><span class="n">flags</span><span class="p">[</span><span class="s2">"C_CONTIGUOUS"</span><span class="p">]:</span>
+            <span class="n">C</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">"C"</span><span class="p">)</span>
         <span class="n">h</span> <span class="o">=</span> <span class="n">xxhash</span><span class="o">.</span><span class="n">xxh64_digest</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hashtable</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">hashtable</span><span class="p">[</span><span class="n">h</span><span class="p">]</span>
@@ -6590,8 +6590,8 @@
                 <span class="k">continue</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Matrix inversion contains negative values, &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;even after adding </span><span class="si">{}</span><span class="s2"> to the diagonal.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inv_eps</span><span class="p">)</span>
+                <span class="s2">"Matrix inversion contains negative values, "</span>
+                <span class="o">+</span> <span class="s2">"even after adding </span><span class="si">{}</span><span class="s2"> to the diagonal."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inv_eps</span><span class="p">)</span>
             <span class="p">)</span>
 
     <span class="n">Ds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">D</span><span class="p">))</span>
@@ -6610,7 +6610,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">expand_path</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.common.expand_path"><a href="../../../../api/isofit/core/common/#isofit.core.common.expand_path" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand a path variable to an absolute path, if it is not one already.</span>
+<span class="w">    </span><span class="sd">"""Expand a path variable to an absolute path, if it is not one already.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        directory:  absolute location</span>
@@ -6619,22 +6619,22 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        str: expanded path</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">if</span> <span class="n">subpath</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">subpath</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"/"</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">subpath</span>
     <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">subpath</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">recursive_replace</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.common.recursive_replace"><a href="../../../../api/isofit/core/common/#isofit.core.common.recursive_replace" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find and replace a vector in a nested (mutable) structure.</span>
+<span class="w">    </span><span class="sd">"""Find and replace a vector in a nested (mutable) structure.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        obj: object to replace within</span>
 <span class="sd">        key: key to replace</span>
 <span class="sd">        val: value to replace with</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
@@ -6647,7 +6647,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">recursive_get</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.common.recursive_get"><a href="../../../../api/isofit/core/common/#isofit.core.common.recursive_get" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find all occurences of a key within a nested struct.</span>
+<span class="w">    </span><span class="sd">"""Find all occurences of a key within a nested struct.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        obj: object to seach within</span>
@@ -6655,7 +6655,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        list: values at those key locations</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
@@ -6671,7 +6671,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_absorption</span><span class="p">(</span><span class="n">wl</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">absfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.common.get_absorption"><a href="../../../../api/isofit/core/common/#isofit.core.common.get_absorption" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate water and ice absorption coefficients using indices of</span>
+<span class="w">    </span><span class="sd">"""Calculate water and ice absorption coefficients using indices of</span>
 <span class="sd">    refraction, and interpolate them to new wavelengths (user specifies nm).</span>
 
 <span class="sd">    Args:</span>
@@ -6682,10 +6682,10 @@
 <span class="sd">        np.array: interpolated, wavelength-specific water absorption coefficients</span>
 <span class="sd">        np.array: interpolated, wavelength-specific ice absorption coefficients</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># read the indices of refraction</span>
-    <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">absfile</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">absfile</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">","</span><span class="p">)</span>
     <span class="n">wl_orig_nm</span> <span class="o">=</span> <span class="n">q</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
     <span class="n">wl_orig_cm</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">nm_to_cm</span><span class="p">(</span><span class="n">wl_orig_nm</span><span class="p">)</span>
     <span class="n">water_imag</span> <span class="o">=</span> <span class="n">q</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
@@ -6702,7 +6702,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">recursive_reencode</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">shell_replace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.common.recursive_reencode"><a href="../../../../api/isofit/core/common/#isofit.core.common.recursive_reencode" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively re-encode a mutable object (ascii-&gt;str).</span>
+<span class="w">    </span><span class="sd">"""Recursively re-encode a mutable object (ascii-&gt;str).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        j: object to reencode</span>
@@ -6711,7 +6711,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Object: expanded, reencoded object</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">j</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -6733,7 +6733,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">json_load_ascii</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">shell_replace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.common.json_load_ascii"><a href="../../../../api/isofit/core/common/#isofit.core.common.json_load_ascii" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a hierarchical structure, convert all unicode to ASCII and</span>
+<span class="w">    </span><span class="sd">"""Load a hierarchical structure, convert all unicode to ASCII and</span>
 <span class="sd">    expand environment variables.</span>
 
 <span class="sd">    Args:</span>
@@ -6743,15 +6743,15 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        dict: encoded dictionary</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fin</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fin</span><span class="p">:</span>
         <span class="n">j</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fin</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">recursive_reencode</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">shell_replace</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">expand_all_paths</span><span class="p">(</span><span class="n">to_expand</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">absdir</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.common.expand_all_paths"><a href="../../../../api/isofit/core/common/#isofit.core.common.expand_all_paths" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand any dictionary entry containing the string &#39;file&#39; into</span>
+<span class="w">    </span><span class="sd">"""Expand any dictionary entry containing the string 'file' into</span>
 <span class="sd">       an absolute path, if needed.</span>
 
 <span class="sd">    Args:</span>
@@ -6761,14 +6761,14 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        dict: dictionary with expanded paths</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">recursive_expand</span><span class="p">(</span><span class="n">j</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">j</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="p">(</span>
                     <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-                    <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;file&quot;</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">or</span> <span class="s2">&quot;directory&quot;</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">or</span> <span class="s2">&quot;path&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="p">(</span><span class="s2">"file"</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">or</span> <span class="s2">"directory"</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">or</span> <span class="s2">"path"</span> <span class="ow">in</span> <span class="n">key</span><span class="p">)</span>
                     <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
                 <span class="p">):</span>
                     <span class="n">j</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">absdir</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -6787,7 +6787,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">find_header</span><span class="p">(</span><span class="n">imgfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.common.find_header"><a href="../../../../api/isofit/core/common/#isofit.core.common.find_header" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Safely return the header associated with an image file.</span>
+<span class="w">    </span><span class="sd">"""Safely return the header associated with an image file.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        imgfile: file name of base image</span>
@@ -6795,23 +6795,23 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        str: header filename if one exists</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">imgfile</span> <span class="o">+</span> <span class="s2">&quot;.hdr&quot;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">imgfile</span> <span class="o">+</span> <span class="s2">&quot;.hdr&quot;</span>
-    <span class="n">ind</span> <span class="o">=</span> <span class="n">imgfile</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;.raw&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">imgfile</span> <span class="o">+</span> <span class="s2">".hdr"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">imgfile</span> <span class="o">+</span> <span class="s2">".hdr"</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="n">imgfile</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">".raw"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">ind</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">imgfile</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">ind</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.hdr&quot;</span>
-    <span class="n">ind</span> <span class="o">=</span> <span class="n">imgfile</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;.img&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">imgfile</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">ind</span><span class="p">]</span> <span class="o">+</span> <span class="s2">".hdr"</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="n">imgfile</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">".img"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">ind</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">imgfile</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">ind</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.hdr&quot;</span>
-    <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;No header found for file </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imgfile</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">imgfile</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">ind</span><span class="p">]</span> <span class="o">+</span> <span class="s2">".hdr"</span>
+    <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">"No header found for file </span><span class="si">{0}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imgfile</span><span class="p">))</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_resample_matrix</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.core.common.calculate_resample_matrix"><a href="../../../../api/isofit/core/common/#isofit.core.common.calculate_resample_matrix" title="Go to docs">[docs]</a></div>
     <span class="n">wl</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">wl2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">fwhm2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">srf_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the resampling matrix for a given set of wavelengths and FWHM.</span>
+<span class="w">    </span><span class="sd">"""Calculate the resampling matrix for a given set of wavelengths and FWHM.</span>
 <span class="sd">    Once calculated, resmpling is just the dot product of this matrix with the</span>
 <span class="sd">    vector to be resampled.</span>
 
@@ -6823,7 +6823,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        np.array: transformation matrix (H)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="n">srf_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
@@ -6861,7 +6861,7 @@
     <span class="n">srf_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">H</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resample a spectrum to a new wavelength / FWHM.</span>
+<span class="w">    </span><span class="sd">"""Resample a spectrum to a new wavelength / FWHM.</span>
 <span class="sd">       Assumes Gaussian SRFs.</span>
 
 <span class="sd">    Args:</span>
@@ -6877,7 +6877,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        np.array: interpolated radiance vector</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># sc including if else to add non-Gaussian SRF</span>
     <span class="c1"># Probably a better way than this with file paths, etc.</span>
     <span class="k">if</span> <span class="n">H</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -6886,7 +6886,7 @@
     <span class="n">dims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">fill</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">dims</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;resample_spectrum(fill=True) only works with vectors&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">"resample_spectrum(fill=True) only works with vectors"</span><span class="p">)</span>
 
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">xnew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
@@ -6908,7 +6908,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">load_spectrum</span><span class="p">(</span><span class="n">spectrum_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.common.load_spectrum"><a href="../../../../api/isofit/core/common/#isofit.core.common.load_spectrum" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a single spectrum from a text file with initial columns giving</span>
+<span class="w">    </span><span class="sd">"""Load a single spectrum from a text file with initial columns giving</span>
 <span class="sd">       wavelength and magnitude, respectively.</span>
 
 <span class="sd">    Args:</span>
@@ -6918,7 +6918,7 @@
 <span class="sd">        np.array: spectrum values</span>
 <span class="sd">        np.array: wavelengths, if available in the file</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">spectrum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">spectrum_file</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">spectrum</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -6932,7 +6932,7 @@
 
 <div class="mkapi-source-link" id="isofit.core.common.spectral_response_function"><a href="../../../../api/isofit/core/common/#isofit.core.common.spectral_response_function" title="Go to docs">[docs]</a></div>
 <span class="k">def</span><span class="w"> </span><span class="nf">spectral_response_function</span><span class="p">(</span><span class="n">response_range</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">mu</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the spectral response function.</span>
+<span class="w">    </span><span class="sd">"""Calculate the spectral response function.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        response_range: signal range to calculate over</span>
@@ -6942,7 +6942,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        np.array: spectral response function</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">u</span> <span class="o">=</span> <span class="p">(</span><span class="n">response_range</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">/</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
     <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sigma</span><span class="p">)))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">u</span> <span class="o">*</span> <span class="n">u</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span>
@@ -6951,7 +6951,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">combos</span><span class="p">(</span><span class="n">inds</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.common.combos"><a href="../../../../api/isofit/core/common/#isofit.core.common.combos" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return all combinations of indices in a list of index sublists.</span>
+<span class="w">    </span><span class="sd">"""Return all combinations of indices in a list of index sublists.</span>
 <span class="sd">    For example, the call::</span>
 <span class="sd">        combos([[1, 2], [3, 4, 5]])</span>
 <span class="sd">        ...[[1, 3], [2, 3], [1, 4], [2, 4], [1, 5], [2, 5]]</span>
@@ -6964,7 +6964,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        np.array: meshgrid array of combinations</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inds</span><span class="p">)</span>
     <span class="n">cases</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">inds</span><span class="p">])</span>
@@ -6975,7 +6975,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">conditional_gaussian</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.core.common.conditional_gaussian"><a href="../../../../api/isofit/core/common/#isofit.core.common.conditional_gaussian" title="Go to docs">[docs]</a></div>
     <span class="n">mu</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">C</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">window</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">remain</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Define the conditional Gaussian distribution for convenience.</span>
+<span class="w">    </span><span class="sd">"""Define the conditional Gaussian distribution for convenience.</span>
 
 <span class="sd">    len(window)+len(remain)=len(x)</span>
 
@@ -6989,7 +6989,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        (np.array, np.array): conditional mean, conditional covariance</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">window</span><span class="p">)[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
     <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">remain</span><span class="p">)[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
     <span class="n">C11</span> <span class="o">=</span> <span class="n">C</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">T</span><span class="p">]</span>
@@ -7004,61 +7004,61 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">envi_header</span><span class="p">(</span><span class="n">inputpath</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.common.envi_header"><a href="../../../../api/isofit/core/common/#isofit.core.common.envi_header" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Convert a envi binary/header path to a header, handling extensions</span>
 <span class="sd">    Args:</span>
 <span class="sd">        inputpath: path to envi binary file</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        str: the header file associated with the input reference.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="p">(</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">inputpath</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.img&quot;</span>
-        <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">inputpath</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.dat&quot;</span>
-        <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">inputpath</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.raw&quot;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">inputpath</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">".img"</span>
+        <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">inputpath</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">".dat"</span>
+        <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">inputpath</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">".raw"</span>
     <span class="p">):</span>
         <span class="c1"># headers could be at either filename.img.hdr or filename.hdr.  Check both, return the one that exists if it</span>
         <span class="c1"># does, if not return the latter (new file creation presumed).</span>
-        <span class="n">hdrfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">inputpath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.hdr&quot;</span>
+        <span class="n">hdrfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">inputpath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">".hdr"</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">hdrfile</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">hdrfile</span>
-        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">inputpath</span> <span class="o">+</span> <span class="s2">&quot;.hdr&quot;</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">inputpath</span> <span class="o">+</span> <span class="s2">&quot;.hdr&quot;</span>
+        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">inputpath</span> <span class="o">+</span> <span class="s2">".hdr"</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">inputpath</span> <span class="o">+</span> <span class="s2">".hdr"</span>
         <span class="k">return</span> <span class="n">hdrfile</span>
-    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">inputpath</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.hdr&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">inputpath</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">".hdr"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">inputpath</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">inputpath</span> <span class="o">+</span> <span class="s2">&quot;.hdr&quot;</span>
+        <span class="k">return</span> <span class="n">inputpath</span> <span class="o">+</span> <span class="s2">".hdr"</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">ray_start</span><span class="p">(</span><span class="n">num_cores</span><span class="p">,</span> <span class="n">num_cpus</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">memory_b</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.common.ray_start"><a href="../../../../api/isofit/core/common/#isofit.core.common.ray_start" title="Go to docs">[docs]</a></div>
     <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
 
     <span class="n">base_args</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;ray&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;start&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;--head&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;--num-cpus&quot;</span><span class="p">,</span>
+        <span class="s2">"ray"</span><span class="p">,</span>
+        <span class="s2">"start"</span><span class="p">,</span>
+        <span class="s2">"--head"</span><span class="p">,</span>
+        <span class="s2">"--num-cpus"</span><span class="p">,</span>
         <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">num_cores</span> <span class="o">/</span> <span class="n">num_cpus</span><span class="p">)),</span>
-        <span class="s2">&quot;--include-dashboard&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+        <span class="s2">"--include-dashboard"</span><span class="p">,</span>
+        <span class="s2">"0"</span><span class="p">,</span>
     <span class="p">]</span>
     <span class="k">if</span> <span class="n">memory_b</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-        <span class="n">base_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--memory&quot;</span><span class="p">)</span>
+        <span class="n">base_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"--memory"</span><span class="p">)</span>
         <span class="n">base_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">memory_b</span> <span class="o">/</span> <span class="n">num_cpus</span><span class="p">)))</span>
 
     <span class="n">head_args</span> <span class="o">=</span> <span class="n">base_args</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">head_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--head&quot;</span><span class="p">)</span>
+    <span class="n">head_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"--head"</span><span class="p">)</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">head_args</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">stdout</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">stdout</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">num_cpus</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;--address=&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s2">"--address="</span>
         <span class="n">start_loc</span> <span class="o">=</span> <span class="n">stdout</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
-        <span class="n">end_loc</span> <span class="o">=</span> <span class="n">stdout</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="n">start_loc</span><span class="p">)</span>
+        <span class="n">end_loc</span> <span class="o">=</span> <span class="n">stdout</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"'"</span><span class="p">,</span> <span class="n">start_loc</span><span class="p">)</span>
 
         <span class="n">address</span> <span class="o">=</span> <span class="n">stdout</span><span class="p">[</span><span class="n">start_loc</span><span class="p">:</span><span class="n">end_loc</span><span class="p">]</span>
-        <span class="n">base_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--address&quot;</span><span class="p">)</span>
+        <span class="n">base_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"--address"</span><span class="p">)</span>
         <span class="n">base_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">base_args</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -7068,14 +7068,14 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Track</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.common.Track"><a href="../../../../api/isofit/core/common/#isofit.core.common.Track" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Tracks and reports the percentage complete for some arbitrary sized iterable.</span>
 
 <span class="sd">    Borrowed from mlky</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="nb">print</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">&quot;complete&quot;</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="nb">print</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">"complete"</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        total: int, iterable</span>
@@ -7086,10 +7086,10 @@
 <span class="sd">            Print function to use, eg. logging.info</span>
 <span class="sd">        reverse: bool, default=False</span>
 <span class="sd">            Reverse the count such that 0 is 100%</span>
-<span class="sd">        message: str, default=&quot;complete&quot;</span>
+<span class="sd">        message: str, default="complete"</span>
 <span class="sd">            Message to be included in the output</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">total</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">total</span><span class="p">,</span> <span class="s2">"__iter__"</span><span class="p">):</span>
             <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">total</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">step</span>
@@ -7101,7 +7101,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        count: int, iterable</span>
@@ -7111,8 +7111,8 @@
 <span class="sd">        -------</span>
 <span class="sd">        bool</span>
 <span class="sd">            True if a percentage step was just crossed, False otherwise</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="s2">"__iter__"</span><span class="p">):</span>
             <span class="n">count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
 
         <span class="n">current</span> <span class="o">=</span> <span class="n">count</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">total</span>
@@ -7126,7 +7126,7 @@
             <span class="n">esti</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">percent</span> <span class="o">*</span> <span class="n">elap</span> <span class="o">-</span> <span class="n">elap</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">current</span><span class="si">:</span><span class="s2">6.2f</span><span class="si">}</span><span class="s2">% </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2"> (elapsed: </span><span class="si">{</span><span class="n">elap</span><span class="si">}</span><span class="s2">, rate: </span><span class="si">{</span><span class="n">rate</span><span class="si">}</span><span class="s2">, eta: </span><span class="si">{</span><span class="n">esti</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">current</span><span class="si">:</span><span class="s2">6.2f</span><span class="si">}</span><span class="s2">% </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2"> (elapsed: </span><span class="si">{</span><span class="n">elap</span><span class="si">}</span><span class="s2">, rate: </span><span class="si">{</span><span class="n">rate</span><span class="si">}</span><span class="s2">, eta: </span><span class="si">{</span><span class="n">esti</span><span class="si">}</span><span class="s2">)"</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">percent</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span>
 
@@ -7135,7 +7135,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">compare</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">not_same</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.common.compare"><a href="../../../../api/isofit/core/common/#isofit.core.common.compare" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compares strings in `a` to strings in `b`</span>
 
 <span class="sd">    Parameters</span>
@@ -7154,7 +7154,7 @@
 <span class="sd">    matching : dict</span>
 <span class="sd">        For each string in `a`, return a list of strings in `b` that meet the matching</span>
 <span class="sd">        threshold</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="p">]</span>
 
@@ -7173,7 +7173,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">saveDataset</span><span class="p">(</span><span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.common.saveDataset"><a href="../../../../api/isofit/core/common/#isofit.core.common.saveDataset" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Handles saving an xarray.Dataset to a NetCDF file for ISOFIT. Will detect if the</span>
 <span class="sd">    point dim needs to be unstacked before saving (regular grids) or not (irregular)</span>
 
@@ -7184,15 +7184,15 @@
 <span class="sd">        is `.nc`</span>
 <span class="sd">    ds: xarray.Dataset</span>
 <span class="sd">        Data object to save</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="s2">&quot;MultiIndex&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">indexes</span><span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">]):</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="s2">&quot;point&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="s2">"MultiIndex"</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">indexes</span><span class="p">[</span><span class="s2">"point"</span><span class="p">]):</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="s2">"point"</span><span class="p">)</span>
 
     <span class="n">ds</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">load_esd</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.common.load_esd"><a href="../../../../api/isofit/core/common/#isofit.core.common.load_esd" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Loads an earth_sun_distance file. Defaults to the</span>
 <span class="sd">    [env.data]/earth_sun_distance.txt if not provided</span>
 
@@ -7205,17 +7205,17 @@
 <span class="sd">    -------</span>
 <span class="sd">    np.array</span>
 <span class="sd">        Loaded ESD. If the file fails to load, creates a default</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">file</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;earth_sun_distance.txt&quot;</span><span class="p">)</span>
+        <span class="n">file</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"data"</span><span class="p">,</span> <span class="s2">"earth_sun_distance.txt"</span><span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">esd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded ESD from file: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loaded ESD from file: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;Earth-sun-distance file not found on system. &quot;</span>
-            <span class="s2">&quot;Proceeding without might cause some inaccuracies down the line.&quot;</span>
+            <span class="s2">"Earth-sun-distance file not found on system. "</span>
+            <span class="s2">"Proceeding without might cause some inaccuracies down the line."</span>
         <span class="p">)</span>
         <span class="n">esd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">366</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
         <span class="n">esd</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">367</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>

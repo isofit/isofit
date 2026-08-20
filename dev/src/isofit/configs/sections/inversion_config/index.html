@@ -4950,14 +4950,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -4972,50 +4972,50 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">InversionConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.inversion_config.InversionConfig"><a href="../../../../../api/isofit/configs/sections/inversion_config/#isofit.configs.sections.inversion_config.InversionConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Inversion configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_windows_type</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">windows</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;List[List[float]]: inversion retrieval windows to operate over.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""List[List[float]]: inversion retrieval windows to operate over."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_cressie_map_confidence_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cressie_map_confidence</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: N. Cressie [ASA 2018] suggests an alternate definition of S_hat for</span>
-<span class="sd">        more statistically-consistent posterior confidence estimation, this flag runs in this mode&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""bool: N. Cressie [ASA 2018] suggests an alternate definition of S_hat for</span>
+<span class="sd">        more statistically-consistent posterior confidence estimation, this flag runs in this mode"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_mcmc_type</span> <span class="o">=</span> <span class="n">McmcConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mcmc</span> <span class="o">=</span> <span class="n">McmcConfig</span><span class="p">({})</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;MCMC parameters, only used if mode = mcmc.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""MCMC parameters, only used if mode = mcmc."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_integration_grid_type</span> <span class="o">=</span> <span class="n">OrderedDict</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">integration_grid</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">({})</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Grid of inversion points to execute if mode=&#39;grid&#39;.  Either fixed, or starting points, depending</span>
-<span class="sd">        on self.fixed_inversion_grid&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Grid of inversion points to execute if mode='grid'.  Either fixed, or starting points, depending</span>
+<span class="sd">        on self.fixed_inversion_grid"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_priors_in_initial_guess_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">priors_in_initial_guess</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Boolean to inidicate the use of surface priors outside of the inversion windows during the </span>
-<span class="sd">        intial guess.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Boolean to inidicate the use of surface priors outside of the inversion windows during the </span>
+<span class="sd">        intial guess."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_inversion_grid_as_preseed_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inversion_grid_as_preseed</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter indicating whether to treat the inversion grid as:</span>
+<span class="w">        </span><span class="sd">"""Parameter indicating whether to treat the inversion grid as:</span>
 <span class="sd">         (True) - a series of seeds for the optimization (variable by the optimization algorithm).</span>
 <span class="sd">         (False) - a set of fixed points (not variable by the optimization algorithm)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_least_squares_params_type</span> <span class="o">=</span> <span class="n">LeastSquaresConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">least_squares_params</span> <span class="o">=</span> <span class="n">LeastSquaresConfig</span><span class="p">({})</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Least squares parameters for core inversion solve.  </span>
 <span class="sd">        See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html</span>
 <span class="sd">        for details.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 
@@ -5024,34 +5024,34 @@
         <span class="n">warnings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
         <span class="c1"># TODO: add some checking to windows</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">windows</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;simulation&quot;</span><span class="p">:</span>
-            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;windows is a required parameters inside of inversion&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">windows</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">"simulation"</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"windows is a required parameters inside of inversion"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">subset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">windows</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
                     <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="s2">&quot;windows parameter must be a list of lists of wavelength ranges&quot;</span>
+                        <span class="s2">"windows parameter must be a list of lists of wavelength ranges"</span>
                     <span class="p">)</span>
                 <span class="k">elif</span> <span class="n">subset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">subset</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
                     <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="s2">&quot;In inversion window subset </span><span class="si">{}</span><span class="s2">, wavelength ranges must be in&quot;</span>
-                        <span class="s2">&quot; order&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span>
+                        <span class="s2">"In inversion window subset </span><span class="si">{}</span><span class="s2">, wavelength ranges must be in"</span>
+                        <span class="s2">" order"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span>
                     <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">McmcConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.inversion_config.McmcConfig"><a href="../../../../../api/isofit/configs/sections/inversion_config/#isofit.configs.sections.inversion_config.McmcConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    MCMC inversion configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_iterations_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">iterations</span> <span class="o">=</span> <span class="mi">10000</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: Number of MCMC iterations to run.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""int: Number of MCMC iterations to run."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_burnin_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">burnin</span> <span class="o">=</span> <span class="mi">200</span>
@@ -5072,41 +5072,41 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">LeastSquaresConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.inversion_config.LeastSquaresConfig"><a href="../../../../../api/isofit/configs/sections/inversion_config/#isofit.configs.sections.inversion_config.LeastSquaresConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Least squares config parameters.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_method_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;trf&quot;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Optimzation method to use. Default &#39;trf&#39;.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">"trf"</span>
+<span class="w">        </span><span class="sd">"""str: Optimzation method to use. Default 'trf'."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_max_nfev_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_nfev</span> <span class="o">=</span> <span class="mi">20</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: Maximum number of function evaluations before the termination. </span>
-<span class="sd">        If None (default), the value is chosen automatically. Default 20.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""int: Maximum number of function evaluations before the termination. </span>
+<span class="sd">        If None (default), the value is chosen automatically. Default 20."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_xtol_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xtol</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: Tolerance for termination by the change of the independent variables.  </span>
-<span class="sd">        Default is None, which disables termination from this criteria.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: Tolerance for termination by the change of the independent variables.  </span>
+<span class="sd">        Default is None, which disables termination from this criteria."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ftol_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ftol</span> <span class="o">=</span> <span class="mf">0.01</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: Tolerance for termination by the change of the cost function.</span>
-<span class="sd">        Default is 0.01&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: Tolerance for termination by the change of the cost function.</span>
+<span class="sd">        Default is 0.01"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_gtol_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gtol</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: Tolerance for termination by the norm of the gradient. </span>
-<span class="sd">        Default is None, which disables termination from this criteria.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: Tolerance for termination by the norm of the gradient. </span>
+<span class="sd">        Default is None, which disables termination from this criteria."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_tr_solver_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tr_solver</span> <span class="o">=</span> <span class="s2">&quot;lsmr&quot;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Method for solving trust-region subproblems, relevant only for ‘trf’ and ‘dogbox’ methods.</span>
-<span class="sd">        Options are None, &#39;exact&#39;, or &#39;lsmr&#39;&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tr_solver</span> <span class="o">=</span> <span class="s2">"lsmr"</span>
+<span class="w">        </span><span class="sd">"""str: Method for solving trust-region subproblems, relevant only for ‘trf’ and ‘dogbox’ methods.</span>
+<span class="sd">        Options are None, 'exact', or 'lsmr'"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 
@@ -5114,11 +5114,11 @@
         <span class="n">errors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="n">warnings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
-        <span class="c1"># TODO: add flags for rile overright, and make sure files don&#39;t exist if not checked?</span>
+        <span class="c1"># TODO: add flags for rile overright, and make sure files don't exist if not checked?</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tr_solver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tr_solver</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;exact&quot;</span><span class="p">,</span> <span class="s2">&quot;lsmr&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tr_solver</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"exact"</span><span class="p">,</span> <span class="s2">"lsmr"</span><span class="p">]:</span>
                 <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="s2">&quot;Least squares tr_solver must be in [None, &#39;exact&#39;, &#39;lsmr&#39;]&quot;</span>
+                    <span class="s2">"Least squares tr_solver must be in [None, 'exact', 'lsmr']"</span>
                 <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>

@@ -4917,14 +4917,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -4942,8 +4942,8 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Geometry</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.geometry.Geometry"><a href="../../../../api/isofit/core/geometry/#isofit.core.geometry.Geometry" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The geometry of the observation, all we need to calculate sensor,</span>
-<span class="sd">    surface, and solar positions.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The geometry of the observation, all we need to calculate sensor,</span>
+<span class="sd">    surface, and solar positions."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -4954,7 +4954,7 @@
         <span class="n">coszen</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">full_config</span><span class="p">:</span> <span class="n">configs</span><span class="o">.</span><span class="n">Config</span> <span class="o">=</span> <span class="p">{},</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize geometry object.</span>
+<span class="w">        </span><span class="sd">"""Initialize geometry object.</span>
 <span class="sd">        Args:</span>
 <span class="sd">            obs: Observation metadata array.</span>
 <span class="sd">            loc: Location metadata array.</span>
@@ -4962,7 +4962,7 @@
 <span class="sd">            svf: Sky view factor.</span>
 <span class="sd">            coszen: Cosine of the solar zenith angle for top of atmosphere.</span>
 <span class="sd">            full_config: isofit config.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Set some benign defaults...</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">observer_zenith</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">observer_azimuth</span> <span class="o">=</span> <span class="kc">None</span>
@@ -4976,9 +4976,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">skyview_factor</span> <span class="o">=</span> <span class="n">svf</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">max_slope</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="o">=</span> <span class="s2">&quot;flat&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="o">=</span> <span class="s2">"flat"</span>
 
-        <span class="c1"># The &#39;obs&#39; object is observation metadata that follows a historical</span>
+        <span class="c1"># The 'obs' object is observation metadata that follows a historical</span>
         <span class="c1"># AVIRIS-NG format.  It arrives to our initializer in the form of</span>
         <span class="c1"># a list-like object...</span>
         <span class="k">if</span> <span class="n">obs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -4992,7 +4992,7 @@
             <span class="n">delta_phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">solar_azimuth</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">observer_azimuth</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">relative_azimuth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">delta_phi</span><span class="p">,</span> <span class="mi">360</span> <span class="o">-</span> <span class="n">delta_phi</span><span class="p">)</span>  <span class="c1"># 0 to 180</span>
 
-        <span class="c1"># The &#39;loc&#39; object is a list-like object that optionally contains</span>
+        <span class="c1"># The 'loc' object is a list-like object that optionally contains</span>
         <span class="c1"># latitude and longitude information about the surface being</span>
         <span class="c1"># observed.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">latitude</span> <span class="o">=</span> <span class="kc">None</span>
@@ -5029,18 +5029,18 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span> <span class="o">=</span> <span class="n">full_config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">lut_grid</span>
 
             <span class="c1"># 1. If user has a lut grid that contains solar_zenith this takes priority</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">&quot;solar_zenith&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">"solar_zenith"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">solar_zenith</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">use_universal_coszen</span> <span class="o">=</span> <span class="kc">False</span>
 
-            <span class="c1"># 2. If it&#39;s not in the lut grid, and user doesn&#39;t give a coszen, we should</span>
+            <span class="c1"># 2. If it's not in the lut grid, and user doesn't give a coszen, we should</span>
             <span class="c1"># raise a helpful warning, but still allow them to use the OBS data</span>
             <span class="k">elif</span> <span class="n">coszen</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">solar_zenith</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">solar_zenith</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">use_universal_coszen</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="s2">&quot;coszen was not defined and solar zenith was not found in the lut grid. &quot;</span>
-                    <span class="s2">&quot;This will proceed with the OBS data, however, this may cause small errors in the forward model.&quot;</span>
+                    <span class="s2">"coszen was not defined and solar zenith was not found in the lut grid. "</span>
+                    <span class="s2">"This will proceed with the OBS data, however, this may cause small errors in the forward model."</span>
                 <span class="p">)</span>
 
             <span class="c1"># 3. In this case, the user does not have solar zenith in the lut grid</span>
@@ -5050,13 +5050,13 @@
 
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;coszen is not defined and valid solar zenith not found in OBS data.&quot;</span>
+                    <span class="s2">"coszen is not defined and valid solar zenith not found in OBS data."</span>
                 <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
 
             <span class="c1"># Pretend that the surface is flat, regardless of input geometry</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="o">==</span> <span class="s2">&quot;flat&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="o">==</span> <span class="s2">"flat"</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cos_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coszen</span>
 
             <span class="c1"># Set min cosi (which is at max slope facing away from sun)</span>
@@ -5076,7 +5076,7 @@
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Unable to determine coszen. Proceeding without will cause errors during the inversion.&quot;</span>
+                <span class="s2">"Unable to determine coszen. Proceeding without will cause errors during the inversion."</span>
             <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

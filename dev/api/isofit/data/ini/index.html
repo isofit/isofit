@@ -5762,19 +5762,19 @@ Validated full path</p>
 <div class="mkapi-section-content">
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">env</span>
 <span class="n">env</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
-<span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
+<span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"data"</span><span class="p">)</span>
 </code></pre></div>
 <div class="mkapi-example-output highlight"><pre><span></span><code>~/.isofit/data
 </code></pre></div>
-<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;examples&quot;</span><span class="p">,</span> <span class="s2">&quot;20171108_Pasadena&quot;</span><span class="p">,</span> <span class="s2">&quot;configs&quot;</span><span class="p">,</span> <span class="s2">&quot;ang20171108t184227_surface.json&quot;</span><span class="p">)</span>
+<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"examples"</span><span class="p">,</span> <span class="s2">"20171108_Pasadena"</span><span class="p">,</span> <span class="s2">"configs"</span><span class="p">,</span> <span class="s2">"ang20171108t184227_surface.json"</span><span class="p">)</span>
 </code></pre></div>
 <div class="mkapi-example-output highlight"><pre><span></span><code>~/.isofit/examples/20171108_Pasadena/configs/ang20171108t184227_surface.json
 </code></pre></div>
-<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;srtmnet&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;srtmnet.file&quot;</span><span class="p">)</span>
+<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"srtmnet"</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"srtmnet.file"</span><span class="p">)</span>
 </code></pre></div>
 <div class="mkapi-example-output highlight"><pre><span></span><code>~/.isofit/srtmnet/sRTMnet_v120.h5
 </code></pre></div>
-<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;srtmnet&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;srtmnet.aux&quot;</span><span class="p">)</span>
+<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"srtmnet"</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"srtmnet.aux"</span><span class="p">)</span>
 </code></pre></div>
 <div class="mkapi-example-output highlight"><pre><span></span><code>~/.isofit/srtmnet/sRTMnet_v120_aux.npz
 </code></pre></div>
@@ -5834,12 +5834,12 @@ report : bool, default=True
 **kwargs : dict
     Additional strings to replace. The values are replaced in a string with the
     key of the kwarg. For example:
-<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;xyz&quot;</span><span class="p">:</span> <span class="s2">&quot;abc&quot;</span><span class="p">}</span>
-<span class="n">data</span><span class="p">[</span><span class="s2">&quot;some_key&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;replace abc here&quot;</span>
+<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"xyz"</span><span class="p">:</span> <span class="s2">"abc"</span><span class="p">}</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">"some_key"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"replace abc here"</span>
 </code></pre></div></p>
 <div class="mkapi-example-output highlight"><pre><span></span><code>will be replaced as:
 </code></pre></div>
-<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">data</span><span class="p">[</span><span class="s2">&quot;some_key&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;replace </span><span class="si">{xyz}</span><span class="s2"> here&quot;</span>
+<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">data</span><span class="p">[</span><span class="s2">"some_key"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"replace </span><span class="si">{xyz}</span><span class="s2"> here"</span>
 </code></pre></div>
 <div class="mkapi-example-output highlight"><pre><span></span><code>This is to be used with Ini.fromTemplate to replace values that are not
 found in the ini object
@@ -5901,12 +5901,12 @@ prepend : str, default=None
 **kwargs : dict
     Additional strings to replace. The values are replaced in a string with the
     key of the kwarg. For example:
-<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;xyz&quot;</span><span class="p">:</span> <span class="s2">&quot;abc&quot;</span><span class="p">}</span>
-<span class="n">data</span><span class="p">[</span><span class="s2">&quot;some_key&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;replace </span><span class="si">{xyz}</span><span class="s2"> here&quot;</span>
+<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"xyz"</span><span class="p">:</span> <span class="s2">"abc"</span><span class="p">}</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">"some_key"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"replace </span><span class="si">{xyz}</span><span class="s2"> here"</span>
 </code></pre></div></p>
 <div class="mkapi-example-output highlight"><pre><span></span><code>will be replaced as:
 </code></pre></div>
-<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">data</span><span class="p">[</span><span class="s2">&quot;some_key&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;replace abc here&quot;</span>
+<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">data</span><span class="p">[</span><span class="s2">"some_key"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"replace abc here"</span>
 </code></pre></div>
 <div class="mkapi-example-output highlight"><pre><span></span><code>This is to be used with Ini.toTemplate to replace values that are not found
 in the ini object

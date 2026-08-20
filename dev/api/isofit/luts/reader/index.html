@@ -5246,12 +5246,12 @@ Mapping dimension names to numpy arrays of grid points</p>
 <span class="mkapi-section-name">Examples</span>
 </p>
 <div class="mkapi-section-content">
-<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">dims</span> <span class="o">=</span> <span class="n">inspect_lut_dimensions</span><span class="p">(</span><span class="s2">&quot;lut.nc&quot;</span><span class="p">)</span>
+<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">dims</span> <span class="o">=</span> <span class="n">inspect_lut_dimensions</span><span class="p">(</span><span class="s2">"lut.nc"</span><span class="p">)</span>
 <span class="n">dims</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>dict_keys([&#39;H2OSTR&#39;, &#39;AOT550&#39;, &#39;observer_zenith&#39;, &#39;wl&#39;])
+<div class="mkapi-example-output highlight"><pre><span></span><code>dict_keys(['H2OSTR', 'AOT550', 'observer_zenith', 'wl'])
 </code></pre></div>
-<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;H2OSTR&#39;</span><span class="p">]</span>
+<div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">dims</span><span class="p">[</span><span class="s1">'H2OSTR'</span><span class="p">]</span>
 </code></pre></div>
 <div class="mkapi-example-output highlight"><pre><span></span><code>array([0.5, 1.0, 1.5, 2.0, 2.5])
 </code></pre></div>
@@ -5385,184 +5385,184 @@ Additional parameters to pass to open_dataset/open_mfdataset</p>
 </p>
 <div class="mkapi-section-content">
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="c1"># Create a test path for the examples to load</span>
-<span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;subsetting_example.nc&#39;</span>
+<span class="n">path</span> <span class="o">=</span> <span class="s1">'subsetting_example.nc'</span>
 <span class="n">lut_dims</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;AOT550&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.1009</span><span class="p">,</span> <span class="mf">0.2008</span><span class="p">,</span> <span class="mf">0.3007</span><span class="p">,</span> <span class="mf">0.4006</span><span class="p">,</span> <span class="mf">0.5005</span><span class="p">,</span> <span class="mf">0.6004</span><span class="p">,</span> <span class="mf">0.7003</span><span class="p">,</span> <span class="mf">0.8002</span><span class="p">,</span> <span class="mf">0.9001</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span>
-    <span class="s1">&#39;H2OSTR&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2231</span><span class="p">,</span> <span class="mf">0.4637</span><span class="p">,</span> <span class="mf">0.7042</span><span class="p">,</span> <span class="mf">0.9447</span><span class="p">,</span> <span class="mf">1.1853</span><span class="p">,</span> <span class="mf">1.4258</span><span class="p">,</span> <span class="mf">1.6664</span><span class="p">,</span> <span class="mf">1.9069</span><span class="p">,</span> <span class="mf">2.1474</span><span class="p">,</span> <span class="mf">2.388</span><span class="p">,</span> <span class="mf">2.6285</span><span class="p">,</span> <span class="mf">2.869</span><span class="p">,</span> <span class="mf">3.1096</span><span class="p">,</span> <span class="mf">3.3501</span><span class="p">],</span>
-    <span class="s1">&#39;observer_zenith&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">7.2155</span><span class="p">,</span> <span class="mf">9.8900</span><span class="p">],</span>
-    <span class="s1">&#39;surface_elevation_km&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.2361</span><span class="p">,</span> <span class="mf">0.4721</span><span class="p">,</span> <span class="mf">0.7082</span><span class="p">,</span> <span class="mf">0.9442</span><span class="p">,</span> <span class="mf">1.1803</span><span class="p">,</span> <span class="mf">1.4164</span><span class="p">,</span> <span class="mf">1.6524</span><span class="p">,</span> <span class="mf">1.8885</span><span class="p">,</span> <span class="mf">2.1245</span><span class="p">,</span> <span class="mf">2.3606</span><span class="p">,</span> <span class="mf">2.5966</span><span class="p">,</span> <span class="mf">2.8327</span><span class="p">,</span> <span class="mf">3.0688</span><span class="p">,</span> <span class="mf">3.3048</span><span class="p">,</span> <span class="mf">3.5409</span><span class="p">,</span> <span class="mf">3.7769</span><span class="p">,</span> <span class="mf">4.013</span><span class="p">],</span>
-    <span class="s1">&#39;wl&#39;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">285</span><span class="p">)</span>
+    <span class="s1">'AOT550'</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.1009</span><span class="p">,</span> <span class="mf">0.2008</span><span class="p">,</span> <span class="mf">0.3007</span><span class="p">,</span> <span class="mf">0.4006</span><span class="p">,</span> <span class="mf">0.5005</span><span class="p">,</span> <span class="mf">0.6004</span><span class="p">,</span> <span class="mf">0.7003</span><span class="p">,</span> <span class="mf">0.8002</span><span class="p">,</span> <span class="mf">0.9001</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span>
+    <span class="s1">'H2OSTR'</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2231</span><span class="p">,</span> <span class="mf">0.4637</span><span class="p">,</span> <span class="mf">0.7042</span><span class="p">,</span> <span class="mf">0.9447</span><span class="p">,</span> <span class="mf">1.1853</span><span class="p">,</span> <span class="mf">1.4258</span><span class="p">,</span> <span class="mf">1.6664</span><span class="p">,</span> <span class="mf">1.9069</span><span class="p">,</span> <span class="mf">2.1474</span><span class="p">,</span> <span class="mf">2.388</span><span class="p">,</span> <span class="mf">2.6285</span><span class="p">,</span> <span class="mf">2.869</span><span class="p">,</span> <span class="mf">3.1096</span><span class="p">,</span> <span class="mf">3.3501</span><span class="p">],</span>
+    <span class="s1">'observer_zenith'</span><span class="p">:</span> <span class="p">[</span><span class="mf">7.2155</span><span class="p">,</span> <span class="mf">9.8900</span><span class="p">],</span>
+    <span class="s1">'surface_elevation_km'</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.2361</span><span class="p">,</span> <span class="mf">0.4721</span><span class="p">,</span> <span class="mf">0.7082</span><span class="p">,</span> <span class="mf">0.9442</span><span class="p">,</span> <span class="mf">1.1803</span><span class="p">,</span> <span class="mf">1.4164</span><span class="p">,</span> <span class="mf">1.6524</span><span class="p">,</span> <span class="mf">1.8885</span><span class="p">,</span> <span class="mf">2.1245</span><span class="p">,</span> <span class="mf">2.3606</span><span class="p">,</span> <span class="mf">2.5966</span><span class="p">,</span> <span class="mf">2.8327</span><span class="p">,</span> <span class="mf">3.0688</span><span class="p">,</span> <span class="mf">3.3048</span><span class="p">,</span> <span class="mf">3.5409</span><span class="p">,</span> <span class="mf">3.7769</span><span class="p">,</span> <span class="mf">4.013</span><span class="p">],</span>
+    <span class="s1">'wl'</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">285</span><span class="p">)</span>
 <span class="p">}</span>
 <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">coords</span><span class="o">=</span><span class="n">lut_dims</span><span class="p">)</span>
 <span class="n">ds</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="c1"># Subset: Exact values along the dimension</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;AOT550&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;H2OSTR&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.1853</span><span class="p">,</span> <span class="mf">2.869</span><span class="p">],</span>
-    <span class="s1">&#39;observer_zenith&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;surface_elevation_km&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'AOT550'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'H2OSTR'</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.1853</span><span class="p">,</span> <span class="mf">2.869</span><span class="p">],</span>
+    <span class="s1">'observer_zenith'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'surface_elevation_km'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">}</span>
 <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 792})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'wl': 285, 'point': 792})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;AOT550&#39;: 11, &#39;H2OSTR&#39;: 2, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'AOT550': 11, 'H2OSTR': 2, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="c1"># Interpolate H2OSTR to 1.5</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;AOT550&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;H2OSTR&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;interp&#39;</span><span class="p">:</span> <span class="mf">1.5</span>
+    <span class="s1">'AOT550'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'H2OSTR'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'interp'</span><span class="p">:</span> <span class="mf">1.5</span>
     <span class="p">},</span>
-    <span class="s1">&#39;observer_zenith&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;surface_elevation_km&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'observer_zenith'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'surface_elevation_km'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">}</span>
 <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 396})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'wl': 285, 'point': 396})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;AOT550&#39;: 11, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="c1"># Subset: 1.1853 &lt; H2OSTR &lt; 2.869</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;AOT550&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;H2OSTR&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;gt&#39;</span><span class="p">:</span> <span class="mf">1.1853</span><span class="p">,</span>
-        <span class="s1">&#39;lt&#39;</span><span class="p">:</span> <span class="mf">2.869</span>
+    <span class="s1">'AOT550'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'H2OSTR'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'gt'</span><span class="p">:</span> <span class="mf">1.1853</span><span class="p">,</span>
+        <span class="s1">'lt'</span><span class="p">:</span> <span class="mf">2.869</span>
     <span class="p">},</span>
-    <span class="s1">&#39;observer_zenith&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;surface_elevation_km&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'observer_zenith'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'surface_elevation_km'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">}</span>
 <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 2376})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'wl': 285, 'point': 2376})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;AOT550&#39;: 11, &#39;H2OSTR&#39;: 6, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'AOT550': 11, 'H2OSTR': 6, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="c1"># Subset: 1.1853 &lt;= H2OSTR &lt;= 2.869, encompassed</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;AOT550&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;H2OSTR&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;gte&#39;</span><span class="p">:</span> <span class="mf">1.1853</span><span class="p">,</span>
-        <span class="s1">&#39;lte&#39;</span><span class="p">:</span> <span class="mf">2.869</span>
+    <span class="s1">'AOT550'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'H2OSTR'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'gte'</span><span class="p">:</span> <span class="mf">1.1853</span><span class="p">,</span>
+        <span class="s1">'lte'</span><span class="p">:</span> <span class="mf">2.869</span>
     <span class="p">},</span>
-    <span class="s1">&#39;observer_zenith&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;surface_elevation_km&#39;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="s1">'observer_zenith'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'surface_elevation_km'</span><span class="p">:</span> <span class="kc">None</span>
 <span class="p">}</span>
 <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 3960})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'wl': 285, 'point': 3960})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;AOT550&#39;: 11, &#39;H2OSTR&#39;: 10, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'AOT550': 11, 'H2OSTR': 10, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="c1"># Subset: 1.1853 &lt;= H2OSTR &lt;= 2.869, not encompassed</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;AOT550&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;H2OSTR&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;gte&#39;</span><span class="p">:</span> <span class="mf">1.1853</span><span class="p">,</span>
-        <span class="s1">&#39;lte&#39;</span><span class="p">:</span> <span class="mf">2.869</span><span class="p">,</span>
-        <span class="s1">&#39;encompass&#39;</span><span class="p">:</span> <span class="kc">False</span>
+    <span class="s1">'AOT550'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'H2OSTR'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'gte'</span><span class="p">:</span> <span class="mf">1.1853</span><span class="p">,</span>
+        <span class="s1">'lte'</span><span class="p">:</span> <span class="mf">2.869</span><span class="p">,</span>
+        <span class="s1">'encompass'</span><span class="p">:</span> <span class="kc">False</span>
     <span class="p">},</span>
-    <span class="s1">&#39;observer_zenith&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;surface_elevation_km&#39;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="s1">'observer_zenith'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'surface_elevation_km'</span><span class="p">:</span> <span class="kc">None</span>
 <span class="p">}</span>
 <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 3168})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'wl': 285, 'point': 3168})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;AOT550&#39;: 11, &#39;H2OSTR&#39;: 8, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'AOT550': 11, 'H2OSTR': 8, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="c1"># Subset: Exact value, squeeze dimension</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;AOT550&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;H2OSTR&#39;</span><span class="p">:</span> <span class="mf">2.869</span><span class="p">,</span>
-    <span class="s1">&#39;observer_zenith&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;surface_elevation_km&#39;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="s1">'AOT550'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'H2OSTR'</span><span class="p">:</span> <span class="mf">2.869</span><span class="p">,</span>
+    <span class="s1">'observer_zenith'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'surface_elevation_km'</span><span class="p">:</span> <span class="kc">None</span>
 <span class="p">}</span>
 <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 396})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'wl': 285, 'point': 396})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;AOT550&#39;: 11, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="c1"># Subset: Using mean, squeeze dimension</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;AOT550&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;H2OSTR&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;observer_zenith&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;surface_elevation_km&#39;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="s1">'AOT550'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'H2OSTR'</span><span class="p">:</span> <span class="s1">'mean'</span><span class="p">,</span>
+    <span class="s1">'observer_zenith'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'surface_elevation_km'</span><span class="p">:</span> <span class="kc">None</span>
 <span class="p">}</span>
 <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 396})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'wl': 285, 'point': 396})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;AOT550&#39;: 11, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="c1"># Subset: Using max, squeeze dimension</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;AOT550&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;H2OSTR&#39;</span><span class="p">:</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;observer_zenith&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;surface_elevation_km&#39;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="s1">'AOT550'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'H2OSTR'</span><span class="p">:</span> <span class="s1">'max'</span><span class="p">,</span>
+    <span class="s1">'observer_zenith'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'surface_elevation_km'</span><span class="p">:</span> <span class="kc">None</span>
 <span class="p">}</span>
 <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 396})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'wl': 285, 'point': 396})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;AOT550&#39;: 11, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="c1"># Multiple subsets</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;AOT550&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2008</span><span class="p">,</span> <span class="mf">0.4006</span><span class="p">,</span> <span class="mf">0.6004</span><span class="p">],</span>
-    <span class="s1">&#39;H2OSTR&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;gte&#39;</span><span class="p">:</span> <span class="mf">1.1853</span><span class="p">,</span>
-        <span class="s1">&#39;lte&#39;</span><span class="p">:</span> <span class="mf">2.869</span>
+    <span class="s1">'AOT550'</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2008</span><span class="p">,</span> <span class="mf">0.4006</span><span class="p">,</span> <span class="mf">0.6004</span><span class="p">],</span>
+    <span class="s1">'H2OSTR'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'gte'</span><span class="p">:</span> <span class="mf">1.1853</span><span class="p">,</span>
+        <span class="s1">'lte'</span><span class="p">:</span> <span class="mf">2.869</span>
     <span class="p">},</span>
-    <span class="s1">&#39;observer_zenith&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;surface_elevation_km&#39;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="s1">'observer_zenith'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">'surface_elevation_km'</span><span class="p">:</span> <span class="kc">None</span>
 <span class="p">}</span>
 <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 1080})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'wl': 285, 'point': 1080})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;AOT550&#39;: 3, &#39;H2OSTR&#39;: 10, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'AOT550': 3, 'H2OSTR': 10, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="c1"># Multiple subsets</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;AOT550&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2008</span><span class="p">,</span> <span class="mf">0.4006</span><span class="p">,</span> <span class="mf">0.6004</span><span class="p">],</span>
-    <span class="s1">&#39;H2OSTR&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;gte&#39;</span><span class="p">:</span> <span class="mf">1.1853</span><span class="p">,</span>
-        <span class="s1">&#39;lte&#39;</span><span class="p">:</span> <span class="mf">2.869</span>
+    <span class="s1">'AOT550'</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2008</span><span class="p">,</span> <span class="mf">0.4006</span><span class="p">,</span> <span class="mf">0.6004</span><span class="p">],</span>
+    <span class="s1">'H2OSTR'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'gte'</span><span class="p">:</span> <span class="mf">1.1853</span><span class="p">,</span>
+        <span class="s1">'lte'</span><span class="p">:</span> <span class="mf">2.869</span>
     <span class="p">},</span>
-    <span class="s1">&#39;observer_zenith&#39;</span><span class="p">:</span> <span class="mf">7.2155</span><span class="p">,</span>
-    <span class="s1">&#39;surface_elevation_km&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span>
+    <span class="s1">'observer_zenith'</span><span class="p">:</span> <span class="mf">7.2155</span><span class="p">,</span>
+    <span class="s1">'surface_elevation_km'</span><span class="p">:</span> <span class="s1">'mean'</span>
 <span class="p">}</span>
 <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 30})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'wl': 285, 'point': 30})
 </code></pre></div>
 <div class="mkapi-example-input highlight"><pre><span></span><code><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">dims</span>
 </code></pre></div>
-<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({&#39;AOT550&#39;: 3, &#39;H2OSTR&#39;: 10, &#39;wl&#39;: 285})
+<div class="mkapi-example-output highlight"><pre><span></span><code>Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})
 </code></pre></div>
 </div>
 <p class="mkapi-section">

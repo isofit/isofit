@@ -5652,39 +5652,39 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">Surface</span><span class="p">(</span><span class="n">config</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.Surface"><a href="../../../api/isofit/surface/#isofit.surface.Surface" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads an ISOFIT full config and initializes the desired Surface model</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    config : isofit.configs.Config</span>
 <span class="sd">        The full_config to determine the surface category from and to pass along to the</span>
-<span class="sd">        Surface model&#39;s initialization</span>
+<span class="sd">        Surface model's initialization</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    Surface Model</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">category</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">surface_category</span>
 
-    <span class="k">if</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">&quot;surface&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">"surface"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">BaseSurface</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">&quot;multicomponent_surface&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">"multicomponent_surface"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">MultiComponentSurface</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">&quot;glint_model_surface&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">"glint_model_surface"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">GlintModelSurface</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">&quot;thermal_surface&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">"thermal_surface"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">ThermalSurface</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">&quot;lut_surface&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">"lut_surface"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">LUTSurface</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># No need to be more specific - should have been checked in config already</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must specify a valid surface model&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Must specify a valid surface model"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

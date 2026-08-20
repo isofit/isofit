@@ -5190,9 +5190,9 @@
 <span class="normal">351</span>
 <span class="normal">352</span>
 <span class="normal">353</span>
-<span class="normal">354</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">354</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Utility functions for the downloader modules</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
@@ -5211,8 +5211,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">env</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">release_metadata</span><span class="p">(</span><span class="n">org</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.download.release_metadata"><a href="../../../../api/isofit/data/download/#isofit.data.download.release_metadata" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">release_metadata</span><span class="p">(</span><span class="n">org</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.download.release_metadata"><a href="../../../../api/isofit/data/download/#isofit.data.download.release_metadata" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Fetch GitHub metadata for the latest tagged release.</span>
 
 <span class="sd">    Credit to Kevin Wurster https://github.com/isofit/isofit/pull/448#issuecomment-1966747551</span>
@@ -5230,12 +5230,12 @@
 <span class="sd">    -------</span>
 <span class="sd">    dict</span>
 <span class="sd">        Metadata returned by the retrieved release</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">tag</span> <span class="o">==</span> <span class="s2">&quot;latest&quot;</span><span class="p">:</span>
-            <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://api.github.com/repos/</span><span class="si">{</span><span class="n">org</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">/releases/</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">tag</span> <span class="o">==</span> <span class="s2">"latest"</span><span class="p">:</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"https://api.github.com/repos/</span><span class="si">{</span><span class="n">org</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">/releases/</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://api.github.com/repos/</span><span class="si">{</span><span class="n">org</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">/releases/tags/</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"https://api.github.com/repos/</span><span class="si">{</span><span class="n">org</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">/releases/tags/</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">"</span>
 
         <span class="n">response</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
 
@@ -5244,12 +5244,12 @@
 
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="p">))</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to pull release: </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to pull release: </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">raise</span> <span class="n">e</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">download_file</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">dstname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.download.download_file"><a href="../../../../api/isofit/data/download/#isofit.data.download.download_file" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stream downloads a file</span>
 
 <span class="sd">    Parameters</span>
@@ -5265,13 +5265,13 @@
 <span class="sd">    -------</span>
 <span class="sd">    outfile : str</span>
 <span class="sd">        Output downloaded filepath</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">urllib</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">URLError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSLError</span><span class="p">):</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;SSL verification failed for </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">. Retrying with unverified context.&quot;</span>
+                <span class="sa">f</span><span class="s2">"SSL verification failed for </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">. Retrying with unverified context."</span>
             <span class="p">)</span>
             <span class="n">context</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">_create_unverified_context</span><span class="p">()</span>
             <span class="n">response</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
@@ -5279,21 +5279,21 @@
             <span class="k">raise</span> <span class="n">e</span>
 
     <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">if</span> <span class="n">length</span> <span class="o">:=</span> <span class="n">response</span><span class="o">.</span><span class="n">info</span><span class="p">()[</span><span class="s2">&quot;Content-Length&quot;</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">length</span> <span class="o">:=</span> <span class="n">response</span><span class="o">.</span><span class="n">info</span><span class="p">()[</span><span class="s2">"Content-Length"</span><span class="p">]:</span>
         <span class="n">total</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
 
-    <span class="c1"># Using Python&#39;s &#39;email&#39; module for this is certainly odd, but due to an</span>
+    <span class="c1"># Using Python's 'email' module for this is certainly odd, but due to an</span>
     <span class="c1"># upcoming deprecation, this is actually the officially recommended way</span>
     <span class="c1"># to do this: https://docs.python.org/3/library/cgi.html#cgi.parse_header</span>
     <span class="n">msg</span> <span class="o">=</span> <span class="n">EmailMessage</span><span class="p">()</span>
-    <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;Content-Disposition&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-Disposition&quot;</span><span class="p">]</span>
+    <span class="n">msg</span><span class="p">[</span><span class="s2">"Content-Disposition"</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">"Content-Disposition"</span><span class="p">]</span>
 
-    <span class="n">outfile</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">dstname</span> <span class="ow">or</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;Content-Disposition&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">])</span>
+    <span class="n">outfile</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">dstname</span> <span class="ow">or</span> <span class="n">msg</span><span class="p">[</span><span class="s2">"Content-Disposition"</span><span class="p">]</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">"filename"</span><span class="p">])</span>
     <span class="k">if</span> <span class="n">outfile</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
 
-    <span class="k">with</span> <span class="n">click</span><span class="o">.</span><span class="n">progressbar</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="n">total</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Downloading file&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">bar</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">click</span><span class="o">.</span><span class="n">progressbar</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="n">total</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Downloading file"</span><span class="p">)</span> <span class="k">as</span> <span class="n">bar</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="k">while</span> <span class="n">chunk</span> <span class="o">:=</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">DEFAULT_BUFFER_SIZE</span><span class="p">):</span>
                 <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
                 <span class="n">bar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">DEFAULT_BUFFER_SIZE</span><span class="p">)</span>
@@ -5302,7 +5302,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">unzip</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cleanup</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.download.unzip"><a href="../../../../api/isofit/data/download/#isofit.data.download.unzip" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Unzips a zipfile</span>
 
 <span class="sd">    Parameters</span>
@@ -5320,13 +5320,13 @@
 <span class="sd">    -------</span>
 <span class="sd">    dst : str</span>
 <span class="sd">        The extracted output path</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">file</span><span class="p">))</span>
 
     <span class="k">with</span> <span class="n">ZipFile</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">as</span> <span class="n">z</span><span class="p">:</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">namelist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="c1"># Verify the output target doesn&#39;t exist</span>
+        <span class="c1"># Verify the output target doesn't exist</span>
         <span class="n">dst</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="p">(</span><span class="n">rename</span> <span class="ow">or</span> <span class="n">name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">dst</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span>
@@ -5348,7 +5348,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">untar</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.download.untar"><a href="../../../../api/isofit/data/download/#isofit.data.download.untar" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Untars a .tar file. Removes the tar file after extracting</span>
 
 <span class="sd">    Parameters</span>
@@ -5362,7 +5362,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    output : str</span>
 <span class="sd">        The extracted output path</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">with</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">as</span> <span class="n">tar</span><span class="p">:</span>
         <span class="n">tar</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">output</span><span class="p">)</span>
 
@@ -5372,8 +5372,8 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">prepare_output</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">default</span><span class="p">,</span> <span class="n">isdir</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.download.prepare_output"><a href="../../../../api/isofit/data/download/#isofit.data.download.prepare_output" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Prepares the output path by ensuring the parents exist and itself doesn&#39;t presently exist.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Prepares the output path by ensuring the parents exist and itself doesn't presently exist.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -5385,23 +5385,23 @@
 <span class="sd">        This is supposed to be a directory</span>
 <span class="sd">    overwrite : bool, default=False</span>
 <span class="sd">        Ignore if the output already exists</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">output</span><span class="p">:</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">default</span>
 
     <span class="n">output</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Output as: </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Output as: </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="s2">&quot;Overwrite Enabled: Removing current output directory to prepare for a new download&quot;</span>
+                <span class="s2">"Overwrite Enabled: Removing current output directory to prepare for a new download"</span>
             <span class="p">)</span>
             <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Path already exists, please remove it or set the overwrite flag if you would like to redownload&quot;</span>
+                <span class="sa">f</span><span class="s2">"Path already exists, please remove it or set the overwrite flag if you would like to redownload"</span>
             <span class="p">)</span>
             <span class="k">return</span>
 
@@ -5411,23 +5411,23 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">output</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to create output directory: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to create output directory: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span>
 
     <span class="k">return</span> <span class="n">output</span>
 
 
-<span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;download&quot;</span><span class="p">,</span> <span class="n">invoke_without_command</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">"download"</span><span class="p">,</span> <span class="n">invoke_without_command</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.data.download.cli"><a href="../../../../api/isofit/data/download/#isofit.data.download.cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Download extra ISOFIT files that do not come with the default installation</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">pass</span>
 
 
-<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;paths&quot;</span><span class="p">)</span>
+<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"paths"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">preview_paths</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.data.download.preview_paths"><a href="../../../../api/isofit/data/download/#isofit.data.download.preview_paths" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Preview download path locations. Paths can be changed from the default by using the overrides on the `isofit` command. See more via `isofit --help`</span>
 
 <span class="sd">    \b</span>
@@ -5443,14 +5443,14 @@
 <span class="sd">        Download paths will default to:</span>
 <span class="sd">        - data = /path/to/data</span>
 <span class="sd">        - examples = /different/path/examples</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Download paths will default to:&quot;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">env</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="s2">&quot;dirs&quot;</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Download paths will default to:"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">env</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="s2">"dirs"</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <div class="mkapi-source-link" id="isofit.data.download.isUpToDateGithub"><a href="../../../../api/isofit/data/download/#isofit.data.download.isUpToDateGithub" title="Go to docs">[docs]</a></div>
 <span class="k">def</span><span class="w"> </span><span class="nf">isUpToDateGithub</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks the installed version against the latest release on Github</span>
 
 <span class="sd">    Parameters</span>
@@ -5479,37 +5479,37 @@
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    The Github workflows watch for the string &quot;[x]&quot; to determine if the cache needs to</span>
+<span class="sd">    The Github workflows watch for the string "[x]" to determine if the cache needs to</span>
 <span class="sd">    update the data of this module. If your module does not include this string, the</span>
 <span class="sd">    workflows will never detect updates.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Checking for updates for examples on path: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Checking for updates for examples on path: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="n">file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;version.txt&quot;</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"version.txt"</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="n">error</span><span class="p">(</span>
-            <span class="s2">&quot;[x] Failed to find a version.txt file under the given path. Version is unknown&quot;</span>
+            <span class="s2">"[x] Failed to find a version.txt file under the given path. Version is unknown"</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="n">metadata</span> <span class="o">=</span> <span class="n">release_metadata</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="s2">&quot;latest&quot;</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">release_metadata</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="s2">"latest"</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">current</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="n">current</span> <span class="o">!=</span> <span class="p">(</span><span class="n">latest</span> <span class="o">:=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;tag_name&quot;</span><span class="p">]):</span>
-        <span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[x] Latest is </span><span class="si">{</span><span class="n">latest</span><span class="si">}</span><span class="s2">, currently installed is </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">current</span> <span class="o">!=</span> <span class="p">(</span><span class="n">latest</span> <span class="o">:=</span> <span class="n">metadata</span><span class="p">[</span><span class="s2">"tag_name"</span><span class="p">]):</span>
+        <span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[x] Latest is </span><span class="si">{</span><span class="n">latest</span><span class="si">}</span><span class="s2">, currently installed is </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[OK] Path is up to date, current version is: </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[OK] Path is up to date, current version is: </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="kc">True</span>
 
 <div class="mkapi-source-link" id="isofit.data.download.pullFromRepo"><a href="../../../../api/isofit/data/download/#isofit.data.download.pullFromRepo" title="Go to docs">[docs]</a></div>
 <span class="k">def</span><span class="w"> </span><span class="nf">pullFromRepo</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Pulls a release zipfile from a Github repository</span>
 
 <span class="sd">    Parameters</span>
@@ -5523,7 +5523,7 @@
 <span class="sd">    output : pathlib.Path</span>
 <span class="sd">        Output path to write to</span>
 <span class="sd">    version : bool, default=True</span>
-<span class="sd">        Write the tag&#39;s name in a version.txt file</span>
+<span class="sd">        Write the tag's name in a version.txt file</span>
 <span class="sd">    overwrite : bool, default=False</span>
 <span class="sd">        Ignore if the output already exists</span>
 
@@ -5531,17 +5531,17 @@
 <span class="sd">    -------</span>
 <span class="sd">    avail : pathlib.Path</span>
 <span class="sd">        Available path</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">metadata</span> <span class="o">=</span> <span class="n">release_metadata</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pulling release </span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;tag_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">zipfile</span> <span class="o">=</span> <span class="n">download_file</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;zipball_url&quot;</span><span class="p">],</span> <span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">.zip&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Pulling release </span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">'tag_name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">zipfile</span> <span class="o">=</span> <span class="n">download_file</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"zipball_url"</span><span class="p">],</span> <span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">.zip"</span><span class="p">)</span>
 
     <span class="n">avail</span> <span class="o">=</span> <span class="n">unzip</span><span class="p">(</span><span class="n">zipfile</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">rename</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">version</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output</span> <span class="o">/</span> <span class="s2">&quot;version.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;tag_name&quot;</span><span class="p">])</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output</span> <span class="o">/</span> <span class="s2">"version.txt"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"tag_name"</span><span class="p">])</span>
 
     <span class="k">return</span> <span class="n">avail</span>
 </code></pre></div></td></tr></table></div>

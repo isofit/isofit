@@ -5380,14 +5380,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5425,10 +5425,10 @@
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Instrument</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_config</span><span class="p">:</span> <span class="n">Config</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;A model of the spectrometer instrument, including spectral</span>
+<span class="w">        </span><span class="sd">"""A model of the spectrometer instrument, including spectral</span>
 <span class="sd">        response and noise covariance matrices. Noise is typically calculated</span>
 <span class="sd">        from a parametric model, fit for the specific instrument.  It is a</span>
-<span class="sd">        function of the radiance level.&quot;&quot;&quot;</span>
+<span class="sd">        function of the radiance level."""</span>
 
         <span class="n">config</span> <span class="o">=</span> <span class="n">full_config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">instrument</span>
 
@@ -5457,7 +5457,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">eof</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">eof_path</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eof_idx</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">)):</span>
-                <span class="k">if</span> <span class="s2">&quot;EOF&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">"EOF"</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">eof_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eof</span> <span class="o">=</span> <span class="kc">None</span>
@@ -5472,71 +5472,71 @@
 
             <span class="c1"># Check validity of linearity file for dn-based noise</span>
             <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="s2">&quot;input_dn&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;dn_ratio&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;rcc&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;rcc_wl&quot;</span><span class="p">,</span>
+                <span class="s2">"input_dn"</span><span class="p">,</span>
+                <span class="s2">"dn_ratio"</span><span class="p">,</span>
+                <span class="s2">"rcc"</span><span class="p">,</span>
+                <span class="s2">"rcc_wl"</span><span class="p">,</span>
             <span class="p">]</span>
             <span class="n">bad</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="mi">1</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">dn_uncertainty_mat</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span> <span class="k">else</span> <span class="mi">0</span>
                 <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span>
             <span class="p">]</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">bad</span><span class="p">):</span>
-                <span class="n">er</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+                <span class="n">er</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
 <span class="s2">                    Invalid value found in dn_uncertainty_mat keys: </span><span class="si">{</span><span class="p">[</span><span class="n">keys</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">bad</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">.</span>
 <span class="s2">                    Check file at: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">dn_uncertainty_file</span><span class="si">}</span>
-<span class="s2">                &quot;&quot;&quot;</span>
+<span class="s2">                """</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">er</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">er</span><span class="p">)</span>
 
-            <span class="n">input_dn</span> <span class="o">=</span> <span class="n">dn_uncertainty_mat</span><span class="p">[</span><span class="s2">&quot;input_dn&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
-            <span class="n">dn_ratio</span> <span class="o">=</span> <span class="n">dn_uncertainty_mat</span><span class="p">[</span><span class="s2">&quot;dn_ratio&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
-            <span class="n">rcc_in</span> <span class="o">=</span> <span class="n">dn_uncertainty_mat</span><span class="p">[</span><span class="s2">&quot;rcc&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
-            <span class="n">rcc_wl</span> <span class="o">=</span> <span class="n">dn_uncertainty_mat</span><span class="p">[</span><span class="s2">&quot;rcc_wl&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="n">input_dn</span> <span class="o">=</span> <span class="n">dn_uncertainty_mat</span><span class="p">[</span><span class="s2">"input_dn"</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="n">dn_ratio</span> <span class="o">=</span> <span class="n">dn_uncertainty_mat</span><span class="p">[</span><span class="s2">"dn_ratio"</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="n">rcc_in</span> <span class="o">=</span> <span class="n">dn_uncertainty_mat</span><span class="p">[</span><span class="s2">"rcc"</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="n">rcc_wl</span> <span class="o">=</span> <span class="n">dn_uncertainty_mat</span><span class="p">[</span><span class="s2">"rcc_wl"</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
 
-            <span class="n">rcc_interp</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">rcc_wl</span><span class="p">,</span> <span class="n">rcc_in</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span><span class="p">)</span>
+            <span class="n">rcc_interp</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">rcc_wl</span><span class="p">,</span> <span class="n">rcc_in</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">"extrapolate"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dn_uncertainty_rcc</span> <span class="o">=</span> <span class="n">rcc_interp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl_init</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dn_uncertainty_interp</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span>
-                <span class="n">input_dn</span><span class="p">,</span> <span class="n">dn_ratio</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span>
+                <span class="n">input_dn</span><span class="p">,</span> <span class="n">dn_ratio</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">"extrapolate"</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dn_uncertainty_inflation</span> <span class="o">=</span> <span class="n">dn_uncertainty_mat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s2">&quot;inflation&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span>
+                <span class="s2">"inflation"</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span>
             <span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dn_uncertainty_embedding</span> <span class="o">=</span> <span class="n">dn_uncertainty_mat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s2">&quot;embedding_location&quot;</span><span class="p">,</span> <span class="s2">&quot;Sy&quot;</span>
+                <span class="s2">"embedding_location"</span><span class="p">,</span> <span class="s2">"Sy"</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">SNR</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="s2">&quot;SNR&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="s2">"SNR"</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">snr</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">SNR</span>
 
         <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">parametric_noise_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="s2">&quot;parametric&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="s2">"parametric"</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">parametric_noise_file</span>
 
-            <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
+            <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">" "</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="s2">"#"</span><span class="p">)</span>
             <span class="n">p_a</span><span class="p">,</span> <span class="n">p_b</span><span class="p">,</span> <span class="n">p_c</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">interp1d</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">coeffs</span><span class="p">[:,</span> <span class="n">col</span><span class="p">],</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span><span class="p">)</span>
+                <span class="n">interp1d</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">coeffs</span><span class="p">[:,</span> <span class="n">col</span><span class="p">],</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">"extrapolate"</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
             <span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">p_a</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">p_b</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">p_c</span><span class="p">(</span><span class="n">w</span><span class="p">)]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_init</span><span class="p">])</span>
 
         <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">pushbroom_noise_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="s2">&quot;pushbroom&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="s2">"pushbroom"</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">pushbroom_noise_file</span>
             <span class="n">D</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">ncols</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="s2">&quot;columns&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">D</span><span class="p">[</span><span class="s2">&quot;bands&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]):</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Noise model mismatches wavelength # bands&quot;</span><span class="p">)</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Noise model mismatches wavelength # bands&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ncols</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="s2">"columns"</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">D</span><span class="p">[</span><span class="s2">"bands"</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Noise model mismatches wavelength # bands"</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Noise model mismatches wavelength # bands"</span><span class="p">)</span>
             <span class="n">cshape</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ncols</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">covs</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="s2">&quot;covariances&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">cshape</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">covs</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="s2">"covariances"</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">cshape</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">integrations</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">integrations</span>
 
         <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">nedt_noise_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="s2">&quot;NEDT&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="s2">"NEDT"</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">nedt_noise_file</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_file</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">","</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
             <span class="n">noise_data_w_nm</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">micron_to_nm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
             <span class="n">noise_data_NEDT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
             <span class="n">nedt</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">noise_data_w_nm</span><span class="p">,</span> <span class="n">noise_data_NEDT</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl_init</span><span class="p">)</span>
@@ -5546,7 +5546,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">noise_NESR</span> <span class="o">=</span> <span class="n">nedt</span> <span class="o">*</span> <span class="n">drdn_dT</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Please define the instrument noise.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">"Please define the instrument noise."</span><span class="p">)</span>
         <span class="c1"># This should never be reached, as an error is designated in the config read</span>
 
         <span class="c1"># We track several unretrieved free variables, that are specified</span>
@@ -5554,21 +5554,21 @@
         <span class="c1"># calibration)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">unknowns</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bvec</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Cal_Relative_</span><span class="si">%04i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_init</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bvec</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Cal_Relative_</span><span class="si">%04i</span><span class="s2">"</span> <span class="o">%</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_init</span><span class="p">]</span>
 
         <span class="c1"># self.unknowns should always exist via configs</span>
         <span class="c1"># but may not exist for manual configs</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="p">:</span>
             <span class="c1"># Now handle spectral calibration uncertainties</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">wavelength_calibration_uncertainty</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">bvec</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;Cal_Spectral&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bvec</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">"Cal_Spectral"</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cal_spectral_idx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bval</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">bval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
                     <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bval</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">wavelength_calibration_uncertainty</span><span class="p">]</span>
                 <span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">stray_srf_uncertainty</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">bvec</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;Cal_Stray_SRF&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bvec</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">"Cal_Stray_SRF"</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cal_stray_idx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bval</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">bval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">bval</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">stray_srf_uncertainty</span><span class="p">])</span>
 
@@ -5585,19 +5585,19 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">calibration_fixed</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument.xa"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.xa" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mean of prior distribution, calculated at state x.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Mean of prior distribution, calculated at state x."""</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">Sa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument.Sa"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.Sa" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Covariance of prior distribution (diagonal).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Covariance of prior distribution (diagonal)."""</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_state</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Sa_cached</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">Sb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meas</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument.Sb"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.Sb" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Uncertainty due to unmodeled variables.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Uncertainty due to unmodeled variables."""</span>
         <span class="n">bval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bval</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="c1"># First we take care of radiometric uncertainties, which add</span>
         <span class="c1"># in quadrature.  We sum their squared values.  Systematic</span>
@@ -5607,7 +5607,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty_file</span>
-                <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
+                <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="s2">"#"</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="n">u</span> <span class="o">=</span> <span class="n">u</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
                 <span class="n">bval</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span><span class="p">]</span> <span class="o">=</span> <span class="n">bval</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span><span class="p">]</span> <span class="o">+</span> <span class="nb">pow</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -5621,7 +5621,7 @@
                 <span class="p">)</span>
 
             <span class="c1"># Uncertainty due to imperfect knowledge of linearity correction</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dn_uncertainty_embedding</span> <span class="o">==</span> <span class="s2">&quot;Sb&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dn_uncertainty_embedding</span> <span class="o">==</span> <span class="s2">"Sb"</span><span class="p">:</span>
                 <span class="n">bval</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">DN_additive_uncertainty</span><span class="p">(</span>
                         <span class="n">meas</span><span class="p">,</span>
@@ -5641,33 +5641,33 @@
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">diagflat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">bval</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">Sy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meas</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument.Sy"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.Sy" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate measuremment error covariance.  Kelvin Man Yiu Leung and</span>
+<span class="w">        </span><span class="sd">"""Calculate measuremment error covariance.  Kelvin Man Yiu Leung and</span>
 <span class="sd">            Jayanth Jagalur Mohan (MIT) developed the noise clipping strategy.</span>
 
 <span class="sd">        Input: meas, the instrument measurement</span>
 <span class="sd">        Returns: Sy, the measurement error covariance due to instrument noise</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">Sy</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;SNR&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">"SNR"</span><span class="p">:</span>
             <span class="n">nedl</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr</span><span class="p">)</span> <span class="o">*</span> <span class="n">meas</span>
             <span class="n">minimum_noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1e-7</span><span class="p">)</span>
             <span class="n">bad</span> <span class="o">=</span> <span class="n">nedl</span> <span class="o">&lt;</span> <span class="n">minimum_noise</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">bad</span><span class="p">):</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="s2">&quot;SNR noise model found noise &lt;= 0 - adjusting to slightly positive&quot;</span>
-                    <span class="s2">&quot; to avoid /0.&quot;</span>
+                    <span class="s2">"SNR noise model found noise &lt;= 0 - adjusting to slightly positive"</span>
+                    <span class="s2">" to avoid /0."</span>
                 <span class="p">)</span>
             <span class="n">nedl</span><span class="p">[</span><span class="n">bad</span><span class="p">]</span> <span class="o">=</span> <span class="n">minimum_noise</span>
             <span class="n">Sy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diagflat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">nedl</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;parametric&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">"parametric"</span><span class="p">:</span>
             <span class="n">noise_plus_meas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">meas</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">noise_plus_meas</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
                 <span class="n">noise_plus_meas</span><span class="p">[</span><span class="n">noise_plus_meas</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e-5</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="s2">&quot;Parametric noise model found noise &lt;= 0 - adjusting to slightly&quot;</span>
-                    <span class="s2">&quot; positive to avoid /0.&quot;</span>
+                    <span class="s2">"Parametric noise model found noise &lt;= 0 - adjusting to slightly"</span>
+                    <span class="s2">" positive to avoid /0."</span>
                 <span class="p">)</span>
             <span class="n">nedl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">noise</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">noise_plus_meas</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
@@ -5675,11 +5675,11 @@
             <span class="n">nedl</span> <span class="o">=</span> <span class="n">nedl</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">integrations</span><span class="p">)</span>
             <span class="n">Sy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diagflat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">nedl</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;pushbroom&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">"pushbroom"</span><span class="p">:</span>
             <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">covs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
             <span class="n">Sy</span> <span class="o">=</span> <span class="n">C</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">integrations</span><span class="p">)</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;NEDT&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">"NEDT"</span><span class="p">:</span>
             <span class="n">Sy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diagflat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_NESR</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dn_uncertainty_embedding</span><span class="p">:</span>
@@ -5700,8 +5700,8 @@
         <span class="k">return</span> <span class="n">Sy</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">dmeas_dinstrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_instrument</span><span class="p">,</span> <span class="n">wl_hi</span><span class="p">,</span> <span class="n">rdn_hi</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument.dmeas_dinstrument"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.dmeas_dinstrument" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Jacobian of measurement with respect to the instrument</span>
-<span class="sd">        free parameter state vector. We use finite differences for now.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Jacobian of measurement with respect to the instrument</span>
+<span class="sd">        free parameter state vector. We use finite differences for now."""</span>
 
         <span class="n">dmeas_dinstrument</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_state</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_state</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -5720,13 +5720,13 @@
         <span class="k">return</span> <span class="n">dmeas_dinstrument</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">dmeas_dinstrumentb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_instrument</span><span class="p">,</span> <span class="n">wl_hi</span><span class="p">,</span> <span class="n">rdn_hi</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument.dmeas_dinstrumentb"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.dmeas_dinstrumentb" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Jacobian of radiance with respect to the instrument parameters</span>
+<span class="w">        </span><span class="sd">"""Jacobian of radiance with respect to the instrument parameters</span>
 <span class="sd">        that are unknown and not retrieved, i.e., the inevitable persisting</span>
 <span class="sd">        uncertainties in instrument spectral and radiometric calibration.</span>
 
 <span class="sd">        Input: meas, a vector of size n_chan</span>
 <span class="sd">        Returns: Kb_instrument, a matrix of size [n_measurements x nb_instrument]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Uncertainty due to radiometric calibration</span>
         <span class="n">meas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">,</span> <span class="n">wl_hi</span><span class="p">,</span> <span class="n">rdn_hi</span><span class="p">)</span>
@@ -5747,7 +5747,7 @@
             <span class="c1"># Uncertainty due to spectral stray light</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">stray_srf_uncertainty</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">ssrf</span> <span class="o">=</span> <span class="n">spectral_response_function</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-                <span class="n">blur</span> <span class="o">=</span> <span class="n">convolve</span><span class="p">(</span><span class="n">meas</span><span class="p">,</span> <span class="n">ssrf</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">)</span>
+                <span class="n">blur</span> <span class="o">=</span> <span class="n">convolve</span><span class="p">(</span><span class="n">meas</span><span class="p">,</span> <span class="n">ssrf</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"same"</span><span class="p">)</span>
                 <span class="n">dmeas_dinstrument</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cal_stray_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">blur</span> <span class="o">-</span> <span class="n">meas</span>
 
         <span class="k">return</span> <span class="n">dmeas_dinstrument</span>
@@ -5760,7 +5760,7 @@
         <span class="k">return</span> <span class="n">offset</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_instrument</span><span class="p">,</span> <span class="n">wl_hi</span><span class="p">,</span> <span class="n">rdn_hi</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument.sample"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.sample" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply instrument sampling to a radiance spectrum, returning predicted measurement.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Apply instrument sampling to a radiance spectrum, returning predicted measurement."""</span>
 
         <span class="k">if</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">calibration_fixed</span>
@@ -5783,12 +5783,12 @@
         <span class="c1"># If rdn_hi is a multidim array, do the multidim resampling</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">resamp</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="c1"># The &quot;fast resample&quot; option approximates a complete resampling</span>
+            <span class="c1"># The "fast resample" option approximates a complete resampling</span>
             <span class="c1"># by a convolution with a uniform FWHM.</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fast_resample</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rdn_hi</span><span class="p">):</span>
                     <span class="n">ssrf</span> <span class="o">=</span> <span class="n">spectral_response_function</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                    <span class="n">blur</span> <span class="o">=</span> <span class="n">convolve</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">ssrf</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">)</span>
+                    <span class="n">blur</span> <span class="o">=</span> <span class="n">convolve</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">ssrf</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"same"</span><span class="p">)</span>
                     <span class="n">resamp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interp1d</span><span class="p">(</span><span class="n">wl_hi</span><span class="p">,</span> <span class="n">blur</span><span class="p">)(</span><span class="n">wl</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rdn_hi</span><span class="p">):</span>
@@ -5797,9 +5797,9 @@
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">resamp</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">simulate_measurement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meas</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument.simulate_measurement"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.simulate_measurement" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Simulate a measurement by the given sensor, for a true radiance</span>
+<span class="w">        </span><span class="sd">"""Simulate a measurement by the given sensor, for a true radiance</span>
 <span class="sd">        sampled to instrument wavelengths. This basically just means</span>
-<span class="sd">        drawing a sample from the noise distribution.&quot;&quot;&quot;</span>
+<span class="sd">        drawing a sample from the noise distribution."""</span>
 
         <span class="n">Sy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Sy</span><span class="p">(</span><span class="n">meas</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
         <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">meas</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
@@ -5807,41 +5807,41 @@
         <span class="k">return</span> <span class="n">rdn_sim</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calibration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_instrument</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument.calibration"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.calibration" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the measured wavelengths.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Calculate the measured wavelengths."""</span>
 
         <span class="n">wl</span><span class="p">,</span> <span class="n">fwhm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_init</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm_init</span>
         <span class="n">space_orig</span> <span class="o">=</span> <span class="n">wl</span> <span class="o">-</span> <span class="n">wl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">offset</span> <span class="o">=</span> <span class="n">wl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="s2">&quot;GROW_FWHM&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">:</span>
-            <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;GROW_FWHM&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"GROW_FWHM"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">:</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"GROW_FWHM"</span><span class="p">)</span>
             <span class="n">fwhm</span> <span class="o">=</span> <span class="n">fwhm</span> <span class="o">+</span> <span class="n">x_instrument</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="nb">any</span><span class="p">([</span><span class="n">v</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;FWHMSPL&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">]):</span>
+        <span class="k">elif</span> <span class="nb">any</span><span class="p">([</span><span class="n">v</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"FWHMSPL"</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">]):</span>
             <span class="c1"># cubic spline perturbation</span>
             <span class="n">channels</span><span class="p">,</span> <span class="n">vals</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;FWHMSPL&quot;</span><span class="p">):</span>
-                    <span class="n">chan</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"FWHMSPL"</span><span class="p">):</span>
+                    <span class="n">chan</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
                     <span class="n">channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chan</span><span class="p">)</span>
                     <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
             <span class="n">sp</span> <span class="o">=</span> <span class="n">splrep</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">xnew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">wl</span><span class="p">))</span>
             <span class="n">fwhm</span> <span class="o">=</span> <span class="n">fwhm</span> <span class="o">+</span> <span class="n">splev</span><span class="p">(</span><span class="n">xnew</span><span class="p">,</span> <span class="n">sp</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="s2">&quot;WL_SPACE&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">:</span>
-            <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;WL_SPACE&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"WL_SPACE"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">:</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"WL_SPACE"</span><span class="p">)</span>
             <span class="n">space</span> <span class="o">=</span> <span class="n">x_instrument</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">space</span> <span class="o">=</span> <span class="mf">1.0</span>
 
-        <span class="k">if</span> <span class="s2">&quot;WL_SHIFT&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">:</span>
-            <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;WL_SHIFT&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"WL_SHIFT"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">:</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"WL_SHIFT"</span><span class="p">)</span>
             <span class="n">shift</span> <span class="o">=</span> <span class="n">x_instrument</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="nb">any</span><span class="p">([</span><span class="n">v</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;WLSPL&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">]):</span>
+        <span class="k">elif</span> <span class="nb">any</span><span class="p">([</span><span class="n">v</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"WLSPL"</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">]):</span>
             <span class="c1"># cubic spline perturbation</span>
             <span class="n">channels</span><span class="p">,</span> <span class="n">vals</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;WLSPL&quot;</span><span class="p">):</span>
-                    <span class="n">chan</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"WLSPL"</span><span class="p">):</span>
+                    <span class="n">chan</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
                     <span class="n">channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chan</span><span class="p">)</span>
                     <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
             <span class="n">sp</span> <span class="o">=</span> <span class="n">splrep</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -5861,11 +5861,11 @@
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">meas</span> <span class="o">*</span> <span class="p">(</span><span class="n">noise_est</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">inflation</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_instrument</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument.summarize"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.summarize" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Summary of state vector.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Summary of state vector."""</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">return</span> <span class="s2">&quot;Instrument: &quot;</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;</span><span class="si">%5.3f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">xi</span> <span class="k">for</span> <span class="n">xi</span> <span class="ow">in</span> <span class="n">x_instrument</span><span class="p">])</span>
+            <span class="k">return</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="s2">"Instrument: "</span> <span class="o">+</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">"</span><span class="si">%5.3f</span><span class="s2">"</span> <span class="o">%</span> <span class="n">xi</span> <span class="k">for</span> <span class="n">xi</span> <span class="ow">in</span> <span class="n">x_instrument</span><span class="p">])</span>
 </code></pre></div></td></tr></table></div>
 
 

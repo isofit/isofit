@@ -4836,69 +4836,69 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="n">emulator</span><span class="p">,</span> <span class="n">sixs</span><span class="p">,</span> <span class="n">resample</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.convert_6s_to_srtmnet.predict"><a href="../../../../api/isofit/utils/convert_6s_to_srtmnet/#isofit.utils.convert_6s_to_srtmnet.predict" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""" """</span>
 
     <span class="c1"># Delay expensive import</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">keras</span>
 
-    <span class="n">data</span> <span class="o">=</span> <span class="n">sixs</span><span class="o">.</span><span class="n">to_array</span><span class="p">(</span><span class="s2">&quot;quantity&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">stack</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;quantity&quot;</span><span class="p">,</span> <span class="s2">&quot;wl&quot;</span><span class="p">])</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">sixs</span><span class="o">.</span><span class="n">to_array</span><span class="p">(</span><span class="s2">"quantity"</span><span class="p">)</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">stack</span><span class="o">=</span><span class="p">[</span><span class="s2">"quantity"</span><span class="p">,</span> <span class="s2">"wl"</span><span class="p">])</span>
 
     <span class="c1"># Now predict, scale, and add the interpolations</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading and predicting with emulator&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Loading and predicting with emulator"</span><span class="p">)</span>
     <span class="n">emulator</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">emulator</span><span class="p">)</span>
     <span class="n">predicts</span> <span class="o">=</span> <span class="n">da</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">emulator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
     <span class="n">predicts</span> <span class="o">/=</span> <span class="n">scaler</span>
     <span class="n">predicts</span> <span class="o">+=</span> <span class="n">resample</span>
 
     <span class="c1"># Unstack back to a dataset and save</span>
-    <span class="n">predicts</span> <span class="o">=</span> <span class="n">predicts</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="s2">&quot;stack&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="s2">&quot;quantity&quot;</span><span class="p">)</span>
+    <span class="n">predicts</span> <span class="o">=</span> <span class="n">predicts</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="s2">"stack"</span><span class="p">)</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="s2">"quantity"</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving predicts to: </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saving predicts to: </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">predicts</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
 
 
-<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;6S_to_sRTMnet&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;sixs&quot;</span><span class="p">)</span>  <span class="c1"># , help=&quot;6S input LUT netCDF&quot;)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;emulator&quot;</span><span class="p">)</span>  <span class="c1"># , help=&quot;Path to sRTMnet emulator&quot;)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;-a&quot;</span><span class="p">,</span> <span class="s2">&quot;--aux&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Emulator aux file&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"6S_to_sRTMnet"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"sixs"</span><span class="p">)</span>  <span class="c1"># , help="6S input LUT netCDF")</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"emulator"</span><span class="p">)</span>  <span class="c1"># , help="Path to sRTMnet emulator")</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"-a"</span><span class="p">,</span> <span class="s2">"--aux"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Emulator aux file"</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-o&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;--output&quot;</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output resampled 6S to sRTMnet&quot;</span><span class="p">,</span>
-    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;sRTMnet.resample.nc&quot;</span><span class="p">,</span>
+    <span class="s2">"-o"</span><span class="p">,</span>
+    <span class="s2">"--output"</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Output resampled 6S to sRTMnet"</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">"sRTMnet.resample.nc"</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="s2">&quot;--predicts&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output sRTMnet predicts&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;sRTMnet.predicts.nc&quot;</span>
+    <span class="s2">"-p"</span><span class="p">,</span> <span class="s2">"--predicts"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Output sRTMnet predicts"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"sRTMnet.predicts.nc"</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="n">sixs</span><span class="p">,</span> <span class="n">emulator</span><span class="p">,</span> <span class="n">aux</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">predicts</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.convert_6s_to_srtmnet.cli"><a href="../../../../api/isofit/utils/convert_6s_to_srtmnet/#isofit.utils.convert_6s_to_srtmnet.cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Converts 6S LUT outputs to sRTMnet input</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading emulator auxiliary file&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Loading emulator auxiliary file"</span><span class="p">)</span>
     <span class="n">aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">aux</span><span class="p">)</span>
-    <span class="n">scaler</span> <span class="o">=</span> <span class="n">aux</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;response_scaler&quot;</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">)</span>
+    <span class="n">scaler</span> <span class="o">=</span> <span class="n">aux</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"response_scaler"</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">)</span>
 
-    <span class="c1"># Lazy load so it&#39;s not in memory</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Lazy loading 6S LUT&quot;</span><span class="p">)</span>
+    <span class="c1"># Lazy load so it's not in memory</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Lazy loading 6S LUT"</span><span class="p">)</span>
     <span class="n">sixs</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_mfdataset</span><span class="p">([</span><span class="n">sixs</span><span class="p">])</span>
 
     <span class="c1"># Select only the rt quantities of interest</span>
-    <span class="n">sixs</span> <span class="o">=</span> <span class="n">sixs</span><span class="p">[</span><span class="n">aux</span><span class="p">[</span><span class="s2">&quot;rt_quantities&quot;</span><span class="p">]]</span>
+    <span class="n">sixs</span> <span class="o">=</span> <span class="n">sixs</span><span class="p">[</span><span class="n">aux</span><span class="p">[</span><span class="s2">"rt_quantities"</span><span class="p">]]</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Interpolating from 6S wavelengths to emulator&#39;s&quot;</span><span class="p">)</span>
-    <span class="n">resample</span> <span class="o">=</span> <span class="n">sixs</span><span class="o">.</span><span class="n">interp</span><span class="p">({</span><span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="n">aux</span><span class="p">[</span><span class="s2">&quot;emulator_wavelengths&quot;</span><span class="p">]})</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Interpolating from 6S wavelengths to emulator's"</span><span class="p">)</span>
+    <span class="n">resample</span> <span class="o">=</span> <span class="n">sixs</span><span class="o">.</span><span class="n">interp</span><span class="p">({</span><span class="s2">"wl"</span><span class="p">:</span> <span class="n">aux</span><span class="p">[</span><span class="s2">"emulator_wavelengths"</span><span class="p">]})</span>
 
     <span class="c1"># Perform Dask operations</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving resample to: </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saving resample to: </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">resample</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
 
     <span class="c1"># Stack the quantities together along a new dimension named `quantity`</span>
-    <span class="n">resample</span> <span class="o">=</span> <span class="n">resample</span><span class="o">.</span><span class="n">to_array</span><span class="p">(</span><span class="s2">&quot;quantity&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">stack</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;quantity&quot;</span><span class="p">,</span> <span class="s2">&quot;wl&quot;</span><span class="p">])</span>
+    <span class="n">resample</span> <span class="o">=</span> <span class="n">resample</span><span class="o">.</span><span class="n">to_array</span><span class="p">(</span><span class="s2">"quantity"</span><span class="p">)</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">stack</span><span class="o">=</span><span class="p">[</span><span class="s2">"quantity"</span><span class="p">,</span> <span class="s2">"wl"</span><span class="p">])</span>
 
     <span class="c1"># Predict on the input data</span>
     <span class="n">predict</span><span class="p">(</span><span class="n">emulator</span><span class="p">,</span> <span class="n">sixs</span><span class="p">,</span> <span class="n">resample</span><span class="p">,</span> <span class="n">scaler</span><span class="p">,</span> <span class="n">predicts</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Done"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

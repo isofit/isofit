@@ -5026,9 +5026,9 @@
 <span class="normal">225</span>
 <span class="normal">226</span>
 <span class="normal">227</span>
-<span class="normal">228</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">228</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">NetCDF implementation for LUTs</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -5047,7 +5047,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">cleanup</span><span class="p">(</span><span class="n">path</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.stores.netcdf.cleanup"><a href="../../../../../api/isofit/luts/stores/netcdf/#isofit.luts.stores.netcdf.cleanup" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks the ``ISOFIT status`` attribute on a LUT and removes the file if it is</span>
 <span class="sd">    incomplete.</span>
 
@@ -5055,18 +5055,18 @@
 <span class="sd">    ----------</span>
 <span class="sd">    file : str</span>
 <span class="sd">        Path to the file to check</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">state</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;ISOFIT status&quot;</span>
-    <span class="n">bad</span> <span class="o">=</span> <span class="s2">&quot;&lt;incomplete&gt;&quot;</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="s2">"ISOFIT status"</span>
+    <span class="n">bad</span> <span class="o">=</span> <span class="s2">"&lt;incomplete&gt;"</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="n">p</span> <span class="o">:=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">))</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">store</span> <span class="o">=</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="n">store</span> <span class="o">=</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"r"</span><span class="p">)</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">getncattr</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">bad</span><span class="p">:</span>
         <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;The LUT status was determined to be incomplete, auto-removing: </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"The LUT status was determined to be incomplete, auto-removing: </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
 
@@ -5075,11 +5075,11 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="n">args</span><span class="p">,</span>
-        <span class="n">compression</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;zlib&quot;</span><span class="p">,</span>
+        <span class="n">compression</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"zlib"</span><span class="p">,</span>
         <span class="n">complevel</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Prepare a NetCDF LUT file</span>
 
 <span class="sd">        Parameters</span>
@@ -5091,7 +5091,7 @@
 <span class="sd">        grid : dict</span>
 <span class="sd">            The LUT grid, formatted as {str: Iterable}.</span>
 <span class="sd">        attrs: dict, defaults={}</span>
-<span class="sd">            Dict of dataset attributes, ie. {&quot;RT_mode&quot;: &quot;transm&quot;}</span>
+<span class="sd">            Dict of dataset attributes, ie. {"RT_mode": "transm"}</span>
 <span class="sd">        consts : dict, optional, default={}</span>
 <span class="sd">            Dictionary of constant values. Appends/replaces current Create.consts list.</span>
 <span class="sd">        onedim : dict, optional, default={}</span>
@@ -5100,12 +5100,12 @@
 <span class="sd">            Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.</span>
 <span class="sd">        zeros : List[str], optional, default=[]</span>
 <span class="sd">            List of zero values. Appends to the current Create.zeros list.</span>
-<span class="sd">        compression : str, default=&quot;zlib&quot;</span>
+<span class="sd">        compression : str, default="zlib"</span>
 <span class="sd">            Compression method to use to the NetCDF. Check https://unidata.github.io/netcdf4-python/</span>
 <span class="sd">            for available options. Currently, must use h5py &lt;= 3.14.0</span>
 <span class="sd">        complevel : int, default=None</span>
 <span class="sd">            Compression to use. Impact and levels vary per method.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="n">compression</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">complevel</span> <span class="o">=</span> <span class="n">complevel</span>
 
@@ -5114,7 +5114,7 @@
         <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">cleanup</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Retrieves a value from the NetCDF store</span>
 
 <span class="sd">        Parameters</span>
@@ -5126,14 +5126,14 @@
 <span class="sd">        -------</span>
 <span class="sd">        Any</span>
 <span class="sd">            The value of the item retrieved from the NetCDF store</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">ds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
         <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">cleanup</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Sets a variable in the NetCDF store</span>
 
 <span class="sd">        Parameters</span>
@@ -5142,22 +5142,22 @@
 <span class="sd">            Key to set</span>
 <span class="sd">        value : any</span>
 <span class="sd">            Value to set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
             <span class="n">ds</span><span class="p">[</span><span class="n">key</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.stores.netcdf.CreateNetCDF.initialize"><a href="../../../../../api/isofit/luts/stores/netcdf/#isofit.luts.stores.netcdf.CreateNetCDF.initialize" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes the LUT netCDF by prepopulating it with filler values.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">createVariable</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="p">(),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">chunksizes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">"""</span>
 <span class="sd">            Reusable createVariable for the Dataset object</span>
-<span class="sd">            &quot;&quot;&quot;</span>
+<span class="sd">            """</span>
             <span class="n">var</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span>
                 <span class="n">varname</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
-                <span class="n">datatype</span><span class="o">=</span><span class="s2">&quot;f8&quot;</span><span class="p">,</span>
+                <span class="n">datatype</span><span class="o">=</span><span class="s2">"f8"</span><span class="p">,</span>
                 <span class="n">dimensions</span><span class="o">=</span><span class="n">dims</span><span class="p">,</span>
                 <span class="n">fill_value</span><span class="o">=</span><span class="n">fill_value</span><span class="p">,</span>
                 <span class="n">chunksizes</span><span class="o">=</span><span class="n">chunksizes</span><span class="p">,</span>
@@ -5166,10 +5166,10 @@
             <span class="p">)</span>
             <span class="n">var</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vals</span>
 
-        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;NETCDF4&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"NETCDF4"</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
             <span class="c1"># Dimensions</span>
-            <span class="n">ds</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="s2">&quot;wl&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">))</span>
-            <span class="n">createVariable</span><span class="p">(</span><span class="s2">&quot;wl&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;wl&quot;</span><span class="p">,))</span>
+            <span class="n">ds</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="s2">"wl"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">))</span>
+            <span class="n">createVariable</span><span class="p">(</span><span class="s2">"wl"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="p">(</span><span class="s2">"wl"</span><span class="p">,))</span>
 
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">ds</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">))</span>
@@ -5181,7 +5181,7 @@
                 <span class="n">createVariable</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">dims</span><span class="p">)</span>
 
             <span class="c1"># One dimensional arrays</span>
-            <span class="n">dims</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;wl&quot;</span><span class="p">,)</span>
+            <span class="n">dims</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"wl"</span><span class="p">,)</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">onedim</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">createVariable</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">dims</span><span class="p">)</span>
 
@@ -5198,16 +5198,16 @@
         <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_flush</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Flushes the (point, data) pairs held in the hold list to the LUT netCDF</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        unknowns : set</span>
 <span class="sd">            Set of unknown keys</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">unknowns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">point</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hold</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">:</span>
@@ -5224,7 +5224,7 @@
         <span class="k">return</span> <span class="n">unknowns</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">getAttr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.stores.netcdf.CreateNetCDF.getAttr"><a href="../../../../../api/isofit/luts/stores/netcdf/#isofit.luts.stores.netcdf.CreateNetCDF.getAttr" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Gets an attribute from the netCDF</span>
 
 <span class="sd">        Parameters</span>
@@ -5236,12 +5236,12 @@
 <span class="sd">        -------</span>
 <span class="sd">        any | None</span>
 <span class="sd">            Retrieved attribute from netCDF, if it exists</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">ds</span><span class="o">.</span><span class="n">getncattr</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">setAttr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.stores.netcdf.CreateNetCDF.setAttr"><a href="../../../../../api/isofit/luts/stores/netcdf/#isofit.luts.stores.netcdf.CreateNetCDF.setAttr" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Sets an attribute in the netCDF</span>
 
 <span class="sd">        Parameters</span>
@@ -5250,9 +5250,9 @@
 <span class="sd">            Key to set</span>
 <span class="sd">        value : any</span>
 <span class="sd">            Value to set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
             <span class="n">ds</span><span class="o">.</span><span class="n">setncattr</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

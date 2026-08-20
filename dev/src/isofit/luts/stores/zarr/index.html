@@ -5375,9 +5375,9 @@
 <span class="normal">497</span>
 <span class="normal">498</span>
 <span class="normal">499</span>
-<span class="normal">500</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">500</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Zarr implementation for LUTs</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -5399,9 +5399,9 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">is_ray_task</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.luts.stores.zarr.is_ray_task"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.is_ray_task" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Utility to check if this environment is a ray task</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">ray</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
         <span class="k">return</span> <span class="kc">False</span>
     <span class="k">try</span><span class="p">:</span>
@@ -5412,7 +5412,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">cleanup</span><span class="p">(</span><span class="n">path</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.stores.zarr.cleanup"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.cleanup" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks the ``ISOFIT status`` attribute on a LUT and removes the file if it is</span>
 <span class="sd">    incomplete.</span>
 
@@ -5420,34 +5420,34 @@
 <span class="sd">    ----------</span>
 <span class="sd">    path : str</span>
 <span class="sd">        Path to the store to check</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">state</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;ISOFIT status&quot;</span>
-    <span class="n">bad</span> <span class="o">=</span> <span class="s2">&quot;&lt;incomplete&gt;&quot;</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="s2">"ISOFIT status"</span>
+    <span class="n">bad</span> <span class="o">=</span> <span class="s2">"&lt;incomplete&gt;"</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="n">p</span> <span class="o">:=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">))</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">store</span> <span class="o">=</span> <span class="n">zarr</span><span class="o">.</span><span class="n">open_group</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">zarr_format</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">store</span> <span class="o">=</span> <span class="n">zarr</span><span class="o">.</span><span class="n">open_group</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"r"</span><span class="p">,</span> <span class="n">zarr_format</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">bad</span><span class="p">:</span>
         <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;The LUT status was determined to be incomplete, auto-removing: </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"The LUT status was determined to be incomplete, auto-removing: </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">shard_to_coord</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">shards</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.stores.zarr.shard_to_coord"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.shard_to_coord" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts a shard index to shard coordinates (the slice of the full store for this</span>
 <span class="sd">    shard).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">group</span><span class="p">)</span> <span class="o">*</span> <span class="n">shards</span>
     <span class="n">end</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">shards</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
 
 <div class="mkapi-source-link" id="isofit.luts.stores.zarr.calc_shards"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.calc_shards" title="Go to docs">[docs]</a></div>
-<span class="k">def</span><span class="w"> </span><span class="nf">calc_shards</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="s2">&quot;8gb&quot;</span><span class="p">,</span> <span class="n">target_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_shards</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="s2">"8gb"</span><span class="p">,</span> <span class="n">target_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Determine an optimal Zarr sharding strategy for a LUT and group points by shard.</span>
 
 <span class="sd">    This function computes candidate shard shapes that:</span>
@@ -5468,7 +5468,7 @@
 <span class="sd">    chunk : iterable of int</span>
 <span class="sd">        Chunk shape used for Zarr storage. Must align with the full LUT shape</span>
 <span class="sd">        (wl + grid dimensions).</span>
-<span class="sd">    storage : str or float, default=&quot;8gb&quot;</span>
+<span class="sd">    storage : str or float, default="8gb"</span>
 <span class="sd">        Storage size limit per shard. Determines how many chunks should be grouped</span>
 <span class="sd">        into a shard while respecting the limit.</span>
 <span class="sd">    target_shards : int, optional</span>
@@ -5490,8 +5490,8 @@
 <span class="sd">        Mapping from shard index to the corresponding global array slice</span>
 <span class="sd">        (including wavelength as the leading dimension). These slices can be</span>
 <span class="sd">        used directly to write shard-aligned data into a Zarr array.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">itemsize</span>
+<span class="sd">    """</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">)</span><span class="o">.</span><span class="n">itemsize</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
 
@@ -5502,7 +5502,7 @@
     <span class="p">)</span>  <span class="c1"># Determine how much space each chunk takes</span>
     <span class="n">target</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">storage</span> <span class="o">/</span> <span class="n">space</span><span class="p">)</span>  <span class="c1"># Target number of chunks per shard</span>
 
-    <span class="c1"># Not technically the fastest but it&#39;s small</span>
+    <span class="c1"># Not technically the fastest but it's small</span>
     <span class="n">divisors</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">([</span><span class="n">n</span> <span class="o">//</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span> <span class="o">%</span> <span class="n">i</span><span class="p">])</span>
 
     <span class="c1"># Viable shard shapes</span>
@@ -5516,7 +5516,7 @@
     <span class="c1"># Insert the wavelength dimension as a single shard</span>
     <span class="n">shards</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shards</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">wl</span><span class="p">)),</span> <span class="n">shards</span><span class="p">])</span>
 
-    <span class="c1"># Ensure shards don&#39;t split chunks</span>
+    <span class="c1"># Ensure shards don't split chunks</span>
     <span class="n">shards</span> <span class="o">=</span> <span class="n">shards</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">shards</span> <span class="o">%</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
 
     <span class="c1"># Chunks per shard</span>
@@ -5529,7 +5529,7 @@
     <span class="n">viable</span> <span class="o">=</span> <span class="n">sizes</span> <span class="o">&lt;=</span> <span class="n">storage</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">viable</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;No sharding strategy satisfies the storage limit </span><span class="si">{</span><span class="n">storage</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GB&quot;</span>
+            <span class="sa">f</span><span class="s2">"No sharding strategy satisfies the storage limit </span><span class="si">{</span><span class="n">storage</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GB"</span>
         <span class="p">)</span>
 
     <span class="n">shards</span> <span class="o">=</span> <span class="n">shards</span><span class="p">[</span><span class="n">viable</span><span class="p">]</span>
@@ -5563,18 +5563,18 @@
             <span class="n">coords</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">coord</span>
 
     <span class="c1"># Useful information</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of points: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of points: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Target chunks per file: </span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">target</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">space</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">gb) (scale: </span><span class="si">{</span><span class="n">scale</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="sa">f</span><span class="s2">"Target chunks per file: </span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">target</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">space</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">gb) (scale: </span><span class="si">{</span><span class="n">scale</span><span class="si">}</span><span class="s2">)"</span>
     <span class="p">)</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shapes:&quot;</span><span class="p">)</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  dimensions: </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    chunking: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recommended&quot;</span><span class="p">)</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    sharding: </span><span class="si">{</span><span class="n">best</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Produces:&quot;</span><span class="p">)</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Chunks per file: </span><span class="si">{</span><span class="n">cpf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">cpf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">space</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">gb)&quot;</span><span class="p">)</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Number of files: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">((</span><span class="n">shape</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">best</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Shapes:"</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  dimensions: </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    chunking: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Recommended"</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    sharding: </span><span class="si">{</span><span class="n">best</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Produces:"</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Chunks per file: </span><span class="si">{</span><span class="n">cpf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">cpf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">space</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">gb)"</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Number of files: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">((</span><span class="n">shape</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">best</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">best</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span> <span class="n">coords</span>
 
@@ -5584,28 +5584,28 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">path</span><span class="p">,</span>
         <span class="o">*</span><span class="n">args</span><span class="p">,</span>
-        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s2">"w"</span><span class="p">,</span>
         <span class="n">shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">buffered</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">shard_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">target_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Prepare a Zarr v3 LUT store</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        path : str</span>
 <span class="sd">            Path for the LUT.</span>
-<span class="sd">        mode : str, default=&quot;w&quot;</span>
+<span class="sd">        mode : str, default="w"</span>
 <span class="sd">            File mode to open with</span>
 <span class="sd">        shards : np.array, optional, default=None</span>
 <span class="sd">            Sharding strategy to use</span>
 <span class="sd">        buffered : bool, optional, default=False</span>
 <span class="sd">            Create intermediate buffer arrays to store data before flushing</span>
 <span class="sd">        shard_size : str | float, optional, default=None</span>
-<span class="sd">            Target size for each shard. May be either a string like &quot;4gb&quot; or a float</span>
+<span class="sd">            Target size for each shard. May be either a string like "4gb" or a float</span>
 <span class="sd">            representing number of bytes. If this parameter is given, the shards array</span>
 <span class="sd">            will be calculated</span>
 <span class="sd">        target_shards : int, optional, default=None</span>
@@ -5616,7 +5616,7 @@
 <span class="sd">        grid : dict</span>
 <span class="sd">            The LUT grid, formatted as {str: Iterable}.</span>
 <span class="sd">        attrs: dict, defaults={}</span>
-<span class="sd">            Dict of dataset attributes, ie. {&quot;RT_mode&quot;: &quot;transm&quot;}</span>
+<span class="sd">            Dict of dataset attributes, ie. {"RT_mode": "transm"}</span>
 <span class="sd">        consts : dict, optional, default={}</span>
 <span class="sd">            Dictionary of constant values. Appends/replaces current Create.consts list.</span>
 <span class="sd">        onedim : dict, optional, default={}</span>
@@ -5625,7 +5625,7 @@
 <span class="sd">            Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.</span>
 <span class="sd">        zeros : List[str], optional, default=[]</span>
 <span class="sd">            List of zero values. Appends to the current Create.zeros list.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="n">zarr</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">LocalStore</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">zarr</span><span class="o">.</span><span class="n">open_group</span><span class="p">(</span><span class="n">store</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">zarr_format</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
@@ -5647,7 +5647,7 @@
         <span class="c1">#     atexit.register(cleanup, self.path)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Retrieves a value from the Zarr store</span>
 
 <span class="sd">        Parameters</span>
@@ -5659,11 +5659,11 @@
 <span class="sd">        -------</span>
 <span class="sd">        Any</span>
 <span class="sd">            The value of the item retrieved from the Zarr store</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Sets a variable in the Zarr store</span>
 
 <span class="sd">        Parameters</span>
@@ -5672,12 +5672,12 @@
 <span class="sd">            Key to set</span>
 <span class="sd">        value : any</span>
 <span class="sd">            Value to set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Automatically insert data into the buffer if it&#39;s available instead of writing to disk</span>
+<span class="sd">        """</span>
+        <span class="c1"># Automatically insert data into the buffer if it's available instead of writing to disk</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ret</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.stores.zarr.CreateZarr.initialize"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.CreateZarr.initialize" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes the LUT Zarr by prepopulating it with filler values.</span>
 
 <span class="sd">        Parameters</span>
@@ -5689,7 +5689,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        None | xr.Dataset</span>
 <span class="sd">            The initialized dataset</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shards</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">calc_shards</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span>
@@ -5700,15 +5700,15 @@
                 <span class="n">scale</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alldim</span><span class="p">),</span>
             <span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;shards&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shards</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;shard order&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"shards"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shards</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"shard order"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;lut_grid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"lut_grid"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span>
 
         <span class="c1"># Coordinates</span>
         <span class="n">array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">create_array</span><span class="p">(</span>
-            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;wl&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dimension_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;wl&quot;</span><span class="p">]</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">"wl"</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dimension_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"wl"</span><span class="p">]</span>
         <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -5724,7 +5724,7 @@
             <span class="p">)</span>
 
         <span class="c1"># One dimensional arrays</span>
-        <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;wl&quot;</span><span class="p">]</span>
+        <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"wl"</span><span class="p">]</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">),)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">onedim</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
@@ -5735,7 +5735,7 @@
                 <span class="n">array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">create_array</span><span class="p">(</span>
                     <span class="n">name</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
                     <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
-                    <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">,</span>
                     <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">dimension_names</span><span class="o">=</span><span class="n">dims</span><span class="p">,</span>
                 <span class="p">)</span>
@@ -5762,7 +5762,7 @@
                 <span class="n">array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">create_array</span><span class="p">(</span>
                     <span class="n">name</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
                     <span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
-                    <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">,</span>
                     <span class="n">fill_value</span><span class="o">=</span><span class="n">vals</span><span class="p">,</span>
                     <span class="n">chunks</span><span class="o">=</span><span class="n">chunks</span><span class="p">,</span>
                     <span class="n">shards</span><span class="o">=</span><span class="n">shards</span><span class="p">,</span>
@@ -5770,18 +5770,18 @@
                 <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_flush</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Flushes the (point, data) pairs held in the hold list to the LUT Zarr</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        finalize : bool, default=False</span>
 <span class="sd">            Calls the `finalize` function</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">unknowns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">point</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hold</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;wl&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"wl"</span><span class="p">:</span>
                     <span class="k">continue</span>
 
                 <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">:</span>
@@ -5803,9 +5803,9 @@
         <span class="k">return</span> <span class="n">unknowns</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">flush_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slices</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.stores.zarr.CreateZarr.flush_buffer"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.CreateZarr.flush_buffer" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Needs to be manually called</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># If the group key is given instead of the slices tuple, retrieve from coords</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">slices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">slice</span><span class="p">):</span>
             <span class="n">slices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">slices</span><span class="p">]</span>
@@ -5814,31 +5814,31 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">slices</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">reset_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.stores.zarr.CreateZarr.reset_buffer"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.CreateZarr.reset_buffer" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resets the buffered data to ensure</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">alldim</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">key</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">vals</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">key</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shards</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+                <span class="n">key</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shards</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="s2">"float64"</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">alldim</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
             <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">queuePoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.stores.zarr.CreateZarr.queuePoint"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.CreateZarr.queuePoint" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Overrides the inherited queuePoint to enable flushing immediately for this</span>
 <span class="sd">        subclass only</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">queuePoint</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="c1"># Don&#39;t hold a queue when buffered</span>
+        <span class="c1"># Don't hold a queue when buffered</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">getAttr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.stores.zarr.CreateZarr.getAttr"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.CreateZarr.getAttr" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Gets an attribute from the Zarr</span>
 
 <span class="sd">        Parameters</span>
@@ -5850,11 +5850,11 @@
 <span class="sd">        -------</span>
 <span class="sd">        any | None</span>
 <span class="sd">            Retrieved attribute from Zarr, if it exists</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">setAttr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.stores.zarr.CreateZarr.setAttr"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.CreateZarr.setAttr" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Sets an attribute in the Zarr</span>
 
 <span class="sd">        Parameters</span>
@@ -5863,15 +5863,15 @@
 <span class="sd">            Key to set</span>
 <span class="sd">        value : any</span>
 <span class="sd">            Value to set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.stores.zarr.CreateZarr.finalize"><a href="../../../../../api/isofit/luts/stores/zarr/#isofit.luts.stores.zarr.CreateZarr.finalize" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Finalizes the Zarr store by consolidating the metadata at the end to make</span>
 <span class="sd">        reading it more efficient via xarray</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">finalize</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="n">zarr</span><span class="o">.</span><span class="n">consolidate_metadata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="n">zarr_format</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>

@@ -5048,7 +5048,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_full_statevector_all_free</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_inverse.test_full_statevector_all_free"><a href="../../../../api/isofit/test/test_inverse/#isofit.test.test_inverse.test_full_statevector_all_free" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;When all indices are free and x_fixed is None, output equals x_free.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""When all indices are free and x_fixed is None, output equals x_free."""</span>
     <span class="n">inv</span> <span class="o">=</span> <span class="n">_mock_inv</span><span class="p">(</span><span class="n">nstate</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">inds_free</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
     <span class="n">x_free</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">])</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">Inversion</span><span class="o">.</span><span class="n">full_statevector</span><span class="p">(</span><span class="n">inv</span><span class="p">,</span> <span class="n">x_free</span><span class="p">)</span>
@@ -5056,7 +5056,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_full_statevector_with_fixed</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_inverse.test_full_statevector_with_fixed"><a href="../../../../api/isofit/test/test_inverse/#isofit.test.test_inverse.test_full_statevector_with_fixed" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fixed indices are filled from x_fixed; free indices come from x_free.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Fixed indices are filled from x_fixed; free indices come from x_free."""</span>
     <span class="n">inv</span> <span class="o">=</span> <span class="n">_mock_inv</span><span class="p">(</span>
         <span class="n">nstate</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
         <span class="n">inds_free</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
@@ -5069,7 +5069,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_full_statevector_unspecified_indices_are_zero</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_inverse.test_full_statevector_unspecified_indices_are_zero"><a href="../../../../api/isofit/test/test_inverse/#isofit.test.test_inverse.test_full_statevector_unspecified_indices_are_zero" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Indices not in inds_free or inds_fixed default to zero.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Indices not in inds_free or inds_fixed default to zero."""</span>
     <span class="n">inv</span> <span class="o">=</span> <span class="n">_mock_inv</span><span class="p">(</span><span class="n">nstate</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">inds_free</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">Inversion</span><span class="o">.</span><span class="n">full_statevector</span><span class="p">(</span><span class="n">inv</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">]))</span>
     <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">7.0</span> <span class="ow">and</span> <span class="n">result</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="mf">8.0</span>
@@ -5080,7 +5080,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_mock_inv_for_loss</span><span class="p">(</span><span class="n">winidx</span><span class="p">,</span> <span class="n">x_free</span><span class="p">,</span> <span class="n">xa_free</span><span class="p">,</span> <span class="n">Sa_inv_sqrt</span><span class="p">,</span> <span class="n">est_meas</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a minimal mock Inversion for loss_function calls.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build a minimal mock Inversion for loss_function calls."""</span>
     <span class="n">inv</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
     <span class="n">inv</span><span class="o">.</span><span class="n">winidx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">winidx</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">inv</span><span class="o">.</span><span class="n">full_statevector</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">x_free</span><span class="p">)</span>
@@ -5093,7 +5093,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_loss_function_perfect_fit_returns_zero</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_inverse.test_loss_function_perfect_fit_returns_zero"><a href="../../../../api/isofit/test/test_inverse/#isofit.test.test_inverse.test_loss_function_perfect_fit_returns_zero" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;When est_meas == meas and x_free == xa_free, total residual is zero.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""When est_meas == meas and x_free == xa_free, total residual is zero."""</span>
     <span class="n">winidx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span>
     <span class="n">n_win</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">winidx</span><span class="p">)</span>
     <span class="n">n_free</span> <span class="o">=</span> <span class="mi">4</span>
@@ -5113,7 +5113,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_loss_function_meas_residual_nonzero_prior_zero</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_inverse.test_loss_function_meas_residual_nonzero_prior_zero"><a href="../../../../api/isofit/test/test_inverse/#isofit.test.test_inverse.test_loss_function_meas_residual_nonzero_prior_zero" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Measurement mismatch produces non-zero meas residual; satisfied prior stays zero.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Measurement mismatch produces non-zero meas residual; satisfied prior stays zero."""</span>
     <span class="n">winidx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span>
     <span class="n">n_win</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">winidx</span><span class="p">)</span>
     <span class="n">n_free</span> <span class="o">=</span> <span class="mi">4</span>
@@ -5137,7 +5137,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_loss_function_prior_residual_nonzero_meas_zero</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_inverse.test_loss_function_prior_residual_nonzero_meas_zero"><a href="../../../../api/isofit/test/test_inverse/#isofit.test.test_inverse.test_loss_function_prior_residual_nonzero_meas_zero" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Departure from prior produces non-zero prior residual; satisfied measurement stays zero.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Departure from prior produces non-zero prior residual; satisfied measurement stays zero."""</span>
     <span class="n">winidx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">]</span>
     <span class="n">n_win</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">winidx</span><span class="p">)</span>
     <span class="n">n_free</span> <span class="o">=</span> <span class="mi">4</span>
@@ -5159,7 +5159,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_jacobian_shape</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_inverse.test_jacobian_shape"><a href="../../../../api/isofit/test/test_inverse/#isofit.test.test_inverse.test_jacobian_shape" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Jacobian must have shape (n_win + n_free, n_free).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Jacobian must have shape (n_win + n_free, n_free)."""</span>
     <span class="n">n_state</span> <span class="o">=</span> <span class="mi">6</span>
     <span class="n">n_free</span> <span class="o">=</span> <span class="mi">5</span>
     <span class="n">winidx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
@@ -5184,7 +5184,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_jacobian_meas_rows_scaled_by_Seps</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_inverse.test_jacobian_meas_rows_scaled_by_Seps"><a href="../../../../api/isofit/test/test_inverse/#isofit.test.test_inverse.test_jacobian_meas_rows_scaled_by_Seps" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Measurement rows of the jacobian are Seps_inv_sqrt @ K_win[:,free].&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Measurement rows of the jacobian are Seps_inv_sqrt @ K_win[:,free]."""</span>
     <span class="n">n_state</span> <span class="o">=</span> <span class="mi">4</span>
     <span class="n">n_free</span> <span class="o">=</span> <span class="mi">4</span>
     <span class="n">winidx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>

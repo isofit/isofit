@@ -5332,24 +5332,24 @@
 
         <span class="c1"># Combine all potential surface files</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span> <span class="o">=</span> <span class="n">model_dict</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;means&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;covs&quot;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">"means"</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">"covs"</span><span class="p">]))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_comp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;wl&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">"wl"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">surface_categories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surface_categories&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface_categories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"surface_categories"</span><span class="p">,</span> <span class="p">[])</span>
 
-        <span class="n">normalize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;normalize&quot;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">normalize</span> <span class="o">==</span> <span class="s2">&quot;Euclidean&quot;</span><span class="p">:</span>
+        <span class="n">normalize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">"normalize"</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">normalize</span> <span class="o">==</span> <span class="s2">"Euclidean"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">norm</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">normalize</span> <span class="o">==</span> <span class="s2">&quot;RMS&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">normalize</span> <span class="o">==</span> <span class="s2">"RMS"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span> <span class="o">==</span> <span class="s2">"None"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="mf">1.0</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unrecognized Normalization: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">normalize</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Unrecognized Normalization: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">"</span> <span class="o">%</span> <span class="n">normalize</span><span class="p">)</span>
 
-        <span class="n">refwl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;refwl&quot;</span><span class="p">])</span>
+        <span class="n">refwl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">"refwl"</span><span class="p">])</span>
         <span class="n">refwl</span> <span class="o">=</span> <span class="n">refwl</span><span class="p">[(</span><span class="n">refwl</span> <span class="o">&lt;</span> <span class="mi">900</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">refwl</span> <span class="o">&gt;</span> <span class="mi">2000</span><span class="p">)]</span>
         <span class="n">idx_ref</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">-</span> <span class="n">w</span><span class="p">))</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">refwl</span><span class="p">)]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idx_ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">idx_ref</span><span class="p">)</span>
@@ -5396,18 +5396,18 @@
         <span class="n">logfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-            <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span>
             <span class="n">level</span><span class="o">=</span><span class="n">loglevel</span><span class="p">,</span>
             <span class="n">filename</span><span class="o">=</span><span class="n">logfile</span><span class="p">,</span>
-            <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S&quot;</span><span class="p">,</span>
+            <span class="n">datefmt</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S"</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">rdn</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">rdn_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loc</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">loc_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">obs_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rdn</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">rdn_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loc</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">loc_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">obs_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out_file</span> <span class="o">=</span> <span class="n">out_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">out_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span>
-            <span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">True</span>
+            <span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">component</span> <span class="o">=</span> <span class="n">Component</span><span class="p">(</span><span class="n">model_dict</span><span class="p">)</span>
@@ -5419,7 +5419,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">solar_irr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solarIrradiance</span><span class="p">(</span><span class="n">irr_file</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">solarIrradiance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">irr_file</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.multicomponent_classification.Worker.solarIrradiance"><a href="../../../../api/isofit/utils/multicomponent_classification/#isofit.utils.multicomponent_classification.Worker.solarIrradiance" title="Go to docs">[docs]</a></div>
-        <span class="n">irr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">irr_file</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
+        <span class="n">irr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">irr_file</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="s2">"#"</span><span class="p">)</span>
         <span class="n">iwl</span><span class="p">,</span> <span class="n">irr</span> <span class="o">=</span> <span class="n">irr</span><span class="o">.</span><span class="n">T</span>
         <span class="k">if</span> <span class="n">iwl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
             <span class="n">iwl</span> <span class="o">=</span> <span class="n">iwl</span> <span class="o">/</span> <span class="mf">1000.0</span>
@@ -5445,8 +5445,8 @@
                 <span class="n">output</span><span class="p">[</span><span class="n">r</span> <span class="o">-</span> <span class="n">start_line</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="n">pickClosest</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
             <span class="n">unique</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="n">r</span> <span class="o">-</span> <span class="n">start_line</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Elements: </span><span class="si">{</span><span class="n">unique</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Counts: </span><span class="si">{</span><span class="n">counts</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Elements: </span><span class="si">{</span><span class="n">unique</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Counts: </span><span class="si">{</span><span class="n">counts</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="n">write_bil_chunk</span><span class="p">(</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
@@ -5460,19 +5460,19 @@
     <span class="n">surface_files</span><span class="p">,</span>
     <span class="n">wavelength_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">keys_to_combine</span><span class="o">=</span><span class="p">[</span>
-        <span class="s2">&quot;means&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;covs&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;attribute_means&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;attribute_covs&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;surface_categories&quot;</span><span class="p">,</span>
+        <span class="s2">"means"</span><span class="p">,</span>
+        <span class="s2">"covs"</span><span class="p">,</span>
+        <span class="s2">"attribute_means"</span><span class="p">,</span>
+        <span class="s2">"attribute_covs"</span><span class="p">,</span>
+        <span class="s2">"surface_categories"</span><span class="p">,</span>
     <span class="p">],</span>
 <span class="p">):</span>
     <span class="c1"># CLI will pass .json or .mat as string.</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">surface_files</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">surface_files</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.mat&quot;</span><span class="p">):</span>
-            <span class="n">surface_files</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;cli_input&quot;</span><span class="p">:</span> <span class="n">surface_files</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">surface_files</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".mat"</span><span class="p">):</span>
+            <span class="n">surface_files</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"cli_input"</span><span class="p">:</span> <span class="n">surface_files</span><span class="p">}</span>
 
-        <span class="k">elif</span> <span class="n">surface_files</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">surface_files</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".json"</span><span class="p">):</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">surface_files</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">wavelength_file</span><span class="p">)</span>
             <span class="n">surface_files</span> <span class="o">=</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">check_surface_model</span><span class="p">(</span>
@@ -5490,7 +5490,7 @@
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys_to_combine</span><span class="p">:</span>
                 <span class="k">assert</span> <span class="p">(</span>
                     <span class="n">model_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="n">surface_model_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span>
-                <span class="p">),</span> <span class="s2">&quot;Dimension mismatch between surface component cov matrices&quot;</span>
+                <span class="p">),</span> <span class="s2">"Dimension mismatch between surface component cov matrices"</span>
                 <span class="n">model_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
                     <span class="p">[</span><span class="n">model_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">surface_model_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
                 <span class="p">)</span>
@@ -5499,13 +5499,13 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">filter_image</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.multicomponent_classification.filter_image"><a href="../../../../api/isofit/utils/multicomponent_classification/#isofit.utils.multicomponent_classification.filter_image" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Temporary function to clean the image.</span>
 <span class="sd">    Memory intensive.</span>
 
 <span class="sd">    Could try to make this recursive by nesting the bottom loop into the top loop</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Don&#39;t do any filtering if array is uniform</span>
+<span class="sd">    """</span>
+    <span class="c1"># Don't do any filtering if array is uniform</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">out</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">out</span>
 
@@ -5560,10 +5560,10 @@
     <span class="n">ray_redis_password</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">ray_temp_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">ray_ip_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">loglevel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+    <span class="n">loglevel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"INFO"</span><span class="p">,</span>
     <span class="n">logfile</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Classify a radiance file based on a per-pixel prior selection.</span>
 <span class="sd">    The classification leverages the same methodology ISOFIT uses</span>
 <span class="sd">    to select a prior distribution from an input .json or .mat file.</span>
@@ -5603,23 +5603,23 @@
 <span class="sd">        Logging level to use (e.g. DEBUG, INFO, etc.)</span>
 <span class="sd">    logfile: str</span>
 <span class="sd">        Output location for logging file if writing to disk.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-        <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">level</span><span class="o">=</span><span class="n">loglevel</span><span class="p">,</span>
         <span class="n">filename</span><span class="o">=</span><span class="n">logfile</span><span class="p">,</span>
-        <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S&quot;</span><span class="p">,</span>
+        <span class="n">datefmt</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Get day of year from rdn string</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">dayofyear</span><span class="p">:</span>
-        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;([0-9]</span><span class="si">{8}</span><span class="s2">t[0-9]</span><span class="si">{6}</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">rdn_file</span><span class="p">)</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">"([0-9]</span><span class="si">{8}</span><span class="s2">t[0-9]</span><span class="si">{6}</span><span class="s2">)"</span><span class="p">,</span> <span class="n">rdn_file</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
-            <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(),</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">t%H%M%S&quot;</span><span class="p">)</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(),</span> <span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">t%H%M%S"</span><span class="p">)</span>
             <span class="n">dayofyear</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Could not find day of year from path&quot;</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not find day of year from path&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Could not find day of year from path"</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Could not find day of year from path"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">n_cores</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
         <span class="n">n_cores</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
@@ -5635,26 +5635,26 @@
 
     <span class="c1"># Check units of wavelength</span>
     <span class="k">if</span> <span class="n">wl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Wavelength units of nm inferred...converting to microns&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Wavelength units of nm inferred...converting to microns"</span><span class="p">)</span>
         <span class="n">wl</span> <span class="o">=</span> <span class="n">wl</span> <span class="o">/</span> <span class="mf">1000.0</span>
         <span class="n">fwhm</span> <span class="o">=</span> <span class="n">fwhm</span> <span class="o">/</span> <span class="mf">1000.0</span>
 
     <span class="c1"># Check to see if irradiance file was passed</span>
     <span class="n">irr_path</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;examples&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;20151026_SantaMonica&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;data&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;prism_optimized_irr.dat&quot;</span><span class="p">,</span>
+        <span class="s2">"examples"</span><span class="p">,</span>
+        <span class="s2">"20151026_SantaMonica"</span><span class="p">,</span>
+        <span class="s2">"data"</span><span class="p">,</span>
+        <span class="s2">"prism_optimized_irr.dat"</span><span class="p">,</span>
     <span class="p">]</span>
     <span class="n">irr_file</span> <span class="o">=</span> <span class="n">irr_file</span> <span class="k">if</span> <span class="n">irr_file</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="o">*</span><span class="n">irr_path</span><span class="p">))</span>
 
-    <span class="c1"># The &quot;mapping&quot; is how the program moves between a int-classification</span>
+    <span class="c1"># The "mapping" is how the program moves between a int-classification</span>
     <span class="c1"># And the surface model</span>
     <span class="n">model_dict</span> <span class="o">=</span> <span class="n">load_surface_mat</span><span class="p">(</span><span class="n">surface_files</span><span class="p">,</span> <span class="n">wavelength_file</span><span class="p">)</span>
-    <span class="n">surface_types</span> <span class="o">=</span> <span class="n">model_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surface_categories&quot;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="n">surface_types</span> <span class="o">=</span> <span class="n">model_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"surface_categories"</span><span class="p">,</span> <span class="p">[])</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">surface_types</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No surface categories key in provided surface prior file.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No surface categories key in provided surface prior file."</span><span class="p">)</span>
 
     <span class="c1"># Construct the output File</span>
     <span class="n">rdn_ds</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">rdn_file</span><span class="p">))</span>
@@ -5664,27 +5664,27 @@
 
     <span class="n">output</span> <span class="o">=</span> <span class="n">initialize_output</span><span class="p">(</span>
         <span class="p">{</span>
-            <span class="s2">&quot;data type&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
-            <span class="s2">&quot;file type&quot;</span><span class="p">:</span> <span class="s2">&quot;ENVI Standard&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;byte order&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;band names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Classification&quot;</span><span class="p">],</span>
+            <span class="s2">"data type"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s2">"file type"</span><span class="p">:</span> <span class="s2">"ENVI Standard"</span><span class="p">,</span>
+            <span class="s2">"byte order"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">"band names"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Classification"</span><span class="p">],</span>
         <span class="p">},</span>
         <span class="n">out_file</span><span class="p">,</span>
         <span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-        <span class="n">lines</span><span class="o">=</span><span class="n">rdn_meta</span><span class="p">[</span><span class="s2">&quot;lines&quot;</span><span class="p">],</span>
-        <span class="n">samples</span><span class="o">=</span><span class="n">rdn_meta</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">],</span>
-        <span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bil&quot;</span><span class="p">,</span>
-        <span class="n">bands</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Per-pixel multicomponent classification&quot;</span><span class="p">),</span>
+        <span class="n">lines</span><span class="o">=</span><span class="n">rdn_meta</span><span class="p">[</span><span class="s2">"lines"</span><span class="p">],</span>
+        <span class="n">samples</span><span class="o">=</span><span class="n">rdn_meta</span><span class="p">[</span><span class="s2">"samples"</span><span class="p">],</span>
+        <span class="n">interleave</span><span class="o">=</span><span class="s2">"bil"</span><span class="p">,</span>
+        <span class="n">bands</span><span class="o">=</span><span class="s2">"1"</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span><span class="s2">"Per-pixel multicomponent classification"</span><span class="p">),</span>
     <span class="p">)</span>
 
     <span class="c1"># Ray initialization</span>
     <span class="n">ray_dict</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;ignore_reinit_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="n">ray_address</span><span class="p">,</span>
-        <span class="s2">&quot;include_dashboard&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;_temp_dir&quot;</span><span class="p">:</span> <span class="n">ray_temp_dir</span><span class="p">,</span>
-        <span class="s2">&quot;_redis_password&quot;</span><span class="p">:</span> <span class="n">ray_redis_password</span><span class="p">,</span>
+        <span class="s2">"ignore_reinit_error"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"address"</span><span class="p">:</span> <span class="n">ray_address</span><span class="p">,</span>
+        <span class="s2">"include_dashboard"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"_temp_dir"</span><span class="p">:</span> <span class="n">ray_temp_dir</span><span class="p">,</span>
+        <span class="s2">"_redis_password"</span><span class="p">:</span> <span class="n">ray_redis_password</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="n">ray_dict</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">n_cores</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -5720,44 +5720,44 @@
     <span class="n">total_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Multicomponent classification complete.  </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">total_time</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">s total, &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s, &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="o">/</span><span class="n">n_workers</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s/core&quot;</span>
+        <span class="sa">f</span><span class="s2">"Multicomponent classification complete.  </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">total_time</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">s total, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="o">/</span><span class="n">n_workers</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s/core"</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">clean</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Filtering classification image.&quot;</span> <span class="sa">f</span><span class="s2">&quot;Using thresh: </span><span class="si">{</span><span class="n">thresh</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Filtering classification image."</span> <span class="sa">f</span><span class="s2">"Using thresh: </span><span class="si">{</span><span class="n">thresh</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">out_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span>
-            <span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">True</span>
+            <span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
         <span class="n">out_filter</span> <span class="o">=</span> <span class="n">filter_image</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">thresh</span><span class="p">)</span>
         <span class="n">out</span><span class="p">[</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">out_filter</span>
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;multicomponent_classification&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"multicomponent_classification"</span><span class="p">,</span>
     <span class="n">help</span><span class="o">=</span><span class="n">multicomponent_classification</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span>
     <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;rdn_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;obs_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;loc_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;out_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;surface_files&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;wavelength_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--n_cores&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--irr_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--clean&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--thresh&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--ray_address&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--ray_redis_password&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--ray_temp_dir&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--ray_ip_head&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--loglevel&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--logfile&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"rdn_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"obs_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"loc_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"out_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"surface_files"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"wavelength_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--n_cores"</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--irr_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--clean"</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--thresh"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--ray_address"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--ray_redis_password"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--ray_temp_dir"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--ray_ip_head"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--loglevel"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"INFO"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--logfile"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.multicomponent_classification.cli"><a href="../../../../api/isofit/utils/multicomponent_classification/#isofit.utils.multicomponent_classification.cli" title="Go to docs">[docs]</a></div>
     <span class="n">multicomponent_classification</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
+    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">"Done"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

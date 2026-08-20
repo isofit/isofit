@@ -4844,7 +4844,7 @@
 <span class="normal">82</span>
 <span class="normal">83</span>
 <span class="normal">84</span>
-<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;High-level tests to ensure the CLI is constructed properly.&quot;&quot;&quot;</span>
+<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""High-level tests to ensure the CLI is constructed properly."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
@@ -4862,12 +4862,12 @@
 <span class="k">except</span><span class="p">:</span>
     <span class="n">isoplots</span> <span class="o">=</span> <span class="kc">None</span>
 
-<span class="c1"># Determine if &#39;isofit&#39; is installed via &#39;$PYTHONPATH&#39;. To do this, check to see</span>
-<span class="c1"># if &#39;$PYTHONPATH&#39; is set, and search for &#39;isofit&#39; at each location.</span>
+<span class="c1"># Determine if 'isofit' is installed via '$PYTHONPATH'. To do this, check to see</span>
+<span class="c1"># if '$PYTHONPATH' is set, and search for 'isofit' at each location.</span>
 <span class="n">ISOFIT_ABSPATH</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">isofit</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
 <span class="n">IS_INSTALLED_VIA_PYTHONPATH</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="k">if</span> <span class="s2">&quot;PYTHONPATH&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PYTHONPATH&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="p">):</span>
+<span class="k">if</span> <span class="s2">"PYTHONPATH"</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"PYTHONPATH"</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="p">):</span>
         <span class="n">potential_isofit_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span> <span class="o">/</span> <span class="n">isofit</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="k">if</span> <span class="n">potential_isofit_path</span> <span class="o">==</span> <span class="n">ISOFIT_ABSPATH</span><span class="p">:</span>
             <span class="n">IS_INSTALLED_VIA_PYTHONPATH</span> <span class="o">=</span> <span class="kc">True</span>
@@ -4875,43 +4875,43 @@
 
 <span class="n">_NO_EXECUTABLE_MARKER</span> <span class="o">=</span> <span class="n">pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">skipif</span><span class="p">(</span>
     <span class="n">IS_INSTALLED_VIA_PYTHONPATH</span><span class="p">,</span>
-    <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;&#39;$ isofit&#39; executable not available when installed via &#39;$PYTHONPATH&#39;&quot;</span><span class="p">,</span>
+    <span class="n">reason</span><span class="o">=</span><span class="s2">"'$ isofit' executable not available when installed via '$PYTHONPATH'"</span><span class="p">,</span>
 <span class="p">)</span>
 
 
 <span class="c1"># fmt: off</span>
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">&quot;executable&quot;</span><span class="p">,</span> <span class="p">[</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">"executable"</span><span class="p">,</span> <span class="p">[</span>
 
     <span class="c1"># No matter the installation this works: $ python -m isofit</span>
-    <span class="p">[</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;isofit&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="s2">"-m"</span><span class="p">,</span> <span class="s2">"isofit"</span><span class="p">],</span>
 
-    <span class="c1"># The &#39;$ isofit&#39; executable is not available when installed via</span>
-    <span class="c1"># &#39;$PYTHONPATH&#39;, so sometimes this test is skipped.</span>
-    <span class="n">pytest</span><span class="o">.</span><span class="n">param</span><span class="p">([</span><span class="s2">&quot;isofit&quot;</span><span class="p">],</span> <span class="n">marks</span><span class="o">=</span><span class="n">_NO_EXECUTABLE_MARKER</span><span class="p">),</span>
+    <span class="c1"># The '$ isofit' executable is not available when installed via</span>
+    <span class="c1"># '$PYTHONPATH', so sometimes this test is skipped.</span>
+    <span class="n">pytest</span><span class="o">.</span><span class="n">param</span><span class="p">([</span><span class="s2">"isofit"</span><span class="p">],</span> <span class="n">marks</span><span class="o">=</span><span class="n">_NO_EXECUTABLE_MARKER</span><span class="p">),</span>
 
 <span class="p">])</span>
 <span class="c1"># fmt: on</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_subcommand_registration</span><span class="p">(</span><span class="n">executable</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_cli_machinery.test_subcommand_registration"><a href="../../../../api/isofit/test/test_cli_machinery/#isofit.test.test_cli_machinery.test_subcommand_registration" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensure all CLI subcommands are registered.</span>
+<span class="w">    </span><span class="sd">"""Ensure all CLI subcommands are registered.</span>
 
 <span class="sd">    Test both ``$ isofit`` and ``$ python3 -m isofit``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">cmd</span> <span class="o">=</span> <span class="n">executable</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;--help&quot;</span><span class="p">]</span>
+<span class="sd">    """</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">executable</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"--help"</span><span class="p">]</span>
     <span class="k">with</span> <span class="n">sp</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span> <span class="k">as</span> <span class="n">proc</span><span class="p">:</span>
         <span class="n">proc</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
         <span class="n">stdout_txt</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">()</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;stdout:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"stdout:"</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">stdout_txt</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">()</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;stderr:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"stderr:"</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
             <span class="k">assert</span> <span class="kc">False</span>
 
     <span class="n">subcommand_count</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">subcommand_count</span><span class="p">,</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">__main__</span><span class="o">.</span><span class="n">cli</span><span class="o">.</span><span class="n">commands</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s2">&quot;plot&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s2">"plot"</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">isoplots</span><span class="p">:</span>
                 <span class="k">assert</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="n">stdout_txt</span>
         <span class="k">else</span><span class="p">:</span>
@@ -4922,10 +4922,10 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_version</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_cli_machinery.test_version"><a href="../../../../api/isofit/test/test_cli_machinery/#isofit.test.test_cli_machinery.test_version" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensure ``--version`` flag works.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Ensure ``--version`` flag works."""</span>
 
     <span class="n">runner</span> <span class="o">=</span> <span class="n">CliRunner</span><span class="p">()</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">__main__</span><span class="o">.</span><span class="n">cli</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;--version&quot;</span><span class="p">])</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">__main__</span><span class="o">.</span><span class="n">cli</span><span class="p">,</span> <span class="p">[</span><span class="s2">"--version"</span><span class="p">])</span>
 
     <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">exit_code</span> <span class="o">==</span> <span class="mi">0</span>
     <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="n">isofit</span><span class="o">.</span><span class="n">__version__</span>

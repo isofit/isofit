@@ -5255,14 +5255,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2020 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5279,7 +5279,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">LUTSurface</span><span class="p">(</span><span class="n">Surface</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A model of the surface based on an N-dimensional lookup table</span>
+<span class="w">    </span><span class="sd">"""A model of the surface based on an N-dimensional lookup table</span>
 <span class="sd">    indexed by one or more state vector elements.  We calculate the</span>
 <span class="sd">    reflectance by multilinear interpolation.  This is good for</span>
 <span class="sd">    surfaces like aquatic ecosystems or snow that can be</span>
@@ -5303,26 +5303,26 @@
 <span class="sd">      - scale: an array of n scale values, one for each state vector</span>
 <span class="sd">         element</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_config</span><span class="p">:</span> <span class="n">Config</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""."""</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">full_config</span><span class="p">)</span>
 
         <span class="c1"># Models are stored as dictionaries in .mat format</span>
         <span class="n">model_dict</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">surface_file</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span> <span class="o">=</span> <span class="p">[</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">grid</span> <span class="ow">in</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;grids&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;lut_names&quot;</span><span class="p">]]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">sv</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">sv</span> <span class="ow">in</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;statevec_names&quot;</span><span class="p">]]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;wl&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span> <span class="o">=</span> <span class="p">[</span><span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">grid</span> <span class="ow">in</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">"grids"</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">"lut_names"</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">sv</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">sv</span> <span class="ow">in</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">"statevec_names"</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">"data"</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">"wl"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;bounds&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;scale&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;init&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;sigma&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">"bounds"</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">"scale"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">"init"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">"mean"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">"sigma"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_state</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_lut</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idx_lut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_state</span><span class="p">)</span>
@@ -5338,7 +5338,7 @@
         <span class="c1"># build the interpolator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">itp</span> <span class="o">=</span> <span class="n">VectorInterpolator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
-        <span class="c1"># Change this if you don&#39;t want to analytical solve for all the full statevector elements.</span>
+        <span class="c1"># Change this if you don't want to analytical solve for all the full statevector elements.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">analytical_iv_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_background_rfl</span><span class="p">:</span>
@@ -5347,11 +5347,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">drdn_drfl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drdn_drfl_homogeneous_bkg</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">update_heuristic_prior_means</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.update_heuristic_prior_means"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.update_heuristic_prior_means" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Don&#39;t update any of the priors. Return xa&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Don't update any of the priors. Return xa"""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">xa</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.xa"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.xa" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mean of prior distribution.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Mean of prior distribution."""</span>
 
         <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_state</span><span class="p">)</span>
         <span class="n">mu</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_lut</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -5359,7 +5359,7 @@
         <span class="k">return</span> <span class="n">mu</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">Sa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.Sa"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.Sa" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Covariance of prior distribution, calculated at state x.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Covariance of prior distribution, calculated at state x."""</span>
 
         <span class="n">variance</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">Sa_unnormalized</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">variance</span><span class="p">)</span>
@@ -5367,18 +5367,18 @@
         <span class="k">return</span> <span class="n">Sa_unnormalized</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Sa_inv_normalized</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Sa_inv_sqrt_normalized</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">Sb</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.Sb"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.Sb" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Uncertainty due to unmodeled variables.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Uncertainty due to unmodeled variables."""</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">diagflat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bval</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fit_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rfl_meas</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.fit_params"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.fit_params" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Given a reflectance estimate, fit a state vector.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Given a reflectance estimate, fit a state vector."""</span>
 
         <span class="n">x_surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">x_surface</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calc_rfl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.calc_rfl"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.calc_rfl" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Non-Lambertian reflectance.</span>
+<span class="w">        </span><span class="sd">"""Non-Lambertian reflectance.</span>
 
 <span class="sd">        Inputs:</span>
 <span class="sd">        x_surface : np.ndarray</span>
@@ -5396,27 +5396,27 @@
 <span class="sd">            We do not handle direct and diffuse photon path reflectance</span>
 <span class="sd">            quantities differently for the multicomponent surface model.</span>
 <span class="sd">            This is why we return the same quantity for both outputs.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">rho_dir_dir</span> <span class="o">=</span> <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_lamb</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calc_lamb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.calc_lamb"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.calc_lamb" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Lambertian reflectance.  Be sure to incorporate BRDF-related</span>
-<span class="sd">        LUT dimensions such as solar and view zenith.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Lambertian reflectance.  Be sure to incorporate BRDF-related</span>
+<span class="sd">        LUT dimensions such as solar and view zenith."""</span>
 
         <span class="n">point</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_lut</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">):</span>
             <span class="n">point</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">v</span>
 
-        <span class="k">if</span> <span class="s2">&quot;SOLZEN&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">:</span>
-            <span class="n">solzen_ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;SOLZEN&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"SOLZEN"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">:</span>
+            <span class="n">solzen_ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"SOLZEN"</span><span class="p">)</span>
             <span class="n">point</span><span class="p">[</span><span class="n">solzen_ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">solar_zenith</span>
 
-        <span class="k">if</span> <span class="s2">&quot;VIEWZEN&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">:</span>
-            <span class="n">viewzen_ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;VIEWZEN&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"VIEWZEN"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">:</span>
+            <span class="n">viewzen_ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"VIEWZEN"</span><span class="p">)</span>
             <span class="n">point</span><span class="p">[</span><span class="n">viewzen_ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">observer_zenith</span>
 
         <span class="n">lamb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">itp</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
@@ -5424,16 +5424,16 @@
         <span class="k">return</span> <span class="n">lamb</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">drfl_dsurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.drfl_dsurface"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.drfl_dsurface" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of reflectance with respect to state vector,</span>
-<span class="sd">        calculated at x_surface.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Partial derivative of reflectance with respect to state vector,</span>
+<span class="sd">        calculated at x_surface."""</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dlamb_dsurface</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">dlamb_dsurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.dlamb_dsurface"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.dlamb_dsurface" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of Lambertian reflectance with respect to</span>
+<span class="w">        </span><span class="sd">"""Partial derivative of Lambertian reflectance with respect to</span>
 <span class="sd">        state vector, calculated at x_surface.  We calculate the</span>
 <span class="sd">        reflectance with multilinear interpolation so the finite</span>
-<span class="sd">        difference derivative is exact.&quot;&quot;&quot;</span>
+<span class="sd">        difference derivative is exact."""</span>
 
         <span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-6</span>
         <span class="n">base</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_lamb</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
@@ -5452,33 +5452,33 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">drdn_drfl_heterogeneous_bkg</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.drdn_drfl_heterogeneous_bkg"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.drdn_drfl_heterogeneous_bkg" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="p">,</span> <span class="n">L_tot</span><span class="p">,</span> <span class="n">s_alb</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dif_dif</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of radiance with respect to</span>
-<span class="sd">        surface reflectance, treating dir-dif and dif-dif as constants.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Partial derivative of radiance with respect to</span>
+<span class="sd">        surface reflectance, treating dir-dif and dif-dif as constants."""</span>
         <span class="k">return</span> <span class="n">L_dir_dir</span> <span class="o">+</span> <span class="p">(</span><span class="n">L_dif_dir</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">s_alb</span> <span class="o">*</span> <span class="n">rho_dif_dir</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">drdn_drfl_homogeneous_bkg</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.drdn_drfl_homogeneous_bkg"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.drdn_drfl_homogeneous_bkg" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="p">,</span> <span class="n">L_tot</span><span class="p">,</span> <span class="n">s_alb</span><span class="p">,</span> <span class="n">rho_dif_dir</span><span class="p">,</span> <span class="n">L_dir_dir</span><span class="p">,</span> <span class="n">L_dir_dif</span><span class="p">,</span> <span class="n">L_dif_dir</span><span class="p">,</span> <span class="n">L_dif_dif</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of radiance with respect to</span>
-<span class="sd">        surface reflectance (dir-dir = dif-dir = dir-dif = dif-dif).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Partial derivative of radiance with respect to</span>
+<span class="sd">        surface reflectance (dir-dir = dif-dir = dir-dif = dif-dif)."""</span>
         <span class="k">return</span> <span class="n">L_tot</span> <span class="o">/</span> <span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">s_alb</span> <span class="o">*</span> <span class="n">rho_dif_dir</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calc_Ls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.calc_Ls"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.calc_Ls" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Emission of surface, as a radiance.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Emission of surface, as a radiance."""</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">dLs_dsurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.dLs_dsurface"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.dLs_dsurface" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of surface emission with respect to</span>
-<span class="sd">        state vector, calculated at x_surface.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Partial derivative of surface emission with respect to</span>
+<span class="sd">        state vector, calculated at x_surface."""</span>
 
         <span class="n">dLs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_state</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">dLs</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">drdn_dLs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t_total_up</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.drdn_dLs"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.drdn_dLs" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of radiance with respect to</span>
-<span class="sd">        surface emission&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Partial derivative of radiance with respect to</span>
+<span class="sd">        surface emission"""</span>
 
         <span class="k">return</span> <span class="n">t_total_up</span>
 
@@ -5495,8 +5495,8 @@
         <span class="n">L_dif_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">L_dif_dif</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Derivative of radiance with respect to</span>
-<span class="sd">        full surface vector&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Derivative of radiance with respect to</span>
+<span class="sd">        full surface vector"""</span>
 
         <span class="n">drdn_dLs</span> <span class="o">=</span> <span class="n">t_total_up</span>
 
@@ -5533,7 +5533,7 @@
         <span class="n">L_dif_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">L_dif_dif</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Linearization of the surface reflectance terms to use in the</span>
 <span class="sd">        AOE inner loop (see Susiluoto, 2025). We set the quadratic</span>
 <span class="sd">        spherical albedo term to a constant background, which</span>
@@ -5547,7 +5547,7 @@
 <span class="sd">        handled is dependent on the nature of the surface rfl model.</span>
 <span class="sd">        The n-columns of H is equal to the number of statevector elements.</span>
 <span class="sd">        Here, set to the number of wavelengths.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">theta</span> <span class="o">=</span> <span class="n">L_tot</span> <span class="o">+</span> <span class="p">(</span><span class="n">L_tot</span> <span class="o">*</span> <span class="n">background</span><span class="p">)</span>
         <span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">)</span>
         <span class="n">H</span> <span class="o">=</span> <span class="n">theta</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span>
@@ -5555,12 +5555,12 @@
         <span class="k">return</span> <span class="n">H</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_lut.LUTSurface.summarize"><a href="../../../../api/isofit/surface/surface_lut/#isofit.surface.surface_lut.LUTSurface.summarize" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Summary of state vector.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Summary of state vector."""</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_surface</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="s2">""</span>
 
-        <span class="k">return</span> <span class="s2">&quot;Surface: &quot;</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([(</span><span class="s2">&quot;</span><span class="si">%5.4f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_surface</span><span class="p">])</span>
+        <span class="k">return</span> <span class="s2">"Surface: "</span> <span class="o">+</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">([(</span><span class="s2">"</span><span class="si">%5.4f</span><span class="s2">"</span> <span class="o">%</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_surface</span><span class="p">])</span>
 </code></pre></div></td></tr></table></div>
 
 

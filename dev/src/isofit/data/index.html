@@ -4951,27 +4951,27 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">isofit.data.cli</span>
 
 
-<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;path&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;product&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">_dirs</span><span class="p">))</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;-k&quot;</span><span class="p">,</span> <span class="s2">&quot;--key&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Append the product&#39;s key&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"path"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"product"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">_dirs</span><span class="p">))</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"-k"</span><span class="p">,</span> <span class="s2">"--key"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Append the product's key"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli"><a href="../../../api/isofit/data/cli/#isofit.data.cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Prints the path to a specific product</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="p">[</span><span class="n">product</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">key</span><span class="p">:</span>
         <span class="c1"># Check if the given key exists</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">sub</span> <span class="o">:=</span> <span class="n">env</span><span class="p">[</span><span class="n">key</span><span class="p">]):</span>
-            <span class="c1"># If it doesn&#39;t, check if this key is a subkey of the product</span>
+            <span class="c1"># If it doesn't, check if this key is a subkey of the product</span>
             <span class="c1"># eg. product=srtmnet, key=file, actual=srtmnet.file</span>
-            <span class="n">subkey</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">product</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">subkey</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">product</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">sub</span> <span class="o">:=</span> <span class="n">env</span><span class="p">[</span><span class="n">subkey</span><span class="p">]):</span>
                 <span class="nb">print</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;The key </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2"> does not exist in the INI nor does the subkey </span><span class="si">{</span><span class="n">subkey</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"The key </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2"> does not exist in the INI nor does the subkey </span><span class="si">{</span><span class="n">subkey</span><span class="si">!r}</span><span class="s2">"</span>
                 <span class="p">)</span>
                 <span class="k">return</span>
 
-        <span class="n">path</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">sub</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">path</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"/</span><span class="si">{</span><span class="n">sub</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>

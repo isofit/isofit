@@ -5422,14 +5422,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5444,7 +5444,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">E_to_L</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">coszen</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.E_to_L"><a href="../../../../api/isofit/core/units/#isofit.core.units.E_to_L" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert irradiance to radiance.</span>
+<span class="w">    </span><span class="sd">"""Convert irradiance to radiance.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        E:         input irradiance vector</span>
@@ -5452,13 +5452,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Data vector converted to radiance</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">L</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">coszen</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
     <span class="k">return</span> <span class="n">L</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">L_to_E</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">coszen</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.L_to_E"><a href="../../../../api/isofit/core/units/#isofit.core.units.L_to_E" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert radiance to irradiance.</span>
+<span class="w">    </span><span class="sd">"""Convert radiance to irradiance.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        L:         input radiance vector</span>
@@ -5466,13 +5466,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Data vector converted to irradiance</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">E</span> <span class="o">=</span> <span class="n">L</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">coszen</span>
     <span class="k">return</span> <span class="n">E</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">transm_to_rdn</span><span class="p">(</span><span class="n">transm</span><span class="p">,</span> <span class="n">coszen</span><span class="p">,</span> <span class="n">solar_irr</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.transm_to_rdn"><a href="../../../../api/isofit/core/units/#isofit.core.units.transm_to_rdn" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to convert a unitless atmospheric vector to radiance units.</span>
+<span class="w">    </span><span class="sd">"""Function to convert a unitless atmospheric vector to radiance units.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        transm:    input data vector in unitless atmospheric units</span>
@@ -5481,13 +5481,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Data vector converted to radiance</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">rdn</span> <span class="o">=</span> <span class="n">transm</span> <span class="o">*</span> <span class="n">E_to_L</span><span class="p">(</span><span class="n">solar_irr</span><span class="p">,</span> <span class="n">coszen</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">rdn</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">rdn_to_transm</span><span class="p">(</span><span class="n">rdn</span><span class="p">,</span> <span class="n">coszen</span><span class="p">,</span> <span class="n">solar_irr</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.rdn_to_transm"><a href="../../../../api/isofit/core/units/#isofit.core.units.rdn_to_transm" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to convert a radiance vector to transmittance.</span>
+<span class="w">    </span><span class="sd">"""Function to convert a radiance vector to transmittance.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        rdn:       input data vector in radiance</span>
@@ -5496,13 +5496,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Data vector converted to unitless atmospheric units</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">transm</span> <span class="o">=</span> <span class="n">rdn</span> <span class="o">/</span> <span class="n">E_to_L</span><span class="p">(</span><span class="n">solar_irr</span><span class="p">,</span> <span class="n">coszen</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">transm</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">wavenumber_to_nm</span><span class="p">(</span><span class="n">wavenumber</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.wavenumber_to_nm"><a href="../../../../api/isofit/core/units/#isofit.core.units.wavenumber_to_nm" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Function to convert wavenumber to nm.</span>
 
 <span class="sd">    Args:</span>
@@ -5510,21 +5510,21 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        value(s) in nanometers</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">nm</span> <span class="o">=</span> <span class="mf">1e7</span> <span class="o">/</span> <span class="p">(</span><span class="n">wavenumber</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">nm</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">nm_to_wavenumber</span><span class="p">(</span><span class="n">nm</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.nm_to_wavenumber"><a href="../../../../api/isofit/core/units/#isofit.core.units.nm_to_wavenumber" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Function to convert nm to wavenumber.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">wavenumber</span> <span class="o">=</span> <span class="n">wavenumber_to_nm</span><span class="p">(</span><span class="n">nm</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">wavenumber</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">vis_to_aod</span><span class="p">(</span><span class="n">vis</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.vis_to_aod"><a href="../../../../api/isofit/core/units/#isofit.core.units.vis_to_aod" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts VIS modtran parameter to the AOD550 .</span>
 <span class="sd">    This formula comes from page 50 of the MODTRAN 6 user manual,</span>
 <span class="sd">    which relates ViS to the extinction coefficient at 550 nm.</span>
@@ -5536,13 +5536,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Data vector converted to exctinction at 550 nm</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">aod</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="o">/</span> <span class="n">vis</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.01159</span>
     <span class="k">return</span> <span class="n">aod</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">aod_to_vis</span><span class="p">(</span><span class="n">aod</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.aod_to_vis"><a href="../../../../api/isofit/core/units/#isofit.core.units.aod_to_vis" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts AOD550 to VIS modtran parameter.</span>
 <span class="sd">    Formula comes from page 50 of the MODTRAN 6 users manual,</span>
 <span class="sd">    which relates ViS to the extinction coefficient at 550 nm.</span>
@@ -5554,13 +5554,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Data vector converted to visibility</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">vis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">aod</span> <span class="o">+</span> <span class="mf">0.01159</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">vis</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">rfl_to_rrs</span><span class="p">(</span><span class="n">rfl</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.rfl_to_rrs"><a href="../../../../api/isofit/core/units/#isofit.core.units.rfl_to_rrs" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts unitless reflectance to remote sensing reflectance</span>
 
 <span class="sd">    Args:</span>
@@ -5568,13 +5568,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Data vector of remote sensing reflectance in units 1/sr</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">rrs</span> <span class="o">=</span> <span class="n">rfl</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
     <span class="k">return</span> <span class="n">rrs</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">rrs_to_rfl</span><span class="p">(</span><span class="n">rrs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.rrs_to_rfl"><a href="../../../../api/isofit/core/units/#isofit.core.units.rrs_to_rfl" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts remote sensing reflectance to unitless reflectance</span>
 
 <span class="sd">    Args:</span>
@@ -5582,13 +5582,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Data vector of unitless reflectance</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">rfl</span> <span class="o">=</span> <span class="n">rrs</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
     <span class="k">return</span> <span class="n">rfl</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">W_to_uW</span><span class="p">(</span><span class="n">w</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.W_to_uW"><a href="../../../../api/isofit/core/units/#isofit.core.units.W_to_uW" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts value of units watts to units microwatts</span>
 
 <span class="sd">    Args:</span>
@@ -5596,13 +5596,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Value(s) in units of microwatts</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">uw</span> <span class="o">=</span> <span class="n">w</span> <span class="o">*</span> <span class="mf">1e6</span>
     <span class="k">return</span> <span class="n">uw</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">uW_to_W</span><span class="p">(</span><span class="n">uw</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.uW_to_W"><a href="../../../../api/isofit/core/units/#isofit.core.units.uW_to_W" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts value of units microwatts to units watts</span>
 
 <span class="sd">    Args:</span>
@@ -5610,13 +5610,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Value(s) in units of microwatts</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">uw</span> <span class="o">/</span> <span class="mf">1e6</span>
     <span class="k">return</span> <span class="n">w</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">Wm2_to_uWcm2</span><span class="p">(</span><span class="n">wm</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.Wm2_to_uWcm2"><a href="../../../../api/isofit/core/units/#isofit.core.units.Wm2_to_uWcm2" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts value of units Watts / square meter to units</span>
 <span class="sd">    of micro-watts / square centimeter</span>
 
@@ -5625,13 +5625,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Value(s) in units of uW/cm2</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">uwcm</span> <span class="o">=</span> <span class="n">wm</span> <span class="o">*</span> <span class="mf">1e2</span>
     <span class="k">return</span> <span class="n">uwcm</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">uWcm2_to_Wm2</span><span class="p">(</span><span class="n">uwcm</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.uWcm2_to_Wm2"><a href="../../../../api/isofit/core/units/#isofit.core.units.uWcm2_to_Wm2" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts value of micro-watts / square centimeter to units Watts / square meter</span>
 
 <span class="sd">    Args:</span>
@@ -5639,13 +5639,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Value(s) in units of W/m2</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">wm</span> <span class="o">=</span> <span class="n">uwcm</span> <span class="o">/</span> <span class="mf">1e2</span>
     <span class="k">return</span> <span class="n">wm</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">micron_to_nm</span><span class="p">(</span><span class="n">micron</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.micron_to_nm"><a href="../../../../api/isofit/core/units/#isofit.core.units.micron_to_nm" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Function to convert microns to nanometers</span>
 
 <span class="sd">    Args:</span>
@@ -5653,13 +5653,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        value(s) in nanometers</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">nm</span> <span class="o">=</span> <span class="n">micron</span> <span class="o">*</span> <span class="mi">1000</span>
     <span class="k">return</span> <span class="n">nm</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">nm_to_micron</span><span class="p">(</span><span class="n">nm</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.nm_to_micron"><a href="../../../../api/isofit/core/units/#isofit.core.units.nm_to_micron" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Function to convert nanometers to microns</span>
 
 <span class="sd">    Args:</span>
@@ -5667,13 +5667,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        value(s) in microns</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">micron</span> <span class="o">=</span> <span class="n">nm</span> <span class="o">/</span> <span class="mi">1000</span>
     <span class="k">return</span> <span class="n">micron</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">cm_to_nm</span><span class="p">(</span><span class="n">cm</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.cm_to_nm"><a href="../../../../api/isofit/core/units/#isofit.core.units.cm_to_nm" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Function to convert microns to nanometers</span>
 
 <span class="sd">    Args:</span>
@@ -5681,13 +5681,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        value(s) in nanometers</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">nm</span> <span class="o">=</span> <span class="n">cm</span> <span class="o">*</span> <span class="mf">1e7</span>
     <span class="k">return</span> <span class="n">nm</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">nm_to_cm</span><span class="p">(</span><span class="n">nm</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.nm_to_cm"><a href="../../../../api/isofit/core/units/#isofit.core.units.nm_to_cm" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Function to convert nanometers to microns</span>
 
 <span class="sd">    Args:</span>
@@ -5695,13 +5695,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        value(s) in microns</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cm</span> <span class="o">=</span> <span class="n">nm</span> <span class="o">/</span> <span class="mf">1e7</span>
     <span class="k">return</span> <span class="n">cm</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">m_to_km</span><span class="p">(</span><span class="n">m</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.m_to_km"><a href="../../../../api/isofit/core/units/#isofit.core.units.m_to_km" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts value of units meters to units kilometer</span>
 
 <span class="sd">    Args:</span>
@@ -5709,13 +5709,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Value(s) in units of kilometers</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">km</span> <span class="o">=</span> <span class="n">m</span> <span class="o">/</span> <span class="mi">1000</span>
     <span class="k">return</span> <span class="n">km</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">mm_to_cm</span><span class="p">(</span><span class="n">mm</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.mm_to_cm"><a href="../../../../api/isofit/core/units/#isofit.core.units.mm_to_cm" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts value of units mm to unit centimeters</span>
 
 <span class="sd">    Args:</span>
@@ -5723,13 +5723,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Value(s) in units of centimeters</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cm</span> <span class="o">=</span> <span class="n">mm</span> <span class="o">/</span> <span class="mi">10</span>
     <span class="k">return</span> <span class="n">cm</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">cm_to_mm</span><span class="p">(</span><span class="n">cm</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.cm_to_mm"><a href="../../../../api/isofit/core/units/#isofit.core.units.cm_to_mm" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts value of units mm to unit millimeters</span>
 
 <span class="sd">    Args:</span>
@@ -5737,13 +5737,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Value(s) in units of millimeters</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">mm</span> <span class="o">=</span> <span class="n">cm</span> <span class="o">*</span> <span class="mi">10</span>
     <span class="k">return</span> <span class="n">mm</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">km_to_m</span><span class="p">(</span><span class="n">km</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.km_to_m"><a href="../../../../api/isofit/core/units/#isofit.core.units.km_to_m" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts value of units kilometers to unit meters</span>
 
 <span class="sd">    Args:</span>
@@ -5751,13 +5751,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Value(s) in units of meters</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">m</span> <span class="o">=</span> <span class="n">km</span> <span class="o">*</span> <span class="mi">1000</span>
     <span class="k">return</span> <span class="n">m</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">m_to_ft</span><span class="p">(</span><span class="n">m</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.m_to_ft"><a href="../../../../api/isofit/core/units/#isofit.core.units.m_to_ft" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts value of units meters to units feet</span>
 
 <span class="sd">    Args:</span>
@@ -5765,13 +5765,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Value(s) in units of feet</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">ft</span> <span class="o">=</span> <span class="n">m</span> <span class="o">*</span> <span class="mf">3.280839895</span>
     <span class="k">return</span> <span class="n">ft</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">ft_to_m</span><span class="p">(</span><span class="n">ft</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.ft_to_m"><a href="../../../../api/isofit/core/units/#isofit.core.units.ft_to_m" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts value of units ft to units m</span>
 
 <span class="sd">    Args:</span>
@@ -5779,23 +5779,23 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Value(s) in units of meters</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">m</span> <span class="o">=</span> <span class="n">ft</span> <span class="o">/</span> <span class="mf">3.280839895</span>
     <span class="k">return</span> <span class="n">m</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">ext550_to_vis</span><span class="p">(</span><span class="n">ext550</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.ext550_to_vis"><a href="../../../../api/isofit/core/units/#isofit.core.units.ext550_to_vis" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;VIS is defined as a function of the surface aerosol extinction coefficient</span>
+<span class="w">    </span><span class="sd">"""VIS is defined as a function of the surface aerosol extinction coefficient</span>
 <span class="sd">    at 550 nm in km-1, EXT550, by the formula VIS[km] = ln(50) / (EXT550 + 0.01159),</span>
 <span class="sd">    where 0.01159 is the surface Rayleigh scattering coefficient at 550 nm in km-1</span>
 <span class="sd">    (see MODTRAN6 manual, p. 50).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">50.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ext550</span> <span class="o">+</span> <span class="mf">0.01159</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">byte_string_to_float</span><span class="p">(</span><span class="n">string</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.byte_string_to_float"><a href="../../../../api/isofit/core/units/#isofit.core.units.byte_string_to_float" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Parses a byte string to a byte float, such as &quot;8gb&quot; -&gt; 8589934592.0</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Parses a byte string to a byte float, such as "8gb" -&gt; 8589934592.0</span>
 <span class="sd">    Supports gb, mb, and kb.</span>
 
 <span class="sd">    Parameters</span>
@@ -5807,9 +5807,9 @@
 <span class="sd">    -------</span>
 <span class="sd">    float</span>
 <span class="sd">        Converted string to float</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">units</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;m&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;g&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
-    <span class="n">parse</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\d+(?:\.\d+)?)\s*([a-zA-Z])&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">units</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"b"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"m"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"g"</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+    <span class="n">parse</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(\d+(?:\.\d+)?)\s*([a-zA-Z])"</span><span class="p">)</span>
 
     <span class="n">num</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">parse</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">num</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">**</span> <span class="n">units</span><span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>

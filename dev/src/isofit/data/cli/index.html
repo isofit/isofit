@@ -4824,23 +4824,23 @@
 <span class="normal">31</span>
 <span class="normal">32</span>
 <span class="normal">33</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Prints the path to a specific product</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="p">[</span><span class="n">product</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">key</span><span class="p">:</span>
         <span class="c1"># Check if the given key exists</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">sub</span> <span class="o">:=</span> <span class="n">env</span><span class="p">[</span><span class="n">key</span><span class="p">]):</span>
-            <span class="c1"># If it doesn&#39;t, check if this key is a subkey of the product</span>
+            <span class="c1"># If it doesn't, check if this key is a subkey of the product</span>
             <span class="c1"># eg. product=srtmnet, key=file, actual=srtmnet.file</span>
-            <span class="n">subkey</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">product</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">subkey</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">product</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">sub</span> <span class="o">:=</span> <span class="n">env</span><span class="p">[</span><span class="n">subkey</span><span class="p">]):</span>
                 <span class="nb">print</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;The key </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2"> does not exist in the INI nor does the subkey </span><span class="si">{</span><span class="n">subkey</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"The key </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2"> does not exist in the INI nor does the subkey </span><span class="si">{</span><span class="n">subkey</span><span class="si">!r}</span><span class="s2">"</span>
                 <span class="p">)</span>
                 <span class="k">return</span>
 
-        <span class="n">path</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">sub</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">path</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"/</span><span class="si">{</span><span class="n">sub</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>

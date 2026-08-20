@@ -5200,9 +5200,9 @@
 <span class="normal">361</span>
 <span class="normal">362</span>
 <span class="normal">363</span>
-<span class="normal">364</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">364</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Downloads 6S from https://github.com/isofit/6S</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -5217,13 +5217,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data.download</span><span class="w"> </span><span class="kn">import</span> <span class="n">isUpToDateGithub</span><span class="p">,</span> <span class="n">prepare_output</span><span class="p">,</span> <span class="n">pullFromRepo</span>
 
 <span class="n">ESSENTIAL</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="n">CMD</span> <span class="o">=</span> <span class="s2">&quot;sixs&quot;</span>
+<span class="n">CMD</span> <span class="o">=</span> <span class="s2">"sixs"</span>
 
 <span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_exe</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.data.cli.sixs.get_exe"><a href="../../../../../api/isofit/data/cli/sixs/#isofit.data.cli.sixs.get_exe" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Retrieves the 6S executable from a given path</span>
 
 <span class="sd">    Parameters</span>
@@ -5237,33 +5237,33 @@
 <span class="sd">    -------</span>
 <span class="sd">    pathlib.Path | str</span>
 <span class="sd">        Either the 6S executable as a pathlib object or the string 6S version</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">sixs</span>
 
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
-    <span class="n">exes</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;sixsV*&quot;</span><span class="p">)</span>
-    <span class="n">exes</span> <span class="o">=</span> <span class="p">[</span><span class="n">exe</span> <span class="k">for</span> <span class="n">exe</span> <span class="ow">in</span> <span class="n">exes</span> <span class="k">if</span> <span class="s2">&quot;lutaero&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exe</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+    <span class="n">exes</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"sixsV*"</span><span class="p">)</span>
+    <span class="n">exes</span> <span class="o">=</span> <span class="p">[</span><span class="n">exe</span> <span class="k">for</span> <span class="n">exe</span> <span class="ow">in</span> <span class="n">exes</span> <span class="k">if</span> <span class="s2">"lutaero"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exe</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
     <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">exe</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">exe</span> <span class="ow">in</span> <span class="n">exes</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">exes</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find a 6S executable under path: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not find a 6S executable under path: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;More than one 6S executable was found. Defaulting to the first one: </span><span class="si">{</span><span class="n">names</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"More than one 6S executable was found. Defaulting to the first one: </span><span class="si">{</span><span class="n">names</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">version</span><span class="p">:</span>
         <span class="c1"># Try using the version.txt file, created by the isofit downloader</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">txt</span> <span class="o">:=</span> <span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;version.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="k">with</span> <span class="n">txt</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">txt</span> <span class="o">:=</span> <span class="n">path</span> <span class="o">/</span> <span class="s2">"version.txt"</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">with</span> <span class="n">txt</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">vers</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
         <span class="c1"># Fallback to using the executable name</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">_</span><span class="p">,</span> <span class="n">vers</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;V&quot;</span><span class="p">)</span>
-            <span class="n">vers</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">vers</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">vers</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"V"</span><span class="p">)</span>
+            <span class="n">vers</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"v</span><span class="si">{</span><span class="n">vers</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">vers</span>
 
@@ -5271,74 +5271,74 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">precheck</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.data.cli.sixs.precheck"><a href="../../../../../api/isofit/data/cli/sixs/#isofit.data.cli.sixs.precheck" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks if gfortran is installed before downloading SixS</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    True or None</span>
 <span class="sd">        True if `gfortran --version` returns a valid response, None otherwise</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">missing</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="c1"># Check gfortran</span>
     <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-        <span class="s2">&quot;gfortran --version&quot;</span><span class="p">,</span>
+        <span class="s2">"gfortran --version"</span><span class="p">,</span>
         <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
         <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;gfortran&quot;</span><span class="p">)</span>
+        <span class="n">missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"gfortran"</span><span class="p">)</span>
 
-    <span class="c1"># Check make (allow mingw&#39;s mingw32-make on Windows)</span>
+    <span class="c1"># Check make (allow mingw's mingw32-make on Windows)</span>
     <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-        <span class="s2">&quot;make --version&quot;</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span>
+        <span class="s2">"make --version"</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span>
     <span class="p">)</span>
-    <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Windows&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"Windows"</span><span class="p">:</span>
         <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-            <span class="s2">&quot;mingw32-make.exe --help&quot;</span><span class="p">,</span>
+            <span class="s2">"mingw32-make.exe --help"</span><span class="p">,</span>
             <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
             <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;make&quot;</span><span class="p">)</span>
+        <span class="n">missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"make"</span><span class="p">)</span>
 
     <span class="c1"># Check bash (git-bash on Windows provides bash)</span>
     <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-        <span class="s2">&quot;bash --version&quot;</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span>
+        <span class="s2">"bash --version"</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;bash&quot;</span><span class="p">)</span>
+        <span class="n">missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"bash"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">missing</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Missing required tools for building 6S:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Missing required tools for building 6S:"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="s2">&quot;gfortran&quot;</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; - gfortran: required Fortran compiler&quot;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">m</span> <span class="o">==</span> <span class="s2">&quot;make&quot;</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; - make: required build tool (on Windows mingw32-make)&quot;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">m</span> <span class="o">==</span> <span class="s2">&quot;bash&quot;</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; - bash: required shell (on Windows use Git Bash)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="s2">"gfortran"</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">" - gfortran: required Fortran compiler"</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">m</span> <span class="o">==</span> <span class="s2">"make"</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">" - make: required build tool (on Windows mingw32-make)"</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">m</span> <span class="o">==</span> <span class="s2">"bash"</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">" - bash: required shell (on Windows use Git Bash)"</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Windows&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"Windows"</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="s2">&quot;On Windows you can install helpers via: isofit download windows [--mingw|--git]&quot;</span>
+            <span class="s2">"On Windows you can install helpers via: isofit download windows [--mingw|--git]"</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="s2">&quot;Please install the missing tools via your package manager (eg. apt, brew, yum)&quot;</span>
+            <span class="s2">"Please install the missing tools via your package manager (eg. apt, brew, yum)"</span>
         <span class="p">)</span>
 
     <span class="k">return</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">patch_makefile</span><span class="p">(</span><span class="n">file</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.sixs.patch_makefile"><a href="../../../../../api/isofit/data/cli/sixs/#isofit.data.cli.sixs.patch_makefile" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Patch the 6S Makefile to:</span>
 <span class="sd">    - Add -std=legacy to the EXTRAS (isofit)</span>
 
@@ -5346,22 +5346,22 @@
 <span class="sd">    ----------</span>
 <span class="sd">    file : pathlib.Path</span>
 <span class="sd">        Makefile to patch inplace</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
 
     <span class="c1"># Insert new lines</span>
     <span class="n">flags</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;EXTRA   = -O -ffixed-line-length-132 -std=legacy&quot;</span><span class="p">,</span>
+        <span class="s2">"EXTRA   = -O -ffixed-line-length-132 -std=legacy"</span><span class="p">,</span>
     <span class="p">]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">flag</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">flag</span><span class="p">:</span>
             <span class="n">lines</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">flag</span><span class="p">)</span>
 
-    <span class="n">file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">))</span>
+    <span class="n">file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">))</span>
 
 <div class="mkapi-source-link" id="isofit.data.cli.sixs.make"><a href="../../../../../api/isofit/data/cli/sixs/#isofit.data.cli.sixs.make" title="Go to docs">[docs]</a></div>
 <span class="k">def</span><span class="w"> </span><span class="nf">make</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Builds a 6S directory via make</span>
 
 <span class="sd">    Parameters</span>
@@ -5371,22 +5371,22 @@
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    If on MacOS, executing the `make` command may fail if the user hasn&#39;t agreed to the</span>
+<span class="sd">    If on MacOS, executing the `make` command may fail if the user hasn't agreed to the</span>
 <span class="sd">    Xcode and Apple SDKs license yet. In these cases, it may be required to run the</span>
 <span class="sd">    following command in order to compile the program:</span>
 <span class="sd">    $ sudo xcodebuild -license</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Update the makefile with recommended flags</span>
-    <span class="n">file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Makefile&quot;</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"Makefile"</span>
     <span class="n">patch_makefile</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
-    <span class="n">make</span> <span class="o">=</span> <span class="s2">&quot;make&quot;</span>
-    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Windows&quot;</span><span class="p">:</span>
-        <span class="n">make</span> <span class="o">=</span> <span class="s2">&quot;mingw32-make.exe&quot;</span>
-        <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">make</span><span class="si">}</span><span class="s2"> --help&quot;</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+    <span class="n">make</span> <span class="o">=</span> <span class="s2">"make"</span>
+    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"Windows"</span><span class="p">:</span>
+        <span class="n">make</span> <span class="o">=</span> <span class="s2">"mingw32-make.exe"</span>
+        <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">make</span><span class="si">}</span><span class="s2"> --help"</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="s2">&quot;MinGW64 (mingw) not found. On Windows install helpers via: isofit download windows --mingw&quot;</span>
+                <span class="s2">"MinGW64 (mingw) not found. On Windows install helpers via: isofit download windows --mingw"</span>
             <span class="p">)</span>
 
     <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
@@ -5399,22 +5399,22 @@
 
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Clean *.o files</span>
-        <span class="n">call</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">make</span><span class="si">}</span><span class="s2"> clean&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">make</span><span class="si">}</span><span class="s2"> clean"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="c1"># Build sixs</span>
-        <span class="n">call</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">make</span><span class="si">}</span><span class="s2"> -j </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">make</span><span class="si">}</span><span class="s2"> -j </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">stdout</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;stdout &quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">32</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">call</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"stdout "</span> <span class="o">+</span> <span class="s2">"-"</span> <span class="o">*</span> <span class="mi">32</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">call</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">stderr</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;stderr &quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">32</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">call</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"stderr "</span> <span class="o">+</span> <span class="s2">"-"</span> <span class="o">*</span> <span class="mi">32</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">call</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Building 6S via make failed, exit code: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">returncode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Building 6S via make failed, exit code: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">returncode</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
 
 <div class="mkapi-source-link" id="isofit.data.cli.sixs.download"><a href="../../../../../api/isofit/data/cli/sixs/#isofit.data.cli.sixs.download" title="Go to docs">[docs]</a></div>
-<span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">debug_make</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">debug_make</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Downloads 6S from https://github.com/isofit/6S.</span>
 
 <span class="sd">    Parameters</span>
@@ -5426,33 +5426,33 @@
 <span class="sd">    **_ : dict</span>
 <span class="sd">        Ignores unused params that may be used by other validate functions. This is to</span>
 <span class="sd">        maintain compatibility with other functions</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">precheck</span><span class="p">():</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="s2">&quot;Skipping downloading 6S. Once above errors are corrected, retry via `isofit download sixs`&quot;</span>
+            <span class="s2">"Skipping downloading 6S. Once above errors are corrected, retry via `isofit download sixs`"</span>
         <span class="p">)</span>
         <span class="k">return</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downloading 6S&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Downloading 6S"</span><span class="p">)</span>
 
     <span class="n">output</span> <span class="o">=</span> <span class="n">prepare_output</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">sixs</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">output</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="n">avail</span> <span class="o">=</span> <span class="n">pullFromRepo</span><span class="p">(</span><span class="s2">&quot;isofit&quot;</span><span class="p">,</span> <span class="s2">&quot;6S&quot;</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
+    <span class="n">avail</span> <span class="o">=</span> <span class="n">pullFromRepo</span><span class="p">(</span><span class="s2">"isofit"</span><span class="p">,</span> <span class="s2">"6S"</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
 
     <span class="c1"># Move files from subdir to base dir for backwards compatibility</span>
-    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="p">(</span><span class="n">avail</span> <span class="o">/</span> <span class="s2">&quot;Sixs&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">iterdir</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="p">(</span><span class="n">avail</span> <span class="o">/</span> <span class="s2">"Sixs"</span><span class="p">)</span><span class="o">.</span><span class="n">iterdir</span><span class="p">():</span>
         <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">avail</span> <span class="o">/</span> <span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building via make&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Building via make"</span><span class="p">)</span>
     <span class="n">make</span><span class="p">(</span><span class="n">avail</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug_make</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Done, now available at: </span><span class="si">{</span><span class="n">avail</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Done, now available at: </span><span class="si">{</span><span class="n">avail</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <div class="mkapi-source-link" id="isofit.data.cli.sixs.validate"><a href="../../../../../api/isofit/data/cli/sixs/#isofit.data.cli.sixs.validate" title="Go to docs">[docs]</a></div>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checkForUpdate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Validates a 6S installation</span>
 
 <span class="sd">    Parameters</span>
@@ -5473,35 +5473,35 @@
 <span class="sd">    -------</span>
 <span class="sd">    bool</span>
 <span class="sd">        True if valid, False otherwise</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">sixs</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Verifying path for 6S: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Verifying path for 6S: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[x] 6S path does not exist&quot;</span><span class="p">)</span>
+        <span class="n">error</span><span class="p">(</span><span class="s2">"[x] 6S path does not exist"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">exe</span> <span class="o">=</span> <span class="n">get_exe</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
         <span class="n">error</span><span class="p">(</span>
-            <span class="s2">&quot;[x] 6S is missing the built &#39;sixsV2.*&#39;, this is likely caused by make failing&quot;</span>
+            <span class="s2">"[x] 6S is missing the built 'sixsV2.*', this is likely caused by make failing"</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">if</span> <span class="n">checkForUpdate</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">isUpToDateGithub</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s2">&quot;isofit&quot;</span><span class="p">,</span> <span class="n">repo</span><span class="o">=</span><span class="s2">&quot;6S&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;sixs&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">isUpToDateGithub</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s2">"isofit"</span><span class="p">,</span> <span class="n">repo</span><span class="o">=</span><span class="s2">"6S"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"sixs"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[OK] Path is valid&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="s2">"[OK] Path is valid"</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">True</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.sixs.update"><a href="../../../../../api/isofit/data/cli/sixs/#isofit.data.cli.sixs.update" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks for an update and executes a new download if it is needed</span>
 <span class="sd">    Note: Not implemented for this module at this time</span>
 
@@ -5511,28 +5511,28 @@
 <span class="sd">        Just check if an update is available, do not download</span>
 <span class="sd">    **kwargs : dict</span>
 <span class="sd">        Additional key-word arguments to pass to download()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">debug</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;debug&quot;</span><span class="p">,</span> <span class="nb">print</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">debug</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"debug"</span><span class="p">,</span> <span class="nb">print</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">validate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;overwrite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Executing update&quot;</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">"overwrite"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">debug</span><span class="p">(</span><span class="s2">"Executing update"</span><span class="p">)</span>
             <span class="n">download</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Please download the latest via `isofit download </span><span class="si">{</span><span class="n">CMD</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">)</span>
+            <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Please download the latest via `isofit download </span><span class="si">{</span><span class="n">CMD</span><span class="si">}</span><span class="s2">`"</span><span class="p">)</span>
 
 
 <span class="nd">@shared</span><span class="o">.</span><span class="n">download</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">CMD</span><span class="p">)</span>
-<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Root directory to download 6S to, ie. [path]/sixs&quot;</span><span class="p">)</span>
+<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">"Root directory to download 6S to, ie. [path]/sixs"</span><span class="p">)</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">tag</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">overwrite</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">check</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--make&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Builds a 6S directory via make&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--make"</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Builds a 6S directory via make"</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;--debug-make&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Enable debug logging for the make command&quot;</span>
+    <span class="s2">"--debug-make"</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Enable debug logging for the make command"</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">download_cli</span><span class="p">(</span><span class="n">debug_make</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.sixs.download_cli"><a href="../../../../../api/isofit/data/cli/sixs/#isofit.data.cli.sixs.download_cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Downloads 6S from https://github.com/isofit/6S. Only HDF5 versions are supported at this time.</span>
 
 <span class="sd">    \b</span>
@@ -5541,28 +5541,28 @@
 <span class="sd">        - `isofit --path sixs /path/sixs download sixs`: Override the ini file. This will save the provided path for future reference.</span>
 <span class="sd">        - `isofit download sixs --path /path/sixs`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.</span>
 <span class="sd">    It is recommended to use the first style so the download path is remembered in the future.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;make&quot;</span><span class="p">):</span>
-        <span class="n">path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"make"</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"path"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">sixs</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Making 6S: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Making 6S: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">make</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug_make</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Finished"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"overwrite"</span><span class="p">):</span>
         <span class="n">download</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@shared</span><span class="o">.</span><span class="n">validate</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">CMD</span><span class="p">)</span>
-<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Root directory to download 6S to, ie. [path]/sixs&quot;</span><span class="p">)</span>
+<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">"Root directory to download 6S to, ie. [path]/sixs"</span><span class="p">)</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">tag</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.sixs.validate_cli"><a href="../../../../../api/isofit/data/cli/sixs/#isofit.data.cli.sixs.validate_cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Validates the installation of 6S</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">validate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

@@ -5240,9 +5240,9 @@
 <span class="normal">362</span>
 <span class="normal">363</span>
 <span class="normal">364</span>
-<span class="normal">365</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">365</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Manages the generation of new look-up tables (LUTs)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -5268,7 +5268,7 @@
     <span class="n">max_buffer_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
     <span class="n">rte_configure_and_exit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run a simulation for a single point and stream the results to a saved lut file.</span>
+<span class="w">    </span><span class="sd">"""Run a simulation for a single point and stream the results to a saved lut file.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        point (np.array): conditions to alter in simulation</span>
@@ -5277,8 +5277,8 @@
 <span class="sd">        reader (function): function to read the results of the simulation</span>
 <span class="sd">        max_buffer_time (float, optional): _description_. Defaults to 0.5.</span>
 <span class="sd">        rte_configure_and_exit (bool, optional): exit early if not executing simulations</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Logger.debug(f&quot;Simulating(point={point})&quot;)</span>
+<span class="sd">    """</span>
+    <span class="c1"># Logger.debug(f"Simulating(point={point})")</span>
 
     <span class="c1"># Slight delay to prevent all subprocesses from starting simultaneously</span>
     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">*</span> <span class="n">max_buffer_time</span><span class="p">)</span>
@@ -5295,15 +5295,15 @@
 
     <span class="c1"># Save the results to our LUT format</span>
     <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
-        <span class="c1"># Logger.debug(f&quot;Updating data point {point} for keys: {data.keys()}&quot;)</span>
+        <span class="c1"># Logger.debug(f"Updating data point {point} for keys: {data.keys()}")</span>
         <span class="k">return</span> <span class="n">point</span><span class="p">,</span> <span class="n">data</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No data was returned for point </span><span class="si">{</span><span class="n">point</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No data was returned for point </span><span class="si">{</span><span class="n">point</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="nd">@ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">num_cpus</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">shardWriter</span><span class="p">(</span><span class="n">lut</span><span class="p">,</span> <span class="n">shard</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">simmer</span><span class="p">,</span> <span class="n">reader</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.writer.shardWriter"><a href="../../../../api/isofit/luts/writer/#isofit.luts.writer.shardWriter" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Execute simulations for a set of points and write chunked results to a LUT shard.</span>
 
 <span class="sd">    This function is intended to run as a Ray remote task. For each input point,</span>
@@ -5335,11 +5335,11 @@
 <span class="sd">        A tuple ``(point, chunkless)`` where ``point`` is the last processed</span>
 <span class="sd">        point and ``chunkless`` is a dictionary of non-chunked outputs from</span>
 <span class="sd">        the last iteration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lut</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="n">lut</span> <span class="o">=</span> <span class="n">create</span><span class="p">(</span><span class="o">**</span><span class="n">lut</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">buffered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">lut</span> <span class="o">=</span> <span class="n">create</span><span class="p">(</span><span class="o">**</span><span class="n">lut</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"a"</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">buffered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting shard </span><span class="si">{</span><span class="n">shard</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Starting shard </span><span class="si">{</span><span class="n">shard</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">points</span><span class="p">:</span>
         <span class="n">simmer</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>  <span class="c1"># Execute the simulation</span>
@@ -5351,49 +5351,49 @@
         <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
             <span class="n">lut</span><span class="o">.</span><span class="n">queuePoint</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished points </span><span class="si">{</span><span class="n">shard</span><span class="si">}</span><span class="s2">, flushing to disk&quot;</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Finished points </span><span class="si">{</span><span class="n">shard</span><span class="si">}</span><span class="s2">, flushing to disk"</span><span class="p">)</span>
     <span class="n">lut</span><span class="o">.</span><span class="n">flush_buffer</span><span class="p">(</span><span class="n">slices</span><span class="o">=</span><span class="n">coord</span><span class="p">)</span>
 
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished shard </span><span class="si">{</span><span class="n">shard</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Finished shard </span><span class="si">{</span><span class="n">shard</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">point</span><span class="p">,</span> <span class="n">chunkless</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Writer</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.writer.Writer"><a href="../../../../api/isofit/luts/writer/#isofit.luts.writer.Writer" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Handles writing RTE engine simulation data to an ISOFIT-compatible LUT store</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Allows engines to outright disable the parallelized sims if they do nothing</span>
     <span class="n">_disable_makeSim</span> <span class="o">=</span> <span class="kc">False</span>
 
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sleep a random amount of time up to max this value</span>
+<span class="w">    </span><span class="sd">"""Sleep a random amount of time up to max this value</span>
 <span class="sd">    at the start of each streamSimulation</span>
-<span class="sd">    Can be set per custom engine&quot;&quot;&quot;</span>
+<span class="sd">    Can be set per custom engine"""</span>
     <span class="n">max_buffer_time</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c1"># Optional flag to exit simulations early</span>
     <span class="n">configure_and_exit</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.writer.Writer.write"><a href="../../../../api/isofit/luts/writer/#isofit.luts.writer.Writer.write" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize a LUT and run simulations</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        shard_size : str, default=None</span>
-<span class="sd">            Limit the total size of a single shard eg. &quot;4gb&quot;</span>
+<span class="sd">            Limit the total size of a single shard eg. "4gb"</span>
 <span class="sd">        target_shards : int, default=self.n_cores</span>
 <span class="sd">            Target number of shards in order to maximize system resources with</span>
 <span class="sd">            parallelization</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;lut_path&quot;</span><span class="p">,</span> <span class="s2">&quot;lut_names&quot;</span><span class="p">,</span> <span class="s2">&quot;lut_grid&quot;</span><span class="p">,</span> <span class="s2">&quot;wl&quot;</span><span class="p">,</span> <span class="s2">&quot;lut_keys&quot;</span><span class="p">):</span>
+<span class="sd">        """</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"lut_path"</span><span class="p">,</span> <span class="s2">"lut_names"</span><span class="p">,</span> <span class="s2">"lut_grid"</span><span class="p">,</span> <span class="s2">"wl"</span><span class="p">,</span> <span class="s2">"lut_keys"</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Missing required attribute to write the LUT: </span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Missing required attribute to write the LUT: </span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">lut</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;target_shards&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"target_shards"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure_and_exit</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lut</span> <span class="o">=</span> <span class="n">create</span><span class="p">(</span>
                 <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_path</span><span class="p">,</span>
@@ -5409,39 +5409,39 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">runSimulations</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">runSimulations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.writer.Writer.runSimulations"><a href="../../../../api/isofit/luts/writer/#isofit.luts.writer.Writer.runSimulations" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Executes an engine object to process simulations using the preSim, makeSim, and</span>
 <span class="sd">        postSim functions</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Tag the LUT with its build day-of-year so a prebuilt LUT reused on a</span>
         <span class="c1"># different scene date can be Earth-Sun-distance corrected downstream</span>
-        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;dayofyear&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">&quot;dayofyear&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"dayofyear"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">"dayofyear"</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dayofyear</span><span class="p">))</span>
 
-        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running any pre-sim functions&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running any pre-sim functions"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">pre</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preSim</span><span class="p">():</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving pre-sim data to index zero of all dimensions except wl&quot;</span><span class="p">)</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pre-sim data contains keys: </span><span class="si">{</span><span class="n">pre</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Saving pre-sim data to index zero of all dimensions except wl"</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pre-sim data contains keys: </span><span class="si">{</span><span class="n">pre</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="n">point</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">writePoint</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">pre</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_disable_makeSim</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="p">,</span> <span class="s2">&quot;groups&quot;</span><span class="p">):</span>
-                <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Executing parallel simulations by shards&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="p">,</span> <span class="s2">"groups"</span><span class="p">):</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Executing parallel simulations by shards"</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">parallelize_shards</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Executing parallel simulations by points&quot;</span><span class="p">)</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Executing parallel simulations by points"</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">parallelize_points</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;makeSim is disabled for this engine&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"makeSim is disabled for this engine"</span><span class="p">)</span>
 
-        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running any post-sim functions&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running any post-sim functions"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">post</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">postSim</span><span class="p">():</span>
             <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="s2">&quot;Saving post-sim data to index zero of all dimensions except wl&quot;</span>
+                <span class="s2">"Saving post-sim data to index zero of all dimensions except wl"</span>
             <span class="p">)</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;post-sim data contains keys: </span><span class="si">{</span><span class="n">post</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"post-sim data contains keys: </span><span class="si">{</span><span class="n">post</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="n">point</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">writePoint</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">post</span><span class="p">)</span>
@@ -5449,21 +5449,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">parallelize_shards</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.writer.Writer.parallelize_shards"><a href="../../../../api/isofit/luts/writer/#isofit.luts.writer.Writer.parallelize_shards" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parallelizes simulations into shard groups to handle very large LUTs: VLLUTS</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">groups</span>
         <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">coords</span>
         <span class="n">simmer</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">makeSim</span><span class="p">)</span>
         <span class="n">reader</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">readSim</span><span class="p">)</span>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
-                <span class="s2">&quot;keys&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_keys</span><span class="p">,</span>
-                <span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span>
-                <span class="s2">&quot;grid&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span>
-                <span class="s2">&quot;shards&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">shards</span><span class="p">,</span>
-                <span class="s2">&quot;target_shards&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="p">,</span>
+                <span class="s2">"path"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                <span class="s2">"keys"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_keys</span><span class="p">,</span>
+                <span class="s2">"wl"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span>
+                <span class="s2">"grid"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span>
+                <span class="s2">"shards"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">shards</span><span class="p">,</span>
+                <span class="s2">"target_shards"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">)</span>
 
@@ -5476,7 +5476,7 @@
             <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="nb">print</span><span class="o">=</span><span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>
-            <span class="n">message</span><span class="o">=</span><span class="s2">&quot;shards complete&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="s2">"shards complete"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># Update the lut as point simulations stream in</span>
@@ -5493,19 +5493,19 @@
                 <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">saved</span><span class="p">}</span>
                 <span class="n">saved</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
-                    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved chunkless: </span><span class="si">{</span><span class="n">saved</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saved chunkless: </span><span class="si">{</span><span class="n">saved</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">queuePoint</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 
             <span class="n">report</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">jobs</span><span class="p">))</span>
 
-        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Flushing chunkless data&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Flushing chunkless data"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">parallelize_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.writer.Writer.parallelize_points"><a href="../../../../api/isofit/luts/writer/#isofit.luts.writer.Writer.parallelize_points" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parallelizes simulations point-wise to stream finished data into the LUT at set</span>
 <span class="sd">        completion percentages</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Place into shared memory space to avoid spilling</span>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
             <span class="n">lut_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">,</span>
@@ -5523,7 +5523,7 @@
             <span class="c1"># Block until all jobs finish</span>
             <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">jobs</span><span class="p">)</span>
 
-            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Exiting early due to rte_configure_and_exit&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Exiting early due to rte_configure_and_exit"</span><span class="p">)</span>
             <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># Report a percentage complete every 10% and flush to disk at those intervals</span>
@@ -5532,7 +5532,7 @@
             <span class="n">step</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
             <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="nb">print</span><span class="o">=</span><span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>
-            <span class="n">message</span><span class="o">=</span><span class="s2">&quot;simulations complete&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="s2">"simulations complete"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># Update the lut as point simulations stream in</span>
@@ -5547,62 +5547,62 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">queuePoint</span><span class="p">(</span><span class="o">*</span><span class="n">ret</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">report</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">jobs</span><span class="p">))</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">hold</span><span class="p">:</span>
-                <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Flushing netCDF to disk&quot;</span><span class="p">)</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Flushing netCDF to disk"</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
-        <span class="c1"># Shouldn&#39;t be hit but just in case</span>
+        <span class="c1"># Shouldn't be hit but just in case</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">hold</span><span class="p">:</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Not all points were flushed, doing so now&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Not all points were flushed, doing so now"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">preSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.writer.Writer.preSim"><a href="../../../../api/isofit/luts/writer/#isofit.luts.writer.Writer.preSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This is an optional function that can be defined by a subclass RTE to be called</span>
 <span class="sd">        directly before runSim() is executed. A subclass may return a dict containing</span>
 <span class="sd">        any single or non-dimensional variables to be saved to the LUT file</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="o">...</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">makeSim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">template_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.writer.Writer.makeSim"><a href="../../../../api/isofit/luts/writer/#isofit.luts.writer.Writer.makeSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Prepares and executes a radiative transfer engine&#39;s simulations</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Prepares and executes a radiative transfer engine's simulations</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            point (np.array): conditions to alter in simulation</span>
 <span class="sd">            template_only (bool): only write template file and then stop</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="bp">NotImplemented</span><span class="p">(</span><span class="s2">&quot;This method must be defined by the subclass&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="k">raise</span> <span class="bp">NotImplemented</span><span class="p">(</span><span class="s2">"This method must be defined by the subclass"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">readSim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.writer.Writer.readSim"><a href="../../../../api/isofit/luts/writer/#isofit.luts.writer.Writer.readSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Reads simulation results to standard form</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            point (np.array): conditions to alter in simulation</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="bp">NotImplemented</span><span class="p">(</span>
-            <span class="s2">&quot;This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information&quot;</span>
+            <span class="s2">"This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">postSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.writer.Writer.postSim"><a href="../../../../api/isofit/luts/writer/#isofit.luts.writer.Writer.postSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This is an optional function that can be defined by a subclass RTE to be called</span>
 <span class="sd">        directly after runSim() is finished. A subclass may return a dict containing</span>
 <span class="sd">        any single or non-dimensional variables to be saved to the LUT file</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="o">...</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">point_to_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.writer.Writer.point_to_filename"><a href="../../../../api/isofit/luts/writer/#isofit.luts.writer.Writer.point_to_filename" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Change a point to a base filename</span>
+<span class="w">        </span><span class="sd">"""Change a point to a base filename</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            point (np.array): conditions to alter in simulation</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: basename of the file to use for this point</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-            <span class="p">[</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-</span><span class="si">%6.4f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">,</span> <span class="n">point</span><span class="p">)]</span>
+<span class="sd">        """</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="s2">"_"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">"</span><span class="si">%s</span><span class="s2">-</span><span class="si">%6.4f</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">,</span> <span class="n">point</span><span class="p">)]</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">filename</span>
 </code></pre></div></td></tr></table></div>

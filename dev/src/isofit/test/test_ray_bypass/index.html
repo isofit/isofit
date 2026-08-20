@@ -4882,10 +4882,10 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_decorators</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_ray_bypass.test_decorators"><a href="../../../../api/isofit/test/test_ray_bypass/#isofit.test.test_ray_bypass.test_decorators" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Tests decorator use cases of Ray</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="n">decorator</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">==</span> <span class="s2">&quot;isofit.debug.ray_bypass&quot;</span>
+<span class="sd">    """</span>
+    <span class="k">assert</span> <span class="n">decorator</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">==</span> <span class="s2">"isofit.debug.ray_bypass"</span>
 
     <span class="n">cases</span> <span class="o">=</span> <span class="p">{</span>
         <span class="mi">1</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
@@ -4894,7 +4894,7 @@
     <span class="p">}</span>
     <span class="k">for</span> <span class="n">ans</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="ow">in</span> <span class="n">cases</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">res</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">decorator</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
-        <span class="k">assert</span> <span class="n">res</span> <span class="o">==</span> <span class="n">ans</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Failed </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">*</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">res</span><span class="si">}</span><span class="s2"> expected </span><span class="si">{</span><span class="n">ans</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="n">res</span> <span class="o">==</span> <span class="n">ans</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Failed </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">*</span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">res</span><span class="si">}</span><span class="s2"> expected </span><span class="si">{</span><span class="n">ans</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="n">jobs</span> <span class="o">=</span> <span class="p">[</span><span class="n">decorator</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">cases</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
     <span class="k">assert</span> <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">jobs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="n">cases</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
@@ -4908,17 +4908,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&gt;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"&lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&gt;"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">some_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_ray_bypass.Worker.some_func"><a href="../../../../api/isofit/test/test_ray_bypass/#isofit.test.test_ray_bypass.Worker.some_func" title="Go to docs">[docs]</a></div>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">test_classes</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_ray_bypass.test_classes"><a href="../../../../api/isofit/test/test_ray_bypass/#isofit.test.test_ray_bypass.test_classes" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Tests wrapping class objects and how they&#39;re used in core.isofit.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="s2">&quot;isofit.debug.ray_bypass&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">ray</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_classes</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"test"</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_ray_bypass.test_classes"><a href="../../../../api/isofit/test/test_ray_bypass/#isofit.test.test_ray_bypass.test_classes" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Tests wrapping class objects and how they're used in core.isofit.</span>
+<span class="sd">    """</span>
+    <span class="k">assert</span> <span class="s2">"isofit.debug.ray_bypass"</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">ray</span><span class="p">)</span>
 
     <span class="n">name_id</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
     <span class="n">worker</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">()(</span><span class="n">Worker</span><span class="p">)</span>
@@ -4926,7 +4926,7 @@
 
     <span class="n">results</span> <span class="o">=</span> <span class="n">workers</span><span class="o">.</span><span class="n">map_unordered</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">some_func</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
 
-    <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+    <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
 </code></pre></div></td></tr></table></div>
 
 

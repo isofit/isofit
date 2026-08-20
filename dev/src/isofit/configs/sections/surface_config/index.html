@@ -5028,14 +5028,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5063,9 +5063,9 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">SurfaceStateVectorConfig</span><span class="p">(</span><span class="n">StateVectorConfig</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.surface_config.SurfaceStateVectorConfig"><a href="../../../../../api/isofit/configs/sections/surface_config/#isofit.configs.sections.surface_config.SurfaceStateVectorConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Surface State vector configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -5091,9 +5091,9 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">SurfaceConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.surface_config.SurfaceConfig"><a href="../../../../../api/isofit/configs/sections/surface_config/#isofit.configs.sections.surface_config.SurfaceConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Surface configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -5124,11 +5124,11 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_select_on_init_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">select_on_init</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: This field, if present and set to true, forces us to use any initialization state and never change.</span>
-<span class="sd">        The state is preserved in the geometry object so that this object stays stateless&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""bool: This field, if present and set to true, forces us to use any initialization state and never change.</span>
+<span class="sd">        The state is preserved in the geometry object so that this object stays stateless"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_selection_metric_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">selection_metric</span> <span class="o">=</span> <span class="s2">&quot;Euclidean&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selection_metric</span> <span class="o">=</span> <span class="s2">"Euclidean"</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_statevector_type</span> <span class="o">=</span> <span class="n">SurfaceStateVectorConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">statevector</span><span class="p">:</span> <span class="n">StateVectorConfig</span> <span class="o">=</span> <span class="n">SurfaceStateVectorConfig</span><span class="p">({})</span>
@@ -5136,24 +5136,24 @@
         <span class="c1"># Surface Thermal</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_emissivity_for_surface_T_init_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emissivity_for_surface_T_init</span> <span class="o">=</span> <span class="mf">0.98</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Initial Value recommended by Glynn Hulley.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">""" Initial Value recommended by Glynn Hulley."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_terrain_style_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="o">=</span> <span class="s2">&quot;flat&quot;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Style of terrain to use in the forward model - options are &#39;flat&#39;, &#39;dem&#39;, &#39;solved&#39;</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="o">=</span> <span class="s2">"flat"</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_max_slope_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_slope</span> <span class="o">=</span> <span class="mf">90.0</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        float: Max slope value used in LUT component calculations to inform minimum cos_i.</span>
-<span class="sd">        Only relevant if terrain_style is &#39;dem&#39; and a 6 component model is used.</span>
+<span class="sd">        Only relevant if terrain_style is 'dem' and a 6 component model is used.</span>
 <span class="sd">        This can avoid runaway results at low cos_i values where diffuse radiance dominates.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_refractive_index_path_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">refractive_index_path</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refractive_index_path</span> <span class="o">=</span> <span class="s2">""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 
@@ -5163,75 +5163,75 @@
 
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Surfaces</span><span class="p">):</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="s2">&quot;surface_file not specified. All current supported surface models require surface_file to be provided&quot;</span>
+                <span class="s2">"surface_file not specified. All current supported surface models require surface_file to be provided"</span>
             <span class="p">)</span>
 
         <span class="n">valid_surface_categories</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;surface&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;multicomponent_surface&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;glint_model_surface&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;thermal_surface&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;lut_surface&quot;</span><span class="p">,</span>
+            <span class="s2">"surface"</span><span class="p">,</span>
+            <span class="s2">"multicomponent_surface"</span><span class="p">,</span>
+            <span class="s2">"glint_model_surface"</span><span class="p">,</span>
+            <span class="s2">"thermal_surface"</span><span class="p">,</span>
+            <span class="s2">"lut_surface"</span><span class="p">,</span>
         <span class="p">]</span>
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_category</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Surfaces</span><span class="p">):</span>
-            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;surface-&gt;surface_category or Surfaces must be specified&quot;</span><span class="p">)</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"surface-&gt;surface_category or Surfaces must be specified"</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_category</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_surface_categories</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Surfaces</span>
         <span class="p">):</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="s2">&quot;surface-&gt;surface_category: </span><span class="si">{}</span><span class="s2"> not in valid surface categories: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">"surface-&gt;surface_category: </span><span class="si">{}</span><span class="s2"> not in valid surface categories: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">surface_category</span><span class="p">,</span> <span class="n">valid_surface_categories</span>
                 <span class="p">)</span>
             <span class="p">)</span>
 
-        <span class="n">valid_metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Euclidean&quot;</span><span class="p">,</span> <span class="s2">&quot;SGA&quot;</span><span class="p">,</span> <span class="s2">&quot;SpecAngle&quot;</span><span class="p">]</span>
+        <span class="n">valid_metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Euclidean"</span><span class="p">,</span> <span class="s2">"SGA"</span><span class="p">,</span> <span class="s2">"SpecAngle"</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection_metric</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_metrics</span><span class="p">:</span>
-            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;surface-&gt;selection_metric must be one of: </span><span class="si">{</span><span class="n">valid_metrics</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"surface-&gt;selection_metric must be one of: </span><span class="si">{</span><span class="n">valid_metrics</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># multistate checks</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Surfaces</span><span class="p">):</span>
             <span class="n">missing_cats</span><span class="p">,</span> <span class="n">missing_files</span><span class="p">,</span> <span class="n">missing_ints</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">sub_surface</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Surfaces</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">sub_surface</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surface_category&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">sub_surface</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"surface_category"</span><span class="p">):</span>
                     <span class="n">missing_cats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">sub_surface</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surface_file&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">sub_surface</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"surface_file"</span><span class="p">):</span>
                     <span class="n">missing_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">sub_surface</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surface_int&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">sub_surface</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"surface_int"</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">missing_ints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing_cats</span><span class="p">):</span>
                 <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="s2">&quot;Multi-surface config given and no &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;surface-category specified for keys: </span><span class="si">{</span><span class="n">missing_cats</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="s2">"Multi-surface config given and no "</span>
+                    <span class="sa">f</span><span class="s2">"surface-category specified for keys: </span><span class="si">{</span><span class="n">missing_cats</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing_files</span><span class="p">):</span>
                 <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="s2">&quot;Multi-surface config given and &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;no surface-file specified for keys: </span><span class="si">{</span><span class="n">missing_files</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="s2">"Multi-surface config given and "</span>
+                    <span class="sa">f</span><span class="s2">"no surface-file specified for keys: </span><span class="si">{</span><span class="n">missing_files</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing_ints</span><span class="p">):</span>
                 <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="s2">&quot;Multi-surface config given and no surface-&quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;int mapping specified for keys: </span><span class="si">{</span><span class="n">missing_ints</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="s2">"Multi-surface config given and no surface-"</span>
+                    <span class="sa">f</span><span class="s2">"int mapping specified for keys: </span><span class="si">{</span><span class="n">missing_ints</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
 
         <span class="c1"># Check statevector</span>
         <span class="n">mat_files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
-            <span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">recursive_get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_config_as_dict</span><span class="p">(),</span> <span class="s2">&quot;surface_file&quot;</span><span class="p">))</span>
+            <span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">recursive_get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_config_as_dict</span><span class="p">(),</span> <span class="s2">"surface_file"</span><span class="p">))</span>
         <span class="p">)</span>
         <span class="n">statevec</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">key</span><span class="p">:</span> <span class="n">value</span>
-            <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="n">recursive_get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_config_as_dict</span><span class="p">(),</span> <span class="s2">&quot;statevector&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">di</span> <span class="ow">in</span> <span class="n">recursive_get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_config_as_dict</span><span class="p">(),</span> <span class="s2">"statevector"</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">di</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
         <span class="p">}</span>
 
         <span class="n">mismatch</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">mat_files</span><span class="p">:</span>
             <span class="n">model_dict</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;statevec_names&quot;</span><span class="p">,</span> <span class="p">[])):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"statevec_names"</span><span class="p">,</span> <span class="p">[])):</span>
                 <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">DefaultState</span><span class="o">.</span><span class="n">_fields</span><span class="p">:</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
                         <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">statevec</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">model_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()[</span><span class="n">i</span><span class="p">])</span>
@@ -5240,20 +5240,20 @@
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mismatch</span><span class="p">):</span>
             <span class="n">message</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="s2">&quot;Configured non-reflectance surface statevector &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;elements do not match .mat file.</span><span class="se">\n</span><span class="s2">Run will use configured &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;values in the .json config.&quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Mismatching values:&quot;</span>
+                <span class="s2">"Configured non-reflectance surface statevector "</span>
+                <span class="o">+</span> <span class="s2">"elements do not match .mat file.</span><span class="se">\n</span><span class="s2">Run will use configured "</span>
+                <span class="o">+</span> <span class="s2">"values in the .json config."</span>
+                <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">Mismatching values:"</span>
             <span class="p">)</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">mismatch</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">message</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">message</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
 
             <span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
 
-        <span class="n">terrain_options</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;flat&quot;</span><span class="p">,</span> <span class="s2">&quot;dem&quot;</span><span class="p">,</span> <span class="s2">&quot;solved&quot;</span><span class="p">]</span>
+        <span class="n">terrain_options</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"flat"</span><span class="p">,</span> <span class="s2">"dem"</span><span class="p">,</span> <span class="s2">"solved"</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">terrain_options</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;surface-&gt;terrain_style is set as </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span><span class="si">}</span><span class="s2">, but must be one of: </span><span class="si">{</span><span class="n">terrain_options</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"surface-&gt;terrain_style is set as </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">terrain_style</span><span class="si">}</span><span class="s2">, but must be one of: </span><span class="si">{</span><span class="n">terrain_options</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>
@@ -5262,11 +5262,11 @@
 
         <span class="c1"># Not entirely sure if this is needed/possible, but just to be safe</span>
         <span class="n">keys_to_ignore</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;multi_surface_flag&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Surfaces&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;surface_class_file&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;base_surface_class_file&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;statevector&quot;</span><span class="p">,</span>
+            <span class="s2">"multi_surface_flag"</span><span class="p">,</span>
+            <span class="s2">"Surfaces"</span><span class="p">,</span>
+            <span class="s2">"surface_class_file"</span><span class="p">,</span>
+            <span class="s2">"base_surface_class_file"</span><span class="p">,</span>
+            <span class="s2">"statevector"</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">subconfig_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>

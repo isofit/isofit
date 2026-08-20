@@ -5627,91 +5627,91 @@
 <span class="p">)</span>
 
 <div class="mkapi-source-link" id="isofit.utils.wavelength_cal.add_wavelength_elements"><a href="../../../../api/isofit/utils/wavelength_cal/#isofit.utils.wavelength_cal.add_wavelength_elements" title="Go to docs">[docs]</a></div>
-<span class="k">def</span><span class="w"> </span><span class="nf">add_wavelength_elements</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s2">&quot;shift&quot;</span><span class="p">,</span> <span class="n">spline_indices</span><span class="o">=</span><span class="p">[]):</span>
-    <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_wavelength_elements</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s2">"shift"</span><span class="p">,</span> <span class="n">spline_indices</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">))</span>
 
     <span class="c1"># Set RTM WL range</span>
     <span class="n">hi_res_wavlengths</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;wavelengths_highres.txt&quot;</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">".."</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">,</span> <span class="s2">"wavelengths_highres.txt"</span>
     <span class="p">)</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">360</span><span class="p">,</span> <span class="mi">2511</span><span class="p">,</span> <span class="mf">0.025</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1000.0</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">*</span> <span class="mf">0.025</span> <span class="o">/</span> <span class="mf">1000.0</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
     <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">n</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">w</span><span class="p">]</span>
-    <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">hi_res_wavlengths</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%8.6f</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">config</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;atmosphere&quot;</span><span class="p">][</span><span class="s2">&quot;engine&quot;</span><span class="p">][</span>
-        <span class="s2">&quot;wavelength_file&quot;</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">hi_res_wavlengths</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">"</span><span class="si">%8.6f</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">config</span><span class="p">[</span><span class="s2">"forward_model"</span><span class="p">][</span><span class="s2">"atmosphere"</span><span class="p">][</span><span class="s2">"engine"</span><span class="p">][</span>
+        <span class="s2">"wavelength_file"</span>
     <span class="p">]</span> <span class="o">=</span> <span class="n">hi_res_wavlengths</span>
 
     <span class="c1"># Flag case where spline_indices is empty and using spline</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">spline_indices</span> <span class="ow">and</span> <span class="p">(</span>
-        <span class="p">(</span><span class="n">state_type</span> <span class="o">==</span> <span class="s2">&quot;spline&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">state_type</span> <span class="o">==</span> <span class="s2">&quot;spline-only&quot;</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">state_type</span> <span class="o">==</span> <span class="s2">"spline"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">state_type</span> <span class="o">==</span> <span class="s2">"spline-only"</span><span class="p">)</span>
     <span class="p">):</span>
-        <span class="n">errstr</span> <span class="o">=</span> <span class="s2">&quot;Spline state given, but no indices provided&quot;</span>
+        <span class="n">errstr</span> <span class="o">=</span> <span class="s2">"Spline state given, but no indices provided"</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errstr</span><span class="p">)</span>
 
-    <span class="n">config</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span><span class="s2">&quot;calibration_fixed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="k">if</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s2">&quot;shift&quot;</span><span class="p">:</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span><span class="s2">&quot;statevector&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;GROW_FWHM&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
-                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
-                <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">config</span><span class="p">[</span><span class="s2">"forward_model"</span><span class="p">][</span><span class="s2">"instrument"</span><span class="p">][</span><span class="s2">"calibration_fixed"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s2">"shift"</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"forward_model"</span><span class="p">][</span><span class="s2">"instrument"</span><span class="p">][</span><span class="s2">"statevector"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"GROW_FWHM"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"bounds"</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+                <span class="s2">"init"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_mean"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_sigma"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+                <span class="s2">"scale"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
             <span class="p">},</span>
-            <span class="s2">&quot;WL_SHIFT&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
-                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
-                <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"WL_SHIFT"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"bounds"</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+                <span class="s2">"init"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_mean"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_sigma"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+                <span class="s2">"scale"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
             <span class="p">},</span>
         <span class="p">}</span>
-    <span class="k">elif</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s2">&quot;shift-only&quot;</span><span class="p">:</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span><span class="s2">&quot;statevector&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;WL_SHIFT&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
-                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
-                <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="k">elif</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s2">"shift-only"</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"forward_model"</span><span class="p">][</span><span class="s2">"instrument"</span><span class="p">][</span><span class="s2">"statevector"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"WL_SHIFT"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"bounds"</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+                <span class="s2">"init"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_mean"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_sigma"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+                <span class="s2">"scale"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">}</span>
-    <span class="k">elif</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s2">&quot;spline&quot;</span><span class="p">:</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span><span class="s2">&quot;statevector&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;GROW_FWHM&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
-                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
-                <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="k">elif</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s2">"spline"</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"forward_model"</span><span class="p">][</span><span class="s2">"instrument"</span><span class="p">][</span><span class="s2">"statevector"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"GROW_FWHM"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"bounds"</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+                <span class="s2">"init"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_mean"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_sigma"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+                <span class="s2">"scale"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">}</span>
         <span class="k">for</span> <span class="n">spline_index</span> <span class="ow">in</span> <span class="n">spline_indices</span><span class="p">:</span>
-            <span class="n">config</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span><span class="s2">&quot;statevector&quot;</span><span class="p">][</span>
-                <span class="sa">f</span><span class="s2">&quot;WLSPL_</span><span class="si">{</span><span class="n">spline_index</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">config</span><span class="p">[</span><span class="s2">"forward_model"</span><span class="p">][</span><span class="s2">"instrument"</span><span class="p">][</span><span class="s2">"statevector"</span><span class="p">][</span>
+                <span class="sa">f</span><span class="s2">"WLSPL_</span><span class="si">{</span><span class="n">spline_index</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
-                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
-                <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">"bounds"</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+                <span class="s2">"init"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_mean"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_sigma"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+                <span class="s2">"scale"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
             <span class="p">}</span>
-    <span class="k">elif</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s2">&quot;spline-only&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s2">"spline-only"</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">spline_index</span> <span class="ow">in</span> <span class="n">spline_indices</span><span class="p">:</span>
-            <span class="n">config</span><span class="p">[</span><span class="s2">&quot;forward_model&quot;</span><span class="p">][</span><span class="s2">&quot;instrument&quot;</span><span class="p">][</span><span class="s2">&quot;statevector&quot;</span><span class="p">][</span>
-                <span class="sa">f</span><span class="s2">&quot;WLSPL_</span><span class="si">{</span><span class="n">spline_index</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">config</span><span class="p">[</span><span class="s2">"forward_model"</span><span class="p">][</span><span class="s2">"instrument"</span><span class="p">][</span><span class="s2">"statevector"</span><span class="p">][</span>
+                <span class="sa">f</span><span class="s2">"WLSPL_</span><span class="si">{</span><span class="n">spline_index</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
-                <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
-                <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">"bounds"</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+                <span class="s2">"init"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_mean"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"prior_sigma"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+                <span class="s2">"scale"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
             <span class="p">}</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Writing config update with WL cal parameters to </span><span class="si">{</span><span class="n">config_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Writing config update with WL cal parameters to </span><span class="si">{</span><span class="n">config_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
         <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">tmpl</span><span class="o">.</span><span class="n">SerialEncoder</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
 
@@ -5726,7 +5726,7 @@
     <span class="n">end_column</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">column_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Averages the columns of input radiance, location, and observation files</span>
 <span class="sd">    and saves the results to output files.</span>
 
@@ -5742,25 +5742,25 @@
 <span class="sd">        end_column (int, optional): Ending column index for averaging.</span>
 <span class="sd">            Defaults to None, which means average until the last column.</span>
 <span class="sd">        column_interval (int, optional): Step size over columns; skips,</span>
-<span class="sd">            doesn&#39;t average.  Useful to increase runtime speeds.</span>
+<span class="sd">            doesn't average.  Useful to increase runtime speeds.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        rows (int): The number of rows in the averaged output files.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">rows</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">infile</span><span class="p">,</span> <span class="n">outfile</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
         <span class="p">[</span><span class="n">input_radiance_file</span><span class="p">,</span> <span class="n">input_loc_file</span><span class="p">,</span> <span class="n">input_obs_file</span><span class="p">],</span>
         <span class="p">[</span><span class="n">output_radiance_file</span><span class="p">,</span> <span class="n">output_loc_file</span><span class="p">,</span> <span class="n">output_obs_file</span><span class="p">],</span>
     <span class="p">):</span>
         <span class="n">in_ds</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">infile</span><span class="p">),</span> <span class="n">infile</span><span class="p">)</span>
-        <span class="n">mm</span> <span class="o">=</span> <span class="n">in_ds</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">mm</span> <span class="o">=</span> <span class="n">in_ds</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="c1"># Stay robust to nodata values - non-finite, header</span>
         <span class="c1"># specified nodata, and -9999 (in case unspecified)</span>
         <span class="n">nodata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">mm</span><span class="p">)</span> <span class="o">==</span> <span class="kc">False</span>
         <span class="n">nodata</span><span class="p">[</span><span class="n">mm</span> <span class="o">==</span> <span class="o">-</span><span class="mi">9999</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="s2">&quot;data ignore value&quot;</span> <span class="ow">in</span> <span class="n">in_ds</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
-            <span class="n">nodata</span><span class="p">[</span><span class="n">mm</span> <span class="o">==</span> <span class="n">in_ds</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;data ignore value&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="s2">"data ignore value"</span> <span class="ow">in</span> <span class="n">in_ds</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+            <span class="n">nodata</span><span class="p">[</span><span class="n">mm</span> <span class="o">==</span> <span class="n">in_ds</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"data ignore value"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">mm</span><span class="p">[</span><span class="n">nodata</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="n">rows</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">mm</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -5773,20 +5773,20 @@
         <span class="n">avg</span> <span class="o">=</span> <span class="n">avg</span><span class="p">[</span><span class="n">start_column</span><span class="p">:</span><span class="n">end_column</span><span class="p">:</span><span class="n">column_interval</span><span class="p">,</span> <span class="p">:]</span>
 
         <span class="n">meta</span> <span class="o">=</span> <span class="n">in_ds</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;lines&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">avg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">meta</span><span class="p">[</span><span class="s2">"lines"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">meta</span><span class="p">[</span><span class="s2">"samples"</span><span class="p">]</span> <span class="o">=</span> <span class="n">avg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="n">out_ds</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">create_image</span><span class="p">(</span>
             <span class="n">envi_header</span><span class="p">(</span><span class="n">outfile</span><span class="p">),</span>
             <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">avg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">avg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-            <span class="n">ext</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">ext</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
             <span class="n">dtype</span><span class="o">=</span><span class="n">in_ds</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
-            <span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bil&quot;</span><span class="p">,</span>
+            <span class="n">interleave</span><span class="o">=</span><span class="s2">"bil"</span><span class="p">,</span>
             <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">metadata</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="n">out_ds</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:]</span> <span class="o">=</span> <span class="n">avg</span>
+        <span class="n">out_ds</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:]</span> <span class="o">=</span> <span class="n">avg</span>
         <span class="k">del</span> <span class="n">in_ds</span><span class="p">,</span> <span class="n">out_ds</span>
     <span class="k">return</span> <span class="n">rows</span>
 
@@ -5801,27 +5801,27 @@
     <span class="n">copy_input_files</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">modtran_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">wavelength_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">surface_category</span><span class="o">=</span><span class="s2">&quot;multicomponent_surface&quot;</span><span class="p">,</span>
+    <span class="n">surface_category</span><span class="o">=</span><span class="s2">"multicomponent_surface"</span><span class="p">,</span>
     <span class="n">rdn_factors_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">atmosphere_type</span><span class="o">=</span><span class="s2">&quot;ATM_MIDLAT_SUMMER&quot;</span><span class="p">,</span>
+    <span class="n">atmosphere_type</span><span class="o">=</span><span class="s2">"ATM_MIDLAT_SUMMER"</span><span class="p">,</span>
     <span class="n">channelized_uncertainty_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">model_discrepancy_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">lut_config_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">logging_level</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+    <span class="n">logging_level</span><span class="o">=</span><span class="s2">"INFO"</span><span class="p">,</span>
     <span class="n">log_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">n_cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">ray_temp_dir</span><span class="o">=</span><span class="s2">&quot;/tmp/ray&quot;</span><span class="p">,</span>
+    <span class="n">ray_temp_dir</span><span class="o">=</span><span class="s2">"/tmp/ray"</span><span class="p">,</span>
     <span class="n">emulator_base</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">prebuilt_lut</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">inversion_windows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">wl_state_type</span><span class="o">=</span><span class="s2">&quot;shift&quot;</span><span class="p">,</span>
+    <span class="n">wl_state_type</span><span class="o">=</span><span class="s2">"shift"</span><span class="p">,</span>
     <span class="n">spline_indices</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">force_with_geo</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">start_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">end_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">column_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Runs a wavelength calibration on an input scene.</span>
 
 <span class="sd">    Observation (obs) and location (loc) files are used to determine appropriate</span>
@@ -5857,11 +5857,11 @@
 <span class="sd">    wavelength_path : str, default=None</span>
 <span class="sd">        Location to get wavelength information from, if not specified the radiance</span>
 <span class="sd">        header will be used</span>
-<span class="sd">    surface_category : str, default=&quot;multicomponent_surface&quot;</span>
+<span class="sd">    surface_category : str, default="multicomponent_surface"</span>
 <span class="sd">        The type of ISOFIT surface priors to use.  Default is multicomponent_surface</span>
 <span class="sd">    rdn_factors_path : str, default=None</span>
 <span class="sd">        Specify a radiometric correction factor, if desired</span>
-<span class="sd">    atmosphere_type : str, default=&quot;ATM_MIDLAT_SUMMER&quot;</span>
+<span class="sd">    atmosphere_type : str, default="ATM_MIDLAT_SUMMER"</span>
 <span class="sd">        Atmospheric profile to be used for MODTRAN simulations.  Unused for other</span>
 <span class="sd">        radiative transfer models.</span>
 <span class="sd">    channelized_uncertainty_path : str, default=None</span>
@@ -5872,7 +5872,7 @@
 <span class="sd">    lut_config_file : str, default=None</span>
 <span class="sd">        Path to a look up table configuration file, which will override defaults</span>
 <span class="sd">        choices</span>
-<span class="sd">    logging_level : str, default=&quot;INFO&quot;</span>
+<span class="sd">    logging_level : str, default="INFO"</span>
 <span class="sd">        Logging level with which to run ISOFIT</span>
 <span class="sd">    log_file : str, default=None</span>
 <span class="sd">        File path to write ISOFIT logs to</span>
@@ -5880,7 +5880,7 @@
 <span class="sd">        Number of cores to run ISOFIT with. Substantial parallelism is available, and</span>
 <span class="sd">        full runs will be very slow in serial. Suggested to max this out on the</span>
 <span class="sd">        available system</span>
-<span class="sd">    ray_temp_dir : str, default=&quot;/tmp/ray&quot;</span>
+<span class="sd">    ray_temp_dir : str, default="/tmp/ray"</span>
 <span class="sd">        Location of temporary directory for ray parallelization engine</span>
 <span class="sd">    emulator_base : str, default=None</span>
 <span class="sd">        Location of emulator base path. Point this at the model folder (or h5 file) of</span>
@@ -5904,44 +5904,44 @@
 <span class="sd">        Ending column index for averaging. Defaults to None, which means average until the</span>
 <span class="sd">        last column.</span>
 <span class="sd">    column_interval : int, default=1</span>
-<span class="sd">        Step size over columns; skips, doesn&#39;t average. Useful to increase runtime speeds.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        Step size over columns; skips, doesn't average. Useful to increase runtime speeds.</span>
+<span class="sd">    """</span>
 
     <span class="n">radiance_meta</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">input_radiance</span><span class="p">))</span><span class="o">.</span><span class="n">metadata</span>
     <span class="k">if</span> <span class="p">(</span>
         <span class="n">force_with_geo</span> <span class="ow">is</span> <span class="kc">False</span>
-        <span class="ow">and</span> <span class="s2">&quot;map info&quot;</span> <span class="ow">in</span> <span class="n">radiance_meta</span>
-        <span class="ow">and</span> <span class="n">radiance_meta</span><span class="p">[</span><span class="s2">&quot;map info&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">and</span> <span class="s2">"map info"</span> <span class="ow">in</span> <span class="n">radiance_meta</span>
+        <span class="ow">and</span> <span class="n">radiance_meta</span><span class="p">[</span><span class="s2">"map info"</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="p">):</span>
-        <span class="n">to_raise</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Radiance metadata has non-blank map info string, implying that </span>
+        <span class="n">to_raise</span> <span class="o">=</span> <span class="s2">"""Radiance metadata has non-blank map info string, implying that </span>
 <span class="s2">        it is a georeferenced file. wavelength_cal will perform columnwise averages that </span>
-<span class="s2">        will break this.  Please adjust or use the &#39;--force_with_geo&#39; flag.&quot;&quot;&quot;</span>
+<span class="s2">        will break this.  Please adjust or use the '--force_with_geo' flag."""</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">to_raise</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">to_raise</span><span class="p">)</span>
 
     <span class="c1">##################### Front Matter #########################</span>
     <span class="c1"># Determine if we run in multipart-transmittance (4c) mode</span>
     <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.jld2&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".jld2"</span><span class="p">):</span>
             <span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="k">elif</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.h5&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".h5"</span><span class="p">):</span>
             <span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="k">elif</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.6c&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".6c"</span><span class="p">):</span>
             <span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid emulator_base extension. Use .h5, .6c, or .jld2&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Invalid emulator_base extension. Use .h5, .6c, or .jld2"</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># This is the MODTRAN case. Do we want to enable the 4c mode by default?</span>
         <span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">if</span> <span class="n">sensor</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SUPPORTED_SENSORS</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">sensor</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;NA-&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sensor</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">"NA-"</span><span class="p">:</span>
             <span class="n">errstr</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s1">&#39;Argument error: sensor must be one of </span><span class="si">{</span><span class="n">SUPPORTED_SENSORS</span><span class="si">}</span><span class="s1"> or &quot;NA-*&quot;&#39;</span>
+                <span class="sa">f</span><span class="s1">'Argument error: sensor must be one of </span><span class="si">{</span><span class="n">SUPPORTED_SENSORS</span><span class="si">}</span><span class="s1"> or "NA-*"'</span>
             <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errstr</span><span class="p">)</span>
 
@@ -5949,41 +5949,41 @@
         <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">working_directory</span><span class="p">)</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-        <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> || </span><span class="si">%(filename)s</span><span class="s2">:</span><span class="si">%(funcName)s</span><span class="s2">() | </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> || </span><span class="si">%(filename)s</span><span class="s2">:</span><span class="si">%(funcName)s</span><span class="s2">() | </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">level</span><span class="o">=</span><span class="n">logging_level</span><span class="p">,</span>
         <span class="n">filename</span><span class="o">=</span><span class="n">log_file</span><span class="p">,</span>
-        <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S&quot;</span><span class="p">,</span>
+        <span class="n">datefmt</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1">################## Staging Setup ##########################</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checking input data files...&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Checking input data files..."</span><span class="p">)</span>
     <span class="n">rdn_dataset</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">input_radiance</span><span class="p">))</span>
     <span class="n">rdn_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">rdn_dataset</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rdn_dataset</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="k">del</span> <span class="n">rdn_dataset</span>
     <span class="k">for</span> <span class="n">infile_name</span><span class="p">,</span> <span class="n">infile</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-        <span class="p">[</span><span class="s2">&quot;input_radiance&quot;</span><span class="p">,</span> <span class="s2">&quot;input_loc&quot;</span><span class="p">,</span> <span class="s2">&quot;input_obs&quot;</span><span class="p">],</span>
+        <span class="p">[</span><span class="s2">"input_radiance"</span><span class="p">,</span> <span class="s2">"input_loc"</span><span class="p">,</span> <span class="s2">"input_obs"</span><span class="p">],</span>
         <span class="p">[</span><span class="n">input_radiance</span><span class="p">,</span> <span class="n">input_loc</span><span class="p">,</span> <span class="n">input_obs</span><span class="p">],</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">infile</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="n">err_str</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Input argument </span><span class="si">{</span><span class="n">infile_name</span><span class="si">}</span><span class="s2"> give as: </span><span class="si">{</span><span class="n">infile</span><span class="si">}</span><span class="s2">.  File not found on&quot;</span>
-                <span class="s2">&quot; system.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Input argument </span><span class="si">{</span><span class="n">infile_name</span><span class="si">}</span><span class="s2"> give as: </span><span class="si">{</span><span class="n">infile</span><span class="si">}</span><span class="s2">.  File not found on"</span>
+                <span class="s2">" system."</span>
             <span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;argument &quot;</span> <span class="o">+</span> <span class="n">err_str</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">infile_name</span> <span class="o">!=</span> <span class="s2">&quot;input_radiance&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"argument "</span> <span class="o">+</span> <span class="n">err_str</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">infile_name</span> <span class="o">!=</span> <span class="s2">"input_radiance"</span><span class="p">:</span>
             <span class="n">input_dataset</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">infile</span><span class="p">),</span> <span class="n">infile</span><span class="p">)</span>
             <span class="n">input_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">input_dataset</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">input_dataset</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">input_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">rdn_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">input_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">rdn_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
                 <span class="n">err_str</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Input file: </span><span class="si">{</span><span class="n">infile_name</span><span class="si">}</span><span class="s2"> size is </span><span class="si">{</span><span class="n">input_size</span><span class="si">}</span><span class="s2">, which does not&quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot; match input_radiance size: </span><span class="si">{</span><span class="n">rdn_size</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Input file: </span><span class="si">{</span><span class="n">infile_name</span><span class="si">}</span><span class="s2"> size is </span><span class="si">{</span><span class="n">input_size</span><span class="si">}</span><span class="s2">, which does not"</span>
+                    <span class="sa">f</span><span class="s2">" match input_radiance size: </span><span class="si">{</span><span class="n">rdn_size</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;...Data file checks complete&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"...Data file checks complete"</span><span class="p">)</span>
 
     <span class="n">lut_params</span> <span class="o">=</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">LUTConfig</span><span class="p">(</span><span class="n">lut_config_file</span><span class="p">,</span> <span class="n">emulator_base</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting up files and directories....&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Setting up files and directories...."</span><span class="p">)</span>
     <span class="n">skyview_factor</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">surface_class_file</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">paths</span> <span class="o">=</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">Pathnames</span><span class="p">(</span>
@@ -6006,10 +6006,10 @@
     <span class="p">)</span>
     <span class="n">paths</span><span class="o">.</span><span class="n">make_directories</span><span class="p">()</span>
     <span class="n">paths</span><span class="o">.</span><span class="n">stage_files</span><span class="p">()</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;...file/directory setup complete&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"...file/directory setup complete"</span><span class="p">)</span>
 
     <span class="c1"># Based on the sensor type, get appropriate year/month/day info from initial condition.</span>
-    <span class="c1"># We&#39;ll adjust for line length and UTC day overrun later</span>
+    <span class="c1"># We'll adjust for line length and UTC day overrun later</span>
     <span class="k">global</span> <span class="n">INVERSION_WINDOWS</span>
     <span class="n">dt</span><span class="p">,</span> <span class="n">sensor_inversion_window</span> <span class="o">=</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">sensor_name_to_dt</span><span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">paths</span><span class="o">.</span><span class="n">fid</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">sensor_inversion_window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -6017,12 +6017,12 @@
     <span class="k">if</span> <span class="n">inversion_windows</span><span class="p">:</span>
         <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span>
             <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">window</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">inversion_windows</span><span class="p">]</span>
-        <span class="p">),</span> <span class="s2">&quot;Inversion windows must be in pairs&quot;</span>
+        <span class="p">),</span> <span class="s2">"Inversion windows must be in pairs"</span>
         <span class="n">INVERSION_WINDOWS</span> <span class="o">=</span> <span class="n">inversion_windows</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using inversion windows: </span><span class="si">{</span><span class="n">INVERSION_WINDOWS</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using inversion windows: </span><span class="si">{</span><span class="n">INVERSION_WINDOWS</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Collapse data row-wise</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Collapsing data row-wise...&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Collapsing data row-wise..."</span><span class="p">)</span>
     <span class="n">n_rows</span> <span class="o">=</span> <span class="n">average_columns</span><span class="p">(</span>
         <span class="n">paths</span><span class="o">.</span><span class="n">input_radiance_file</span><span class="p">,</span>
         <span class="n">paths</span><span class="o">.</span><span class="n">input_loc_file</span><span class="p">,</span>
@@ -6055,12 +6055,12 @@
     <span class="k">if</span> <span class="n">h_m_s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="ow">and</span> <span class="n">h_m_s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">24</span><span class="p">:</span>
         <span class="n">h_m_s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">hour</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;UTC hour did not match start time minute. Adjusting to that value.&quot;</span>
+            <span class="s2">"UTC hour did not match start time minute. Adjusting to that value."</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">h_m_s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">dt</span><span class="o">.</span><span class="n">minute</span> <span class="ow">and</span> <span class="n">h_m_s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">60</span><span class="p">:</span>
         <span class="n">h_m_s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">minute</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;UTC minute did not match start time minute. Adjusting to that value.&quot;</span>
+            <span class="s2">"UTC minute did not match start time minute. Adjusting to that value."</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">day_increment</span><span class="p">:</span>
@@ -6092,11 +6092,11 @@
         <span class="n">name</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">surface_template_path</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">use_multisurface</span><span class="p">:</span>
-            <span class="n">surface_working_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">surface_working_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">surface_working_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">surface_working_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">"</span>
 
-        <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">surface_working_path</span> <span class="ow">and</span> <span class="n">surface_path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.mat&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">surface_working_path</span> <span class="ow">and</span> <span class="n">surface_path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".mat"</span><span class="p">):</span>
             <span class="n">copyfile</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">surface_working_path</span><span class="p">)</span>
 
         <span class="n">paths</span><span class="o">.</span><span class="n">surface_working_paths</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">surface_working_path</span>
@@ -6121,35 +6121,35 @@
                     <span class="mi">0</span>
                 <span class="p">]</span>  <span class="c1"># should be 0, but just in case</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="s2">&quot;Scene contains target lut grid elements &lt; 0 km, and uses 6s (via&quot;</span>
-                <span class="s2">&quot; sRTMnet).  6s does not support targets below sea level in km units. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot; Setting grid points </span><span class="si">{</span><span class="n">to_rem</span><span class="si">}</span><span class="s2"> to 0.&quot;</span>
+                <span class="s2">"Scene contains target lut grid elements &lt; 0 km, and uses 6s (via"</span>
+                <span class="s2">" sRTMnet).  6s does not support targets below sea level in km units. "</span>
+                <span class="sa">f</span><span class="s2">" Setting grid points </span><span class="si">{</span><span class="n">to_rem</span><span class="si">}</span><span class="s2"> to 0."</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">mean_elevation_km</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">mean_elevation_km</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Scene contains a mean target elevation &lt; 0.  6s does not support&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot; targets below sea level in km units.  Setting mean elevation to 0.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Scene contains a mean target elevation &lt; 0.  6s does not support"</span>
+                <span class="sa">f</span><span class="s2">" targets below sea level in km units.  Setting mean elevation to 0."</span>
             <span class="p">)</span>
 
     <span class="n">mean_altitude_km</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">mean_elevation_km</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">mean_to_sensor_zenith</span><span class="p">))</span> <span class="o">*</span> <span class="n">mean_path_km</span>
     <span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Observation means:&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Path (km): </span><span class="si">{</span><span class="n">mean_path_km</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;To-sensor azimuth (deg): </span><span class="si">{</span><span class="n">mean_to_sensor_azimuth</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;To-sensor zenith (deg): </span><span class="si">{</span><span class="n">mean_to_sensor_zenith</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;To-sun azimuth (deg): </span><span class="si">{</span><span class="n">mean_to_sun_azimuth</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;To-sun zenith (deg): </span><span class="si">{</span><span class="n">mean_to_sun_zenith</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Relative to-sun azimuth (deg): </span><span class="si">{</span><span class="n">mean_relative_azimuth</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Altitude (km): </span><span class="si">{</span><span class="n">mean_altitude_km</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Observation means:"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Path (km): </span><span class="si">{</span><span class="n">mean_path_km</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"To-sensor azimuth (deg): </span><span class="si">{</span><span class="n">mean_to_sensor_azimuth</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"To-sensor zenith (deg): </span><span class="si">{</span><span class="n">mean_to_sensor_zenith</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"To-sun azimuth (deg): </span><span class="si">{</span><span class="n">mean_to_sun_azimuth</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"To-sun zenith (deg): </span><span class="si">{</span><span class="n">mean_to_sun_zenith</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Relative to-sun azimuth (deg): </span><span class="si">{</span><span class="n">mean_relative_azimuth</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Altitude (km): </span><span class="si">{</span><span class="n">mean_altitude_km</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mean_altitude_km</span> <span class="o">&gt;</span> <span class="mi">99</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.jld2&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">emulator_base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".jld2"</span><span class="p">):</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="s2">&quot;Adjusting altitude to 99 km for integration with 6S, because emulator is&quot;</span>
-                <span class="s2">&quot; chosen.&quot;</span>
+                <span class="s2">"Adjusting altitude to 99 km for integration with 6S, because emulator is"</span>
+                <span class="s2">" chosen."</span>
             <span class="p">)</span>
             <span class="n">mean_altitude_km</span> <span class="o">=</span> <span class="mi">99</span>
 
@@ -6167,12 +6167,12 @@
         <span class="n">lut_params</span><span class="o">.</span><span class="n">h2o_spacing_min</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Full (non-aerosol) LUTs:&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Elevation: </span><span class="si">{</span><span class="n">elevation_lut_grid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;To-sensor zenith: </span><span class="si">{</span><span class="n">to_sensor_zenith_lut_grid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;To-sun zenith: </span><span class="si">{</span><span class="n">to_sun_zenith_lut_grid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Relative to-sun azimuth: </span><span class="si">{</span><span class="n">relative_azimuth_lut_grid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;H2O Vapor: </span><span class="si">{</span><span class="n">h2o_lut_grid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Full (non-aerosol) LUTs:"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Elevation: </span><span class="si">{</span><span class="n">elevation_lut_grid</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"To-sensor zenith: </span><span class="si">{</span><span class="n">to_sensor_zenith_lut_grid</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"To-sun zenith: </span><span class="si">{</span><span class="n">to_sun_zenith_lut_grid</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Relative to-sun azimuth: </span><span class="si">{</span><span class="n">relative_azimuth_lut_grid</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"H2O Vapor: </span><span class="si">{</span><span class="n">h2o_lut_grid</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="p">(</span>
         <span class="ow">not</span> <span class="n">exists</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">state_subs_path</span><span class="p">)</span>
@@ -6193,7 +6193,7 @@
             <span class="n">output_file</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">modtran_template_path</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Writing main configuration file.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Writing main configuration file."</span><span class="p">)</span>
         <span class="c1"># add aerosol elements from climatology</span>
         <span class="n">aerosol_state_vector</span><span class="p">,</span> <span class="n">aerosol_lut_grid</span><span class="p">,</span> <span class="n">aerosol_model_path</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">tmpl</span><span class="o">.</span><span class="n">load_climatology</span><span class="p">(</span>
@@ -6237,9 +6237,9 @@
         <span class="p">)</span>
 
         <span class="c1"># Run retrieval</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running ISOFIT with full LUT&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Running ISOFIT with full LUT"</span><span class="p">)</span>
         <span class="n">retrieval_full</span> <span class="o">=</span> <span class="n">isofit</span><span class="o">.</span><span class="n">Isofit</span><span class="p">(</span>
-            <span class="n">paths</span><span class="o">.</span><span class="n">isofit_full_config_path</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="n">log_file</span>
+            <span class="n">paths</span><span class="o">.</span><span class="n">isofit_full_config_path</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">"INFO"</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="n">log_file</span>
         <span class="p">)</span>
         <span class="n">retrieval_full</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
         <span class="k">del</span> <span class="n">retrieval_full</span>
@@ -6247,7 +6247,7 @@
         <span class="c1"># clean up unneeded storage</span>
         <span class="k">if</span> <span class="n">emulator_base</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">to_rm</span> <span class="ow">in</span> <span class="n">RTM_CLEANUP_LIST</span><span class="p">:</span>
-                <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot;rm &quot;</span> <span class="o">+</span> <span class="n">join</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">full_lut_directory</span><span class="p">,</span> <span class="n">to_rm</span><span class="p">)</span>
+                <span class="n">cmd</span> <span class="o">=</span> <span class="s2">"rm "</span> <span class="o">+</span> <span class="n">join</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">full_lut_directory</span><span class="p">,</span> <span class="n">to_rm</span><span class="p">)</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
                 <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -6255,7 +6255,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">get_wavelength_adjustment</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.utils.wavelength_cal.get_wavelength_adjustment"><a href="../../../../api/isofit/utils/wavelength_cal/#isofit.utils.wavelength_cal.get_wavelength_adjustment" title="Go to docs">[docs]</a></div>
     <span class="n">config_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">filter_edges</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get the wavelength adjustment based on a previous isofit wavelength_cal run.</span>
 
 <span class="sd">    Args:</span>
@@ -6265,26 +6265,26 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Getting wavelength adjustment...&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Getting wavelength adjustment..."</span><span class="p">)</span>
 
     <span class="c1"># Load the instrument object</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">configs</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
     <span class="n">instrument</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">Instrument</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
     <span class="c1"># Load the statevector - we could do this by loading the forward</span>
-    <span class="c1"># model and the indicies, but in case the LUT is large, we&#39;re</span>
+    <span class="c1"># model and the indicies, but in case the LUT is large, we're</span>
     <span class="c1"># shortcutting here</span>
-    <span class="n">state_ds</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">][</span><span class="s2">&quot;estimated_state_file&quot;</span><span class="p">]))</span>
-    <span class="n">state_possible_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;GRWO_FWHM&quot;</span><span class="p">,</span> <span class="s2">&quot;FWHMSPL&quot;</span><span class="p">,</span> <span class="s2">&quot;WL_SPACE&quot;</span><span class="p">,</span> <span class="s2">&quot;WL_SHIFT&quot;</span><span class="p">,</span> <span class="s2">&quot;WLSPL&quot;</span><span class="p">]</span>
-    <span class="n">band_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state_ds</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;band names&quot;</span><span class="p">])</span>
+    <span class="n">state_ds</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"output"</span><span class="p">][</span><span class="s2">"estimated_state_file"</span><span class="p">]))</span>
+    <span class="n">state_possible_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"GRWO_FWHM"</span><span class="p">,</span> <span class="s2">"FWHMSPL"</span><span class="p">,</span> <span class="s2">"WL_SPACE"</span><span class="p">,</span> <span class="s2">"WL_SHIFT"</span><span class="p">,</span> <span class="s2">"WLSPL"</span><span class="p">]</span>
+    <span class="n">band_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state_ds</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"band names"</span><span class="p">])</span>
     <span class="n">instrument_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
         <span class="p">[</span>
             <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">bn</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">state_possible_names</span><span class="p">])</span>
             <span class="k">for</span> <span class="n">bn</span> <span class="ow">in</span> <span class="n">band_names</span>
         <span class="p">]</span>
     <span class="p">)</span>
-    <span class="n">instrument_state</span> <span class="o">=</span> <span class="n">state_ds</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span>
+    <span class="n">instrument_state</span> <span class="o">=</span> <span class="n">state_ds</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span>
         <span class="p">:,</span> <span class="n">instrument_idx</span>
     <span class="p">]</span>
 
@@ -6307,76 +6307,76 @@
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;get_wavelength_adjustment&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"get_wavelength_adjustment"</span><span class="p">,</span>
     <span class="n">help</span><span class="o">=</span><span class="n">get_wavelength_adjustment</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span>
     <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;config_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;output_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;--filter_edges&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"config_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"output_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"--filter_edges"</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;--debug-args&quot;</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Prints the arguments list without executing the command&quot;</span><span class="p">,</span>
+    <span class="s2">"--debug-args"</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Prints the arguments list without executing the command"</span><span class="p">,</span>
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli_get_wavelength_adjustment</span><span class="p">(</span><span class="n">debug_args</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.wavelength_cal.cli_get_wavelength_adjustment"><a href="../../../../api/isofit/utils/wavelength_cal/#isofit.utils.wavelength_cal.cli_get_wavelength_adjustment" title="Go to docs">[docs]</a></div>
     <span class="k">if</span> <span class="n">debug_args</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Arguments to be passed:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Arguments to be passed:"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwitems</span><span class="p">():</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">get_wavelength_adjustment</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Done"</span><span class="p">)</span>
 
 
 <span class="c1"># Input arguments</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;wavelength_cal&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">wavelength_cal</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;input_radiance&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;input_loc&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;input_obs&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;working_directory&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;sensor&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--surface_path&quot;</span><span class="p">,</span> <span class="s2">&quot;-sp&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--copy_input_files&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--modtran_path&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--wavelength_path&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--surface_category&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;multicomponent_surface&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--rdn_factors_path&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--atmosphere_type&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;ATM_MIDLAT_SUMMER&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--channelized_uncertainty_path&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--model_discrepancy_path&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--lut_config_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--logging_level&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--log_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--n_cores&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--ray_temp_dir&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;/tmp/ray&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--emulator_base&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--prebuilt_lut&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--inversion_windows&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"wavelength_cal"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">wavelength_cal</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"input_radiance"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"input_loc"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"input_obs"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"working_directory"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"sensor"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--surface_path"</span><span class="p">,</span> <span class="s2">"-sp"</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--copy_input_files"</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--modtran_path"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--wavelength_path"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--surface_category"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"multicomponent_surface"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--rdn_factors_path"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--atmosphere_type"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"ATM_MIDLAT_SUMMER"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--channelized_uncertainty_path"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--model_discrepancy_path"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--lut_config_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--logging_level"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"INFO"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--log_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--n_cores"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--ray_temp_dir"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"/tmp/ray"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--emulator_base"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--prebuilt_lut"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--inversion_windows"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;--wl_state_type&quot;</span><span class="p">,</span>
+    <span class="s2">"--wl_state_type"</span><span class="p">,</span>
     <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">(</span>
-        <span class="p">[</span><span class="s2">&quot;shift&quot;</span><span class="p">,</span> <span class="s2">&quot;shift-only&quot;</span><span class="p">,</span> <span class="s2">&quot;spline&quot;</span><span class="p">,</span> <span class="s2">&quot;spline-only&quot;</span><span class="p">],</span> <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">[</span><span class="s2">"shift"</span><span class="p">,</span> <span class="s2">"shift-only"</span><span class="p">,</span> <span class="s2">"spline"</span><span class="p">,</span> <span class="s2">"spline-only"</span><span class="p">],</span> <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">),</span>
-    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;shift&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">"shift"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--spline_indices&quot;</span><span class="p">,</span> <span class="s2">&quot;-si&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--force_with_geo&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--start_column&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--end_column&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--column_interval&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--spline_indices"</span><span class="p">,</span> <span class="s2">"-si"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--force_with_geo"</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--start_column"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--end_column"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--column_interval"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;--debug-args&quot;</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Prints the arguments list without executing the command&quot;</span><span class="p">,</span>
+    <span class="s2">"--debug-args"</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Prints the arguments list without executing the command"</span><span class="p">,</span>
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--profile&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--profile"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli_wavelength_cal</span><span class="p">(</span><span class="n">debug_args</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.wavelength_cal.cli_wavelength_cal"><a href="../../../../api/isofit/utils/wavelength_cal/#isofit.utils.wavelength_cal.cli_wavelength_cal" title="Go to docs">[docs]</a></div>
     <span class="k">if</span> <span class="n">debug_args</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Arguments to be passed:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Arguments to be passed:"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwitems</span><span class="p">():</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">profile</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">cProfile</span>
@@ -6392,7 +6392,7 @@
             <span class="n">stats</span> <span class="o">=</span> <span class="n">pstats</span><span class="o">.</span><span class="n">Stats</span><span class="p">(</span><span class="n">profiler</span><span class="p">)</span>
             <span class="n">stats</span><span class="o">.</span><span class="n">dump_stats</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Done"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

@@ -4885,14 +4885,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -4910,77 +4910,77 @@
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ImplementationConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.implementation_config.ImplementationConfig"><a href="../../../../../api/isofit/configs/sections/implementation_config/#isofit.configs.sections.implementation_config.ImplementationConfig" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Input file(s) configuration.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_mode_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;inversion&quot;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s2">"inversion"</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        str: Defines the operating mode for isofit. Current options are: inversion, inversion_mcmc,</span>
-<span class="sd">        and &#39;simulation&#39;.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        and 'simulation'.</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_inversion_type</span> <span class="o">=</span> <span class="n">InversionConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inversion</span><span class="p">:</span> <span class="n">InversionConfig</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;InversionConfig: optional config for running in inversion mode.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""InversionConfig: optional config for running in inversion mode."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_n_cores_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: number of cores to use.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""int: number of cores to use."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_task_inflation_factor_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">task_inflation_factor</span> <span class="o">=</span> <span class="mi">10</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: Submit task_inflation_factor*n_cores number of tasks.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""int: Submit task_inflation_factor*n_cores number of tasks."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ip_head_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ip_head</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Ray - parameter.  IP-head (for multi-node runs).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: Ray - parameter.  IP-head (for multi-node runs)."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_redis_password_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">redis_password</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Ray - parameter.  Redis-password (for multi-node runs).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: Ray - parameter.  Redis-password (for multi-node runs)."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ray_include_dashboard_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ray_include_dashboard</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Ray - parameter.  Boolean to include dashboard.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: Ray - parameter.  Boolean to include dashboard."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ray_temp_dir_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ray_temp_dir</span> <span class="o">=</span> <span class="s2">&quot;/tmp/ray&quot;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Overrides the standard ray temporary directory.  Useful for multiuser systems.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ray_temp_dir</span> <span class="o">=</span> <span class="s2">"/tmp/ray"</span>
+<span class="w">        </span><span class="sd">"""str: Overrides the standard ray temporary directory.  Useful for multiuser systems."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ray_ignore_reinit_error_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ray_ignore_reinit_error</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: Boolean to tell ray to ignore re-initilaization.  Can be convenient for multiple Isofit instances.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""bool: Boolean to tell ray to ignore re-initilaization.  Can be convenient for multiple Isofit instances."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_io_buffer_size_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">io_buffer_size</span> <span class="o">=</span> <span class="mi">100</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: Integer indicating how large (how many spectra) of chunks to read/process/write.  A</span>
+<span class="w">        </span><span class="sd">"""bool: Integer indicating how large (how many spectra) of chunks to read/process/write.  A</span>
 <span class="sd">        buffer size of 1 means pixels are processed independently.  Large buffers can help prevent IO choke points,</span>
-<span class="sd">        especially if the &quot;&quot;&quot;</span>
+<span class="sd">        especially if the """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_max_hash_table_size_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_hash_table_size</span> <span class="o">=</span> <span class="mi">50</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: The maximum size of inversion hash tables.  Can provide speedups with redundant surfaces, but comes</span>
+<span class="w">        </span><span class="sd">"""int: The maximum size of inversion hash tables.  Can provide speedups with redundant surfaces, but comes</span>
 <span class="sd">        with increased memory costs.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_per_pixel_heuristic_prior_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">per_pixel_heuristic_prior</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: define prior mean setting scheme.</span>
+<span class="w">        </span><span class="sd">"""bool: define prior mean setting scheme.</span>
 <span class="sd">        True -&gt; use per-pixel heuristic</span>
-<span class="sd">        False -&gt; Use image-wide &quot;unverisal&quot; value</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        False -&gt; Use image-wide "unverisal" value</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_debug_mode_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">debug_mode</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: A flag to run the code in debug mode, which circumvents ray.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""bool: A flag to run the code in debug mode, which circumvents ray.</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_isofit_version_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">isofit_version</span> <span class="o">=</span> <span class="n">__version__</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: ISOFIT version used.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: ISOFIT version used."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 
@@ -4988,29 +4988,29 @@
         <span class="n">errors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="n">warnings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
-        <span class="n">valid_implementation_modes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;inversion&quot;</span><span class="p">,</span> <span class="s2">&quot;mcmc_inversion&quot;</span><span class="p">,</span> <span class="s2">&quot;simulation&quot;</span><span class="p">]</span>
+        <span class="n">valid_implementation_modes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"inversion"</span><span class="p">,</span> <span class="s2">"mcmc_inversion"</span><span class="p">,</span> <span class="s2">"simulation"</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_implementation_modes</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="s2">&quot;Invalid implementation mode: </span><span class="si">{}</span><span class="s2">.  Valid options are: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">"Invalid implementation mode: </span><span class="si">{}</span><span class="s2">.  Valid options are: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span> <span class="n">valid_implementation_modes</span>
                 <span class="p">)</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;simulation&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">inversion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">"simulation"</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">inversion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="s2">&quot;If running outside of simulation mode, Inversion must be defined&quot;</span>
+                <span class="s2">"If running outside of simulation mode, Inversion must be defined"</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;simulation&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">inversion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">"simulation"</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">inversion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># TODO: fix this</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="s2">&quot;Even in simulation mode, and inversion config must be defined, though&quot;</span>
-                <span class="s2">&quot;it may be blank.&quot;</span>
+                <span class="s2">"Even in simulation mode, and inversion config must be defined, though"</span>
+                <span class="s2">"it may be blank."</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip_head</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">redis_password</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="s2">&quot;If either ip_head or redis_password are specified, both must be&quot;</span>
-                <span class="s2">&quot; specified&quot;</span>
+                <span class="s2">"If either ip_head or redis_password are specified, both must be"</span>
+                <span class="s2">" specified"</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>

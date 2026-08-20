@@ -4772,9 +4772,9 @@
 <span class="normal">38</span>
 <span class="normal">39</span>
 <span class="normal">40</span>
-<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Contains shared objects for the downloader modules to use to keep the CLI consistent</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
 
@@ -4785,33 +4785,33 @@
 <span class="n">download</span> <span class="o">=</span> <span class="n">download</span><span class="o">.</span><span class="n">cli</span>
 <span class="n">validate</span> <span class="o">=</span> <span class="n">validate</span><span class="o">.</span><span class="n">cli</span>
 
-<span class="n">output</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">,</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="s2">&quot;--output&quot;</span><span class="p">)</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">,</span> <span class="s2">"-o"</span><span class="p">,</span> <span class="s2">"--output"</span><span class="p">)</span>
 
 <span class="n">tag</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="s2">&quot;--tag&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Release tag to pull&quot;</span><span class="p">,</span> <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span>
+    <span class="s2">"-t"</span><span class="p">,</span> <span class="s2">"--tag"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="sa">f</span><span class="s2">"latest"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Release tag to pull"</span><span class="p">,</span> <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
 
 <span class="n">overwrite</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;--overwrite&quot;</span><span class="p">,</span>
+    <span class="s2">"--overwrite"</span><span class="p">,</span>
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Overwrite any existing installation&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Overwrite any existing installation"</span><span class="p">,</span>
     <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">path</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">,</span> <span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="s2">&quot;--path&quot;</span><span class="p">)</span>
+<span class="n">path</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">,</span> <span class="s2">"-p"</span><span class="p">,</span> <span class="s2">"--path"</span><span class="p">)</span>
 
 <span class="n">check</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-c&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;--check&quot;</span><span class="p">,</span>
+    <span class="s2">"-c"</span><span class="p">,</span>
+    <span class="s2">"--check"</span><span class="p">,</span>
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Only check for updates&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Only check for updates"</span><span class="p">,</span>
     <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">exclude</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-e&quot;</span><span class="p">,</span> <span class="s2">&quot;--exclude&quot;</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Exclude products from the function&quot;</span>
+    <span class="s2">"-e"</span><span class="p">,</span> <span class="s2">"--exclude"</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Exclude products from the function"</span>
 <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

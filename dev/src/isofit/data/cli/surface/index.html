@@ -4959,9 +4959,9 @@
 <span class="normal">164</span>
 <span class="normal">165</span>
 <span class="normal">166</span>
-<span class="normal">167</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">167</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Downloads the extra ISOFIT surface prior files from https://github.com/emit-sds/emit-sds-l2a/tree/main/surface</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">importlib.metadata</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
@@ -4979,11 +4979,11 @@
 <span class="p">)</span>
 
 <span class="n">ESSENTIAL</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="n">CMD</span> <span class="o">=</span> <span class="s2">&quot;surface&quot;</span>
+<span class="n">CMD</span> <span class="o">=</span> <span class="s2">"surface"</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.surface.download"><a href="../../../../../api/isofit/data/cli/surface/#isofit.data.cli.surface.download" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.surface.download"><a href="../../../../../api/isofit/data/cli/surface/#isofit.data.cli.surface.download" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Downloads the ISOFIT surface prior files from the repository https://github.com/emit-sds/emit-sds-l2a/tree/main/surface.</span>
 
 <span class="sd">    Parameters</span>
@@ -4997,27 +4997,27 @@
 <span class="sd">    **_ : dict</span>
 <span class="sd">        Ignores unused params that may be used by other validate functions. This is to</span>
 <span class="sd">        maintain compatibility with other functions</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downloading ISOFIT surface&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Downloading ISOFIT surface"</span><span class="p">)</span>
 
     <span class="n">output</span> <span class="o">=</span> <span class="n">prepare_output</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">surface</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">output</span><span class="p">:</span>
         <span class="k">return</span>
 
     <span class="n">avail</span> <span class="o">=</span> <span class="n">pullFromRepo</span><span class="p">(</span>
-        <span class="n">owner</span><span class="o">=</span><span class="s2">&quot;emit-sds&quot;</span><span class="p">,</span>
-        <span class="n">repo</span><span class="o">=</span><span class="s2">&quot;emit-sds-l2a&quot;</span><span class="p">,</span>
+        <span class="n">owner</span><span class="o">=</span><span class="s2">"emit-sds"</span><span class="p">,</span>
+        <span class="n">repo</span><span class="o">=</span><span class="s2">"emit-sds-l2a"</span><span class="p">,</span>
         <span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span>
-        <span class="n">output</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;surface_repository&quot;</span><span class="p">,</span>
+        <span class="n">output</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"surface_repository"</span><span class="p">,</span>
         <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">avail</span> <span class="o">/</span> <span class="s2">&quot;surface&quot;</span><span class="p">,</span> <span class="n">avail</span> <span class="o">/</span> <span class="s2">&quot;..&quot;</span><span class="p">)</span>
-    <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">avail</span> <span class="o">/</span> <span class="s2">&quot;version.txt&quot;</span><span class="p">,</span> <span class="n">avail</span> <span class="o">/</span> <span class="s2">&quot;..&quot;</span> <span class="o">/</span> <span class="s2">&quot;surface&quot;</span> <span class="o">/</span> <span class="s2">&quot;version.txt&quot;</span><span class="p">)</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">avail</span> <span class="o">/</span> <span class="s2">"surface"</span><span class="p">,</span> <span class="n">avail</span> <span class="o">/</span> <span class="s2">".."</span><span class="p">)</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">avail</span> <span class="o">/</span> <span class="s2">"version.txt"</span><span class="p">,</span> <span class="n">avail</span> <span class="o">/</span> <span class="s2">".."</span> <span class="o">/</span> <span class="s2">"surface"</span> <span class="o">/</span> <span class="s2">"version.txt"</span><span class="p">)</span>
     <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">avail</span><span class="p">)</span>
 
 <div class="mkapi-source-link" id="isofit.data.cli.surface.validate"><a href="../../../../../api/isofit/data/cli/surface/#isofit.data.cli.surface.validate" title="Go to docs">[docs]</a></div>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checkForUpdate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Validates an ISOFIT surface installation</span>
 
 <span class="sd">    Parameters</span>
@@ -5038,45 +5038,45 @@
 <span class="sd">    -------</span>
 <span class="sd">    bool</span>
 <span class="sd">        True if valid, False otherwise</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">surface</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Verifying path for ISOFIT surface: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Verifying path for ISOFIT surface: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
     <span class="n">expected</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
         <span class="p">[</span>
-            <span class="s2">&quot;filtered_ocean&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;filtered_other&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;filtered_veg&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;surface_Liquids&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;surface_mixture_veg_soil&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;surface_SWIPE&quot;</span><span class="p">,</span>
+            <span class="s2">"filtered_ocean"</span><span class="p">,</span>
+            <span class="s2">"filtered_other"</span><span class="p">,</span>
+            <span class="s2">"filtered_veg"</span><span class="p">,</span>
+            <span class="s2">"surface_Liquids"</span><span class="p">,</span>
+            <span class="s2">"surface_mixture_veg_soil"</span><span class="p">,</span>
+            <span class="s2">"surface_SWIPE"</span><span class="p">,</span>
         <span class="p">]</span>
     <span class="p">)</span>
-    <span class="n">names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">file</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)])</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">file</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*"</span><span class="p">)])</span>
     <span class="k">if</span> <span class="n">missing</span> <span class="o">:=</span> <span class="p">(</span><span class="n">expected</span> <span class="o">-</span> <span class="n">names</span><span class="p">):</span>
-        <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[x] ISOFIT surface is missing surface library files&quot;</span><span class="p">)</span>
-        <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected: </span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got: </span><span class="si">{</span><span class="n">names</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">error</span><span class="p">(</span><span class="s2">"[x] ISOFIT surface is missing surface library files"</span><span class="p">)</span>
+        <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected: </span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Got: </span><span class="si">{</span><span class="n">names</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[OK] Path is valid&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="s2">"[OK] Path is valid"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">checkForUpdate</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">isUpToDateGithub</span><span class="p">(</span>
-            <span class="n">owner</span><span class="o">=</span><span class="s2">&quot;emit-sds&quot;</span><span class="p">,</span> <span class="n">repo</span><span class="o">=</span><span class="s2">&quot;emit-sds-l2a&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;surface&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span>
+            <span class="n">owner</span><span class="o">=</span><span class="s2">"emit-sds"</span><span class="p">,</span> <span class="n">repo</span><span class="o">=</span><span class="s2">"emit-sds-l2a"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"surface"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span>
         <span class="p">)</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[OK] Path is valid&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="s2">"[OK] Path is valid"</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">True</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.surface.update"><a href="../../../../../api/isofit/data/cli/surface/#isofit.data.cli.surface.update" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks for an update and executes a new download if it is needed</span>
 
 <span class="sd">    Parameters</span>
@@ -5085,24 +5085,24 @@
 <span class="sd">        Just check if an update is available, do not download</span>
 <span class="sd">    **kwargs : dict</span>
 <span class="sd">        Additional key-word arguments to pass to download()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">debug</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;debug&quot;</span><span class="p">,</span> <span class="nb">print</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">debug</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"debug"</span><span class="p">,</span> <span class="nb">print</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">validate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;overwrite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Executing update&quot;</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">"overwrite"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">debug</span><span class="p">(</span><span class="s2">"Executing update"</span><span class="p">)</span>
             <span class="n">download</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Please download the latest via `isofit download </span><span class="si">{</span><span class="n">CMD</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">)</span>
+            <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Please download the latest via `isofit download </span><span class="si">{</span><span class="n">CMD</span><span class="si">}</span><span class="s2">`"</span><span class="p">)</span>
 
 
 <span class="nd">@shared</span><span class="o">.</span><span class="n">download</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">CMD</span><span class="p">)</span>
-<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Root directory to download surface files to, ie. [path]/surface&quot;</span><span class="p">)</span>
+<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">"Root directory to download surface files to, ie. [path]/surface"</span><span class="p">)</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">tag</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">overwrite</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">check</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">download_cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.surface.download_cli"><a href="../../../../../api/isofit/data/cli/surface/#isofit.data.cli.surface.download_cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Downloads the extra ISOFIT surface prior files from https://github.com/emit-sds/emit-sds-l2a/tree/main/surface</span>
 
 <span class="sd">    \b</span>
@@ -5111,20 +5111,20 @@
 <span class="sd">        - `isofit --path surface /path/surface download surface`: Override the ini file. This will save the provided path for future reference.</span>
 <span class="sd">        - `isofit download surface --path /path/surface`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.</span>
 <span class="sd">    It is recommended to use the first style so the download path is remembered in the future.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">):</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"overwrite"</span><span class="p">):</span>
         <span class="n">download</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@shared</span><span class="o">.</span><span class="n">validate</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">CMD</span><span class="p">)</span>
-<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Root directory to download example files to, ie. [path]/surface&quot;</span><span class="p">)</span>
+<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">"Root directory to download example files to, ie. [path]/surface"</span><span class="p">)</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">tag</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.surface.validate_cli"><a href="../../../../../api/isofit/data/cli/surface/#isofit.data.cli.surface.validate_cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Validates the installation of the ISOFIT surface as well as checks for updates</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">validate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

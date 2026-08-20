@@ -5499,14 +5499,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5545,7 +5545,7 @@
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parseTokens</span><span class="p">(</span><span class="n">tokens</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">coszen</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.modtran.ModtranRT.parseTokens"><a href="../../../../../api/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.parseTokens" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Processes tokens returned by parseLine()</span>
 
 <span class="sd">        Parameters</span>
@@ -5559,7 +5559,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        dict</span>
 <span class="sd">            Dictionary of calculated values using the tokens list</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">irr</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">L_to_E</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">18</span><span class="p">])</span> <span class="o">/</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span> <span class="n">coszen</span><span class="p">)</span>  <span class="c1"># uW/nm/cm2</span>
 
         <span class="c1"># fmt: off</span>
@@ -5570,24 +5570,24 @@
         <span class="c1"># so we store it under the direct upward transmittance key (transm_up_dir)</span>
         <span class="c1"># ToDo: remove in future versions and enforce the use of multipart transmittance</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s1">&#39;solar_irr&#39;</span>          <span class="p">:</span> <span class="n">irr</span><span class="p">,</span>       <span class="c1"># Solar irradiance</span>
-            <span class="s1">&#39;wl&#39;</span>                 <span class="p">:</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="c1"># Wavelength</span>
-            <span class="s1">&#39;rhoatm&#39;</span>             <span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">rdn_to_transm</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span> <span class="n">coszen</span><span class="p">,</span> <span class="n">irr</span><span class="p">),</span> <span class="c1"># unitless</span>
-            <span class="s1">&#39;width&#39;</span>              <span class="p">:</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span>
-            <span class="s1">&#39;thermal_upwelling&#39;</span>  <span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">((</span><span class="n">tokens</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span> <span class="o">+</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">12</span><span class="p">])</span> <span class="o">/</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">8</span><span class="p">]),</span> <span class="c1"># uW/nm/sr/cm2</span>
-            <span class="s1">&#39;thermal_downwelling&#39;</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">16</span><span class="p">])</span> <span class="o">/</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span>
-            <span class="s1">&#39;path_rdn&#39;</span>           <span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span> <span class="o">+</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">15</span><span class="p">]),</span> <span class="c1"># The sum of the (1) single scattering and (2) multiple scattering</span>
-            <span class="s1">&#39;grnd_rflt&#39;</span>          <span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">16</span><span class="p">]),</span>        <span class="c1"># ground reflected radiance (direct+diffuse+multiple scattering)</span>
-            <span class="s1">&#39;drct_rflt&#39;</span>          <span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">17</span><span class="p">]),</span>        <span class="c1"># same as 16 but only on the sun-&gt;surface-&gt;sensor path (only direct)</span>
-            <span class="s1">&#39;transm_down_dif&#39;</span>    <span class="p">:</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">21</span><span class="p">]</span> <span class="o">+</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">22</span><span class="p">],</span>  <span class="c1"># total transmittance (down * up, direct + diffuse)</span>
-            <span class="s1">&#39;sphalb&#39;</span>             <span class="p">:</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">23</span><span class="p">],</span>  <span class="c1"># atmospheric spherical albedo</span>
-            <span class="s1">&#39;transm_up_dir&#39;</span>      <span class="p">:</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">24</span><span class="p">],</span>  <span class="c1"># upward direct transmittance</span>
+            <span class="s1">'solar_irr'</span>          <span class="p">:</span> <span class="n">irr</span><span class="p">,</span>       <span class="c1"># Solar irradiance</span>
+            <span class="s1">'wl'</span>                 <span class="p">:</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="c1"># Wavelength</span>
+            <span class="s1">'rhoatm'</span>             <span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">rdn_to_transm</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span> <span class="n">coszen</span><span class="p">,</span> <span class="n">irr</span><span class="p">),</span> <span class="c1"># unitless</span>
+            <span class="s1">'width'</span>              <span class="p">:</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span>
+            <span class="s1">'thermal_upwelling'</span>  <span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">((</span><span class="n">tokens</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span> <span class="o">+</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">12</span><span class="p">])</span> <span class="o">/</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">8</span><span class="p">]),</span> <span class="c1"># uW/nm/sr/cm2</span>
+            <span class="s1">'thermal_downwelling'</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">16</span><span class="p">])</span> <span class="o">/</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span>
+            <span class="s1">'path_rdn'</span>           <span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span> <span class="o">+</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">15</span><span class="p">]),</span> <span class="c1"># The sum of the (1) single scattering and (2) multiple scattering</span>
+            <span class="s1">'grnd_rflt'</span>          <span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">16</span><span class="p">]),</span>        <span class="c1"># ground reflected radiance (direct+diffuse+multiple scattering)</span>
+            <span class="s1">'drct_rflt'</span>          <span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">W_to_uW</span><span class="p">(</span><span class="n">tokens</span><span class="p">[</span><span class="mi">17</span><span class="p">]),</span>        <span class="c1"># same as 16 but only on the sun-&gt;surface-&gt;sensor path (only direct)</span>
+            <span class="s1">'transm_down_dif'</span>    <span class="p">:</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">21</span><span class="p">]</span> <span class="o">+</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">22</span><span class="p">],</span>  <span class="c1"># total transmittance (down * up, direct + diffuse)</span>
+            <span class="s1">'sphalb'</span>             <span class="p">:</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">23</span><span class="p">],</span>  <span class="c1"># atmospheric spherical albedo</span>
+            <span class="s1">'transm_up_dir'</span>      <span class="p">:</span> <span class="n">tokens</span><span class="p">[</span><span class="mi">24</span><span class="p">],</span>  <span class="c1"># upward direct transmittance</span>
         <span class="p">}</span>
         <span class="c1"># fmt: on</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parseLine</span><span class="p">(</span><span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.modtran.ModtranRT.parseLine"><a href="../../../../../api/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.parseLine" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parses a single line of a .chn file into a list of token values</span>
 
 <span class="sd">        Parameters</span>
@@ -5599,14 +5599,14 @@
 <span class="sd">        -------</span>
 <span class="sd">        list</span>
 <span class="sd">            List of floats parsed from the line</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Fixes issues in large datasets where irrelevant columns touch which breaks parseTokens()</span>
-        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="mi">17</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">line</span><span class="p">[</span><span class="mi">18</span><span class="p">:]</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="mi">17</span><span class="p">]</span> <span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="n">line</span><span class="p">[</span><span class="mi">18</span><span class="p">:]</span>
 
-        <span class="k">return</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="p">)</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\d\S*)&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="p">)</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(\d\S*)"</span><span class="p">,</span> <span class="n">line</span><span class="p">)]</span>
 <div class="mkapi-source-link" id="isofit.atmosphere.engines.modtran.ModtranRT.load_chn"><a href="../../../../../api/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.load_chn" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_chn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">coszen</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">header</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parses a MODTRAN channel file and extracts relevant data</span>
 
 <span class="sd">        Parameters</span>
@@ -5622,8 +5622,8 @@
 <span class="sd">        -------</span>
 <span class="sd">        chn: dict</span>
 <span class="sd">            Channel data</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
 
         <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">lines</span><span class="p">[</span><span class="n">header</span><span class="p">:]]</span>
@@ -5636,7 +5636,7 @@
 
             <span class="c1"># Check if the first line of the next part is the same</span>
             <span class="k">if</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">lines</span><span class="p">[</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
-                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Channel file discovered to be </span><span class="si">{</span><span class="n">N</span><span class="si">}</span><span class="s2"> parts: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Channel file discovered to be </span><span class="si">{</span><span class="n">N</span><span class="si">}</span><span class="s2"> parts: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                 <span class="c1"># Parse the lines into N many parts</span>
                 <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
@@ -5648,8 +5648,8 @@
                 <span class="k">break</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Channel file detected to be a single transmittance, support for this will be dropped in a future version.&quot;</span>
-                <span class="o">+</span> <span class="s2">&quot; Please start using 2 or 3 multipart transmittance files.&quot;</span>
+                <span class="s2">"Channel file detected to be a single transmittance, support for this will be dropped in a future version."</span>
+                <span class="o">+</span> <span class="s2">" Please start using 2 or 3 multipart transmittance files."</span>
             <span class="p">)</span>
 
         <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
@@ -5669,14 +5669,14 @@
         <span class="c1"># Single transmittance files will be the first dict in the list, otherwise multiparts use two_albedo_method</span>
         <span class="n">chn</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Using two albedo method&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Using two albedo method"</span><span class="p">)</span>
             <span class="n">chn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">two_albedo_method</span><span class="p">(</span><span class="o">*</span><span class="n">parts</span><span class="p">,</span> <span class="n">coszen</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">albedos</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
 
         <span class="k">return</span> <span class="n">chn</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_tp6</span><span class="p">(</span><span class="n">file</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.modtran.ModtranRT.load_tp6"><a href="../../../../../api/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.load_tp6" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parses relevant information from a tp6 file. Specifically, seeking a</span>
 <span class="sd">        table in the unstructured text and extracting a column from it.</span>
 
@@ -5684,16 +5684,16 @@
 <span class="sd">        ----------</span>
 <span class="sd">        tp6: str</span>
 <span class="sd">            tp6 file path</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tp6</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">tp6</span><span class="p">:</span>
             <span class="n">lines</span> <span class="o">=</span> <span class="n">tp6</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">lines</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;tp6 file is empty: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"tp6 file is empty: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
             <span class="c1"># Table found</span>
-            <span class="k">if</span> <span class="s2">&quot;SINGLE SCATTER SOLAR&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">"SINGLE SCATTER SOLAR"</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
                 <span class="n">i</span> <span class="o">+=</span> <span class="mi">5</span>  <span class="c1"># Skip header</span>
                 <span class="k">break</span>
 
@@ -5710,22 +5710,22 @@
             <span class="n">solzen</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">split</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">solzen</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No solar zenith found in tp6 file: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No solar zenith found in tp6 file: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">solzen</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">preSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.modtran.ModtranRT.preSim"><a href="../../../../../api/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.preSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Post-initialized, pre-simulation setup</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Track the MODTRAN directory used in the LUT attributes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">&quot;MODTRAN&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_base_dir</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">"MODTRAN"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_base_dir</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">filtpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;wavelengths_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">engine_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">.flt&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"wavelengths_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">engine_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">.flt"</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="n">json_load_ascii</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">)[</span><span class="s2">&quot;MODTRAN&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="n">json_load_ascii</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">)[</span><span class="s2">"MODTRAN"</span><span class="p">]</span>
 
         <span class="c1"># Regenerate MODTRAN input wavelength file</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filtpath</span><span class="p">):</span>
@@ -5733,7 +5733,7 @@
 
         <span class="c1"># Insert aerosol templates, if specified</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">aerosol_model_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;AEROSOLS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json_load_ascii</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"AEROSOLS"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json_load_ascii</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">aerosol_template_file</span>
             <span class="p">)</span>
 
@@ -5753,26 +5753,26 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">aer_asym</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">aer_asym</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">readSim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.modtran.ModtranRT.readSim"><a href="../../../../../api/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.readSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        For a given point, parses the tp6 and chn file and returns the data</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_to_filename</span><span class="p">(</span><span class="n">point</span><span class="p">))</span>
 
-        <span class="n">solzen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_tp6</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">.tp6&quot;</span><span class="p">)</span>
+        <span class="n">solzen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_tp6</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">.tp6"</span><span class="p">)</span>
         <span class="n">coszen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">solzen</span><span class="p">))</span>
-        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_chn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">.chn&quot;</span><span class="p">,</span> <span class="n">coszen</span><span class="p">)</span>
-        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;solzen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">solzen</span>
-        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coszen</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_chn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">.chn"</span><span class="p">,</span> <span class="n">coszen</span><span class="p">)</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">"solzen"</span><span class="p">]</span> <span class="o">=</span> <span class="n">solzen</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">"coszen"</span><span class="p">]</span> <span class="o">=</span> <span class="n">coszen</span>
 
         <span class="k">return</span> <span class="n">params</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">makeSim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.modtran.ModtranRT.makeSim"><a href="../../../../../api/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.makeSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Prepares the command to execute MODTRAN</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_base_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="s2">&quot;No MODTRAN installation provided, please set config key `engine_base_dir`&quot;</span>
+                <span class="s2">"No MODTRAN installation provided, please set config key `engine_base_dir`"</span>
             <span class="p">)</span>
             <span class="k">return</span>
 
@@ -5780,45 +5780,45 @@
 
         <span class="c1"># Translate ISOFIT generic lut names to MODTRAN-specific names</span>
         <span class="n">translation</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">:</span> <span class="s2">&quot;GNDALT&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;observer_altitude_km&quot;</span><span class="p">:</span> <span class="s2">&quot;H1ALT&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;observer_azimuth&quot;</span><span class="p">:</span> <span class="s2">&quot;TRUEAZ&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;observer_zenith&quot;</span><span class="p">:</span> <span class="s2">&quot;OBSZEN&quot;</span><span class="p">,</span>
+            <span class="s2">"surface_elevation_km"</span><span class="p">:</span> <span class="s2">"GNDALT"</span><span class="p">,</span>
+            <span class="s2">"observer_altitude_km"</span><span class="p">:</span> <span class="s2">"H1ALT"</span><span class="p">,</span>
+            <span class="s2">"observer_azimuth"</span><span class="p">:</span> <span class="s2">"TRUEAZ"</span><span class="p">,</span>
+            <span class="s2">"observer_zenith"</span><span class="p">:</span> <span class="s2">"OBSZEN"</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">translation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">]</span>
 
         <span class="n">vals</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">n</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">point</span><span class="p">)])</span>
-        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;DISALB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;NAME&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">filename_base</span>
-        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;FILTNM&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filtpath</span><span class="p">)</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">"DISALB"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">"NAME"</span><span class="p">]</span> <span class="o">=</span> <span class="n">filename_base</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">"FILTNM"</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filtpath</span><span class="p">)</span>
 
         <span class="c1"># Translate to the MODTRAN OBSZEN convention, assumes we are downlooking</span>
-        <span class="k">if</span> <span class="s2">&quot;OBSZEN&quot;</span> <span class="ow">in</span> <span class="n">vals</span> <span class="ow">and</span> <span class="n">vals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;OBSZEN&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">90</span><span class="p">:</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;OBSZEN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;OBSZEN&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">"OBSZEN"</span> <span class="ow">in</span> <span class="n">vals</span> <span class="ow">and</span> <span class="n">vals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"OBSZEN"</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">90</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">"OBSZEN"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">"OBSZEN"</span><span class="p">])</span>
 
         <span class="n">modtran_config_str</span><span class="p">,</span> <span class="n">modtran_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_driver</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">vals</span><span class="p">))</span>
 
         <span class="c1"># Check rebuild conditions: LUT is missing or from a different config</span>
-        <span class="n">infilename</span> <span class="o">=</span> <span class="s2">&quot;LUT_&quot;</span> <span class="o">+</span> <span class="n">filename_base</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
-        <span class="n">infilepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="s2">&quot;LUT_&quot;</span> <span class="o">+</span> <span class="n">filename_base</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span><span class="p">)</span>
+        <span class="n">infilename</span> <span class="o">=</span> <span class="s2">"LUT_"</span> <span class="o">+</span> <span class="n">filename_base</span> <span class="o">+</span> <span class="s2">".json"</span>
+        <span class="n">infilepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="s2">"LUT_"</span> <span class="o">+</span> <span class="n">filename_base</span> <span class="o">+</span> <span class="s2">".json"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_results_exist</span><span class="p">(</span><span class="n">filename_base</span><span class="p">):</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File already exists, skipping execution: </span><span class="si">{</span><span class="n">filename_base</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"File already exists, skipping execution: </span><span class="si">{</span><span class="n">filename_base</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="c1"># write_config_file</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">infilepath</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">infilepath</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">modtran_config_str</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">configure_and_exit</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="c1"># Specify location of the proper MODTRAN 6.0 binary for this OS</span>
-        <span class="n">xdir</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;linux&quot;</span><span class="p">:</span> <span class="s2">&quot;linux&quot;</span><span class="p">,</span> <span class="s2">&quot;darwin&quot;</span><span class="p">:</span> <span class="s2">&quot;macos&quot;</span><span class="p">,</span> <span class="s2">&quot;windows&quot;</span><span class="p">:</span> <span class="s2">&quot;windows&quot;</span><span class="p">}</span>
+        <span class="n">xdir</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"linux"</span><span class="p">:</span> <span class="s2">"linux"</span><span class="p">,</span> <span class="s2">"darwin"</span><span class="p">:</span> <span class="s2">"macos"</span><span class="p">,</span> <span class="s2">"windows"</span><span class="p">:</span> <span class="s2">"windows"</span><span class="p">}</span>
 
         <span class="c1"># Generate the CLI path</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">engine_base_dir</span><span class="p">,</span> <span class="s2">&quot;bin&quot;</span><span class="p">,</span> <span class="n">xdir</span><span class="p">[</span><span class="n">platform</span><span class="p">],</span> <span class="s2">&quot;mod6c_cons &quot;</span> <span class="o">+</span> <span class="n">infilename</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">engine_base_dir</span><span class="p">,</span> <span class="s2">"bin"</span><span class="p">,</span> <span class="n">xdir</span><span class="p">[</span><span class="n">platform</span><span class="p">],</span> <span class="s2">"mod6c_cons "</span> <span class="o">+</span> <span class="n">infilename</span>
         <span class="p">)</span>
 
         <span class="n">call</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
@@ -5828,75 +5828,75 @@
             <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">modtran_driver</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overrides</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.modtran.ModtranRT.modtran_driver"><a href="../../../../../api/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.modtran_driver" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a MODTRAN 6.0 input file.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Write a MODTRAN 6.0 input file."""</span>
 
         <span class="n">param</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;aer_absc&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"aer_absc"</span><span class="p">):</span>
             <span class="n">fracs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">naer</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="s2">&quot;IPARM&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;MODTRAN template requires an IPARM specification&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"IPARM"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"GEOMETRY"</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">"MODTRAN template requires an IPARM specification"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;ITYPE&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Currently unsupported modtran ITYPE specification&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"ITYPE"</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">"Currently unsupported modtran ITYPE specification"</span><span class="p">)</span>
 
         <span class="c1"># Geometry values that depend on IPARM</span>
         <span class="k">if</span> <span class="p">(</span>
-            <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;IPARM&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">12</span>
-            <span class="ow">and</span> <span class="s2">&quot;GMTIME&quot;</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"IPARM"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">12</span>
+            <span class="ow">and</span> <span class="s2">"GMTIME"</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                <span class="s2">&quot;GMTIME in MODTRAN driver overrides, but IPARM set to 12.  Check&quot;</span>
-                <span class="s2">&quot; modtran template.&quot;</span>
+                <span class="s2">"GMTIME in MODTRAN driver overrides, but IPARM set to 12.  Check"</span>
+                <span class="s2">" modtran template."</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;IPARM&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">11</span> <span class="ow">and</span> <span class="p">{</span>
-            <span class="s2">&quot;solar_azimuth&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;solaz&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;solar_zenith&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;solzen&quot;</span><span class="p">,</span>
+        <span class="k">elif</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"IPARM"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">11</span> <span class="ow">and</span> <span class="p">{</span>
+            <span class="s2">"solar_azimuth"</span><span class="p">,</span>
+            <span class="s2">"solaz"</span><span class="p">,</span>
+            <span class="s2">"solar_zenith"</span><span class="p">,</span>
+            <span class="s2">"solzen"</span><span class="p">,</span>
         <span class="p">}</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">overrides</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                <span class="s2">&quot;Solar geometry (solar az/azimuth zen/zenith) is specified, but IPARM&quot;</span>
-                <span class="s2">&quot; is set to 11.  Check MODTRAN template&quot;</span>
+                <span class="s2">"Solar geometry (solar az/azimuth zen/zenith) is specified, but IPARM"</span>
+                <span class="s2">" is set to 11.  Check MODTRAN template"</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="p">{</span><span class="s2">&quot;PARM1&quot;</span><span class="p">,</span> <span class="s2">&quot;PARM2&quot;</span><span class="p">}</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">overrides</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
+        <span class="k">if</span> <span class="p">{</span><span class="s2">"PARM1"</span><span class="p">,</span> <span class="s2">"PARM2"</span><span class="p">}</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">overrides</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                <span class="s2">&quot;PARM1 and PARM2 keys not supported as LUT dimensions.  Please use&quot;</span>
-                <span class="s2">&quot; either solar_azimuth/solaz or solar_zenith/solzen&quot;</span>
+                <span class="s2">"PARM1 and PARM2 keys not supported as LUT dimensions.  Please use"</span>
+                <span class="s2">" either solar_azimuth/solaz or solar_zenith/solzen"</span>
             <span class="p">)</span>
 
         <span class="c1"># Perform overrides</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">recursive_replace</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;AER&quot;</span><span class="p">):</span>
-                <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"AER"</span><span class="p">):</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
                 <span class="n">fracs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
-            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;EXT550&quot;</span><span class="p">,</span> <span class="s2">&quot;AOT550&quot;</span><span class="p">,</span> <span class="s2">&quot;AOD550&quot;</span><span class="p">]:</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"EXT550"</span><span class="p">,</span> <span class="s2">"AOT550"</span><span class="p">,</span> <span class="s2">"AOD550"</span><span class="p">]:</span>
                 <span class="c1"># MODTRAN 6.0 convention treats negative visibility as AOT550</span>
-                <span class="n">recursive_replace</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="s2">&quot;VIS&quot;</span><span class="p">,</span> <span class="o">-</span><span class="n">val</span><span class="p">)</span>
+                <span class="n">recursive_replace</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="s2">"VIS"</span><span class="p">,</span> <span class="o">-</span><span class="n">val</span><span class="p">)</span>
 
-            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;FILTNM&quot;</span><span class="p">:</span>
-                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;SPECTRAL&quot;</span><span class="p">][</span><span class="s2">&quot;FILTNM&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"FILTNM"</span><span class="p">:</span>
+                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"SPECTRAL"</span><span class="p">][</span><span class="s2">"FILTNM"</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
-            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;FILTNM&quot;</span><span class="p">:</span>
-                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;SPECTRAL&quot;</span><span class="p">][</span><span class="s2">&quot;FILTNM&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"FILTNM"</span><span class="p">:</span>
+                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"SPECTRAL"</span><span class="p">][</span><span class="s2">"FILTNM"</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
             <span class="c1"># Geometry parameters we want to populate even if unassigned</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;H1ALT&quot;</span><span class="p">,</span> <span class="s2">&quot;IDAY&quot;</span><span class="p">,</span> <span class="s2">&quot;TRUEAZ&quot;</span><span class="p">,</span> <span class="s2">&quot;OBSZEN&quot;</span><span class="p">,</span> <span class="s2">&quot;GMTIME&quot;</span><span class="p">]:</span>
-                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"H1ALT"</span><span class="p">,</span> <span class="s2">"IDAY"</span><span class="p">,</span> <span class="s2">"TRUEAZ"</span><span class="p">,</span> <span class="s2">"OBSZEN"</span><span class="p">,</span> <span class="s2">"GMTIME"</span><span class="p">]:</span>
+                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
-            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;AIRT_DELTA_K&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"AIRT_DELTA_K"</span><span class="p">:</span>
                 <span class="c1"># If there is no profile already provided ...</span>
                 <span class="k">if</span> <span class="p">(</span>
-                    <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span><span class="s2">&quot;MODEL&quot;</span><span class="p">]</span>
-                    <span class="o">!=</span> <span class="s2">&quot;ATM_USER_ALT_PROFILE&quot;</span>
+                    <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span><span class="s2">"MODEL"</span><span class="p">]</span>
+                    <span class="o">!=</span> <span class="s2">"ATM_USER_ALT_PROFILE"</span>
                 <span class="p">):</span>
                     <span class="c1"># MODTRAN cannot accept a ground altitude above 6 km, so keep all layers after that</span>
-                    <span class="n">gndalt</span> <span class="o">=</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;SURFACE&quot;</span><span class="p">][</span><span class="s2">&quot;GNDALT&quot;</span><span class="p">]</span>
+                    <span class="n">gndalt</span> <span class="o">=</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"SURFACE"</span><span class="p">][</span><span class="s2">"GNDALT"</span><span class="p">]</span>
 
                     <span class="c1"># E.g.: [1.5, 2, 3, 4, 5]</span>
                     <span class="n">low_altitudes</span> <span class="o">=</span> <span class="p">[</span><span class="n">gndalt</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span>
@@ -5939,67 +5939,67 @@
 
                     <span class="n">altitudes</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="n">low_altitudes</span> <span class="o">+</span> <span class="n">hi_altitudes</span>
-                    <span class="p">)</span>  <span class="c1"># Append lists, don&#39;t add altitudes!</span>
+                    <span class="p">)</span>  <span class="c1"># Append lists, don't add altitudes!</span>
 
                     <span class="n">prof_unt_tdelta_kelvin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">altitudes</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">TROPOPAUSE_ALTITUDE_KM</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="mi">0</span>
                     <span class="p">)</span>
 
                     <span class="n">altitude_dict</span> <span class="o">=</span> <span class="p">{</span>
-                        <span class="s2">&quot;TYPE&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_ALTITUDE&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;UNITS&quot;</span><span class="p">:</span> <span class="s2">&quot;UNT_KILOMETERS&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;PROFILE&quot;</span><span class="p">:</span> <span class="n">altitudes</span><span class="p">,</span>
+                        <span class="s2">"TYPE"</span><span class="p">:</span> <span class="s2">"PROF_ALTITUDE"</span><span class="p">,</span>
+                        <span class="s2">"UNITS"</span><span class="p">:</span> <span class="s2">"UNT_KILOMETERS"</span><span class="p">,</span>
+                        <span class="s2">"PROFILE"</span><span class="p">:</span> <span class="n">altitudes</span><span class="p">,</span>
                     <span class="p">}</span>
                     <span class="n">delta_kelvin_dict</span> <span class="o">=</span> <span class="p">{</span>
-                        <span class="s2">&quot;TYPE&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_TEMPERATURE&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;UNITS&quot;</span><span class="p">:</span> <span class="s2">&quot;UNT_TDELTA_KELVIN&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;PROFILE&quot;</span><span class="p">:</span> <span class="n">prof_unt_tdelta_kelvin</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                        <span class="s2">"TYPE"</span><span class="p">:</span> <span class="s2">"PROF_TEMPERATURE"</span><span class="p">,</span>
+                        <span class="s2">"UNITS"</span><span class="p">:</span> <span class="s2">"UNT_TDELTA_KELVIN"</span><span class="p">,</span>
+                        <span class="s2">"PROFILE"</span><span class="p">:</span> <span class="n">prof_unt_tdelta_kelvin</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
                     <span class="p">}</span>
 
-                    <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span>
-                        <span class="s2">&quot;MODEL&quot;</span>
-                    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;ATM_USER_ALT_PROFILE&quot;</span>
-                    <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span><span class="s2">&quot;NPROF&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
-                    <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span><span class="s2">&quot;NLAYERS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">altitudes</span><span class="p">)</span>
-                    <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span><span class="s2">&quot;PROFILES&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span>
+                        <span class="s2">"MODEL"</span>
+                    <span class="p">]</span> <span class="o">=</span> <span class="s2">"ATM_USER_ALT_PROFILE"</span>
+                    <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span><span class="s2">"NPROF"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+                    <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span><span class="s2">"NLAYERS"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">altitudes</span><span class="p">)</span>
+                    <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span><span class="s2">"PROFILES"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
                         <span class="n">altitude_dict</span><span class="p">,</span>
                         <span class="n">delta_kelvin_dict</span><span class="p">,</span>
                     <span class="p">]</span>
 
                 <span class="k">else</span><span class="p">:</span>  <span class="c1"># A profile is already provided, assume that it includes PROF_ALTITUDE</span>
-                    <span class="n">nprof</span> <span class="o">=</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span><span class="s2">&quot;NPROF&quot;</span><span class="p">]</span>
+                    <span class="n">nprof</span> <span class="o">=</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span><span class="s2">"NPROF"</span><span class="p">]</span>
                     <span class="n">profile_types</span> <span class="o">=</span> <span class="p">[]</span>
                     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nprof</span><span class="p">):</span>
                         <span class="n">profile_types</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                            <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span><span class="s2">&quot;PROFILES&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span>
-                                <span class="s2">&quot;TYPE&quot;</span>
+                            <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span><span class="s2">"PROFILES"</span><span class="p">][</span><span class="n">i</span><span class="p">][</span>
+                                <span class="s2">"TYPE"</span>
                             <span class="p">]</span>
                         <span class="p">)</span>
 
-                    <span class="n">ind_prof_altitude</span> <span class="o">=</span> <span class="n">profile_types</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;PROF_ALTITUDE&quot;</span><span class="p">)</span>
+                    <span class="n">ind_prof_altitude</span> <span class="o">=</span> <span class="n">profile_types</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"PROF_ALTITUDE"</span><span class="p">)</span>
                     <span class="n">prof_altitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                        <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span><span class="s2">&quot;PROFILES&quot;</span><span class="p">][</span>
+                        <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span><span class="s2">"PROFILES"</span><span class="p">][</span>
                             <span class="n">ind_prof_altitude</span>
-                        <span class="p">][</span><span class="s2">&quot;PROFILE&quot;</span><span class="p">]</span>
+                        <span class="p">][</span><span class="s2">"PROFILE"</span><span class="p">]</span>
                     <span class="p">)</span>
 
-                    <span class="k">if</span> <span class="s2">&quot;PROF_TEMPERATURE&quot;</span> <span class="ow">in</span> <span class="n">profile_types</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s2">"PROF_TEMPERATURE"</span> <span class="ow">in</span> <span class="n">profile_types</span><span class="p">:</span>
                         <span class="c1"># If a temperature profile already exists, then we must add the temperature delta to that</span>
                         <span class="c1"># as MODTRAN apparently does not allow have both an offset and a specified temperature</span>
-                        <span class="n">ind_prof_temperature</span> <span class="o">=</span> <span class="n">profile_types</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;PROF_TEMPERATURE&quot;</span><span class="p">)</span>
+                        <span class="n">ind_prof_temperature</span> <span class="o">=</span> <span class="n">profile_types</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"PROF_TEMPERATURE"</span><span class="p">)</span>
                         <span class="n">prof_temperature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                            <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span><span class="s2">&quot;PROFILES&quot;</span><span class="p">][</span>
+                            <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span><span class="s2">"PROFILES"</span><span class="p">][</span>
                                 <span class="n">ind_prof_temperature</span>
-                            <span class="p">][</span><span class="s2">&quot;PROFILE&quot;</span><span class="p">]</span>
+                            <span class="p">][</span><span class="s2">"PROFILE"</span><span class="p">]</span>
                         <span class="p">)</span>
                         <span class="n">prof_temperature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
                             <span class="n">prof_altitude</span> <span class="o">&lt;=</span> <span class="n">TROPOPAUSE_ALTITUDE_KM</span><span class="p">,</span>
                             <span class="n">prof_temperature</span> <span class="o">+</span> <span class="n">val</span><span class="p">,</span>
                             <span class="n">prof_temperature</span><span class="p">,</span>
                         <span class="p">)</span>
-                        <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span><span class="s2">&quot;PROFILES&quot;</span><span class="p">][</span>
+                        <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span><span class="s2">"PROFILES"</span><span class="p">][</span>
                             <span class="n">ind_prof_temperature</span>
-                        <span class="p">][</span><span class="s2">&quot;PROFILE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prof_temperature</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                        <span class="p">][</span><span class="s2">"PROFILE"</span><span class="p">]</span> <span class="o">=</span> <span class="n">prof_temperature</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c1"># If a temperature profile does not exist, then use UNT_TDELTA_KELVIN</span>
@@ -6007,47 +6007,47 @@
                             <span class="n">prof_altitude</span> <span class="o">&lt;=</span> <span class="n">TROPOPAUSE_ALTITUDE_KM</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="mf">0.0</span>
                         <span class="p">)</span>
                         <span class="n">prof_unt_tdelta_kelvin_dict</span> <span class="o">=</span> <span class="p">{</span>
-                            <span class="s2">&quot;TYPE&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_TEMPERATURE&quot;</span><span class="p">,</span>
-                            <span class="s2">&quot;UNITS&quot;</span><span class="p">:</span> <span class="s2">&quot;UNT_TDELTA_KELVIN&quot;</span><span class="p">,</span>
-                            <span class="s2">&quot;PROFILE&quot;</span><span class="p">:</span> <span class="n">prof_unt_tdelta_kelvin</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                            <span class="s2">"TYPE"</span><span class="p">:</span> <span class="s2">"PROF_TEMPERATURE"</span><span class="p">,</span>
+                            <span class="s2">"UNITS"</span><span class="p">:</span> <span class="s2">"UNT_TDELTA_KELVIN"</span><span class="p">,</span>
+                            <span class="s2">"PROFILE"</span><span class="p">:</span> <span class="n">prof_unt_tdelta_kelvin</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
                         <span class="p">}</span>
-                        <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span><span class="s2">&quot;PROFILES&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span><span class="s2">"PROFILES"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                             <span class="n">prof_unt_tdelta_kelvin_dict</span>
                         <span class="p">)</span>
-                        <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">][</span><span class="s2">&quot;NPROF&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nprof</span> <span class="o">+</span> <span class="mi">1</span>
+                        <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">][</span><span class="s2">"NPROF"</span><span class="p">]</span> <span class="o">=</span> <span class="n">nprof</span> <span class="o">+</span> <span class="mi">1</span>
 
             <span class="c1"># Surface parameters we want to populate even if unassigned</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">,</span> <span class="s2">&quot;GNDALT&quot;</span><span class="p">]:</span>
-                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;SURFACE&quot;</span><span class="p">][</span><span class="s2">&quot;GNDALT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"surface_elevation_km"</span><span class="p">,</span> <span class="s2">"GNDALT"</span><span class="p">]:</span>
+                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"SURFACE"</span><span class="p">][</span><span class="s2">"GNDALT"</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
             <span class="c1"># Make sure that view geometry gets populated if not assigned previously</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;observer_azimuth&quot;</span><span class="p">,</span> <span class="s2">&quot;trueaz&quot;</span><span class="p">]:</span>
-                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;TRUEAZ&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"observer_azimuth"</span><span class="p">,</span> <span class="s2">"trueaz"</span><span class="p">]:</span>
+                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"TRUEAZ"</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
-            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;observer_zenith&quot;</span><span class="p">,</span> <span class="s2">&quot;obszen&quot;</span><span class="p">]:</span>
-                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;OBSZEN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"observer_zenith"</span><span class="p">,</span> <span class="s2">"obszen"</span><span class="p">]:</span>
+                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"OBSZEN"</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
             <span class="c1"># Populate solar geometry</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;solar_zenith&quot;</span><span class="p">,</span> <span class="s2">&quot;solzen&quot;</span><span class="p">,</span> <span class="s2">&quot;SOLZEN&quot;</span><span class="p">]:</span>
-                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;PARM2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"solar_zenith"</span><span class="p">,</span> <span class="s2">"solzen"</span><span class="p">,</span> <span class="s2">"SOLZEN"</span><span class="p">]:</span>
+                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"PARM2"</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
-            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;relative_azimuth&quot;</span><span class="p">,</span> <span class="s2">&quot;relaz&quot;</span><span class="p">,</span> <span class="s2">&quot;RELAZ&quot;</span><span class="p">]:</span>
-                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;PARM1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"relative_azimuth"</span><span class="p">,</span> <span class="s2">"relaz"</span><span class="p">,</span> <span class="s2">"RELAZ"</span><span class="p">]:</span>
+                <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"PARM1"</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
-            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;DISALB&quot;</span><span class="p">,</span> <span class="s2">&quot;NAME&quot;</span><span class="p">]:</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"DISALB"</span><span class="p">,</span> <span class="s2">"NAME"</span><span class="p">]:</span>
                 <span class="n">recursive_replace</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;ATMOSPHERE&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"ATMOSPHERE"</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">recursive_replace</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                    <span class="s2">&quot;Unsupported MODTRAN parameter </span><span class="si">{}</span><span class="s2"> specified&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                    <span class="s2">"Unsupported MODTRAN parameter </span><span class="si">{}</span><span class="s2"> specified"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
                 <span class="p">)</span>
 
         <span class="c1"># For custom aerosols, specify final extinction and absorption</span>
         <span class="c1"># MODTRAN 6.0 convention treats negative visibility as AOT550</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;aer_absc&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"aer_absc"</span><span class="p">):</span>
             <span class="n">total_aot</span> <span class="o">=</span> <span class="n">fracs</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-            <span class="n">recursive_replace</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="s2">&quot;VIS&quot;</span><span class="p">,</span> <span class="o">-</span><span class="n">total_aot</span><span class="p">)</span>
+            <span class="n">recursive_replace</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="s2">"VIS"</span><span class="p">,</span> <span class="o">-</span><span class="n">total_aot</span><span class="p">)</span>
             <span class="n">total_extc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aer_extc</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">fracs</span><span class="p">)</span>
             <span class="n">total_absc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aer_absc</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">fracs</span><span class="p">)</span>
             <span class="n">norm_fracs</span> <span class="o">=</span> <span class="n">fracs</span> <span class="o">/</span> <span class="p">(</span><span class="n">fracs</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
@@ -6055,40 +6055,40 @@
 
             <span class="c1"># Normalize to 550 nm</span>
             <span class="n">total_extc550</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aer_wl</span><span class="p">,</span> <span class="n">total_extc</span><span class="p">)(</span><span class="mf">0.55</span><span class="p">)</span>
-            <span class="n">lvl0</span> <span class="o">=</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;AEROSOLS&quot;</span><span class="p">][</span><span class="s2">&quot;IREGSPC&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">lvl0</span><span class="p">[</span><span class="s2">&quot;NARSPC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aer_wl</span><span class="p">)</span>
-            <span class="n">lvl0</span><span class="p">[</span><span class="s2">&quot;VARSPC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aer_wl</span><span class="p">]</span>
-            <span class="n">lvl0</span><span class="p">[</span><span class="s2">&quot;ASYM&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">total_asym</span><span class="p">]</span>
-            <span class="n">lvl0</span><span class="p">[</span><span class="s2">&quot;EXTC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_extc550</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">total_extc</span><span class="p">]</span>
-            <span class="n">lvl0</span><span class="p">[</span><span class="s2">&quot;ABSC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_extc550</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">total_absc</span><span class="p">]</span>
+            <span class="n">lvl0</span> <span class="o">=</span> <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"AEROSOLS"</span><span class="p">][</span><span class="s2">"IREGSPC"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">lvl0</span><span class="p">[</span><span class="s2">"NARSPC"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aer_wl</span><span class="p">)</span>
+            <span class="n">lvl0</span><span class="p">[</span><span class="s2">"VARSPC"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aer_wl</span><span class="p">]</span>
+            <span class="n">lvl0</span><span class="p">[</span><span class="s2">"ASYM"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">total_asym</span><span class="p">]</span>
+            <span class="n">lvl0</span><span class="p">[</span><span class="s2">"EXTC"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_extc550</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">total_extc</span><span class="p">]</span>
+            <span class="n">lvl0</span><span class="p">[</span><span class="s2">"ABSC"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_extc550</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">total_absc</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multipart_transmittance</span><span class="p">:</span>
             <span class="c1"># TODO: move setting of multipart rfl values to config</span>
             <span class="n">const_rfl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">albedos</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
             <span class="c1"># Here we copy the original config and just change the surface reflectance</span>
-            <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;CASE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;SURFACE&quot;</span><span class="p">][</span><span class="s2">&quot;SURFP&quot;</span><span class="p">][</span>
-                <span class="s2">&quot;CSALB&quot;</span>
-            <span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;LAMB_CONST_</span><span class="si">{</span><span class="n">const_rfl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">_PCT&quot;</span>
+            <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"CASE"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"SURFACE"</span><span class="p">][</span><span class="s2">"SURFP"</span><span class="p">][</span>
+                <span class="s2">"CSALB"</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"LAMB_CONST_</span><span class="si">{</span><span class="n">const_rfl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">_PCT"</span>
             <span class="n">param1</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">param1</span><span class="p">[</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;CASE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">param1</span><span class="p">[</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;SURFACE&quot;</span><span class="p">][</span><span class="s2">&quot;SURFP&quot;</span><span class="p">][</span>
-                <span class="s2">&quot;CSALB&quot;</span>
-            <span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;LAMB_CONST_</span><span class="si">{</span><span class="n">const_rfl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">_PCT&quot;</span>
+            <span class="n">param1</span><span class="p">[</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"CASE"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">param1</span><span class="p">[</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"SURFACE"</span><span class="p">][</span><span class="s2">"SURFP"</span><span class="p">][</span>
+                <span class="s2">"CSALB"</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"LAMB_CONST_</span><span class="si">{</span><span class="n">const_rfl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">_PCT"</span>
             <span class="n">param</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param1</span><span class="p">)</span>
             <span class="n">param2</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">param</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">param2</span><span class="p">[</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;CASE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
-            <span class="n">param2</span><span class="p">[</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">][</span><span class="s2">&quot;SURFACE&quot;</span><span class="p">][</span><span class="s2">&quot;SURFP&quot;</span><span class="p">][</span>
-                <span class="s2">&quot;CSALB&quot;</span>
-            <span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;LAMB_CONST_</span><span class="si">{</span><span class="n">const_rfl</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">_PCT&quot;</span>
+            <span class="n">param2</span><span class="p">[</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"CASE"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">param2</span><span class="p">[</span><span class="s2">"MODTRANINPUT"</span><span class="p">][</span><span class="s2">"SURFACE"</span><span class="p">][</span><span class="s2">"SURFP"</span><span class="p">][</span>
+                <span class="s2">"CSALB"</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"LAMB_CONST_</span><span class="si">{</span><span class="n">const_rfl</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">_PCT"</span>
             <span class="n">param</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param2</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;MODTRAN&quot;</span><span class="p">:</span> <span class="n">param</span><span class="p">}),</span> <span class="n">param</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">"MODTRAN"</span><span class="p">:</span> <span class="n">param</span><span class="p">}),</span> <span class="n">param</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">required_results_exist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename_base</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.modtran.ModtranRT.required_results_exist"><a href="../../../../../api/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.required_results_exist" title="Go to docs">[docs]</a></div>
-        <span class="n">infilename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="s2">&quot;LUT_&quot;</span> <span class="o">+</span> <span class="n">filename_base</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span><span class="p">)</span>
-        <span class="n">outchnname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="n">filename_base</span> <span class="o">+</span> <span class="s2">&quot;.chn&quot;</span><span class="p">)</span>
-        <span class="n">outtp6name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="n">filename_base</span> <span class="o">+</span> <span class="s2">&quot;.tp6&quot;</span><span class="p">)</span>
+        <span class="n">infilename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="s2">"LUT_"</span> <span class="o">+</span> <span class="n">filename_base</span> <span class="o">+</span> <span class="s2">".json"</span><span class="p">)</span>
+        <span class="n">outchnname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="n">filename_base</span> <span class="o">+</span> <span class="s2">".chn"</span><span class="p">)</span>
+        <span class="n">outtp6name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="n">filename_base</span> <span class="o">+</span> <span class="s2">".tp6"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="p">(</span>
             <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">infilename</span><span class="p">)</span>
@@ -6100,7 +6100,7 @@
             <span class="k">return</span> <span class="kc">False</span>
 <div class="mkapi-source-link" id="isofit.atmosphere.engines.modtran.ModtranRT.wl2flt"><a href="../../../../../api/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.wl2flt" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="nf">wl2flt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wavelengths</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">fwhms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">outfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to generate Gaussian distributions around the</span>
+<span class="w">        </span><span class="sd">"""Helper function to generate Gaussian distributions around the</span>
 <span class="sd">        center wavelengths.</span>
 
 <span class="sd">        Args:</span>
@@ -6108,24 +6108,24 @@
 <span class="sd">            fwhms: full width at half max</span>
 <span class="sd">            outfile: file to write to</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">sigmas</span> <span class="o">=</span> <span class="n">fwhms</span> <span class="o">/</span> <span class="mf">2.355</span>
         <span class="n">span</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">wavelengths</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">wavelengths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># nm</span>
         <span class="n">steps</span> <span class="o">=</span> <span class="mi">101</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
-            <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Nanometer data for sensor</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
+            <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"Nanometer data for sensor</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">wl</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">,</span> <span class="n">sigma</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">wavelengths</span><span class="p">,</span> <span class="n">fwhms</span><span class="p">,</span> <span class="n">sigmas</span><span class="p">):</span>
                 <span class="n">ws</span> <span class="o">=</span> <span class="n">wl</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">span</span><span class="p">,</span> <span class="n">span</span><span class="p">,</span> <span class="n">steps</span><span class="p">)</span>
                 <span class="n">vs</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
                 <span class="n">vs</span> <span class="o">=</span> <span class="n">vs</span> <span class="o">/</span> <span class="n">vs</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">steps</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)]</span>
                 <span class="n">wns</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">nm_to_wavenumber</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
 
-                <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;CENTER:  </span><span class="si">%6.2f</span><span class="s2"> NM   FWHM:  </span><span class="si">%4.2f</span><span class="s2"> NM</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">wl</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">))</span>
+                <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"CENTER:  </span><span class="si">%6.2f</span><span class="s2"> NM   FWHM:  </span><span class="si">%4.2f</span><span class="s2"> NM</span><span class="se">\n</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">wl</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">))</span>
 
                 <span class="k">for</span> <span class="n">w</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">wn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">vs</span><span class="p">,</span> <span class="n">wns</span><span class="p">):</span>
-                    <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; </span><span class="si">%9.4f</span><span class="s2"> </span><span class="si">%9.7f</span><span class="s2"> </span><span class="si">%9.2f</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">wn</span><span class="p">))</span>
+                    <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">" </span><span class="si">%9.4f</span><span class="s2"> </span><span class="si">%9.7f</span><span class="s2"> </span><span class="si">%9.2f</span><span class="se">\n</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">wn</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
 
 

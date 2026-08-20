@@ -5295,14 +5295,14 @@
 <span class="normal">450</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5332,7 +5332,7 @@
 
 <span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-5</span>  <span class="c1"># used for finite difference derivative calculations</span>
 
-<span class="n">SIXS_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;\</span>
+<span class="n">SIXS_TEMPLATE</span> <span class="o">=</span> <span class="s2">"""\</span>
 <span class="s2">0 (User defined)</span>
 <span class="si">{solzen}</span><span class="s2"> </span><span class="si">{solaz}</span><span class="s2"> </span><span class="si">{viewzen}</span><span class="s2"> </span><span class="si">{viewaz}</span><span class="s2"> </span><span class="si">{month}</span><span class="s2"> </span><span class="si">{day}</span>
 <span class="s2">8  (User defined H2O, O3)</span>
@@ -5353,31 +5353,31 @@
 <span class="s2">0</span>
 <span class="s2">0</span>
 <span class="s2">-1 No atm. corrections selected</span>
-<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">"""</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">set_env</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.six_s.set_env"><a href="../../../../../api/isofit/atmosphere/engines/six_s/#isofit.atmosphere.engines.six_s.set_env" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks the current env SIXS_DIR against the ini sixs key</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">current</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SIXS_DIR&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"SIXS_DIR"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">current</span><span class="p">:</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Setting SIXS_DIR=</span><span class="si">{</span><span class="n">env</span><span class="o">.</span><span class="n">sixs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SIXS_DIR&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">sixs</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Setting SIXS_DIR=</span><span class="si">{</span><span class="n">env</span><span class="o">.</span><span class="n">sixs</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"SIXS_DIR"</span><span class="p">]</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">sixs</span>
     <span class="k">elif</span> <span class="p">(</span><span class="n">current</span> <span class="o">:=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">current</span><span class="p">))</span> <span class="o">!=</span> <span class="n">env</span><span class="o">.</span><span class="n">sixs</span><span class="p">:</span>
         <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;The environment variable $SIXS_DIR does not match the ISOFIT ini. It is recommended to make these match, though not required. The ENV path will be the one used.&quot;</span>
+            <span class="s2">"The environment variable $SIXS_DIR does not match the ISOFIT ini. It is recommended to make these match, though not required. The ENV path will be the one used."</span>
         <span class="p">)</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ENV: </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;INI: </span><span class="si">{</span><span class="n">env</span><span class="o">.</span><span class="n">sixs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ENV: </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"INI: </span><span class="si">{</span><span class="n">env</span><span class="o">.</span><span class="n">sixs</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;Please either set the ENV to that INI value, or update the INI with the ENV via:&quot;</span>
+            <span class="s2">"Please either set the ENV to that INI value, or update the INI with the ENV via:"</span>
         <span class="p">)</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;  isofit --path sixs $SIXS_DIR&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"  isofit --path sixs $SIXS_DIR"</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">SixSRT</span><span class="p">(</span><span class="n">BaseAtmosphere</span><span class="p">,</span> <span class="n">Writer</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.six_s.SixSRT"><a href="../../../../../api/isofit/atmosphere/engines/six_s/#isofit.atmosphere.engines.six_s.SixSRT" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A model of photon transport including the atmosphere.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A model of photon transport including the atmosphere."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_config</span><span class="p">,</span> <span class="n">wl</span><span class="o">=</span><span class="p">[],</span> <span class="n">fwhm</span><span class="o">=</span><span class="p">[],</span> <span class="n">modtran_emulation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">set_env</span><span class="p">()</span>
@@ -5385,7 +5385,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">full_config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">atmosphere</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modtran_emulation</span> <span class="o">=</span> <span class="n">modtran_emulation</span>
 
-        <span class="c1"># Overwrite the wavelengths, because we&#39;re going to use these no matter what (6S runs at 2.5 nm)</span>
+        <span class="c1"># Overwrite the wavelengths, because we're going to use these no matter what (6S runs at 2.5 nm)</span>
         <span class="c1"># NOTE - this wavelength range is fairly inclusive, but need not be hardcoded at these start and end points</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">wl</span><span class="p">):</span>
             <span class="n">wl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">350</span><span class="p">,</span> <span class="mi">2500</span> <span class="o">+</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
@@ -5397,45 +5397,45 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">engine_base_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">engine_base_dir</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exe</span> <span class="o">=</span> <span class="n">get_exe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">engine_base_dir</span><span class="p">)</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using 6S executable: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using 6S executable: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">co2_mode</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="s2">&quot;CO2&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"CO2"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">co2_mode</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="c1"># TODO Add check that sim path exists</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">sim_path</span>
 
         <span class="c1"># If the LUT file already exists, still need to calc this post init</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;esd&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"esd"</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">load_esd</span><span class="p">()</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">full_config</span><span class="p">,</span> <span class="n">wl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">preSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.six_s.SixSRT.preSim"><a href="../../../../../api/isofit/atmosphere/engines/six_s/#isofit.atmosphere.engines.six_s.SixSRT.preSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add the 6S executable in the LUT attributes</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">&quot;6S&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">))</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">"6S"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">makeSim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.six_s.SixSRT.makeSim"><a href="../../../../../api/isofit/atmosphere/engines/six_s/#isofit.atmosphere.engines.six_s.SixSRT.makeSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Perform 6S simulations</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        point: np.array</span>
 <span class="sd">            Point to process</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Retrieve the files to process</span>
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_to_filename</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
         <span class="n">outp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-        <span class="n">inpt</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;LUT_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.inp&quot;</span><span class="p">)</span>
+        <span class="n">inpt</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"LUT_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.inp"</span><span class="p">)</span>
 
         <span class="c1"># Only execute when either the 6S input (ext.inp) or output (no extension) files are missing</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">outp</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">inpt</span><span class="p">):</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;6S sim files already exist: </span><span class="si">{</span><span class="n">outp</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">inpt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"6S sim files already exist: </span><span class="si">{</span><span class="n">outp</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">inpt</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rebuild_cmd</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">wlinf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">wlsup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
@@ -5446,7 +5446,7 @@
                 <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">readSim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.six_s.SixSRT.readSim"><a href="../../../../../api/isofit/atmosphere/engines/six_s/#isofit.atmosphere.engines.six_s.SixSRT.readSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parses a 6S output simulation file for a given point</span>
 
 <span class="sd">        Parameters</span>
@@ -5458,8 +5458,8 @@
 <span class="sd">        -------</span>
 <span class="sd">        data: dict</span>
 <span class="sd">            Simulated data results. These keys correspond with the expected keys</span>
-<span class="sd">            of ISOFIT&#39;s LUT files</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            of ISOFIT's LUT files</span>
+<span class="sd">        """</span>
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_to_filename</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
         <span class="n">file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
@@ -5471,27 +5471,27 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">postSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.six_s.SixSRT.postSim"><a href="../../../../../api/isofit/atmosphere/engines/six_s/#isofit.atmosphere.engines.six_s.SixSRT.postSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Update solar_irr after simulations</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_esd</span><span class="p">()</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">irr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">irradiance_file</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
+            <span class="n">irr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">irradiance_file</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="s2">"#"</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-                <span class="s2">&quot;Solar irradiance file not found on system. &quot;</span>
-                <span class="s2">&quot;Make sure to add the examples folder to ISOFIT&#39;s root directory before proceeding.&quot;</span>
+                <span class="s2">"Solar irradiance file not found on system. "</span>
+                <span class="s2">"Make sure to add the examples folder to ISOFIT's root directory before proceeding."</span>
             <span class="p">)</span>
         <span class="n">iwl</span><span class="p">,</span> <span class="n">irr</span> <span class="o">=</span> <span class="n">irr</span><span class="o">.</span><span class="n">T</span>
         <span class="n">irr</span> <span class="o">=</span> <span class="n">irr</span> <span class="o">/</span> <span class="mf">10.0</span>  <span class="c1"># convert from mW/m2/nm to uW/nm/cm2</span>
         <span class="n">irr</span> <span class="o">=</span> <span class="n">irr</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">irr_factor</span><span class="o">**</span><span class="mi">2</span>  <span class="c1"># consider solar distance</span>
         <span class="n">solar_irr</span> <span class="o">=</span> <span class="n">resample_spectrum</span><span class="p">(</span><span class="n">irr</span><span class="p">,</span> <span class="n">iwl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;solar_irr&quot;</span><span class="p">:</span> <span class="n">solar_irr</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"solar_irr"</span><span class="p">:</span> <span class="n">solar_irr</span><span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">rebuild_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">wlinf</span><span class="p">,</span> <span class="n">wlsup</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.six_s.SixSRT.rebuild_cmd"><a href="../../../../../api/isofit/atmosphere/engines/six_s/#isofit.atmosphere.engines.six_s.SixSRT.rebuild_cmd" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the simulation command file.</span>
+<span class="w">        </span><span class="sd">"""Build the simulation command file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            point (np.array): conditions to alter in simulation</span>
@@ -5500,31 +5500,31 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: execution command</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Collect files of interest for this point</span>
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">point_to_filename</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
 
         <span class="n">outp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>  <span class="c1"># Output path</span>
-        <span class="n">inpt</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;LUT_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.inp&quot;</span><span class="p">)</span>  <span class="c1"># Input path</span>
-        <span class="n">bash</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;LUT_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.sh&quot;</span><span class="p">)</span>  <span class="c1"># Script path</span>
+        <span class="n">inpt</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"LUT_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.inp"</span><span class="p">)</span>  <span class="c1"># Input path</span>
+        <span class="n">bash</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"LUT_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.sh"</span><span class="p">)</span>  <span class="c1"># Script path</span>
 
         <span class="c1"># Prepare template values</span>
         <span class="n">vals</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;aermodel&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;AOT550&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
-            <span class="s2">&quot;H2OSTR&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;O3&quot;</span><span class="p">:</span> <span class="mf">0.30</span><span class="p">,</span>
-            <span class="s2">&quot;day&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">day</span><span class="p">,</span>
-            <span class="s2">&quot;month&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">month</span><span class="p">,</span>
-            <span class="s2">&quot;elev&quot;</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">elev</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
-            <span class="s2">&quot;alt&quot;</span><span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">alt</span><span class="p">,</span> <span class="mi">99</span><span class="p">),</span>
-            <span class="s2">&quot;atm_file&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s2">&quot;abscf_data_directory&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s2">&quot;wlinf&quot;</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">nm_to_micron</span><span class="p">(</span><span class="n">wlinf</span><span class="p">),</span>
-            <span class="s2">&quot;wlsup&quot;</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">nm_to_micron</span><span class="p">(</span><span class="n">wlsup</span><span class="p">),</span>
+            <span class="s2">"aermodel"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"AOT550"</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+            <span class="s2">"H2OSTR"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">"O3"</span><span class="p">:</span> <span class="mf">0.30</span><span class="p">,</span>
+            <span class="s2">"day"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">day</span><span class="p">,</span>
+            <span class="s2">"month"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">month</span><span class="p">,</span>
+            <span class="s2">"elev"</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">elev</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+            <span class="s2">"alt"</span><span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">alt</span><span class="p">,</span> <span class="mi">99</span><span class="p">),</span>
+            <span class="s2">"atm_file"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">"abscf_data_directory"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">"wlinf"</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">nm_to_micron</span><span class="p">(</span><span class="n">wlinf</span><span class="p">),</span>
+            <span class="s2">"wlsup"</span><span class="p">:</span> <span class="n">units</span><span class="o">.</span><span class="n">nm_to_micron</span><span class="p">(</span><span class="n">wlsup</span><span class="p">),</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">co2_mode</span><span class="p">:</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;CO2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">420</span>  <span class="c1"># ppm</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">"CO2"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">420</span>  <span class="c1"># ppm</span>
 
         <span class="c1"># Assume geometry values are provided by the config</span>
         <span class="n">vals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
@@ -5540,63 +5540,63 @@
 
         <span class="c1"># Special cases</span>
 
-        <span class="k">if</span> <span class="s2">&quot;H2OSTR&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;h2o_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">cm_to_mm</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">"H2OSTR"</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">"h2o_mm"</span><span class="p">]</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">cm_to_mm</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">"H2OSTR"</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="s2">&quot;surface_elevation_km&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;elev&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">],</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="s2">"surface_elevation_km"</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">"elev"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">"surface_elevation_km"</span><span class="p">],</span> <span class="mi">0</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="s2">&quot;observer_altitude_km&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;alt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;observer_altitude_km&quot;</span><span class="p">],</span> <span class="mi">99</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"observer_altitude_km"</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">"alt"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">"observer_altitude_km"</span><span class="p">],</span> <span class="mi">99</span><span class="p">)</span>
 
         <span class="c1"># ASL to AGL</span>
-        <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;alt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;alt&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;elev&quot;</span><span class="p">],</span> <span class="mi">99</span><span class="p">),</span> <span class="mf">0.01</span><span class="p">)</span>
+        <span class="n">vals</span><span class="p">[</span><span class="s2">"alt"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s2">"alt"</span><span class="p">]</span> <span class="o">-</span> <span class="n">vals</span><span class="p">[</span><span class="s2">"elev"</span><span class="p">],</span> <span class="mi">99</span><span class="p">),</span> <span class="mf">0.01</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="s2">&quot;observer_azimuth&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;viewaz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;observer_azimuth&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"observer_azimuth"</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">"viewaz"</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">"observer_azimuth"</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="s2">&quot;observer_zenith&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;viewzen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;observer_zenith&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"observer_zenith"</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">"viewzen"</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">"observer_zenith"</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="s2">&quot;solar_zenith&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;solzen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;solar_zenith&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"solar_zenith"</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">"solzen"</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">"solar_zenith"</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="s2">&quot;relative_azimuth&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;solaz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
-                <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;viewaz&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;relative_azimuth&quot;</span><span class="p">],</span>
-                <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;viewaz&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;relative_azimuth&quot;</span><span class="p">],</span>
+        <span class="k">if</span> <span class="s2">"relative_azimuth"</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">"solaz"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
+                <span class="n">vals</span><span class="p">[</span><span class="s2">"viewaz"</span><span class="p">]</span> <span class="o">+</span> <span class="n">vals</span><span class="p">[</span><span class="s2">"relative_azimuth"</span><span class="p">],</span>
+                <span class="n">vals</span><span class="p">[</span><span class="s2">"viewaz"</span><span class="p">]</span> <span class="o">-</span> <span class="n">vals</span><span class="p">[</span><span class="s2">"relative_azimuth"</span><span class="p">],</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">modtran_emulation</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">&quot;AERFRAC_2&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
-                <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;AOT550&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;AERFRAC_2&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s2">"AERFRAC_2"</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+                <span class="n">vals</span><span class="p">[</span><span class="s2">"AOT550"</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="s2">"AERFRAC_2"</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="s2">&quot;CO2&quot;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"CO2"</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">co2_mode</span><span class="p">:</span>
-                <span class="n">co2_warning</span> <span class="o">=</span> <span class="s2">&quot;CO2 mode must be on to have a CO2 value in the LUT&quot;</span>
+                <span class="n">co2_warning</span> <span class="o">=</span> <span class="s2">"CO2 mode must be on to have a CO2 value in the LUT"</span>
                 <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">co2_warning</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">co2_warning</span><span class="p">)</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;CO2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;, </span><span class="si">{</span><span class="n">vals</span><span class="p">[</span><span class="s2">&quot;CO2&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">"CO2"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">', </span><span class="si">{</span><span class="n">vals</span><span class="p">[</span><span class="s2">"CO2"</span><span class="p">]</span><span class="si">}</span><span class="s1">'</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Need to add a blank CO2 entry for backwards 6S compatibility</span>
-            <span class="n">vals</span><span class="p">[</span><span class="s2">&quot;CO2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s2">"CO2"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">""</span>
 
         <span class="c1"># Write sim files</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">template</span> <span class="o">=</span> <span class="n">SIXS_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">vals</span><span class="p">)</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">bash</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;#!/usr/bin/bash</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="si">}</span><span class="s1">&quot; &lt; &quot;</span><span class="si">{</span><span class="n">inpt</span><span class="si">}</span><span class="s1">&quot; &gt; &quot;</span><span class="si">{</span><span class="n">outp</span><span class="si">}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;cd $cwd</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">bash</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"#!/usr/bin/bash</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">'"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="si">}</span><span class="s1">" &lt; "</span><span class="si">{</span><span class="n">inpt</span><span class="si">}</span><span class="s1">" &gt; "</span><span class="si">{</span><span class="n">outp</span><span class="si">}</span><span class="s1">"</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"cd $cwd</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;bash </span><span class="si">{</span><span class="n">bash</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"bash </span><span class="si">{</span><span class="n">bash</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">load_esd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.six_s.SixSRT.load_esd"><a href="../../../../../api/isofit/atmosphere/engines/six_s/#isofit.atmosphere.engines.six_s.SixSRT.load_esd" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Loads the earth-sun distance file</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">esd</span> <span class="o">=</span> <span class="n">load_esd</span><span class="p">()</span>
 
         <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
@@ -5605,7 +5605,7 @@
 
     <span class="nd">@staticmethod</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.six_s.SixSRT.parse_file"><a href="../../../../../api/isofit/atmosphere/engines/six_s/#isofit.atmosphere.engines.six_s.SixSRT.parse_file" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse_file</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="n">multipart_transmittance</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">wl_size</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parses a 6S sim file</span>
 
 <span class="sd">        Parameters</span>
@@ -5624,31 +5624,31 @@
 <span class="sd">        -------</span>
 <span class="sd">        data: dict</span>
 <span class="sd">            Simulated data results. These keys correspond with the expected keys</span>
-<span class="sd">            of ISOFIT&#39;s LUT files</span>
+<span class="sd">            of ISOFIT's LUT files</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from isofit.data import env</span>
 <span class="sd">        &gt;&gt;&gt; from isofit.radiative_transfer.engines import SixSRT</span>
-<span class="sd">        &gt;&gt;&gt; SixSRT.parse_file(f&#39;{env.examples}/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000&#39;, wl_size=3)</span>
-<span class="sd">        {&#39;sphalb&#39;: array([0.3116, 0.3057, 0.2999]),</span>
-<span class="sd">         &#39;rhoatm&#39;: array([0.2009, 0.1963, 0.1916]),</span>
-<span class="sd">         &#39;transm_down_dif&#39;: array([0.53211358, 0.53993346, 0.54736113]),</span>
-<span class="sd">         &#39;solzen&#39;: 55.21,</span>
-<span class="sd">         &#39;coszen&#39;: 0.5705702414191993}</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; SixSRT.parse_file(f'{env.examples}/20151026_SantaMonica/lut/AOT550-0.0000_H2OSTR-0.5000', wl_size=3)</span>
+<span class="sd">        {'sphalb': array([0.3116, 0.3057, 0.2999]),</span>
+<span class="sd">         'rhoatm': array([0.2009, 0.1963, 0.1916]),</span>
+<span class="sd">         'transm_down_dif': array([0.53211358, 0.53993346, 0.54736113]),</span>
+<span class="sd">         'solzen': 55.21,</span>
+<span class="sd">         'coszen': 0.5705702414191993}</span>
+<span class="sd">        """</span>
         <span class="n">path</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
-        <span class="n">inpt</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;LUT_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.inp&quot;</span><span class="p">)</span>
+        <span class="n">inpt</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"LUT_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.inp"</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">solzen</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">coszen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">solzen</span><span class="p">))</span>
 
-        <span class="c1"># `data` stores the return values, `append` will append to existing keys and creates them if they don&#39;t</span>
+        <span class="c1"># `data` stores the return values, `append` will append to existing keys and creates them if they don't</span>
         <span class="c1"># Easy append to keys whether they exist or not</span>
         <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">append</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
@@ -5658,7 +5658,7 @@
         <span class="k">for</span> <span class="n">end</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># Find all ints/floats for this line</span>
-                <span class="n">tokens</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;NaN|\d+\.?\d+&quot;</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;******&quot;</span><span class="p">,</span> <span class="s2">&quot;0.0&quot;</span><span class="p">))</span>
+                <span class="n">tokens</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"NaN|\d+\.?\d+"</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"******"</span><span class="p">,</span> <span class="s2">"0.0"</span><span class="p">))</span>
 
                 <span class="c1"># End of table</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">==</span> <span class="mi">11</span><span class="p">:</span>
@@ -5675,16 +5675,16 @@
                         <span class="n">dsol</span><span class="p">,</span>
                         <span class="n">toar</span><span class="p">,</span>
                     <span class="p">)</span> <span class="o">=</span> <span class="n">tokens</span>
-                    <span class="n">append</span><span class="p">(</span><span class="s2">&quot;grid&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
-                    <span class="n">append</span><span class="p">(</span><span class="s2">&quot;sphalb&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">salb</span><span class="p">))</span>
-                    <span class="n">append</span><span class="p">(</span><span class="s2">&quot;rhoatm&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">rhoa</span><span class="p">))</span>
+                    <span class="n">append</span><span class="p">(</span><span class="s2">"grid"</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+                    <span class="n">append</span><span class="p">(</span><span class="s2">"sphalb"</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">salb</span><span class="p">))</span>
+                    <span class="n">append</span><span class="p">(</span><span class="s2">"rhoatm"</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">rhoa</span><span class="p">))</span>
 
                     <span class="c1"># Only append this if not a multipart_transm run</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">multipart_transmittance</span><span class="p">:</span>
-                        <span class="n">append</span><span class="p">(</span><span class="s2">&quot;transm_down_dif&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">scau</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">scad</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">gt</span><span class="p">))</span>
+                        <span class="n">append</span><span class="p">(</span><span class="s2">"transm_down_dif"</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">scau</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">scad</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">gt</span><span class="p">))</span>
 
             <span class="c1"># Found beginning of primary table</span>
-            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;*        trans  down   up&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"*        trans  down   up"</span><span class="p">):</span>
                 <span class="n">start</span> <span class="o">=</span> <span class="n">end</span>
 
             <span class="k">if</span> <span class="n">start_multi</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">==</span> <span class="mi">5</span> <span class="ow">and</span> <span class="n">multipart_transmittance</span><span class="p">:</span>
@@ -5695,38 +5695,38 @@
                     <span class="n">tudir</span><span class="p">,</span>
                     <span class="n">tudif</span><span class="p">,</span>
                 <span class="p">)</span> <span class="o">=</span> <span class="n">tokens</span>
-                <span class="n">append</span><span class="p">(</span><span class="s2">&quot;transm_down_dir&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">tddir</span><span class="p">))</span>
-                <span class="n">append</span><span class="p">(</span><span class="s2">&quot;transm_down_dif&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">tddif</span><span class="p">))</span>
-                <span class="n">append</span><span class="p">(</span><span class="s2">&quot;transm_up_dir&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">tudir</span><span class="p">))</span>
-                <span class="n">append</span><span class="p">(</span><span class="s2">&quot;transm_up_dif&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">tudif</span><span class="p">))</span>
+                <span class="n">append</span><span class="p">(</span><span class="s2">"transm_down_dir"</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">tddir</span><span class="p">))</span>
+                <span class="n">append</span><span class="p">(</span><span class="s2">"transm_down_dif"</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">tddif</span><span class="p">))</span>
+                <span class="n">append</span><span class="p">(</span><span class="s2">"transm_up_dir"</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">tudir</span><span class="p">))</span>
+                <span class="n">append</span><span class="p">(</span><span class="s2">"transm_up_dif"</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">tudif</span><span class="p">))</span>
 
             <span class="c1"># Found beginning of multipart table</span>
-            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;*           down      down      up&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"*           down      down      up"</span><span class="p">):</span>
                 <span class="n">start_multi</span> <span class="o">=</span> <span class="n">end</span>
 
             <span class="c1"># Two break conditions:</span>
-            <span class="c1"># You hit the multipart_transm part of file and don&#39;t use it</span>
+            <span class="c1"># You hit the multipart_transm part of file and don't use it</span>
             <span class="k">if</span> <span class="n">start_multi</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">multipart_transmittance</span><span class="p">:</span>
                 <span class="k">break</span>
 
             <span class="c1"># You move past the multipart_transm part of file</span>
-            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;*                         integrated values of&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"*                         integrated values of"</span><span class="p">):</span>
                 <span class="k">break</span>
 
         <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to parse any data for file: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to parse any data for file: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">{}</span>
 
         <span class="k">if</span> <span class="n">start_multi</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">multipart_transmittance</span><span class="p">:</span>
             <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Failed to parse any multipart transmittance data for file: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Failed to parse any multipart transmittance data for file: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="p">{}</span>
 
-        <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;grid&quot;</span><span class="p">])</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"grid"</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">total</span> <span class="o">&lt;</span> <span class="n">wl_size</span><span class="p">:</span>
             <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;The following file parsed shorter than expected (</span><span class="si">{</span><span class="n">wl_size</span><span class="si">}</span><span class="s2">), got (</span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"The following file parsed shorter than expected (</span><span class="si">{</span><span class="n">wl_size</span><span class="si">}</span><span class="s2">), got (</span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="c1"># Cast to numpy and trim excess</span>
@@ -5735,11 +5735,11 @@
             <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[:</span><span class="n">wl_size</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
         <span class="c1"># Add extras</span>
-        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;solzen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">solzen</span>
-        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coszen</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">"solzen"</span><span class="p">]</span> <span class="o">=</span> <span class="n">solzen</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">"coszen"</span><span class="p">]</span> <span class="o">=</span> <span class="n">coszen</span>
 
-        <span class="c1"># Remove before saving to LUT file since this doesn&#39;t go in there</span>
-        <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;grid&quot;</span><span class="p">)</span>
+        <span class="c1"># Remove before saving to LUT file since this doesn't go in there</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"grid"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">data</span>
 </code></pre></div></td></tr></table></div>

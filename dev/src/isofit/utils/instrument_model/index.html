@@ -4896,14 +4896,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -4923,9 +4923,9 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">instrument_model</span><span class="p">(</span><span class="n">config</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.instrument_model.instrument_model"><a href="../../../../api/isofit/utils/instrument_model/#isofit.utils.instrument_model.instrument_model" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""."""</span>
 
-    <span class="n">hdr_template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;ENVI</span>
+    <span class="n">hdr_template</span> <span class="o">=</span> <span class="s2">"""ENVI</span>
 <span class="s2">    samples = </span><span class="si">{samples}</span>
 <span class="s2">    lines   = </span><span class="si">{lines}</span>
 <span class="s2">    bands   = 1</span>
@@ -4934,69 +4934,69 @@
 <span class="s2">    data type = 4</span>
 <span class="s2">    interleave = bsq</span>
 <span class="s2">    byte order = 0</span>
-<span class="s2">    &quot;&quot;&quot;</span>
+<span class="s2">    """</span>
 
     <span class="n">config</span> <span class="o">=</span> <span class="n">json_load_ascii</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">shell_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">configdir</span><span class="p">,</span> <span class="n">configfile</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">abspath</span><span class="p">(</span><span class="n">config</span><span class="p">))</span>
 
-    <span class="n">infile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;input_radiance_file&quot;</span><span class="p">])</span>
-    <span class="n">outfile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;output_model_file&quot;</span><span class="p">])</span>
-    <span class="n">flatfile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;output_flatfield_file&quot;</span><span class="p">])</span>
-    <span class="n">uniformity_thresh</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;uniformity_threshold&quot;</span><span class="p">])</span>
+    <span class="n">infile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">"input_radiance_file"</span><span class="p">])</span>
+    <span class="n">outfile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">"output_model_file"</span><span class="p">])</span>
+    <span class="n">flatfile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">"output_flatfield_file"</span><span class="p">])</span>
+    <span class="n">uniformity_thresh</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"uniformity_threshold"</span><span class="p">])</span>
 
     <span class="n">infile_hdr</span> <span class="o">=</span> <span class="n">envi_header</span><span class="p">(</span><span class="n">infile</span><span class="p">)</span>
     <span class="n">img</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">infile_hdr</span><span class="p">,</span> <span class="n">infile</span><span class="p">)</span>
-    <span class="n">inmm</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bil&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">inmm</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bil"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">inmm</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
     <span class="n">nr</span><span class="p">,</span> <span class="n">nb</span><span class="p">,</span> <span class="n">nc</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="n">FF</span><span class="p">,</span> <span class="n">Xhoriz</span><span class="p">,</span> <span class="n">Xhorizp</span><span class="p">,</span> <span class="n">use_ff</span> <span class="o">=</span> <span class="n">_flat_field</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">uniformity_thresh</span><span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">FF</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="n">flatfile</span><span class="p">)</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">flatfile</span><span class="p">),</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">flatfile</span><span class="p">),</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
         <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">hdr_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lines</span><span class="o">=</span><span class="n">nb</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="n">nc</span><span class="p">))</span>
 
     <span class="n">C</span><span class="p">,</span> <span class="n">Xvert</span><span class="p">,</span> <span class="n">Xvertp</span><span class="p">,</span> <span class="n">use_C</span> <span class="o">=</span> <span class="n">_column_covariances</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">uniformity_thresh</span><span class="p">)</span>
     <span class="n">cshape</span> <span class="o">=</span> <span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">cshape</span><span class="p">)</span>
     <span class="n">mdict</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;columns&quot;</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-        <span class="s2">&quot;bands&quot;</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-        <span class="s2">&quot;covariances&quot;</span><span class="p">:</span> <span class="n">out</span><span class="p">,</span>
-        <span class="s2">&quot;Xvert&quot;</span><span class="p">:</span> <span class="n">Xvert</span><span class="p">,</span>
-        <span class="s2">&quot;Xhoriz&quot;</span><span class="p">:</span> <span class="n">Xhoriz</span><span class="p">,</span>
-        <span class="s2">&quot;Xvertp&quot;</span><span class="p">:</span> <span class="n">Xvertp</span><span class="p">,</span>
-        <span class="s2">&quot;Xhorizp&quot;</span><span class="p">:</span> <span class="n">Xhorizp</span><span class="p">,</span>
-        <span class="s2">&quot;use_ff&quot;</span><span class="p">:</span> <span class="n">use_ff</span><span class="p">,</span>
-        <span class="s2">&quot;use_C&quot;</span><span class="p">:</span> <span class="n">use_C</span><span class="p">,</span>
+        <span class="s2">"columns"</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s2">"bands"</span><span class="p">:</span> <span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="s2">"covariances"</span><span class="p">:</span> <span class="n">out</span><span class="p">,</span>
+        <span class="s2">"Xvert"</span><span class="p">:</span> <span class="n">Xvert</span><span class="p">,</span>
+        <span class="s2">"Xhoriz"</span><span class="p">:</span> <span class="n">Xhoriz</span><span class="p">,</span>
+        <span class="s2">"Xvertp"</span><span class="p">:</span> <span class="n">Xvertp</span><span class="p">,</span>
+        <span class="s2">"Xhorizp"</span><span class="p">:</span> <span class="n">Xhorizp</span><span class="p">,</span>
+        <span class="s2">"use_ff"</span><span class="p">:</span> <span class="n">use_ff</span><span class="p">,</span>
+        <span class="s2">"use_C"</span><span class="p">:</span> <span class="n">use_C</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">scipy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">savemat</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">mdict</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_high_frequency_vert</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""."""</span>
 
     <span class="n">nl</span><span class="p">,</span> <span class="n">nb</span><span class="p">,</span> <span class="n">nr</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">Xvert</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nr</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb</span><span class="p">):</span>
-            <span class="n">filt</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">Xvert</span><span class="p">[:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">r</span><span class="p">],</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;nearest&quot;</span><span class="p">)</span>
+            <span class="n">filt</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">Xvert</span><span class="p">[:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">r</span><span class="p">],</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"nearest"</span><span class="p">)</span>
             <span class="n">Xvert</span><span class="p">[:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">r</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">b</span><span class="p">,</span> <span class="n">r</span><span class="p">]</span> <span class="o">-</span> <span class="n">filt</span>
     <span class="k">return</span> <span class="n">Xvert</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_low_frequency_horiz</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""."""</span>
 
     <span class="n">nl</span><span class="p">,</span> <span class="n">nb</span><span class="p">,</span> <span class="n">nr</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">Xhoriz</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nl</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb</span><span class="p">):</span>
-            <span class="n">Xhoriz</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">Xhoriz</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="p">:],</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;nearest&quot;</span><span class="p">)</span>
+            <span class="n">Xhoriz</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">Xhoriz</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="p">:],</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"nearest"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">Xhoriz</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_flat_field</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">uniformity_thresh</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""."""</span>
 
     <span class="n">Xhoriz</span> <span class="o">=</span> <span class="n">_low_frequency_horiz</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">)</span>
     <span class="n">Xhorizp</span> <span class="o">=</span> <span class="n">_low_frequency_horiz</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>
@@ -5017,7 +5017,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_column_covariances</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">uniformity_thresh</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""."""</span>
 
     <span class="n">Xvert</span> <span class="o">=</span> <span class="n">_high_frequency_vert</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">4.0</span><span class="p">)</span>
     <span class="n">Xvertp</span> <span class="o">=</span> <span class="n">_high_frequency_vert</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>

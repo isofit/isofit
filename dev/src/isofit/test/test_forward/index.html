@@ -5058,7 +5058,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_mock_fm_1c</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">L_atm</span><span class="p">,</span> <span class="n">s_alb</span><span class="p">,</span> <span class="n">upward_transm</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a minimal ForwardModel mock configured for 1-component (Lambertian) mode.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Return a minimal ForwardModel mock configured for 1-component (Lambertian) mode."""</span>
     <span class="n">fm</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
     <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">get_L_atm</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">(</span><span class="n">return_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">L_atm</span><span class="p">))</span>
@@ -5067,16 +5067,16 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_calc_rdn_lambertian_no_emission</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_forward.test_calc_rdn_lambertian_no_emission"><a href="../../../../api/isofit/test/test_forward/#isofit.test.test_forward.test_calc_rdn_lambertian_no_emission" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;1-component Lambertian RT formula: L = L_atm + L_tot*rho/(1-S*rho)</span>
+<span class="w">    </span><span class="sd">"""1-component Lambertian RT formula: L = L_atm + L_tot*rho/(1-S*rho)</span>
 
 <span class="sd">    With zero surface emission (Ls=0) the standard formula must hold exactly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">n</span> <span class="o">=</span> <span class="mi">10</span>
     <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
     <span class="n">L_tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)</span>
     <span class="n">L_atm_val</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">s_alb_val</span> <span class="o">=</span> <span class="mf">0.1</span>
-    <span class="n">r</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sphalb&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">s_alb_val</span><span class="p">)}</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"sphalb"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">s_alb_val</span><span class="p">)}</span>
 
     <span class="n">fm</span> <span class="o">=</span> <span class="n">_mock_fm_1c</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">L_atm_val</span><span class="p">,</span> <span class="n">s_alb_val</span><span class="p">,</span> <span class="n">upward_transm</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
     <span class="n">geom</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
@@ -5103,11 +5103,11 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_calc_rdn_lambertian_zero_sphalb</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_forward.test_calc_rdn_lambertian_zero_sphalb"><a href="../../../../api/isofit/test/test_forward/#isofit.test.test_forward.test_calc_rdn_lambertian_zero_sphalb" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;With zero spherical sky albedo the formula reduces to L = L_atm + L_tot*rho.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""With zero spherical sky albedo the formula reduces to L = L_atm + L_tot*rho."""</span>
     <span class="n">n</span> <span class="o">=</span> <span class="mi">8</span>
     <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
     <span class="n">L_tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
-    <span class="n">r</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sphalb&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)}</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"sphalb"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)}</span>
 
     <span class="n">fm</span> <span class="o">=</span> <span class="n">_mock_fm_1c</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">L_atm</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">s_alb</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upward_transm</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
     <span class="n">geom</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
@@ -5134,11 +5134,11 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_calc_rdn_includes_surface_emission</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_forward.test_calc_rdn_includes_surface_emission"><a href="../../../../api/isofit/test/test_forward/#isofit.test.test_forward.test_calc_rdn_includes_surface_emission" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Surface thermal emission (Ls) is attenuated by upward transmittance and</span>
-<span class="sd">    added to the radiance signal.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Surface thermal emission (Ls) is attenuated by upward transmittance and</span>
+<span class="sd">    added to the radiance signal."""</span>
     <span class="n">n</span> <span class="o">=</span> <span class="mi">6</span>
     <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-    <span class="n">r</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sphalb&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)}</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"sphalb"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)}</span>
     <span class="n">Ls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">)</span>
     <span class="n">upward_transm</span> <span class="o">=</span> <span class="mf">0.8</span>
 
@@ -5181,7 +5181,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_out_of_bounds_in_bounds</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_forward.test_out_of_bounds_in_bounds"><a href="../../../../api/isofit/test/test_forward/#isofit.test.test_forward.test_out_of_bounds_in_bounds" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;State vector strictly inside bounds returns False.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""State vector strictly inside bounds returns False."""</span>
     <span class="n">fm</span> <span class="o">=</span> <span class="n">_mock_fm_bounds</span><span class="p">(</span>
         <span class="n">idx_atm</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">bounds_lwr</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bounds_upr</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
     <span class="p">)</span>
@@ -5190,7 +5190,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_out_of_bounds_at_upper</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_forward.test_out_of_bounds_at_upper"><a href="../../../../api/isofit/test/test_forward/#isofit.test.test_forward.test_out_of_bounds_at_upper" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;State vector at the upper bound (within eps*2 tolerance) returns True.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""State vector at the upper bound (within eps*2 tolerance) returns True."""</span>
     <span class="n">fm</span> <span class="o">=</span> <span class="n">_mock_fm_bounds</span><span class="p">(</span>
         <span class="n">idx_atm</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">bounds_lwr</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bounds_upr</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
     <span class="p">)</span>
@@ -5199,7 +5199,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_out_of_bounds_at_lower</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_forward.test_out_of_bounds_at_lower"><a href="../../../../api/isofit/test/test_forward/#isofit.test.test_forward.test_out_of_bounds_at_lower" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;State vector at the lower bound (within eps*2 tolerance) returns True.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""State vector at the lower bound (within eps*2 tolerance) returns True."""</span>
     <span class="n">fm</span> <span class="o">=</span> <span class="n">_mock_fm_bounds</span><span class="p">(</span>
         <span class="n">idx_atm</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">bounds_lwr</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bounds_upr</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
     <span class="p">)</span>
@@ -5213,20 +5213,20 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_mock_fm_6c</span><span class="p">(</span><span class="n">coupling_terms</span><span class="p">):</span>
     <span class="n">fm</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
     <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">coupling_terms</span> <span class="o">=</span> <span class="n">coupling_terms</span>
-    <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">=</span> <span class="s2">&quot;rdn&quot;</span>  <span class="c1"># values taken directly from r, no transm_to_rdn call</span>
+    <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">=</span> <span class="s2">"rdn"</span>  <span class="c1"># values taken directly from r, no transm_to_rdn call</span>
     <span class="k">return</span> <span class="n">fm</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_get_L_coupled_nadir_sum</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_forward.test_get_L_coupled_nadir_sum"><a href="../../../../api/isofit/test/test_forward/#isofit.test.test_forward.test_get_L_coupled_nadir_sum" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;With nadir geometry (coszen=cos_i=1) and full transmittance, L_tot equals</span>
-<span class="sd">    the sum of the four coupling term radiances.&quot;&quot;&quot;</span>
-    <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;dir-dir&quot;</span><span class="p">,</span> <span class="s2">&quot;dif-dir&quot;</span><span class="p">,</span> <span class="s2">&quot;dir-dif&quot;</span><span class="p">,</span> <span class="s2">&quot;dif-dif&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">"""With nadir geometry (coszen=cos_i=1) and full transmittance, L_tot equals</span>
+<span class="sd">    the sum of the four coupling term radiances."""</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"dir-dir"</span><span class="p">,</span> <span class="s2">"dif-dir"</span><span class="p">,</span> <span class="s2">"dir-dif"</span><span class="p">,</span> <span class="s2">"dif-dif"</span><span class="p">]</span>
     <span class="n">fm</span> <span class="o">=</span> <span class="n">_mock_fm_6c</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
 
     <span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">]</span>
     <span class="n">r</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">vals</span><span class="p">)}</span>
-    <span class="n">r</span><span class="p">[</span><span class="s2">&quot;transm_down_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-    <span class="n">r</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">[</span><span class="s2">"transm_down_dir"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">[</span><span class="s2">"sphalb"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 
     <span class="n">geom</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
     <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="mf">1.0</span>
@@ -5244,15 +5244,15 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_get_L_coupled_cos_i_scaling</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_forward.test_get_L_coupled_cos_i_scaling"><a href="../../../../api/isofit/test/test_forward/#isofit.test.test_forward.test_get_L_coupled_cos_i_scaling" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Direct-illuminated components scale linearly with cos_i / coszen.&quot;&quot;&quot;</span>
-    <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;dir-dir&quot;</span><span class="p">,</span> <span class="s2">&quot;dif-dir&quot;</span><span class="p">,</span> <span class="s2">&quot;dir-dif&quot;</span><span class="p">,</span> <span class="s2">&quot;dif-dif&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">"""Direct-illuminated components scale linearly with cos_i / coszen."""</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"dir-dir"</span><span class="p">,</span> <span class="s2">"dif-dir"</span><span class="p">,</span> <span class="s2">"dir-dif"</span><span class="p">,</span> <span class="s2">"dif-dif"</span><span class="p">]</span>
     <span class="n">fm</span> <span class="o">=</span> <span class="n">_mock_fm_6c</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
 
     <span class="n">r</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">}</span>
-    <span class="n">r</span><span class="p">[</span><span class="s2">&quot;transm_down_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+    <span class="n">r</span><span class="p">[</span><span class="s2">"transm_down_dir"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
         <span class="mi">4</span>
     <span class="p">)</span>  <span class="c1"># zero direct transmittance isolates the L_coupled[0] scaling</span>
-    <span class="n">r</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">[</span><span class="s2">"sphalb"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 
     <span class="n">geom</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
     <span class="n">geom</span><span class="o">.</span><span class="n">coszen</span> <span class="o">=</span> <span class="mf">1.0</span>
@@ -5265,7 +5265,7 @@
         <span class="n">fm</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="o">=</span><span class="mi">0</span>
     <span class="p">)</span>
 
-    <span class="c1"># L_dir_dir = r[&quot;L_dd&quot;] / coszen * cos_i = 1.0 / 1.0 * 0.5 = 0.5</span>
+    <span class="c1"># L_dir_dir = r["L_dd"] / coszen * cos_i = 1.0 / 1.0 * 0.5 = 0.5</span>
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">L_dir_dir</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

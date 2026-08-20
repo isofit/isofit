@@ -5060,14 +5060,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5087,22 +5087,22 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_spectrum</span><span class="p">,</span> <span class="n">load_wavelen</span>
 
 <span class="n">DefaultState</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
-    <span class="s2">&quot;DefaultState&quot;</span><span class="p">,</span>
+    <span class="s2">"DefaultState"</span><span class="p">,</span>
     <span class="p">[</span>
-        <span class="s2">&quot;bounds&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;scale&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;prior_mean&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;prior_sigma&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;init&quot;</span><span class="p">,</span>
+        <span class="s2">"bounds"</span><span class="p">,</span>
+        <span class="s2">"scale"</span><span class="p">,</span>
+        <span class="s2">"prior_mean"</span><span class="p">,</span>
+        <span class="s2">"prior_sigma"</span><span class="p">,</span>
+        <span class="s2">"init"</span><span class="p">,</span>
     <span class="p">],</span>
 <span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Surface</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A model of the surface.</span>
+<span class="w">    </span><span class="sd">"""A model of the surface.</span>
 
-<span class="sd">    Surface models are stored as MATLAB &#39;.mat&#39; format files.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    Surface models are stored as MATLAB '.mat' format files.</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_config</span><span class="p">:</span> <span class="n">Config</span><span class="p">):</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">full_config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">surface</span>
@@ -5125,13 +5125,13 @@
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">wavelength_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span> <span class="o">=</span> <span class="n">load_wavelen</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">wavelength_file</span><span class="p">)</span>
         <span class="c1"># 2nd Priority: use the wl from the surface model file</span>
-        <span class="k">elif</span> <span class="s2">&quot;wl&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;wl&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s2">"wl"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">"wl"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="c1"># Special case for simulation mode</span>
-        <span class="k">elif</span> <span class="n">full_config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;simulation&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">full_config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">"simulation"</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="s2">&quot;No surface wavelength_file provided, getting wavelengths from&quot;</span>
-                <span class="s2">&quot; input.reflectance_file&quot;</span>
+                <span class="s2">"No surface wavelength_file provided, getting wavelengths from"</span>
+                <span class="s2">" input.reflectance_file"</span>
             <span class="p">)</span>
             <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="n">load_spectrum</span><span class="p">(</span><span class="n">full_config</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">reflectance_file</span><span class="p">)</span>
         <span class="c1"># Else: wl = None</span>
@@ -5142,79 +5142,79 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">use_background_rfl</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">use_background_rfl</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">resample_reflectance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.resample_reflectance"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.resample_reflectance" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make sure model wavelengths align with the wavelength file.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Make sure model wavelengths align with the wavelength file."""</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;rwl&quot;</span><span class="p">):</span>
-            <span class="n">p</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rwl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfl</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"rwl"</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rwl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfl</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">"extrapolate"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rfl</span> <span class="o">=</span> <span class="n">p</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">update_heuristic_prior_means</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.update_heuristic_prior_means"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.update_heuristic_prior_means" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Don&#39;t update any of the reflectance priors. Return xa&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Don't update any of the reflectance priors. Return xa"""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">xa</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.xa"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.xa" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mean of prior state vector distribution calculated at state x.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Mean of prior state vector distribution calculated at state x."""</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">Sa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.Sa"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.Sa" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Covariance of prior state vector distribution calculated at state x.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Covariance of prior state vector distribution calculated at state x."""</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">Sb</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.Sb"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.Sb" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Uncertainty due to unmodeled variables.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Uncertainty due to unmodeled variables."""</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">diagflat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bval</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fit_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rfl_meas</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.fit_params"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.fit_params" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Given a directional reflectance estimate and one or more emissive</span>
-<span class="sd">        parameters, fit a state vector.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Given a directional reflectance estimate and one or more emissive</span>
+<span class="sd">        parameters, fit a state vector."""</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calc_lamb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.calc_lamb"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.calc_lamb" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate a Lambertian surface reflectance for this state vector.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Calculate a Lambertian surface reflectance for this state vector."""</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfl</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calc_rfl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.calc_rfl"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.calc_rfl" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the directed reflectance (specifically the HRDF) for this</span>
-<span class="sd">        state vector.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Calculate the directed reflectance (specifically the HRDF) for this</span>
+<span class="sd">        state vector."""</span>
 
         <span class="c1"># ToDo: Future use of calc_rfl() is to return a direct and diffuse surface reflectance quantity.</span>
         <span class="c1">#  As long as this is not implemented, return the same reflectance vector for both.</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rfl</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">drfl_dsurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.drfl_dsurface"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.drfl_dsurface" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of reflectance with respect to state vector,</span>
+<span class="w">        </span><span class="sd">"""Partial derivative of reflectance with respect to state vector,</span>
 <span class="sd">        calculated at x_surface. In the case that there are no free</span>
-<span class="sd">        paramters our convention is to return the vector of zeros.&quot;&quot;&quot;</span>
+<span class="sd">        paramters our convention is to return the vector of zeros."""</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">drfl_dsurfaceb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.drfl_dsurfaceb"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.drfl_dsurfaceb" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of reflectance with respect to unmodeled</span>
+<span class="w">        </span><span class="sd">"""Partial derivative of reflectance with respect to unmodeled</span>
 <span class="sd">        variables, calculated at x_surface. In the case that there are no</span>
-<span class="sd">        free paramters our convention is to return the vector of zeros.&quot;&quot;&quot;</span>
+<span class="sd">        free paramters our convention is to return the vector of zeros."""</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calc_Ls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.calc_Ls"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.calc_Ls" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Emission of surface, as a radiance.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Emission of surface, as a radiance."""</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">,))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">dLs_dsurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.dLs_dsurface"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.dLs_dsurface" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of surface emission with respect to state vector,</span>
+<span class="w">        </span><span class="sd">"""Partial derivative of surface emission with respect to state vector,</span>
 <span class="sd">        calculated at x_surface. In the case that there are no free paramters</span>
-<span class="sd">        our convention is to return the vector of zeros.&quot;&quot;&quot;</span>
+<span class="sd">        our convention is to return the vector of zeros."""</span>
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_wl</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface.Surface.summarize"><a href="../../../../api/isofit/surface/surface/#isofit.surface.surface.Surface.summarize" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Summary of state vector.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Summary of state vector."""</span>
 
-        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">""</span>
 </code></pre></div></td></tr></table></div>
 
 

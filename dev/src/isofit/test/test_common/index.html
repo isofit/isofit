@@ -5083,7 +5083,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_load_wavelen</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_common.test_load_wavelen"><a href="../../../../api/isofit/test/test_common/#isofit.test.test_common.test_load_wavelen" title="Go to docs">[docs]</a></div>
-    <span class="n">file</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="s2">&quot;0 0.37686 0.00557 </span><span class="se">\n</span><span class="s2"> 1 0.38187 0.00558 </span><span class="se">\n</span><span class="s2"> 2 0.38688 0.00558&quot;</span><span class="p">)</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="s2">"0 0.37686 0.00557 </span><span class="se">\n</span><span class="s2"> 1 0.38187 0.00558 </span><span class="se">\n</span><span class="s2"> 2 0.38688 0.00558"</span><span class="p">)</span>
     <span class="n">wl_modified</span><span class="p">,</span> <span class="n">fwhm_modified</span> <span class="o">=</span> <span class="n">load_wavelen</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">wl_modified</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
     <span class="k">assert</span> <span class="n">fwhm_modified</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
@@ -5091,7 +5091,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_get_absorption</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_common.test_get_absorption"><a href="../../../../api/isofit/test/test_common/#isofit.test.test_common.test_get_absorption" title="Go to docs">[docs]</a></div>
-    <span class="n">file</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="s2">&quot;12e7,2e7,3e7,4e7,3e7</span><span class="se">\n</span><span class="s2">16e7,3e7,8e7,5e7,12e7&quot;</span><span class="p">)</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="s2">"12e7,2e7,3e7,4e7,3e7</span><span class="se">\n</span><span class="s2">16e7,3e7,8e7,5e7,12e7"</span><span class="p">)</span>
     <span class="n">wavelengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">13e7</span><span class="p">,</span> <span class="mf">15e7</span><span class="p">])</span>
     <span class="n">w_abscf_new</span><span class="p">,</span> <span class="n">i_abscf_new</span> <span class="o">=</span> <span class="n">get_absorption</span><span class="p">(</span><span class="n">wavelengths</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">w_abscf_new</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.25e7</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
@@ -5101,8 +5101,8 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_expand_path</span><span class="p">():</span>  <span class="c1"># -- backslash vs forward slash discrepancy</span><div class="mkapi-source-link" id="isofit.test.test_common.test_expand_path"><a href="../../../../api/isofit/test/test_common/#isofit.test.test_common.test_expand_path" title="Go to docs">[docs]</a></div>
-    <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;NASA&quot;</span><span class="p">,</span> <span class="s2">&quot;JPL&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;NASA/JPL&quot;</span>
-    <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;NASA&quot;</span><span class="p">,</span> <span class="s2">&quot;/JPL&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;/JPL&quot;</span>
+    <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">"NASA"</span><span class="p">,</span> <span class="s2">"JPL"</span><span class="p">))</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"NASA/JPL"</span>
+    <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">"NASA"</span><span class="p">,</span> <span class="s2">"/JPL"</span><span class="p">))</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"/JPL"</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_spectral_response_function</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_common.test_spectral_response_function"><a href="../../../../api/isofit/test/test_common/#isofit.test.test_common.test_spectral_response_function" title="Go to docs">[docs]</a></div>
@@ -5115,7 +5115,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_load_spectrum</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_common.test_load_spectrum"><a href="../../../../api/isofit/test/test_common/#isofit.test.test_common.test_load_spectrum" title="Go to docs">[docs]</a></div>
-    <span class="n">file</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="s2">&quot;0.123 0.132 0.426 </span><span class="se">\n</span><span class="s2"> 0.234 0.234 0.132 </span><span class="se">\n</span><span class="s2"> 0.123 0.423 0.435&quot;</span><span class="p">)</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="s2">"0.123 0.132 0.426 </span><span class="se">\n</span><span class="s2"> 0.234 0.234 0.132 </span><span class="se">\n</span><span class="s2"> 0.123 0.423 0.435"</span><span class="p">)</span>
     <span class="n">spectrum_new</span><span class="p">,</span> <span class="n">wavelength_new</span> <span class="o">=</span> <span class="n">load_spectrum</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">wavelength_new</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
     <span class="k">assert</span> <span class="n">spectrum_new</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
@@ -5144,55 +5144,55 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_recursive_replace</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_common.test_recursive_replace"><a href="../../../../api/isofit/test/test_common/#isofit.test.test_common.test_recursive_replace" title="Go to docs">[docs]</a></div>
-    <span class="n">list1</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;list_val_1&quot;</span><span class="p">,</span> <span class="s2">&quot;list_val_2&quot;</span><span class="p">,</span> <span class="s2">&quot;list_val_3&quot;</span><span class="p">]</span>
-    <span class="n">recursive_replace</span><span class="p">(</span><span class="n">list1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;replacement_val&quot;</span><span class="p">)</span>
-    <span class="n">unchanged_list1</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;list_val_1&quot;</span><span class="p">,</span> <span class="s2">&quot;list_val_2&quot;</span><span class="p">,</span> <span class="s2">&quot;list_val_3&quot;</span><span class="p">]</span>
+    <span class="n">list1</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"list_val_1"</span><span class="p">,</span> <span class="s2">"list_val_2"</span><span class="p">,</span> <span class="s2">"list_val_3"</span><span class="p">]</span>
+    <span class="n">recursive_replace</span><span class="p">(</span><span class="n">list1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"replacement_val"</span><span class="p">)</span>
+    <span class="n">unchanged_list1</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"list_val_1"</span><span class="p">,</span> <span class="s2">"list_val_2"</span><span class="p">,</span> <span class="s2">"list_val_3"</span><span class="p">]</span>
     <span class="k">assert</span> <span class="n">unchanged_list1</span> <span class="o">==</span> <span class="n">list1</span>
 
-    <span class="n">dict1</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;dict_val_1&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;dict_val_2&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;dict_val_3&quot;</span><span class="p">}</span>
-    <span class="n">modified_dict1</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;dict_val_1&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;dict_val_2&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;replacement_val&quot;</span><span class="p">}</span>
-    <span class="n">recursive_replace</span><span class="p">(</span><span class="n">dict1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;replacement_val&quot;</span><span class="p">)</span>
+    <span class="n">dict1</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"dict_val_1"</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">"dict_val_2"</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">"dict_val_3"</span><span class="p">}</span>
+    <span class="n">modified_dict1</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"dict_val_1"</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">"dict_val_2"</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">"replacement_val"</span><span class="p">}</span>
+    <span class="n">recursive_replace</span><span class="p">(</span><span class="n">dict1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"replacement_val"</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">modified_dict1</span> <span class="o">==</span> <span class="n">dict1</span>
 
     <span class="n">dict2</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;dict_val_1&quot;</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="s2">"dict_val_1"</span><span class="p">,</span>
         <span class="mi">2</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;list_val_1&quot;</span><span class="p">,</span>
-            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;dict_val_2&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;dict_val_3&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;list_val_2&quot;</span><span class="p">,</span> <span class="s2">&quot;list_val_3&quot;</span><span class="p">]},</span>
-            <span class="s2">&quot;list_val4&quot;</span><span class="p">,</span>
+            <span class="s2">"list_val_1"</span><span class="p">,</span>
+            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"dict_val_2"</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">"dict_val_3"</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="p">[</span><span class="s2">"list_val_2"</span><span class="p">,</span> <span class="s2">"list_val_3"</span><span class="p">]},</span>
+            <span class="s2">"list_val4"</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;dict_val_5&quot;</span><span class="p">,</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="s2">"dict_val_5"</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="n">recursive_replace</span><span class="p">(</span><span class="n">dict2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;replacement_val&quot;</span><span class="p">)</span>
-    <span class="n">modified_dict2</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;dict_val_1&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;replacement_val&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;dict_val_5&quot;</span><span class="p">}</span>
+    <span class="n">recursive_replace</span><span class="p">(</span><span class="n">dict2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"replacement_val"</span><span class="p">)</span>
+    <span class="n">modified_dict2</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"dict_val_1"</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">"replacement_val"</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">"dict_val_5"</span><span class="p">}</span>
     <span class="k">assert</span> <span class="n">dict2</span> <span class="o">==</span> <span class="n">modified_dict2</span>
 
     <span class="n">dict3</span> <span class="o">=</span> <span class="p">{</span>
         <span class="mi">1</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;list_val_1&quot;</span><span class="p">,</span>
-            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;dict_val_1&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;dict_val_2&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;dict_val_3&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;dict_val_4&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;tuple_val_5&quot;</span><span class="p">,</span> <span class="s2">&quot;tuple_val_4&quot;</span><span class="p">)},</span>
+            <span class="s2">"list_val_1"</span><span class="p">,</span>
+            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"dict_val_1"</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">"dict_val_2"</span><span class="p">},</span>
+            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"dict_val_3"</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">"dict_val_4"</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="p">(</span><span class="s2">"tuple_val_5"</span><span class="p">,</span> <span class="s2">"tuple_val_4"</span><span class="p">)},</span>
         <span class="p">],</span>
         <span class="mi">2</span><span class="p">:</span> <span class="p">(</span>
-            <span class="p">[</span><span class="s2">&quot;list_val_2&quot;</span><span class="p">,</span> <span class="s2">&quot;list_val_3&quot;</span><span class="p">],</span>
-            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;dict_val_5&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;list_val_4&quot;</span><span class="p">,</span> <span class="s2">&quot;list_val_5&quot;</span><span class="p">],</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;dict_val_5&quot;</span><span class="p">},</span>
+            <span class="p">[</span><span class="s2">"list_val_2"</span><span class="p">,</span> <span class="s2">"list_val_3"</span><span class="p">],</span>
+            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"dict_val_5"</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="p">[</span><span class="s2">"list_val_4"</span><span class="p">,</span> <span class="s2">"list_val_5"</span><span class="p">],</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">"dict_val_5"</span><span class="p">},</span>
         <span class="p">),</span>
-        <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;dict_val_6&quot;</span><span class="p">,</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="s2">"dict_val_6"</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">modified_dict3</span> <span class="o">=</span> <span class="p">{</span>
         <span class="mi">1</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;list_val_1&quot;</span><span class="p">,</span>
-            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;dict_val_1&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;dict_val_2&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;dict_val_3&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;dict_val_4&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;replacement_val&quot;</span><span class="p">},</span>
+            <span class="s2">"list_val_1"</span><span class="p">,</span>
+            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"dict_val_1"</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">"dict_val_2"</span><span class="p">},</span>
+            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"dict_val_3"</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">"dict_val_4"</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">"replacement_val"</span><span class="p">},</span>
         <span class="p">],</span>
         <span class="mi">2</span><span class="p">:</span> <span class="p">(</span>
-            <span class="p">[</span><span class="s2">&quot;list_val_2&quot;</span><span class="p">,</span> <span class="s2">&quot;list_val_3&quot;</span><span class="p">],</span>
-            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;dict_val_5&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;list_val_4&quot;</span><span class="p">,</span> <span class="s2">&quot;list_val_5&quot;</span><span class="p">],</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;replacement_val&quot;</span><span class="p">},</span>
+            <span class="p">[</span><span class="s2">"list_val_2"</span><span class="p">,</span> <span class="s2">"list_val_3"</span><span class="p">],</span>
+            <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">"dict_val_5"</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="p">[</span><span class="s2">"list_val_4"</span><span class="p">,</span> <span class="s2">"list_val_5"</span><span class="p">],</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">"replacement_val"</span><span class="p">},</span>
         <span class="p">),</span>
-        <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;replacement_val&quot;</span><span class="p">,</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="s2">"replacement_val"</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="n">recursive_replace</span><span class="p">(</span><span class="n">dict3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;replacement_val&quot;</span><span class="p">)</span>
+    <span class="n">recursive_replace</span><span class="p">(</span><span class="n">dict3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"replacement_val"</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">modified_dict3</span> <span class="o">==</span> <span class="n">dict3</span>
 
 
@@ -5231,8 +5231,8 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_interpolators</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_common.test_interpolators"><a href="../../../../api/isofit/test/test_common/#isofit.test.test_common.test_interpolators" title="Go to docs">[docs]</a></div>
-    <span class="n">interp_test</span><span class="p">(</span><span class="s2">&quot;rg&quot;</span><span class="p">,</span> <span class="s2">&quot;mlg&quot;</span><span class="p">)</span>
-    <span class="n">interp_test</span><span class="p">(</span><span class="s2">&quot;rg&quot;</span><span class="p">,</span> <span class="s2">&quot;mlg_numba&quot;</span><span class="p">)</span>
+    <span class="n">interp_test</span><span class="p">(</span><span class="s2">"rg"</span><span class="p">,</span> <span class="s2">"mlg"</span><span class="p">)</span>
+    <span class="n">interp_test</span><span class="p">(</span><span class="s2">"rg"</span><span class="p">,</span> <span class="s2">"mlg_numba"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

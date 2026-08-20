@@ -5226,14 +5226,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5250,10 +5250,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 
 <span class="c1"># Explicitly set the number of threads to be 1, so we more effectively run in parallel</span>
-<span class="c1"># Must be executed before importing numpy, otherwise doesn&#39;t work</span>
-<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ISOFIT_NO_SET_THREADS&quot;</span><span class="p">):</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;MKL_NUM_THREADS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;OMP_NUM_THREADS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+<span class="c1"># Must be executed before importing numpy, otherwise doesn't work</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ISOFIT_NO_SET_THREADS"</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"MKL_NUM_THREADS"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"1"</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"OMP_NUM_THREADS"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"1"</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -5273,15 +5273,15 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Isofit</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.core.isofit.Isofit"><a href="../../../../api/isofit/core/isofit/#isofit.core.isofit.Isofit" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize the Isofit class.</span>
+<span class="w">    </span><span class="sd">"""Initialize the Isofit class.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        config_file: isofit configuration file in JSON or YAML format</span>
 <span class="sd">        level: logging level (ERROR, WARNING, INFO, DEBUG)</span>
 <span class="sd">        logfile: file to write output logs to</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_file</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_file</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">"INFO"</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1"># Check the MKL/OMP env vars and raise a warning if not set properly</span>
         <span class="n">checkNumThreads</span><span class="p">()</span>
 
@@ -5289,17 +5289,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">loglevel</span> <span class="o">=</span> <span class="n">level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logfile</span> <span class="o">=</span> <span class="n">logfile</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-            <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span>
             <span class="n">level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loglevel</span><span class="p">,</span>
             <span class="n">filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logfile</span><span class="p">,</span>
-            <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S&quot;</span><span class="p">,</span>
+            <span class="n">datefmt</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">rows</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cols</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">if</span> <span class="n">config_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.tmpl&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">config_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".tmpl"</span><span class="p">):</span>
             <span class="n">config_file</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">fromTemplate</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
 
         <span class="c1"># Load configuration file</span>
@@ -5311,11 +5311,11 @@
 
         <span class="c1"># Initialize ray for parallel execution</span>
         <span class="n">rayargs</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ip_head</span><span class="p">,</span>
-            <span class="s2">&quot;_redis_password&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">redis_password</span><span class="p">,</span>
-            <span class="s2">&quot;_temp_dir&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_temp_dir</span><span class="p">,</span>
-            <span class="s2">&quot;ignore_reinit_error&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_ignore_reinit_error</span><span class="p">,</span>
-            <span class="s2">&quot;include_dashboard&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_include_dashboard</span><span class="p">,</span>
+            <span class="s2">"address"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ip_head</span><span class="p">,</span>
+            <span class="s2">"_redis_password"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">redis_password</span><span class="p">,</span>
+            <span class="s2">"_temp_dir"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_temp_dir</span><span class="p">,</span>
+            <span class="s2">"ignore_reinit_error"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_ignore_reinit_error</span><span class="p">,</span>
+            <span class="s2">"include_dashboard"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_include_dashboard</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="c1"># We can only set the num_cpus if running on a single-node</span>
@@ -5323,14 +5323,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ip_head</span> <span class="ow">is</span> <span class="kc">None</span>
             <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">redis_password</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="p">):</span>
-            <span class="n">rayargs</span><span class="p">[</span><span class="s2">&quot;num_cpus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">n_cores</span>
+            <span class="n">rayargs</span><span class="p">[</span><span class="s2">"num_cpus"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">n_cores</span>
 
         <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="n">rayargs</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_column</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.isofit.Isofit.run"><a href="../../../../api/isofit/core/isofit/#isofit.core.isofit.Isofit.run" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Iterate over spectra, reading and writing through the IO</span>
 <span class="sd">        object to handle formatting, buffering, and deferred write-to-file.</span>
 <span class="sd">        Attempts to avoid reading the entire file into memory, or hitting</span>
@@ -5345,7 +5345,7 @@
 <span class="sd">              sample_end) all values are inclusive.</span>
 
 <span class="sd">            If none of the above, the whole cube will be analyzed.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Get the number of workers from config</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">n_cores</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -5366,7 +5366,7 @@
         <span class="c1"># Handle case where you only want to run part of an image</span>
         <span class="c1"># TODO Clean this, not sure if currently functioning.</span>
         <span class="k">if</span> <span class="n">row_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">ranges</span> <span class="o">=</span> <span class="n">row_column</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+            <span class="n">ranges</span> <span class="o">=</span> <span class="n">row_column</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranges</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">ranges</span><span class="p">[</span><span class="mi">0</span><span class="p">])],</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranges</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
@@ -5385,12 +5385,12 @@
             <span class="p">(</span><span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">])</span> <span class="o">*</span> <span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="p">]),</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
         <span class="p">)</span>
         <span class="n">meshgrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="p">)</span>
-        <span class="n">index_pairs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">meshgrid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;f&quot;</span><span class="p">)</span>
-        <span class="n">index_pairs</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">meshgrid</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;f&quot;</span><span class="p">)</span>
+        <span class="n">index_pairs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">meshgrid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">"f"</span><span class="p">)</span>
+        <span class="n">index_pairs</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">meshgrid</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">"f"</span><span class="p">)</span>
         <span class="k">del</span> <span class="n">meshgrid</span>
 
         <span class="n">index_pairs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;f&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="p">)]</span>
+            <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">"f"</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="p">)]</span>
         <span class="p">)</span><span class="o">.</span><span class="n">T</span>
 
         <span class="c1"># Save this for logging</span>
@@ -5405,14 +5405,14 @@
         <span class="n">cache_atmosphere</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">surface_index</span> <span class="o">=</span> <span class="n">index_spectra_by_surface</span><span class="p">(</span><span class="n">input_config</span><span class="p">,</span> <span class="n">index_pairs</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">surface_class_str</span><span class="p">,</span> <span class="n">class_idx_pairs</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">surface_index</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running surfaces: </span><span class="si">{</span><span class="n">surface_class_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running surfaces: </span><span class="si">{</span><span class="n">surface_class_str</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">class_idx_pairs</span><span class="p">):</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;No pixels found in image for surface: </span><span class="si">{</span><span class="n">surface_class_str</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"No pixels found in image for surface: </span><span class="si">{</span><span class="n">surface_class_str</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># Don&#39;t want more workers than tasks</span>
+            <span class="c1"># Don't want more workers than tasks</span>
             <span class="n">n_iter</span> <span class="o">=</span> <span class="n">class_idx_pairs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">n_workers</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">n_cores</span><span class="p">,</span> <span class="n">n_iter</span><span class="p">)</span>
 
@@ -5441,7 +5441,7 @@
             <span class="n">fm</span> <span class="o">=</span> <span class="n">ForwardModel</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">cache_atmosphere</span><span class="o">=</span><span class="n">cache_atmosphere</span><span class="p">)</span>
             <span class="n">fm</span><span class="o">.</span><span class="n">match_statevector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">full_statevector</span><span class="p">)</span>
 
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Surface: </span><span class="si">{</span><span class="n">surface_class_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Surface: </span><span class="si">{</span><span class="n">surface_class_str</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="c1"># Put worker args into Ray object</span>
             <span class="n">params</span> <span class="o">=</span> <span class="p">[</span>
@@ -5464,8 +5464,8 @@
 
             <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Beginning </span><span class="si">{</span><span class="n">n_iter</span><span class="si">}</span><span class="s2"> inversions in </span><span class="si">{</span><span class="n">n_tasks</span><span class="si">}</span><span class="s2"> chunks &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;using </span><span class="si">{</span><span class="n">n_workers</span><span class="si">}</span><span class="s2"> cores&quot;</span>
+                <span class="sa">f</span><span class="s2">"Beginning </span><span class="si">{</span><span class="n">n_iter</span><span class="si">}</span><span class="s2"> inversions in </span><span class="si">{</span><span class="n">n_tasks</span><span class="si">}</span><span class="s2"> chunks "</span>
+                <span class="sa">f</span><span class="s2">"using </span><span class="si">{</span><span class="n">n_workers</span><span class="si">}</span><span class="s2"> cores"</span>
             <span class="p">)</span>
 
             <span class="c1"># Kick off actor pool</span>
@@ -5477,15 +5477,15 @@
 
             <span class="n">loop_total_time</span> <span class="o">+=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
             <span class="n">loop_total_spectra</span> <span class="o">+=</span> <span class="n">n_iter</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pixel class: </span><span class="si">{</span><span class="n">surface_class_str</span><span class="si">}</span><span class="s2"> inversions complete.&quot;</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running totals&quot;</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_time</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">s total&quot;</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_spectra</span><span class="o">/</span><span class="n">loop_total_time</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Pixel class: </span><span class="si">{</span><span class="n">surface_class_str</span><span class="si">}</span><span class="s2"> inversions complete."</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Running totals"</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_time</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">s total"</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_spectra</span><span class="o">/</span><span class="n">loop_total_time</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s"</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_spectra</span><span class="o">/</span><span class="n">loop_total_time</span><span class="o">/</span><span class="n">n_workers</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s/core&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_spectra</span><span class="o">/</span><span class="n">loop_total_time</span><span class="o">/</span><span class="n">n_workers</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s/core"</span>
             <span class="p">)</span>
 
-            <span class="c1"># Not sure if it&#39;s best practice to null out these vars</span>
+            <span class="c1"># Not sure if it's best practice to null out these vars</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">params</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -5496,12 +5496,12 @@
             <span class="k">del</span> <span class="n">fm</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index_pairs</span><span class="p">):</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;All Inversions complete.&quot;</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Final totals&quot;</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_time</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">s total&quot;</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_spectra</span><span class="o">/</span><span class="n">loop_total_time</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"All Inversions complete."</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Final totals"</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_time</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">s total"</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_spectra</span><span class="o">/</span><span class="n">loop_total_time</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s"</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_spectra</span><span class="o">/</span><span class="n">loop_total_time</span><span class="o">/</span><span class="n">n_workers</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s/core&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">loop_total_spectra</span><span class="o">/</span><span class="n">loop_total_time</span><span class="o">/</span><span class="n">n_workers</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s/core"</span>
             <span class="p">)</span>
 
 
@@ -5518,7 +5518,7 @@
         <span class="n">total_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">worker_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Worker class to help run a subset of spectra.</span>
 
 <span class="sd">        Args:</span>
@@ -5527,16 +5527,16 @@
 <span class="sd">            logfile: output logging file</span>
 <span class="sd">            worker_id: worker ID for logging reference</span>
 <span class="sd">            total_workers: the total number of workers running, for logging reference</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-            <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span>
             <span class="n">level</span><span class="o">=</span><span class="n">loglevel</span><span class="p">,</span>
             <span class="n">filename</span><span class="o">=</span><span class="n">logfile</span><span class="p">,</span>
-            <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S&quot;</span><span class="p">,</span>
+            <span class="n">datefmt</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S"</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="c1"># If full image statevector isn&#39;t passed, use forward model</span>
+        <span class="c1"># If full image statevector isn't passed, use forward model</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_statevector</span><span class="p">):</span>
             <span class="n">full_statevector</span> <span class="o">=</span> <span class="n">forward_model</span><span class="o">.</span><span class="n">statevec</span>
 
@@ -5554,7 +5554,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">run_set_of_spectra</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.isofit.Worker.run_set_of_spectra"><a href="../../../../api/isofit/core/isofit/#isofit.core.isofit.Worker.run_set_of_spectra" title="Go to docs">[docs]</a></div>
         <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Read chunk of spectra&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Read chunk of spectra"</span><span class="p">)</span>
             <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">indices</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
 
             <span class="n">input_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">get_components_at_index</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span>
@@ -5565,8 +5565,8 @@
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nan_locs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nan_locs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">meas</span><span class="p">):</span>
                         <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Input data gap &gt;25% for pixel at index (</span><span class="si">{</span><span class="n">row</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">). &quot;</span>
-                            <span class="sa">f</span><span class="s2">&quot;Skipping inversion. Results for this pixel will be all zeros.&quot;</span>
+                            <span class="sa">f</span><span class="s2">"Input data gap &gt;25% for pixel at index (</span><span class="si">{</span><span class="n">row</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">). "</span>
+                            <span class="sa">f</span><span class="s2">"Skipping inversion. Results for this pixel will be all zeros."</span>
                         <span class="p">)</span>
                         <span class="k">continue</span>
                     <span class="k">else</span><span class="p">:</span>
@@ -5574,29 +5574,29 @@
                         <span class="n">interp</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">meas_wl</span><span class="p">[</span><span class="n">non_nan_locs</span><span class="p">],</span>
                             <span class="n">input_data</span><span class="o">.</span><span class="n">meas</span><span class="p">[</span><span class="n">non_nan_locs</span><span class="p">],</span>
-                            <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-                            <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span><span class="p">,</span>
+                            <span class="n">kind</span><span class="o">=</span><span class="s2">"linear"</span><span class="p">,</span>
+                            <span class="n">fill_value</span><span class="o">=</span><span class="s2">"extrapolate"</span><span class="p">,</span>
                         <span class="p">)</span>
                         <span class="n">input_data</span><span class="o">.</span><span class="n">meas</span> <span class="o">=</span> <span class="n">interp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">meas_wl</span><span class="p">)</span>
 
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Run model&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Run model"</span><span class="p">)</span>
                 <span class="c1"># The inversion returns a list of states, which are</span>
                 <span class="c1"># intepreted either as samples from the posterior (MCMC case)</span>
                 <span class="c1"># or as a gradient descent trajectory (standard case). For</span>
                 <span class="c1"># a trajectory, the last spectrum is the converged solution.</span>
                 <span class="n">states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iv</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">input_data</span><span class="o">.</span><span class="n">meas</span><span class="p">,</span> <span class="n">input_data</span><span class="o">.</span><span class="n">geom</span><span class="p">)</span>
 
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Write chunk of spectra&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Write chunk of spectra"</span><span class="p">)</span>
                 <span class="c1"># Write the spectra to disk</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_spectrum</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">states</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iv</span><span class="p">)</span>
 
                 <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+                        <span class="sa">f</span><span class="s2">"""</span>
 <span class="s2">                    Encountered the following ValueError in (row,col) (</span><span class="si">{</span><span class="n">row</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">).</span>
 <span class="s2">                    Results for this pixel will be all zeros.</span>
-<span class="s2">                    &quot;&quot;&quot;</span>
+<span class="s2">                    """</span>
                     <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">index</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -5606,40 +5606,40 @@
                             <span class="mi">2</span><span class="p">,</span>
                         <span class="p">)</span>
                         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Worker </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span><span class="si">}</span><span class="s2"> completed&quot;</span>
-                            <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">completed_spectra</span><span class="si">}</span><span class="s2">/~</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">total_samples</span><span class="si">}</span><span class="s2">::&quot;</span>
-                            <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">percent</span><span class="si">}</span><span class="s2">% complete&quot;</span>
+                            <span class="sa">f</span><span class="s2">"Worker </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span><span class="si">}</span><span class="s2"> completed"</span>
+                            <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">completed_spectra</span><span class="si">}</span><span class="s2">/~</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">total_samples</span><span class="si">}</span><span class="s2">::"</span>
+                            <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">percent</span><span class="si">}</span><span class="s2">% complete"</span>
                         <span class="p">)</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Worker at start location (</span><span class="si">{</span><span class="n">row</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">) completed&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Worker at start location (</span><span class="si">{</span><span class="n">row</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">) completed"</span>
+            <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">flush_buffers</span><span class="p">()</span>
 
 
-<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;run&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;config_file&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"run"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"config_file"</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-l&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;--level&quot;</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Log level&quot;</span><span class="p">,</span>
+    <span class="s2">"-l"</span><span class="p">,</span>
+    <span class="s2">"--level"</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Log level"</span><span class="p">,</span>
     <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">(</span>
-        <span class="p">[</span><span class="s2">&quot;DEBUG&quot;</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span> <span class="s2">&quot;WARNING&quot;</span><span class="p">,</span> <span class="s2">&quot;ERROR&quot;</span><span class="p">,</span> <span class="s2">&quot;EXCEPTION&quot;</span><span class="p">],</span> <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">[</span><span class="s2">"DEBUG"</span><span class="p">,</span> <span class="s2">"INFO"</span><span class="p">,</span> <span class="s2">"WARNING"</span><span class="p">,</span> <span class="s2">"ERROR"</span><span class="p">,</span> <span class="s2">"EXCEPTION"</span><span class="p">],</span> <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">),</span>
-    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">"INFO"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--log_file&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--log_file"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">log_file</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.isofit.cli"><a href="../../../../api/isofit/core/isofit/#isofit.core.isofit.cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Execute ISOFIT core&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Execute ISOFIT core"""</span>
 
     <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Running ISOFIT(config_file=</span><span class="si">{</span><span class="n">config_file</span><span class="si">!r}</span><span class="s2">, level=</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">, logfile=</span><span class="si">{</span><span class="n">log_file</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="sa">f</span><span class="s2">"Running ISOFIT(config_file=</span><span class="si">{</span><span class="n">config_file</span><span class="si">!r}</span><span class="s2">, level=</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">, logfile=</span><span class="si">{</span><span class="n">log_file</span><span class="si">}</span><span class="s2">)"</span>
     <span class="p">)</span>
     <span class="n">Isofit</span><span class="p">(</span><span class="n">config_file</span><span class="o">=</span><span class="n">config_file</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="n">log_file</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
-    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
+    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">"Done"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

@@ -4975,12 +4975,12 @@
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
-<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">This module circumvents the ray package while maintaining ray-like syntax in the code.</span>
 <span class="sd">Only the exact ISOFIT use cases of Ray are implemented here. If new uses of Ray are</span>
 <span class="sd">implemented, those uses/functions will have to be defined here as well.</span>
 
-<span class="sd">To enable, set the environment variable `ISOFIT_DEBUG` to &quot;1&quot;. For example:</span>
+<span class="sd">To enable, set the environment variable `ISOFIT_DEBUG` to "1". For example:</span>
 
 <span class="sd">$ export ISOFIT_DEBUG=1</span>
 <span class="sd">$ python isofit ...</span>
@@ -4988,7 +4988,7 @@
 <span class="sd">Additionally, you may pass it as a temporary environment variable via:</span>
 
 <span class="sd">$ ISOFIT_DEBUG=1 python isofit ...</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FunctionType</span>
@@ -5003,10 +5003,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns a Remote object on the key being requested. This enables</span>
 <span class="sd">        ray.remote(Class).func.remote()</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">Remote</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">remote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.debug.ray_bypass.Remote.remote"><a href="../../../../api/isofit/debug/ray_bypass/#isofit.debug.ray_bypass.Remote.remote" title="Go to docs">[docs]</a></div>
@@ -5016,14 +5016,14 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&lt;Remote(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="si">}</span><span class="s2">)&gt;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"&lt;Remote(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="si">}</span><span class="s2">)&gt;"</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reports any call to Ray that is not emulated</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported operation: </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported operation: </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">:</span> <span class="kc">None</span>
 
 
@@ -5037,18 +5037,18 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">init</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.debug.ray_bypass.init"><a href="../../../../api/isofit/debug/ray_bypass/#isofit.debug.ray_bypass.init" title="Go to docs">[docs]</a></div>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Ray has been disabled for this run&quot;</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Ray has been disabled for this run"</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="n">jobs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.debug.ray_bypass.get"><a href="../../../../api/isofit/debug/ray_bypass/#isofit.debug.ray_bypass.get" title="Go to docs">[docs]</a></div>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">jobs</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">jobs</span><span class="p">,</span> <span class="s2">"__iter__"</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">jobs</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">wait</span><span class="p">(</span><span class="n">jobs</span><span class="p">,</span> <span class="n">num_returns</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.debug.ray_bypass.wait"><a href="../../../../api/isofit/debug/ray_bypass/#isofit.debug.ray_bypass.wait" title="Go to docs">[docs]</a></div>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">jobs</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">jobs</span><span class="p">,</span> <span class="s2">"__iter__"</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">num_returns</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">jobs</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">jobs</span><span class="p">[:</span><span class="n">num_returns</span><span class="p">],</span> <span class="n">jobs</span><span class="p">[</span><span class="n">num_returns</span><span class="p">:]</span>
         <span class="k">return</span> <span class="n">jobs</span><span class="p">[:</span><span class="n">num_returns</span><span class="p">],</span> <span class="p">[]</span>
@@ -5067,14 +5067,14 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">util</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.debug.ray_bypass.util"><a href="../../../../api/isofit/debug/ray_bypass/#isofit.debug.ray_bypass.util" title="Go to docs">[docs]</a></div>
     <span class="k">class</span><span class="w"> </span><span class="nc">ActorPool</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.debug.ray_bypass.util.ActorPool"><a href="../../../../api/isofit/debug/ray_bypass/#isofit.debug.ray_bypass.util.ActorPool" title="Go to docs">[docs]</a></div>
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actors</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">"""</span>
 <span class="sd">            Emulates https://docs.ray.io/en/latest/_modules/ray/util/actor_pool.html</span>
 
 <span class="sd">            Parameters</span>
 <span class="sd">            ----------</span>
 <span class="sd">            actors: list</span>
 <span class="sd">                List of Remote objects to call</span>
-<span class="sd">            &quot;&quot;&quot;</span>
+<span class="sd">            """</span>
             <span class="c1"># Only need one actor function</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">actors</span> <span class="o">=</span> <span class="n">Remote</span><span class="p">(</span><span class="n">actors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
 

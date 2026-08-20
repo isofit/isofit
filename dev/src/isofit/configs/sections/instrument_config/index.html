@@ -4967,14 +4967,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -4993,9 +4993,9 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">InstrumentStateVectorConfig</span><span class="p">(</span><span class="n">StateVectorConfig</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.instrument_config.InstrumentStateVectorConfig"><a href="../../../../../api/isofit/configs/sections/instrument_config/#isofit.configs.sections.instrument_config.InstrumentStateVectorConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Instrument State vector configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -5024,9 +5024,9 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">InstrumentUnknowns</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.instrument_config.InstrumentUnknowns"><a href="../../../../../api/isofit/configs/sections/instrument_config/#isofit.configs.sections.instrument_config.InstrumentUnknowns" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Instrument Unknowns configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -5059,15 +5059,15 @@
         <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">file_params</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">param</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">param</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
-                    <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Instrument unknown file: </span><span class="si">{}</span><span class="s2"> not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">))</span>
+                    <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"Instrument unknown file: </span><span class="si">{}</span><span class="s2"> not found"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">InstrumentConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.instrument_config.InstrumentConfig"><a href="../../../../../api/isofit/configs/sections/instrument_config/#isofit.configs.sections.instrument_config.InstrumentConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Instrument configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_wavelength_file_type</span> <span class="o">=</span> <span class="nb">str</span>
@@ -5075,49 +5075,49 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_integrations_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">integrations</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of integrations comprising the measurement.  </span>
+<span class="w">        </span><span class="sd">"""Number of integrations comprising the measurement.  </span>
 <span class="sd">        Noise diminishes with the square root of this number.  Applicable in concert with parametric_noise_file </span>
-<span class="sd">        or pushbroom_noise_file&quot;&quot;&quot;</span>
+<span class="sd">        or pushbroom_noise_file"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_unknowns_type</span> <span class="o">=</span> <span class="n">InstrumentUnknowns</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="p">:</span> <span class="n">InstrumentUnknowns</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_fast_resample_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fast_resample</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: Approximates a complete resampling by a convolution with a uniform FWHM.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""bool: Approximates a complete resampling by a convolution with a uniform FWHM."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_statevector_type</span> <span class="o">=</span> <span class="n">InstrumentStateVectorConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">statevector</span><span class="p">:</span> <span class="n">StateVectorConfig</span> <span class="o">=</span> <span class="n">InstrumentStateVectorConfig</span><span class="p">({})</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_SNR_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">SNR</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: We have several ways to define the instrument noise.  The simplest model is based on a single uniform </span>
-<span class="sd">        SNR number that is signal-independnet and applied uniformly to all wavelengths&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: We have several ways to define the instrument noise.  The simplest model is based on a single uniform </span>
+<span class="sd">        SNR number that is signal-independnet and applied uniformly to all wavelengths"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_parametric_noise_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parametric_noise_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: We have several ways to define the instrument noise.</span>
+<span class="w">        </span><span class="sd">"""str: We have several ways to define the instrument noise.</span>
 <span class="sd">        The second option is a parametric, signal- and wavelength-</span>
 <span class="sd">        dependent noise function. This is given by a four-column</span>
 <span class="sd">        ASCII Text file.  Rows represent, respectively, the reference</span>
 <span class="sd">        wavelength, and coefficients A, B, and C that define the</span>
 <span class="sd">        noise-equivalent radiance via NeDL = A * sqrt(B+L) + C</span>
-<span class="sd">        For the actual radiance L.&quot;&quot;&quot;</span>
+<span class="sd">        For the actual radiance L."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_pushbroom_noise_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pushbroom_noise_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: We have several ways to define the instrument noise.</span>
+<span class="w">        </span><span class="sd">"""str: We have several ways to define the instrument noise.</span>
 <span class="sd">        The third option is a full pushbroom noise model that</span>
 <span class="sd">        specifies noise columns and covariances independently for</span>
-<span class="sd">        each cross-track location via an ENVI-format binary data file.&quot;&quot;&quot;</span>
+<span class="sd">        each cross-track location via an ENVI-format binary data file."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_nedt_noise_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nedt_noise_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: We have several ways to define the instrument noise.  The last is NEDT noise&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: We have several ways to define the instrument noise.  The last is NEDT noise"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_eof_path_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eof_path</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Path to an Empirial Orthogonal Function (EOF) file with one row per instrument channel.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: Path to an Empirial Orthogonal Function (EOF) file with one row per instrument channel."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 
@@ -5138,11 +5138,11 @@
         <span class="n">used_noise_options</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">noise_options</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">used_noise_options</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Instrument noise not defined.&quot;</span><span class="p">)</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"Instrument noise not defined."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">used_noise_options</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="s2">&quot;Multiple instrument noise options selected - please choose only 1.&quot;</span>
+                <span class="s2">"Multiple instrument noise options selected - please choose only 1."</span>
             <span class="p">)</span>
 
         <span class="n">file_params</span> <span class="o">=</span> <span class="p">[</span>
@@ -5153,7 +5153,7 @@
         <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">file_params</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">param</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">param</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
-                    <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Instrument config file: </span><span class="si">{}</span><span class="s2"> not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">))</span>
+                    <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"Instrument config file: </span><span class="si">{}</span><span class="s2"> not found"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>
 </code></pre></div></td></tr></table></div>

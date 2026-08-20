@@ -4962,40 +4962,40 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data.download</span><span class="w"> </span><span class="kn">import</span> <span class="n">release_metadata</span>
 
 
-<span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;dev&quot;</span><span class="p">,</span> <span class="n">invoke_without_command</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">"dev"</span><span class="p">,</span> <span class="n">invoke_without_command</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.data.dev.cli"><a href="../../../../api/isofit/data/dev/#isofit.data.dev.cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Extra commands for developers</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="s2">&quot;DEBUG&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)-8s</span><span class="s2"> </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="s2">"DEBUG"</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)-8s</span><span class="s2"> </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">)</span>
 
 
-<span class="n">data</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"data"</span><span class="p">)</span>
 <span class="n">save</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-ns&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;--no-save&quot;</span><span class="p">,</span>
+    <span class="s2">"-ns"</span><span class="p">,</span>
+    <span class="s2">"--no-save"</span><span class="p">,</span>
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Disables saving to file, will print to terminal&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Disables saving to file, will print to terminal"</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">kwargs</span> <span class="o">=</span> <span class="n">click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-k&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;--kwargs&quot;</span><span class="p">,</span>
+    <span class="s2">"-k"</span><span class="p">,</span>
+    <span class="s2">"--kwargs"</span><span class="p">,</span>
     <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">nargs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Example: -k working_directory /path/to/output&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Example: -k working_directory /path/to/output"</span><span class="p">,</span>
 <span class="p">)</span>
 
 
 <span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;totmpl&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"totmpl"</span><span class="p">,</span>
     <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">help</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">toTemplate</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span>
-    <span class="n">short_help</span><span class="o">=</span><span class="s2">&quot;Convert a config to a template&quot;</span><span class="p">,</span>
+    <span class="n">short_help</span><span class="o">=</span><span class="s2">"Convert a config to a template"</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@data</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="s2">&quot;--replace&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">&quot;dirs&quot;</span><span class="p">,</span> <span class="s2">&quot;keys&quot;</span><span class="p">,</span> <span class="s2">&quot;None&quot;</span><span class="p">]),</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;dirs&quot;</span>
+    <span class="s2">"-r"</span><span class="p">,</span> <span class="s2">"--replace"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">"dirs"</span><span class="p">,</span> <span class="s2">"keys"</span><span class="p">,</span> <span class="s2">"None"</span><span class="p">]),</span> <span class="n">default</span><span class="o">=</span><span class="s2">"dirs"</span>
 <span class="p">)</span>
 <span class="nd">@save</span>
 <span class="nd">@kwargs</span>
@@ -5007,14 +5007,14 @@
 
 
 <span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;fromtmpl&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"fromtmpl"</span><span class="p">,</span>
     <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">help</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">fromTemplate</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span>
-    <span class="n">short_help</span><span class="o">=</span><span class="s2">&quot;Convert a template to a config&quot;</span><span class="p">,</span>
+    <span class="n">short_help</span><span class="o">=</span><span class="s2">"Convert a template to a config"</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@data</span>
 <span class="nd">@save</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="s2">&quot;--prepend&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"-p"</span><span class="p">,</span> <span class="s2">"--prepend"</span><span class="p">)</span>
 <span class="nd">@kwargs</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">fromTemplate</span><span class="p">(</span><span class="n">no_save</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">opts</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.dev.fromTemplate"><a href="../../../../api/isofit/data/dev/#isofit.data.dev.fromTemplate" title="Go to docs">[docs]</a></div>
     <span class="n">data</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">fromTemplate</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="ow">not</span> <span class="n">no_save</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">),</span> <span class="o">**</span><span class="n">opts</span><span class="p">)</span>
@@ -5024,40 +5024,40 @@
 
 
 <span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;install_tab_completion&quot;</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Installs ISOFIT tab completion for your current shell&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"install_tab_completion"</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Installs ISOFIT tab completion for your current shell"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">installTabCompletion</span><span class="p">(</span><span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;isofit&quot;</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.dev.installTabCompletion"><a href="../../../../api/isofit/data/dev/#isofit.data.dev.installTabCompletion" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generates the Click shell completion script for a user&#39;s shell, if it is supported.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">installTabCompletion</span><span class="p">(</span><span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"isofit"</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.dev.installTabCompletion"><a href="../../../../api/isofit/data/dev/#isofit.data.dev.installTabCompletion" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Generates the Click shell completion script for a user's shell, if it is supported.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    command : str, default=&quot;isofit&quot;</span>
+<span class="sd">    command : str, default="isofit"</span>
 <span class="sd">        Name of the CLI program</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">shell</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SHELL&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">shell</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"SHELL"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
     <span class="n">home</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span>
 
     <span class="c1"># Only shells supported by Click</span>
-    <span class="k">if</span> <span class="s2">&quot;zsh&quot;</span> <span class="ow">in</span> <span class="n">shell</span><span class="p">:</span>
-        <span class="n">shell</span> <span class="o">=</span> <span class="s2">&quot;zsh&quot;</span>
-        <span class="n">rc_file</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">&quot;.zshrc&quot;</span>
-    <span class="k">elif</span> <span class="s2">&quot;bash&quot;</span> <span class="ow">in</span> <span class="n">shell</span><span class="p">:</span>
-        <span class="n">shell</span> <span class="o">=</span> <span class="s2">&quot;bash&quot;</span>
-        <span class="n">rc_file</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">&quot;.bashrc&quot;</span>
-    <span class="k">elif</span> <span class="s2">&quot;fish&quot;</span> <span class="ow">in</span> <span class="n">shell</span><span class="p">:</span>
-        <span class="n">shell</span> <span class="o">=</span> <span class="s2">&quot;fish&quot;</span>
-        <span class="n">rc_file</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">&quot;.config&quot;</span> <span class="o">/</span> <span class="s2">&quot;fish&quot;</span> <span class="o">/</span> <span class="s2">&quot;config.fish&quot;</span>
+    <span class="k">if</span> <span class="s2">"zsh"</span> <span class="ow">in</span> <span class="n">shell</span><span class="p">:</span>
+        <span class="n">shell</span> <span class="o">=</span> <span class="s2">"zsh"</span>
+        <span class="n">rc_file</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">".zshrc"</span>
+    <span class="k">elif</span> <span class="s2">"bash"</span> <span class="ow">in</span> <span class="n">shell</span><span class="p">:</span>
+        <span class="n">shell</span> <span class="o">=</span> <span class="s2">"bash"</span>
+        <span class="n">rc_file</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">".bashrc"</span>
+    <span class="k">elif</span> <span class="s2">"fish"</span> <span class="ow">in</span> <span class="n">shell</span><span class="p">:</span>
+        <span class="n">shell</span> <span class="o">=</span> <span class="s2">"fish"</span>
+        <span class="n">rc_file</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">".config"</span> <span class="o">/</span> <span class="s2">"fish"</span> <span class="o">/</span> <span class="s2">"config.fish"</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported or undetected shell: </span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported or undetected shell: </span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Get the source command</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="n">command</span>
 
     <span class="c1"># Generate the completion script</span>
     <span class="n">completion_script</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">command</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">_COMPLETE=</span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2">_source </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"_</span><span class="si">{</span><span class="n">command</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">_COMPLETE=</span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2">_source </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -5065,14 +5065,14 @@
     <span class="p">)</span><span class="o">.</span><span class="n">stdout</span>
 
     <span class="c1"># Save the completion script</span>
-    <span class="n">root</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">&quot;.isofit&quot;</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">home</span> <span class="o">/</span> <span class="s2">".isofit"</span>
     <span class="n">root</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">completion_path</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">_completion.</span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">completion_path</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">_completion.</span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2">"</span>
     <span class="n">completion_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">completion_script</span><span class="p">)</span>
 
     <span class="c1"># Append source line to shell rc if not already present</span>
-    <span class="n">source_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"># </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2"> tab completion</span><span class="se">\n</span><span class="s2">source </span><span class="si">{</span><span class="n">completion_path</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">source_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2"># </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2"> tab completion</span><span class="se">\n</span><span class="s2">source </span><span class="si">{</span><span class="n">completion_path</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
     <span class="k">if</span> <span class="n">rc_file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="n">content</span> <span class="o">=</span> <span class="n">rc_file</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">completion_path</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
@@ -5080,28 +5080,28 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">rc_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">source_line</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2"> tab completion for shell </span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2"> installed in </span><span class="si">{</span><span class="n">rc_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2"> tab completion for shell </span><span class="si">{</span><span class="n">shell</span><span class="si">}</span><span class="s2"> installed in </span><span class="si">{</span><span class="n">rc_file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span>
-        <span class="s2">&quot;It is recommended to set the isofit CLI into laziest mode via: isofit -k cli_laziest 1&quot;</span>
+        <span class="s2">"It is recommended to set the isofit CLI into laziest mode via: isofit -k cli_laziest 1"</span>
     <span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;You must restart your shell or run: source </span><span class="si">{</span><span class="n">rc_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"You must restart your shell or run: source </span><span class="si">{</span><span class="n">rc_file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="nd">@cli</span><span class="o">.</span><span class="n">command</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">check_version</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.data.dev.check_version"><a href="../../../../api/isofit/data/dev/#isofit.data.dev.check_version" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks the currently installed ISOFIT version against the latest release</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">metadata</span> <span class="o">=</span> <span class="n">release_metadata</span><span class="p">(</span><span class="s2">&quot;isofit&quot;</span><span class="p">,</span> <span class="s2">&quot;isofit&quot;</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">release_metadata</span><span class="p">(</span><span class="s2">"isofit"</span><span class="p">,</span> <span class="s2">"isofit"</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">)</span>
     <span class="n">current</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">__version__</span><span class="p">)</span>
-    <span class="n">latest</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;tag_name&quot;</span><span class="p">])</span>
+    <span class="n">latest</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"tag_name"</span><span class="p">])</span>
 
     <span class="k">if</span> <span class="n">current</span> <span class="o">&lt;=</span> <span class="n">latest</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;[x] Current version is less than or equal to latest: </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2"> &lt;= </span><span class="si">{</span><span class="n">latest</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"[x] Current version is less than or equal to latest: </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2"> &lt;= </span><span class="si">{</span><span class="n">latest</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[OK] Current version is greater than latest: </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">latest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[OK] Current version is greater than latest: </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">latest</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

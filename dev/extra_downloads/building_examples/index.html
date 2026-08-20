@@ -4952,14 +4952,14 @@ Creating a new example must define one or more templates for the given example t
 </code></pre></div>
 <p>Each script will have the configs for it. For example, <code>reduced.sh</code> would contain:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Build a surface model first</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;Building surface model: surface.json&#39;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'Building surface model: surface.json'</span>
 isofit<span class="w"> </span>surface_model<span class="w"> </span>~/.isofit/examples/<span class="o">[</span>example<span class="o">]</span>/configs/surface.json
 
 <span class="c1"># Now run retrievals</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;Running 1/2: config1.json&#39;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'Running 1/2: config1.json'</span>
 isofit<span class="w"> </span>run<span class="w"> </span>--level<span class="w"> </span>DEBUG<span class="w"> </span>~/.isofit/examples/<span class="o">[</span>example<span class="o">]</span>/configs/reduced/config1.json
 
-<span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;Running 2/2: config2.json&#39;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">'Running 2/2: config2.json'</span>
 isofit<span class="w"> </span>run<span class="w"> </span>--level<span class="w"> </span>DEBUG<span class="w"> </span>~/.isofit/examples/<span class="o">[</span>example<span class="o">]</span>/configs/reduced/config2.json
 </code></pre></div>
 <ol>
@@ -4978,17 +4978,17 @@ isofit<span class="w"> </span>run<span class="w"> </span>--level<span class="w">
 </code></pre></div>
 The small image cube example's <code>default.args.json</code> is currently defined as:</p>
 <div class="highlight"><pre><span></span><code><span class="p">[</span>
-<span class="s2">&quot;{imagecube}/medium/ang20170323t202244_rdn_7k-8k&quot;</span><span class="p">,</span>
-<span class="s2">&quot;{imagecube}/medium/ang20170323t202244_loc_7k-8k&quot;</span><span class="p">,</span>
-<span class="s2">&quot;{imagecube}/medium/ang20170323t202244_obs_7k-8k&quot;</span><span class="p">,</span>
-<span class="s2">&quot;{examples}/image_cube/medium&quot;</span><span class="p">,</span>
-<span class="s2">&quot;ang&quot;</span><span class="p">,</span>
-<span class="s2">&quot;--surface_path {examples}/image_cube/medium/configs/surface.json&quot;</span><span class="p">,</span>
-<span class="s2">&quot;--emulator_base {srtmnet}/sRTMnet_v120.h5&quot;</span><span class="p">,</span>
-<span class="s2">&quot;--n_cores {cores}&quot;</span><span class="p">,</span>
-<span class="s2">&quot;--presolve&quot;</span><span class="p">,</span>
-<span class="s2">&quot;--segmentation_size 400&quot;</span><span class="p">,</span>
-<span class="s2">&quot;--pressure_elevation&quot;</span>
+<span class="s2">"{imagecube}/medium/ang20170323t202244_rdn_7k-8k"</span><span class="p">,</span>
+<span class="s2">"{imagecube}/medium/ang20170323t202244_loc_7k-8k"</span><span class="p">,</span>
+<span class="s2">"{imagecube}/medium/ang20170323t202244_obs_7k-8k"</span><span class="p">,</span>
+<span class="s2">"{examples}/image_cube/medium"</span><span class="p">,</span>
+<span class="s2">"ang"</span><span class="p">,</span>
+<span class="s2">"--surface_path {examples}/image_cube/medium/configs/surface.json"</span><span class="p">,</span>
+<span class="s2">"--emulator_base {srtmnet}/sRTMnet_v120.h5"</span><span class="p">,</span>
+<span class="s2">"--n_cores {cores}"</span><span class="p">,</span>
+<span class="s2">"--presolve"</span><span class="p">,</span>
+<span class="s2">"--segmentation_size 400"</span><span class="p">,</span>
+<span class="s2">"--pressure_elevation"</span>
 <span class="p">]</span>
 </code></pre></div>
 <p>This will generate <code>default.sh</code>:</p>

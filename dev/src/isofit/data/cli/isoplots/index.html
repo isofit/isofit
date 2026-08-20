@@ -5039,9 +5039,9 @@
 <span class="normal">222</span>
 <span class="normal">223</span>
 <span class="normal">224</span>
-<span class="normal">225</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">225</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Downloads the extra ISOFIT plotting utilities from the repository https://github.com/isofit/isofit-plots</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">importlib.metadata</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -5056,37 +5056,37 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data.download</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_file</span><span class="p">,</span> <span class="n">prepare_output</span><span class="p">,</span> <span class="n">release_metadata</span><span class="p">,</span> <span class="n">unzip</span>
 
 <span class="n">ESSENTIAL</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="n">CMD</span> <span class="o">=</span> <span class="s2">&quot;plots&quot;</span>
+<span class="n">CMD</span> <span class="o">=</span> <span class="s2">"plots"</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">install</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.isoplots.install"><a href="../../../../../api/isofit/data/cli/isoplots/#isofit.data.cli.isoplots.install" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Installs a python package into the current python environment as editable mode</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    path : str | None</span>
 <span class="sd">        Path to package to install. If None, defaults to the ini path</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">plots</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Installing </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Installing </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Attempt with pip</span>
-        <span class="n">command</span> <span class="o">=</span> <span class="p">[</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;pip&quot;</span><span class="p">,</span> <span class="s2">&quot;install&quot;</span><span class="p">,</span> <span class="s2">&quot;-e&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">]</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="p">[</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="s2">"-m"</span><span class="p">,</span> <span class="s2">"pip"</span><span class="p">,</span> <span class="s2">"install"</span><span class="p">,</span> <span class="s2">"-e"</span><span class="p">,</span> <span class="n">path</span><span class="p">]</span>
 
         <span class="c1"># uv venv</span>
-        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;VIRTUAL_ENV&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">uv</span> <span class="o">:=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s2">&quot;uv&quot;</span><span class="p">)):</span>
-            <span class="n">command</span> <span class="o">=</span> <span class="p">[</span><span class="n">uv</span><span class="p">,</span> <span class="s2">&quot;pip&quot;</span><span class="p">,</span> <span class="s2">&quot;install&quot;</span><span class="p">,</span> <span class="s2">&quot;-e&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"VIRTUAL_ENV"</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">uv</span> <span class="o">:=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s2">"uv"</span><span class="p">)):</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="p">[</span><span class="n">uv</span><span class="p">,</span> <span class="s2">"pip"</span><span class="p">,</span> <span class="s2">"install"</span><span class="p">,</span> <span class="s2">"-e"</span><span class="p">,</span> <span class="n">path</span><span class="p">]</span>
 
         <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
     <span class="k">except</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to install isoplots, you may need to do so manually: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to install isoplots, you may need to do so manually: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.isoplots.download"><a href="../../../../../api/isofit/data/cli/isoplots/#isofit.data.cli.isoplots.download" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.isoplots.download"><a href="../../../../../api/isofit/data/cli/isoplots/#isofit.data.cli.isoplots.download" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Downloads the extra ISOFIT plotting utilities from the repository https://github.com/isofit/isofit-plots.</span>
 
 <span class="sd">    Parameters</span>
@@ -5097,28 +5097,28 @@
 <span class="sd">        Release tag to pull from the github</span>
 <span class="sd">    overwrite : bool, default=False</span>
 <span class="sd">        Overwrite an existing installation</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading ISOFIT Plotting Utilities&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Downloading ISOFIT Plotting Utilities"</span><span class="p">)</span>
 
     <span class="n">output</span> <span class="o">=</span> <span class="n">prepare_output</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">plots</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">output</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="n">metadata</span> <span class="o">=</span> <span class="n">release_metadata</span><span class="p">(</span><span class="s2">&quot;isofit&quot;</span><span class="p">,</span> <span class="s2">&quot;isofit-plots&quot;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">release_metadata</span><span class="p">(</span><span class="s2">"isofit"</span><span class="p">,</span> <span class="s2">"isofit-plots"</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pulling release </span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;tag_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">zipfile</span> <span class="o">=</span> <span class="n">download_file</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;zipball_url&quot;</span><span class="p">],</span> <span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;isofit-plots.zip&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Pulling release </span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">'tag_name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">zipfile</span> <span class="o">=</span> <span class="n">download_file</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"zipball_url"</span><span class="p">],</span> <span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"isofit-plots.zip"</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unzipping </span><span class="si">{</span><span class="n">zipfile</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unzipping </span><span class="si">{</span><span class="n">zipfile</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">avail</span> <span class="o">=</span> <span class="n">unzip</span><span class="p">(</span><span class="n">zipfile</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">rename</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
 
     <span class="n">install</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Done, now available at: </span><span class="si">{</span><span class="n">avail</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Done, now available at: </span><span class="si">{</span><span class="n">avail</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <div class="mkapi-source-link" id="isofit.data.cli.isoplots.validate"><a href="../../../../../api/isofit/data/cli/isoplots/#isofit.data.cli.isoplots.validate" title="Go to docs">[docs]</a></div>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checkForUpdate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Validates an isoplots installation</span>
 
 <span class="sd">    Parameters</span>
@@ -5139,11 +5139,11 @@
 <span class="sd">    -------</span>
 <span class="sd">    bool</span>
 <span class="sd">        True if valid, False otherwise</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">plots</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Verifying path for isoplots: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Verifying path for isoplots: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Copy the existing sys.path</span>
     <span class="n">syspath</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">[:]</span>
@@ -5153,7 +5153,7 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">isoplots</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[x] Failed to load isoplots: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[x] Failed to load isoplots: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
     <span class="k">finally</span><span class="p">:</span>
         <span class="c1"># Remove the inserted path</span>
@@ -5162,12 +5162,12 @@
     <span class="k">if</span> <span class="n">checkForUpdate</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">isUpToDate</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">error</span><span class="p">)</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[OK] Path is valid&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="s2">"[OK] Path is valid"</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">True</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">isUpToDate</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.isoplots.isUpToDate"><a href="../../../../../api/isofit/data/cli/isoplots/#isofit.data.cli.isoplots.isUpToDate" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">isUpToDate</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.isoplots.isUpToDate"><a href="../../../../../api/isofit/data/cli/isoplots/#isofit.data.cli.isoplots.isUpToDate" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks the installed version against the latest release</span>
 
 <span class="sd">    Parameters</span>
@@ -5189,29 +5189,29 @@
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    The Github workflows watch for the string &quot;[x]&quot; to determine if the cache needs to</span>
+<span class="sd">    The Github workflows watch for the string "[x]" to determine if the cache needs to</span>
 <span class="sd">    update the data of this module. If your module does not include this string, the</span>
 <span class="sd">    workflows will never detect updates.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">plots</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Checking for updates for plots on path: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Checking for updates for plots on path: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="n">latest</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">release_metadata</span><span class="p">(</span><span class="s2">&quot;isofit&quot;</span><span class="p">,</span> <span class="s2">&quot;isofit-plots&quot;</span><span class="p">,</span> <span class="s2">&quot;latest&quot;</span><span class="p">)[</span><span class="s2">&quot;tag_name&quot;</span><span class="p">])</span>
-    <span class="n">current</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="s2">&quot;isoplots&quot;</span><span class="p">))</span>
+    <span class="n">latest</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">release_metadata</span><span class="p">(</span><span class="s2">"isofit"</span><span class="p">,</span> <span class="s2">"isofit-plots"</span><span class="p">,</span> <span class="s2">"latest"</span><span class="p">)[</span><span class="s2">"tag_name"</span><span class="p">])</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="s2">"isoplots"</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="n">current</span> <span class="o">&lt;</span> <span class="n">latest</span><span class="p">:</span>
-        <span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[x] Latest is </span><span class="si">{</span><span class="n">latest</span><span class="si">}</span><span class="s2">, currently installed is </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[x] Latest is </span><span class="si">{</span><span class="n">latest</span><span class="si">}</span><span class="s2">, currently installed is </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[OK] Path is up to date, current version: </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[OK] Path is up to date, current version: </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="kc">True</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.isoplots.update"><a href="../../../../../api/isofit/data/cli/isoplots/#isofit.data.cli.isoplots.update" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks for an update and executes a new download if it is needed</span>
 
 <span class="sd">    Parameters</span>
@@ -5220,26 +5220,26 @@
 <span class="sd">        Just check if an update is available, do not download</span>
 <span class="sd">    **kwargs : dict</span>
 <span class="sd">        Additional key-word arguments to pass to download()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">debug</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;debug&quot;</span><span class="p">,</span> <span class="nb">print</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">debug</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"debug"</span><span class="p">,</span> <span class="nb">print</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">validate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;overwrite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Executing update&quot;</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">"overwrite"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">debug</span><span class="p">(</span><span class="s2">"Executing update"</span><span class="p">)</span>
             <span class="n">download</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Please download the latest via `isofit download </span><span class="si">{</span><span class="n">CMD</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">)</span>
+            <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Please download the latest via `isofit download </span><span class="si">{</span><span class="n">CMD</span><span class="si">}</span><span class="s2">`"</span><span class="p">)</span>
 
 
 <span class="nd">@shared</span><span class="o">.</span><span class="n">download</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">CMD</span><span class="p">)</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Root directory to download the ISOFIT plotting utilities package to, ie. [path]/plots&quot;</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Root directory to download the ISOFIT plotting utilities package to, ie. [path]/plots"</span>
 <span class="p">)</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">tag</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">overwrite</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">check</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">download_cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.isoplots.download_cli"><a href="../../../../../api/isofit/data/cli/isoplots/#isofit.data.cli.isoplots.download_cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Downloads the extra ISOFIT plotting utilities from the repository https://github.com/isofit/isofit-plots.</span>
 <span class="sd">    This will install the package into your current environment along with its dependencies.</span>
 
@@ -5249,20 +5249,20 @@
 <span class="sd">        - `isofit --path plots /path/plots download plots`: Override the ini file. This will save the provided path for future reference.</span>
 <span class="sd">        - `isofit download plots --path /path/plots`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.</span>
 <span class="sd">    It is recommended to use the first style so the download path is remembered in the future.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">):</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"overwrite"</span><span class="p">):</span>
         <span class="n">download</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@shared</span><span class="o">.</span><span class="n">validate</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">CMD</span><span class="p">)</span>
-<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Root directory to download data files to, ie. [path]/data&quot;</span><span class="p">)</span>
+<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">"Root directory to download data files to, ie. [path]/data"</span><span class="p">)</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">tag</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.isoplots.validate_cli"><a href="../../../../../api/isofit/data/cli/isoplots/#isofit.data.cli.isoplots.validate_cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Validates the installation of the ISOFIT extra data files as well as checks for updates</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">validate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

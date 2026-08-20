@@ -4904,9 +4904,9 @@
 <span class="normal">120</span>
 <span class="normal">121</span>
 <span class="normal">122</span>
-<span class="normal">123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">These tests are to ensure any changes to the CLI will be backwards compatible.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
@@ -4928,28 +4928,28 @@
 <span class="n">CORES</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
 
 
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;session&quot;</span><span class="p">)</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">"session"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cwd</span><span class="p">(</span><span class="n">tmp_path_factory</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_cli.cwd"><a href="../../../../api/isofit/test/test_cli/#isofit.test.test_cli.cwd" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Path to the working cube example</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;image_cube&quot;</span> <span class="o">/</span> <span class="s2">&quot;medium&quot;</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"image_cube"</span> <span class="o">/</span> <span class="s2">"medium"</span>
 
 
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;session&quot;</span><span class="p">)</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">"session"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">surface</span><span class="p">(</span><span class="n">cwd</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_cli.surface"><a href="../../../../api/isofit/test/test_cli/#isofit.test.test_cli.surface" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Generates the surface.mat file</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">outdir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">cwd</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">outdir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">cwd</span> <span class="o">/</span> <span class="s2">"data"</span><span class="p">)</span>
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">outp</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">cwd</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;surface.mat&quot;</span><span class="p">)</span>
+    <span class="n">outp</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">cwd</span> <span class="o">/</span> <span class="s2">"data"</span> <span class="o">/</span> <span class="s2">"surface.mat"</span><span class="p">)</span>
 
     <span class="c1"># Generate the surface.mat using the image_cube example config</span>
     <span class="c1"># fmt: off</span>
     <span class="n">surface_model</span><span class="p">(</span>
-        <span class="n">config_path</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;examples&quot;</span><span class="p">,</span> <span class="s2">&quot;20171108_Pasadena&quot;</span><span class="p">,</span> <span class="s2">&quot;configs&quot;</span><span class="p">,</span> <span class="s2">&quot;ang20171108t184227_surface.json&quot;</span><span class="p">),</span>
-        <span class="n">wavelength_path</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;examples&quot;</span><span class="p">,</span> <span class="s2">&quot;20171108_Pasadena&quot;</span><span class="p">,</span> <span class="s2">&quot;remote&quot;</span><span class="p">,</span> <span class="s2">&quot;20170320_ang20170228_wavelength_fit.txt&quot;</span><span class="p">),</span>
+        <span class="n">config_path</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"examples"</span><span class="p">,</span> <span class="s2">"20171108_Pasadena"</span><span class="p">,</span> <span class="s2">"configs"</span><span class="p">,</span> <span class="s2">"ang20171108t184227_surface.json"</span><span class="p">),</span>
+        <span class="n">wavelength_path</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"examples"</span><span class="p">,</span> <span class="s2">"20171108_Pasadena"</span><span class="p">,</span> <span class="s2">"remote"</span><span class="p">,</span> <span class="s2">"20170320_ang20170228_wavelength_fit.txt"</span><span class="p">),</span>
         <span class="n">output_path</span><span class="o">=</span><span class="n">outp</span>
     <span class="p">)</span>
     <span class="c1"># fmt: on</span>
@@ -4960,7 +4960,7 @@
 
 <span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">()</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">files</span><span class="p">(</span><span class="n">cwd</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_cli.files"><a href="../../../../api/isofit/test/test_cli/#isofit.test.test_cli.files" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Common data files to be used by multiple tests. The return is a list in the</span>
 <span class="sd">    order: [</span>
 <span class="sd">        0: Radiance file,</span>
@@ -4970,53 +4970,53 @@
 <span class="sd">    ]</span>
 
 <span class="sd">    As of 07/24/2023 these are from the medium cube example.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Flush dirs if they already exists from a previous test case</span>
 
-    <span class="n">flush_dirs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">,</span> <span class="s2">&quot;lut_h2o&quot;</span><span class="p">,</span> <span class="s2">&quot;lut_full&quot;</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">]</span>
+    <span class="n">flush_dirs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"config"</span><span class="p">,</span> <span class="s2">"lut_h2o"</span><span class="p">,</span> <span class="s2">"lut_full"</span><span class="p">,</span> <span class="s2">"output"</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">flush_dir</span> <span class="ow">in</span> <span class="n">flush_dirs</span><span class="p">:</span>
         <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">cwd</span> <span class="o">/</span> <span class="n">flush_dir</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">[</span>
-        <span class="nb">str</span><span class="p">(</span><span class="n">cwd</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;ang20170323t202244_rdn_7k-8k&quot;</span><span class="p">),</span>
-        <span class="nb">str</span><span class="p">(</span><span class="n">cwd</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;ang20170323t202244_loc_7k-8k&quot;</span><span class="p">),</span>
-        <span class="nb">str</span><span class="p">(</span><span class="n">cwd</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;ang20170323t202244_obs_7k-8k&quot;</span><span class="p">),</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">cwd</span> <span class="o">/</span> <span class="s2">"data"</span> <span class="o">/</span> <span class="s2">"ang20170323t202244_rdn_7k-8k"</span><span class="p">),</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">cwd</span> <span class="o">/</span> <span class="s2">"data"</span> <span class="o">/</span> <span class="s2">"ang20170323t202244_loc_7k-8k"</span><span class="p">),</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">cwd</span> <span class="o">/</span> <span class="s2">"data"</span> <span class="o">/</span> <span class="s2">"ang20170323t202244_obs_7k-8k"</span><span class="p">),</span>
         <span class="n">cwd</span><span class="p">,</span>
     <span class="p">]</span>
 
 
 <span class="c1"># fmt: off</span>
 <span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">slow</span>
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="p">[</span>
-    <span class="p">[</span><span class="s2">&quot;-nn&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;-nn&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">,],</span>
-    <span class="p">[</span><span class="s2">&quot;-nn&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;-nn&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="s2">&quot;-nn&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;--pressure_elevation&quot;</span><span class="p">,],</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">"args"</span><span class="p">,</span> <span class="p">[</span>
+    <span class="p">[</span><span class="s2">"-nn"</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"-nn"</span><span class="p">,</span> <span class="mi">50</span><span class="p">,],</span>
+    <span class="p">[</span><span class="s2">"-nn"</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"-nn"</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="s2">"-nn"</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"--pressure_elevation"</span><span class="p">,],</span>
 <span class="p">])</span>
 <span class="c1"># fmt: on</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_apply_oe</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_cli.test_apply_oe"><a href="../../../../api/isofit/test/test_cli/#isofit.test.test_cli.test_apply_oe" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Executes the isofit apply_oe cli command for various test cases</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">ray</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
     <span class="n">sleep</span><span class="p">(</span><span class="mi">120</span><span class="p">)</span>
 
-    <span class="n">emulator</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;srtmnet&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;srtmnet.file&quot;</span><span class="p">)</span>
+    <span class="n">emulator</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"srtmnet"</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"srtmnet.file"</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;ang&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;--presolve&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;--emulator_base&quot;</span><span class="p">,</span>
+        <span class="s2">"ang"</span><span class="p">,</span>
+        <span class="s2">"--presolve"</span><span class="p">,</span>
+        <span class="s2">"--emulator_base"</span><span class="p">,</span>
         <span class="n">emulator</span><span class="p">,</span>
-        <span class="s2">&quot;--n_cores&quot;</span><span class="p">,</span>
+        <span class="s2">"--n_cores"</span><span class="p">,</span>
         <span class="n">CORES</span><span class="p">,</span>
-        <span class="s2">&quot;--analytical_line&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;--logging_level&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;DEBUG&quot;</span><span class="p">,</span>
+        <span class="s2">"--analytical_line"</span><span class="p">,</span>
+        <span class="s2">"--logging_level"</span><span class="p">,</span>
+        <span class="s2">"DEBUG"</span><span class="p">,</span>
     <span class="p">]</span> <span class="o">+</span> <span class="n">args</span>
 
     <span class="n">arguments</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;apply_oe&quot;</span><span class="p">,</span>
+        <span class="s2">"apply_oe"</span><span class="p">,</span>
         <span class="o">*</span><span class="n">files</span><span class="p">,</span>
         <span class="o">*</span><span class="n">args</span><span class="p">,</span>
-        <span class="s2">&quot;--surface_path&quot;</span><span class="p">,</span>
+        <span class="s2">"--surface_path"</span><span class="p">,</span>
         <span class="n">surface</span><span class="p">,</span>
     <span class="p">]</span>
 

@@ -5042,14 +5042,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5076,33 +5076,33 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ThermalSurface</span><span class="p">(</span><span class="n">MultiComponentSurface</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_thermal.ThermalSurface"><a href="../../../../api/isofit/surface/surface_thermal/#isofit.surface.surface_thermal.ThermalSurface" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A model of the surface based on a Mixture of a hot Black Body and</span>
-<span class="sd">    Multicomponent cold surfaces.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A model of the surface based on a Mixture of a hot Black Body and</span>
+<span class="sd">    Multicomponent cold surfaces."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_config</span><span class="p">:</span> <span class="n">Config</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""."""</span>
 
         <span class="n">config</span> <span class="o">=</span> <span class="n">full_config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">surface</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">full_config</span><span class="p">)</span>
 
         <span class="c1"># Handle additional state vector elements</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;SURF_TEMP_K&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">"SURF_TEMP_K"</span><span class="p">])</span>
 
         <span class="c1"># Old syntax:</span>
         <span class="c1"># self.surface_T_prior_mean_degK = config.statevector.SURF_TEMP_K.get(</span>
-        <span class="c1">#     &quot;prior_mean&quot;</span>
+        <span class="c1">#     "prior_mean"</span>
         <span class="c1"># )</span>
         <span class="c1"># New syntax from config object:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">)])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">)])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bounds&quot;</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"init"</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"scale"</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"bounds"</span><span class="p">)])</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">surface_T_prior_mean_degK</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-            <span class="s2">&quot;prior_mean&quot;</span>
+            <span class="s2">"prior_mean"</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">surface_T_prior_sigma_degK</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">statevector</span><span class="o">.</span><span class="n">SURF_TEMP_K</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-            <span class="s2">&quot;prior_sigma&quot;</span>
+            <span class="s2">"prior_sigma"</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">idx_surface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">))</span>
@@ -5119,9 +5119,9 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_thermal.ThermalSurface.xa"><a href="../../../../api/isofit/surface/surface_thermal/#isofit.surface.surface_thermal.ThermalSurface.xa" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mean of prior distribution, calculated at state x.  We find</span>
+<span class="w">        </span><span class="sd">"""Mean of prior distribution, calculated at state x.  We find</span>
 <span class="sd">        the covariance in a normalized space (normalizing by z) and then un-</span>
-<span class="sd">        normalize the result for the calling function.&quot;&quot;&quot;</span>
+<span class="sd">        normalize the result for the calling function."""</span>
 
         <span class="n">mu</span> <span class="o">=</span> <span class="n">MultiComponentSurface</span><span class="o">.</span><span class="n">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
         <span class="n">mu</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_T_prior_mean_degK</span>
@@ -5129,7 +5129,7 @@
         <span class="k">return</span> <span class="n">mu</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">Sa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_thermal.ThermalSurface.Sa"><a href="../../../../api/isofit/surface/surface_thermal/#isofit.surface.surface_thermal.ThermalSurface.Sa" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Covariance of prior distribution, calculated at state x.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Covariance of prior distribution, calculated at state x."""</span>
 
         <span class="n">Sa_unnormalized</span><span class="p">,</span> <span class="n">Sa_inv_normalized</span><span class="p">,</span> <span class="n">Sa_inv_sqrt_normalized</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">MultiComponentSurface</span><span class="o">.</span><span class="n">Sa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
@@ -5147,7 +5147,7 @@
         <span class="k">return</span> <span class="n">Sa_unnormalized</span><span class="p">,</span> <span class="n">Sa_inv_normalized</span><span class="p">,</span> <span class="n">Sa_inv_sqrt_normalized</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fit_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rfl_meas</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_thermal.ThermalSurface.fit_params"><a href="../../../../api/isofit/surface/surface_thermal/#isofit.surface.surface_thermal.ThermalSurface.fit_params" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Given a reflectance estimate, find the surface reflectance&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Given a reflectance estimate, find the surface reflectance"""</span>
 
         <span class="n">x_surface</span> <span class="o">=</span> <span class="n">MultiComponentSurface</span><span class="o">.</span><span class="n">fit_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rfl_meas</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
         <span class="n">x_surface</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span><span class="p">]</span>
@@ -5155,8 +5155,8 @@
         <span class="k">return</span> <span class="n">x_surface</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">dlamb_dsurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_thermal.ThermalSurface.dlamb_dsurface"><a href="../../../../api/isofit/surface/surface_thermal/#isofit.surface.surface_thermal.ThermalSurface.dlamb_dsurface" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of Lambertian reflectance with respect to state</span>
-<span class="sd">        vector, calculated at x_surface.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Partial derivative of Lambertian reflectance with respect to state</span>
+<span class="sd">        vector, calculated at x_surface."""</span>
 
         <span class="n">dlamb</span> <span class="o">=</span> <span class="n">MultiComponentSurface</span><span class="o">.</span><span class="n">dlamb_dsurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
         <span class="n">dlamb</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
@@ -5164,7 +5164,7 @@
         <span class="k">return</span> <span class="n">dlamb</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calc_Ls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_thermal.ThermalSurface.calc_Ls"><a href="../../../../api/isofit/surface/surface_thermal/#isofit.surface.surface_thermal.ThermalSurface.calc_Ls" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Emission of surface, as a radiance.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Emission of surface, as a radiance."""</span>
 
         <span class="n">T</span> <span class="o">=</span> <span class="n">x_surface</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span><span class="p">]</span>
         <span class="n">rfl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
@@ -5176,8 +5176,8 @@
         <span class="k">return</span> <span class="n">Ls</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">dLs_dsurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_thermal.ThermalSurface.dLs_dsurface"><a href="../../../../api/isofit/surface/surface_thermal/#isofit.surface.surface_thermal.ThermalSurface.dLs_dsurface" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of surface emission with respect to state vector,</span>
-<span class="sd">        calculated at x_surface.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Partial derivative of surface emission with respect to state vector,</span>
+<span class="sd">        calculated at x_surface."""</span>
 
         <span class="n">T</span> <span class="o">=</span> <span class="n">x_surface</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span><span class="p">]</span>
         <span class="n">lambertian_rfl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_lamb</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
@@ -5201,8 +5201,8 @@
         <span class="n">L_dif_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">L_dif_dif</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Derivative of radiance with respect to</span>
-<span class="sd">        full surface vector&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Derivative of radiance with respect to</span>
+<span class="sd">        full surface vector"""</span>
 
         <span class="c1"># Construct the output matrix:</span>
         <span class="c1"># Dimensions should be (len(RT.wl), len(x_surface))</span>
@@ -5228,10 +5228,10 @@
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">drdn_dsurface</span><span class="p">,</span> <span class="n">drdn_dLs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.surface.surface_thermal.ThermalSurface.summarize"><a href="../../../../api/isofit/surface/surface_thermal/#isofit.surface.surface_thermal.ThermalSurface.summarize" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Summary of state vector.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Summary of state vector."""</span>
 
         <span class="n">mcm</span> <span class="o">=</span> <span class="n">MultiComponentSurface</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot; Kelvins: </span><span class="si">%5.1f</span><span class="s2"> &quot;</span> <span class="o">%</span> <span class="n">x_surface</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span><span class="p">]</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">" Kelvins: </span><span class="si">%5.1f</span><span class="s2"> "</span> <span class="o">%</span> <span class="n">x_surface</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_temp_ind</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">msg</span> <span class="o">+</span> <span class="n">mcm</span>
 </code></pre></div></td></tr></table></div>

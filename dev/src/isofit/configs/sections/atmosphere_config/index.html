@@ -5214,14 +5214,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5245,9 +5245,9 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">AtmosphereStateVectorConfig</span><span class="p">(</span><span class="n">StateVectorConfig</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.atmosphere_config.AtmosphereStateVectorConfig"><a href="../../../../../api/isofit/configs/sections/atmosphere_config/#isofit.configs.sections.atmosphere_config.AtmosphereStateVectorConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Atmosphere state vector configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
@@ -5279,9 +5279,9 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">AtmosphereUnknownsConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.atmosphere_config.AtmosphereUnknownsConfig"><a href="../../../../../api/isofit/configs/sections/atmosphere_config/#isofit.configs.sections.atmosphere_config.AtmosphereUnknownsConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Atmosphere unknowns configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -5292,181 +5292,181 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">AtmosphereConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.atmosphere_config.AtmosphereConfig"><a href="../../../../../api/isofit/configs/sections/atmosphere_config/#isofit.configs.sections.atmosphere_config.AtmosphereConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Atmosphere configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_name_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Name of config - optional, and not currently used.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: Name of config - optional, and not currently used."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_engine_base_dir_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">engine_base_dir</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: base directory of the given atmospheric radiative transfer engine on user&#39;s OS.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: base directory of the given atmospheric radiative transfer engine on user's OS."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_wavelength_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wavelength_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Optional path to wavelength file for high-res atmospheric calculations&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: Optional path to wavelength file for high-res atmospheric calculations"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_wavelength_range_type</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wavelength_range</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;List: The wavelength range to execute this atmospheric radiative transfer engine over.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""List: The wavelength range to execute this atmospheric radiative transfer engine over."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_lut_path_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lut_path</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: The path to the look up table directory used by the atmospheric radiative transfer engine.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: The path to the look up table directory used by the atmospheric radiative transfer engine."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_sim_path_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim_path</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Path to the simulation outputs for the atmospheric radiative transfer engine.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: Path to the simulation outputs for the atmospheric radiative transfer engine."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_template_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">template_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: A template file to be used as the base-configuration for the given atmospheric radiative transfer engine.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: A template file to be used as the base-configuration for the given atmospheric radiative transfer engine."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_rt_mode_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">=</span> <span class="s2">&quot;transm&quot;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Atmospheric radiative transfer mode of LUT simulations.</span>
-<span class="sd">        &#39;transm&#39; for transmittances, &#39;rdn&#39; for reflected radiance.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">=</span> <span class="s2">"transm"</span>
+<span class="w">        </span><span class="sd">"""str: Atmospheric radiative transfer mode of LUT simulations.</span>
+<span class="sd">        'transm' for transmittances, 'rdn' for reflected radiance."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_lut_names_type</span> <span class="o">=</span> <span class="nb">dict</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dictionary: Names of the elements to run this atmospheric radiative transfer element on.  Must be a subset</span>
+<span class="w">        </span><span class="sd">"""Dictionary: Names of the elements to run this atmospheric radiative transfer element on.  Must be a subset</span>
 <span class="sd">        of the keys in atmosphere-&gt;lut_grid.  If not specified, uses all keys from</span>
-<span class="sd">        atmosphere-&gt; lut_grid.  Auto-sorted (alphabetically) below.&quot;&quot;&quot;</span>
+<span class="sd">        atmosphere-&gt; lut_grid.  Auto-sorted (alphabetically) below."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_statevector_names_type</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">statevector_names</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;List: Names of the statevector elements to use with this atmospheric radiative transfer engine.  Must be a subset</span>
+<span class="w">        </span><span class="sd">"""List: Names of the statevector elements to use with this atmospheric radiative transfer engine.  Must be a subset</span>
 <span class="sd">        of the keys in atmosphere-&gt;statevector.  If not specified, uses all keys from</span>
-<span class="sd">        atmosphere-&gt;statevector.  Auto-sorted (alphabetically) below.&quot;&quot;&quot;</span>
+<span class="sd">        atmosphere-&gt;statevector.  Auto-sorted (alphabetically) below."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_lut_compression_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lut_compression</span> <span class="o">=</span> <span class="s2">&quot;zlib&quot;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Compression method to use for the LUT NetCDF&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lut_compression</span> <span class="o">=</span> <span class="s2">"zlib"</span>
+<span class="w">        </span><span class="sd">"""str: Compression method to use for the LUT NetCDF"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_lut_complevel_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lut_complevel</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: The compression level to use for the chosen method&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""int: The compression level to use for the chosen method"""</span>
 
         <span class="c1"># MODTRAN parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_aerosol_template_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_template_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Aerosol template file, currently only implemented for MODTRAN.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: Aerosol template file, currently only implemented for MODTRAN."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_aerosol_model_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aerosol_model_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Aerosol model file, currently only implemented for MODTRAN.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: Aerosol model file, currently only implemented for MODTRAN."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_multipart_transmittance_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Use True to specify triple-run diffuse &amp; direct transmittance</span>
-<span class="sd">           estimation.  Only implemented for MODTRAN.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: Use True to specify triple-run diffuse &amp; direct transmittance</span>
+<span class="sd">           estimation.  Only implemented for MODTRAN."""</span>
 
         <span class="c1"># MODTRAN simulator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_emulator_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Path to emulator model file&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: Path to emulator model file"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_emulator_aux_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emulator_aux_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: path to emulator auxiliary data - expected npz format&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: path to emulator auxiliary data - expected npz format"""</span>
 
         <span class="c1"># 6S parameters - not the recommended</span>
         <span class="c1"># TODO: these should come from a template file, as in modtran</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_day_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">day</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: 6s-only day parameter.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""int: 6s-only day parameter."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_month_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">month</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: 6s-only month parameter.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""int: 6s-only month parameter."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_elev_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">elev</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: 6s-only elevation parameter.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: 6s-only elevation parameter."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_alt_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alt</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: 6s-only altitude parameter.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: 6s-only altitude parameter."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_obs_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">obs_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: 6s-only observation file.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: 6s-only observation file."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_solzen_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">solzen</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: 6s-only solar zenith.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: 6s-only solar zenith."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_solaz_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">solaz</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: 6s-only solar azimuth.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: 6s-only solar azimuth."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_viewzen_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">viewzen</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: 6s-only view zenith.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: 6s-only view zenith."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_viewaz_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">viewaz</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: 6s-only view azimuth.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: 6s-only view azimuth."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_earth_sun_distance_file_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">earth_sun_distance_file</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: 6s-only earth-to-sun distance file.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">earth_sun_distance_file</span> <span class="o">=</span> <span class="s2">""</span>
+<span class="w">        </span><span class="sd">"""str: 6s-only earth-to-sun distance file."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_irradiance_file_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">irradiance_file</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: 6s-only irradiance file.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">irradiance_file</span> <span class="o">=</span> <span class="s2">""</span>
+<span class="w">        </span><span class="sd">"""str: 6s-only irradiance file."""</span>
 
         <span class="c1"># libRadtran</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reptran_band_model_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reptran_band_model</span> <span class="o">=</span> <span class="s2">&quot;coarse&quot;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: libRadtran-only band model. REPTRAN options are coarse (15cm-1), medium (5 cm-1), and fine (1 cm-1).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reptran_band_model</span> <span class="o">=</span> <span class="s2">"coarse"</span>
+<span class="w">        </span><span class="sd">"""str: libRadtran-only band model. REPTRAN options are coarse (15cm-1), medium (5 cm-1), and fine (1 cm-1)."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_kb_alpha_1_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kb_alpha_1</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: libRadtran-only King-Byrne Angstrom parameter (alpha 1). Setting to None uses default aerosol profile.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: libRadtran-only King-Byrne Angstrom parameter (alpha 1). Setting to None uses default aerosol profile."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_kb_alpha_2_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kb_alpha_2</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: libRadtran-only King-Byrne Angstrom parameter (alpha 2). Setting to None uses default aerosol profile.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: libRadtran-only King-Byrne Angstrom parameter (alpha 2). Setting to None uses default aerosol profile."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ssa_scale_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ssa_scale</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: libRadtran-only scaling of single scattering albedo from aerosol profile. Setting to None uses profile default.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: libRadtran-only scaling of single scattering albedo from aerosol profile. Setting to None uses profile default."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_gg_set_type</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gg_set</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;float: libRadtran-only setting of constant asymmetry parameter to represent aerosols. Setting to None uses profile default.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""float: libRadtran-only setting of constant asymmetry parameter to represent aerosols. Setting to None uses profile default."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_tau_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tau_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: libRadtran-only path to optical depth file that overwrites default profile.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: libRadtran-only path to optical depth file that overwrites default profile."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_ssa_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ssa_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: libRadtran-only path to single scattering albedo file that overwrites default profile.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: libRadtran-only path to single scattering albedo file that overwrites default profile."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_gg_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gg_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: libRadtran-only path to asymmetry parameter file that overwrites default profile.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: libRadtran-only path to asymmetry parameter file that overwrites default profile."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_moments_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">moments_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: libRadtran-only path to phase function moments file. Uses custom phase function instead of default Henyey-Greenstein.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""str: libRadtran-only path to phase function moments file. Uses custom phase function instead of default Henyey-Greenstein."""</span>
 
         <span class="c1"># MODTRAN, 6S, and libRadtran</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_configure_and_exit_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">configure_and_exit</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: Indicates that code should terminate as soon as all atmospheric radiative transfer engine configuration files are</span>
-<span class="sd">        written (without running them)&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""bool: Indicates that code should terminate as soon as all atmospheric radiative transfer engine configuration files are</span>
+<span class="sd">        written (without running them)"""</span>
 
         <span class="c1"># sRTMnet</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_emulator_batch_size_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emulator_batch_size</span> <span class="o">=</span> <span class="mi">4096</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: Batch size for sRTMnet predictions. Set smaller to reduce memory usage, larger for faster emulation.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""int: Batch size for sRTMnet predictions. Set smaller to reduce memory usage, larger for faster emulation."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_statevector_type</span> <span class="o">=</span> <span class="n">AtmosphereStateVectorConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">statevector</span><span class="p">:</span> <span class="n">StateVectorConfig</span> <span class="o">=</span> <span class="n">AtmosphereStateVectorConfig</span><span class="p">({})</span>
@@ -5478,37 +5478,37 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="p">:</span> <span class="n">AtmosphereUnknownsConfig</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_interpolator_style_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span> <span class="o">=</span> <span class="s2">&quot;mlg_numba&quot;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Style of interpolation.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span> <span class="o">=</span> <span class="s2">"mlg_numba"</span>
+<span class="w">        </span><span class="sd">"""str: Style of interpolation.</span>
 <span class="sd">        - mlg   = Multilinear Grid</span>
 <span class="sd">        - rg    = RegularGrid</span>
 <span class="sd">        Speed performance:</span>
 <span class="sd">            mlg &gt;&gt; stacked rg &gt;&gt; unstacked rg</span>
-<span class="sd">        Caching provides significant gains for rg, marginal for mlg&quot;&quot;&quot;</span>
+<span class="sd">        Caching provides significant gains for rg, marginal for mlg"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_overwrite_interpolator_type</span> <span class="o">=</span> <span class="nb">bool</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_interpolator</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: Overwrite any existing interpolator pickles&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""bool: Overwrite any existing interpolator pickles"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_cache_size_type</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span> <span class="o">=</span> <span class="mi">16</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;int: Size of the cache to store interpolation lookups. Defaults to 16 which</span>
-<span class="sd">        provides the most significant gains. Setting higher may provide marginal gains.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""int: Size of the cache to store interpolation lookups. Defaults to 16 which</span>
+<span class="sd">        provides the most significant gains. Setting higher may provide marginal gains."""</span>
 
         <span class="c1"># TODO: this part  here is a little hairy and not sure if i totally have this correct.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_engine_name_type</span> <span class="o">=</span> <span class="nb">str</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span> <span class="o">=</span> <span class="s2">&quot;Prebuilt&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span> <span class="o">=</span> <span class="s2">"Prebuilt"</span>
 
         <span class="c1"># Backward compatibility: old configs nested RT engine settings under an</span>
-        <span class="c1"># &quot;engine&quot; sub-dict. Flatten those into the parent dict so all fields resolve.</span>
+        <span class="c1"># "engine" sub-dict. Flatten those into the parent dict so all fields resolve.</span>
         <span class="k">if</span> <span class="p">(</span>
             <span class="n">sub_configdic</span>
-            <span class="ow">and</span> <span class="s2">&quot;engine&quot;</span> <span class="ow">in</span> <span class="n">sub_configdic</span>
-            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">[</span><span class="s2">&quot;engine&quot;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="s2">"engine"</span> <span class="ow">in</span> <span class="n">sub_configdic</span>
+            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">[</span><span class="s2">"engine"</span><span class="p">],</span> <span class="nb">dict</span><span class="p">)</span>
         <span class="p">):</span>
             <span class="n">merged</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="o">**</span><span class="n">sub_configdic</span><span class="p">[</span><span class="s2">&quot;engine&quot;</span><span class="p">],</span>
-                <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sub_configdic</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;engine&quot;</span><span class="p">},</span>
+                <span class="o">**</span><span class="n">sub_configdic</span><span class="p">[</span><span class="s2">"engine"</span><span class="p">],</span>
+                <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sub_configdic</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">"engine"</span><span class="p">},</span>
             <span class="p">}</span>
             <span class="n">sub_configdic</span> <span class="o">=</span> <span class="n">merged</span>
 
@@ -5536,72 +5536,72 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Engines</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="s2">&quot;atmosphere-&gt;engine_name: </span><span class="si">{}</span><span class="s2"> not in one of the&quot;</span>
-                <span class="s2">&quot; available models: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">Engines</span><span class="p">))</span>
+                <span class="s2">"atmosphere-&gt;engine_name: </span><span class="si">{}</span><span class="s2"> not in one of the"</span>
+                <span class="s2">" available models: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">Engines</span><span class="p">))</span>
             <span class="p">)</span>
 
-        <span class="n">valid_rt_modes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;transm&quot;</span><span class="p">,</span> <span class="s2">&quot;rdn&quot;</span><span class="p">]</span>
+        <span class="n">valid_rt_modes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"transm"</span><span class="p">,</span> <span class="s2">"rdn"</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_rt_modes</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="s2">&quot;atmosphere-&gt;rt_mode: </span><span class="si">{}</span><span class="s2"> not in one of the&quot;</span>
-                <span class="s2">&quot; available modes: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rt_mode</span><span class="p">,</span> <span class="n">valid_rt_modes</span><span class="p">)</span>
+                <span class="s2">"atmosphere-&gt;rt_mode: </span><span class="si">{}</span><span class="s2"> not in one of the"</span>
+                <span class="s2">" available modes: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rt_mode</span><span class="p">,</span> <span class="n">valid_rt_modes</span><span class="p">)</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emulator_batch_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;atmosphere-&gt;emulator_batch_size must be a positive integer.&quot;</span><span class="p">)</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"atmosphere-&gt;emulator_batch_size must be a positive integer."</span><span class="p">)</span>
 
         <span class="c1"># Only check for missing files when a prebuilt LUT is not provided</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_path</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_path</span><span class="p">):</span>
             <span class="c1"># Check that all input files exist</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_nontype_attributes</span><span class="p">():</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">value</span> <span class="ow">and</span> <span class="n">key</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;_file&quot;</span> <span class="ow">and</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">&quot;emulator_file&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="ow">and</span> <span class="n">key</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">"_file"</span> <span class="ow">and</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">"emulator_file"</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
                         <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                            <span class="s2">&quot;Config value atmosphere-&gt;</span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2"> not found&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="s2">"Config value atmosphere-&gt;</span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2"> not found"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                                 <span class="n">key</span><span class="p">,</span> <span class="n">value</span>
                             <span class="p">)</span>
                         <span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earth_sun_distance_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span> <span class="o">==</span> <span class="s2">&quot;6s&quot;</span><span class="p">:</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;6s requires earth_sun_distance_file to be specified&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earth_sun_distance_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span> <span class="o">==</span> <span class="s2">"6s"</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"6s requires earth_sun_distance_file to be specified"</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">irradiance_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span> <span class="o">==</span> <span class="s2">&quot;6s&quot;</span><span class="p">:</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;6s requires irradiance_file to be specified&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">irradiance_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span> <span class="o">==</span> <span class="s2">"6s"</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"6s requires irradiance_file to be specified"</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span> <span class="o">==</span> <span class="s2">&quot;sRTMnet&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_name</span> <span class="o">==</span> <span class="s2">"sRTMnet"</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="c1"># Fallback to the path specified by the isofit.ini</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;srtmnet&quot;</span><span class="p">,</span> <span class="n">env</span><span class="p">[</span><span class="s2">&quot;srtmnet.file&quot;</span><span class="p">]))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"srtmnet"</span><span class="p">,</span> <span class="n">env</span><span class="p">[</span><span class="s2">"srtmnet.file"</span><span class="p">]))</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">):</span>
                         <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                            <span class="s2">&quot;The sRTMnet requires an emulator_file to be specified.&quot;</span>
+                            <span class="s2">"The sRTMnet requires an emulator_file to be specified."</span>
                         <span class="p">)</span>
 
                 <span class="k">if</span> <span class="p">(</span>
-                    <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;.h5&quot;</span><span class="p">)</span>
-                    <span class="ow">and</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;.npz&quot;</span><span class="p">)</span>
-                    <span class="ow">and</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;.6c&quot;</span><span class="p">)</span>
+                    <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">".h5"</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">".npz"</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">".6c"</span><span class="p">)</span>
                 <span class="p">):</span>
                     <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="s2">&quot;sRTMnet now requires the emulator_file to be of type .h5 (or .npz for experimental 6c emulator).  &quot;</span>
-                        <span class="s2">&quot;Please download an updated version from:</span><span class="se">\n</span><span class="s2"> https://zenodo.org/records/10831425&quot;</span>
+                        <span class="s2">"sRTMnet now requires the emulator_file to be of type .h5 (or .npz for experimental 6c emulator).  "</span>
+                        <span class="s2">"Please download an updated version from:</span><span class="se">\n</span><span class="s2"> https://zenodo.org/records/10831425"</span>
                     <span class="p">)</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.6c&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">emulator_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".6c"</span><span class="p">):</span>
                     <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.atmosphere.engines.six_s</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_exe</span>
 
-                    <span class="k">if</span> <span class="s2">&quot;co2&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">get_exe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_base_dir</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="s2">"co2"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">get_exe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine_base_dir</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
                         <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                            <span class="s2">&quot;sRTMnet 6C requires a CO2 version of 6S. Please use the isofit download CLI to pull a CO2 tag: https://github.com/isofit/6S/tags&quot;</span>
+                            <span class="s2">"sRTMnet 6C requires a CO2 version of 6S. Please use the isofit download CLI to pull a CO2 tag: https://github.com/isofit/6S/tags"</span>
                         <span class="p">)</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">emulator_aux_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="c1"># Fallback to the path specified by the isofit.ini</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">emulator_aux_file</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;srtmnet&quot;</span><span class="p">,</span> <span class="n">env</span><span class="p">[</span><span class="s2">&quot;srtmnet.aux&quot;</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">emulator_aux_file</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"srtmnet"</span><span class="p">,</span> <span class="n">env</span><span class="p">[</span><span class="s2">"srtmnet.aux"</span><span class="p">])</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">emulator_aux_file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                         <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                            <span class="s2">&quot;The sRTMnet requires an emulator_aux_file to be specified.&quot;</span>
+                            <span class="s2">"The sRTMnet requires an emulator_aux_file to be specified."</span>
                         <span class="p">)</span>
 
             <span class="n">files</span> <span class="o">=</span> <span class="p">[</span>
@@ -5612,41 +5612,41 @@
             <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
                     <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Atmospheric radiative transfer engine file not found on system: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">"Atmospheric radiative transfer engine file not found on system: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span>
                     <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_complevel</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_complevel</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;The LUT complevel must be and int greater than 0&quot;</span><span class="p">)</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"The LUT complevel must be and int greater than 0"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="s2">&quot;lut_grid item </span><span class="si">{}</span><span class="s2"> has less than the required 2 elements&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                    <span class="s2">"lut_grid item </span><span class="si">{}</span><span class="s2"> has less than the required 2 elements"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Detected duplicate values in lut_grid item </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Detected duplicate values in lut_grid item </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="n">kinds</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;rg&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;nds&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;mlg&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;mlg_numba&quot;</span><span class="p">,</span>
+            <span class="s2">"rg"</span><span class="p">,</span>
+            <span class="s2">"nds"</span><span class="p">,</span>
+            <span class="s2">"mlg"</span><span class="p">,</span>
+            <span class="s2">"mlg_numba"</span><span class="p">,</span>
         <span class="p">]</span>  <span class="c1"># Implemented kinds of interpolator functions</span>
         <span class="n">kind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
         <span class="n">degrees</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
 
         <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kinds</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Interpolator style </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span><span class="si">}</span><span class="s2"> must be one of: </span><span class="si">{</span><span class="n">kinds</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Interpolator style </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span><span class="si">}</span><span class="s2"> must be one of: </span><span class="si">{</span><span class="n">kinds</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;nds&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"nds"</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">degree</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">degrees</span><span class="p">)</span>
                 <span class="k">assert</span> <span class="n">degree</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">degree</span><span class="p">)</span>
             <span class="k">except</span><span class="p">:</span>
                 <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="s2">&quot;Invalid degree number. Should be an integer, e.g. nds-3, got&quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">degrees</span><span class="si">!r}</span><span class="s2"> from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span><span class="si">!r}</span><span class="s2">[4:]&quot;</span>
+                    <span class="s2">"Invalid degree number. Should be an integer, e.g. nds-3, got"</span>
+                    <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">degrees</span><span class="si">!r}</span><span class="s2"> from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolator_style</span><span class="si">!r}</span><span class="s2">[4:]"</span>
                 <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span>

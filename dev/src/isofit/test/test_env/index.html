@@ -4958,15 +4958,15 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="n">paths</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_env.normalize"><a href="../../../../api/isofit/test/test_env/#isofit.test.test_env.normalize" title="Go to docs">[docs]</a></div>
-    <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;D:&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"D:"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
 
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;session&quot;</span><span class="p">)</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">"session"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">changedDirs</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_env.changedDirs"><a href="../../../../api/isofit/test/test_env/#isofit.test.test_env.changedDirs" title="Go to docs">[docs]</a></div>
     <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 
     <span class="c1"># Changed dirs</span>
-    <span class="n">dirs</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;/abc/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">env</span><span class="o">.</span><span class="n">_dirs</span><span class="p">}</span>
+    <span class="n">dirs</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"/abc/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">env</span><span class="o">.</span><span class="n">_dirs</span><span class="p">}</span>
 
     <span class="c1"># Default keys</span>
     <span class="n">keys</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">env</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">env</span><span class="o">.</span><span class="n">_keys</span><span class="p">}</span>
@@ -4974,7 +4974,7 @@
     <span class="k">return</span> <span class="n">normalize</span><span class="p">({</span><span class="o">**</span><span class="n">dirs</span><span class="p">,</span> <span class="o">**</span><span class="n">keys</span><span class="p">})</span>
 
 
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;session&quot;</span><span class="p">)</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">"session"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">changedKeys</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_env.changedKeys"><a href="../../../../api/isofit/test/test_env/#isofit.test.test_env.changedKeys" title="Go to docs">[docs]</a></div>
     <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 
@@ -4982,12 +4982,12 @@
     <span class="n">dirs</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">env</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">env</span><span class="o">.</span><span class="n">_dirs</span><span class="p">}</span>
 
     <span class="c1"># Changed keys</span>
-    <span class="n">keys</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;/xyz/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">env</span><span class="o">.</span><span class="n">_keys</span><span class="p">}</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"/xyz/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">env</span><span class="o">.</span><span class="n">_keys</span><span class="p">}</span>
 
     <span class="k">return</span> <span class="n">normalize</span><span class="p">({</span><span class="o">**</span><span class="n">dirs</span><span class="p">,</span> <span class="o">**</span><span class="n">keys</span><span class="p">})</span>
 
 
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;session&quot;</span><span class="p">)</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">"session"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">changedBoth</span><span class="p">(</span><span class="n">changedDirs</span><span class="p">,</span> <span class="n">changedKeys</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_env.changedBoth"><a href="../../../../api/isofit/test/test_env/#isofit.test.test_env.changedBoth" title="Go to docs">[docs]</a></div>
     <span class="n">both</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -5021,7 +5021,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">test_changeBase</span><span class="p">(</span><span class="n">changedDirs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_env.test_changeBase"><a href="../../../../api/isofit/test/test_env/#isofit.test.test_env.test_changeBase" title="Go to docs">[docs]</a></div>
     <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 
-    <span class="n">env</span><span class="o">.</span><span class="n">changeBase</span><span class="p">(</span><span class="s2">&quot;/abc&quot;</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">changeBase</span><span class="p">(</span><span class="s2">"/abc"</span><span class="p">)</span>
 
     <span class="k">assert</span> <span class="n">normalize</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">env</span><span class="p">))</span> <span class="o">==</span> <span class="n">changedDirs</span>
 
@@ -5034,23 +5034,23 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_custom_ini</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_env.test_custom_ini"><a href="../../../../api/isofit/test/test_env/#isofit.test.test_env.test_custom_ini" title="Go to docs">[docs]</a></div>
-    <span class="n">ini</span> <span class="o">=</span> <span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">&quot;custom_test.ini&quot;</span>
-    <span class="n">ini</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[DEFAULT]</span><span class="se">\n</span><span class="s2">data = </span><span class="si">{</span><span class="n">tmp_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ini</span> <span class="o">=</span> <span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">"custom_test.ini"</span>
+    <span class="n">ini</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[DEFAULT]</span><span class="se">\n</span><span class="s2">data = </span><span class="si">{</span><span class="n">tmp_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">env</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ini</span><span class="p">)</span>
     <span class="n">remote</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">check_ini</span><span class="o">.</span><span class="n">remote</span><span class="p">())</span>
 
-    <span class="k">assert</span> <span class="n">env</span><span class="o">.</span><span class="n">ini</span> <span class="o">==</span> <span class="n">remote</span><span class="p">,</span> <span class="s2">&quot;The custom ini was not loaded in a child ray process&quot;</span>
+    <span class="k">assert</span> <span class="n">env</span><span class="o">.</span><span class="n">ini</span> <span class="o">==</span> <span class="n">remote</span><span class="p">,</span> <span class="s2">"The custom ini was not loaded in a child ray process"</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_raise_path_errors</span><span class="p">():</span><div class="mkapi-source-link" id="isofit.test.test_env.test_raise_path_errors"><a href="../../../../api/isofit/test/test_env/#isofit.test.test_env.test_raise_path_errors" title="Go to docs">[docs]</a></div>
     <span class="c1"># Make sure an exception is not raised</span>
-    <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;fake.file&quot;</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"data"</span><span class="p">,</span> <span class="s2">"fake.file"</span><span class="p">)</span>
 
     <span class="c1"># Now make sure it is raised</span>
-    <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">&quot;raise_path_errors&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">"raise_path_errors"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">):</span>
-        <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;fake.file&quot;</span><span class="p">)</span>
+        <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"data"</span><span class="p">,</span> <span class="s2">"fake.file"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

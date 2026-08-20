@@ -5085,14 +5085,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2025 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5126,10 +5126,10 @@
     <span class="p">):</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-            <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span>
             <span class="n">level</span><span class="o">=</span><span class="n">loglevel</span><span class="p">,</span>
             <span class="n">filename</span><span class="o">=</span><span class="n">logfile</span><span class="p">,</span>
-            <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S&quot;</span><span class="p">,</span>
+            <span class="n">datefmt</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">infile</span> <span class="o">=</span> <span class="n">infile</span>
@@ -5146,7 +5146,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_img</span><span class="o">.</span><span class="n">shape</span>
 
         <span class="c1"># Get wavelength grid</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">in_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">in_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"wavelength"</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">interpolate_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meas</span><span class="p">,</span> <span class="n">replace_nan</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.interpolate_spectra.Worker.interpolate_values"><a href="../../../../api/isofit/utils/interpolate_spectra/#isofit.utils.interpolate_spectra.Worker.interpolate_values" title="Go to docs">[docs]</a></div>
         <span class="k">if</span> <span class="n">replace_nan</span><span class="p">:</span>
@@ -5163,8 +5163,8 @@
             <span class="n">interp</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">[</span><span class="n">non_nan_locs</span><span class="p">]),</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">meas</span><span class="p">[</span><span class="n">non_nan_locs</span><span class="p">]),</span>
-                <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-                <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span><span class="p">,</span>
+                <span class="n">kind</span><span class="o">=</span><span class="s2">"linear"</span><span class="p">,</span>
+                <span class="n">fill_value</span><span class="o">=</span><span class="s2">"extrapolate"</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">interp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">),</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
@@ -5173,8 +5173,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">interpolate_chunk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">startstop</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.interpolate_spectra.Worker.interpolate_chunk"><a href="../../../../api/isofit/utils/interpolate_spectra/#isofit.utils.interpolate_spectra.Worker.interpolate_chunk" title="Go to docs">[docs]</a></div>
         <span class="n">lstart</span><span class="p">,</span> <span class="n">lend</span> <span class="o">=</span> <span class="n">startstop</span>
 
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lstart</span><span class="si">}</span><span class="s2">: starting&quot;</span><span class="p">)</span>
-        <span class="n">img_mm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_img</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lstart</span><span class="si">}</span><span class="s2">: starting"</span><span class="p">)</span>
+        <span class="n">img_mm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_img</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Set up output</span>
         <span class="n">output_state</span> <span class="o">=</span> <span class="p">(</span>
@@ -5193,7 +5193,7 @@
                 <span class="n">lstart</span><span class="p">,</span>
                 <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ns</span><span class="p">),</span>
             <span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lstart</span><span class="si">}</span><span class="s2">: No non null data present, continuing&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lstart</span><span class="si">}</span><span class="s2">: No non null data present, continuing"</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="c1"># Iterate through the chunk</span>
@@ -5213,10 +5213,10 @@
 
                 <span class="k">if</span> <span class="n">exit_code_nodata</span> <span class="o">+</span> <span class="n">exit_code_nan</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Entire pixel is NaN or no data leaving as-is: </span><span class="si">{</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">"Entire pixel is NaN or no data leaving as-is: </span><span class="si">{</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="si">}</span><span class="s2">"</span>
                     <span class="p">)</span>
                 <span class="k">elif</span> <span class="n">exit_code_nodata</span> <span class="o">+</span> <span class="n">exit_code_nan</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Interpolated NaN or no data in pixel: </span><span class="si">{</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Interpolated NaN or no data in pixel: </span><span class="si">{</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                 <span class="n">output_state</span><span class="p">[</span><span class="n">r</span> <span class="o">-</span> <span class="n">lstart</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">meas_interp</span>
 
@@ -5232,7 +5232,7 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">interpolate_spectra</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.utils.interpolate_spectra.interpolate_spectra"><a href="../../../../api/isofit/utils/interpolate_spectra/#isofit.utils.interpolate_spectra.interpolate_spectra" title="Go to docs">[docs]</a></div>
     <span class="n">infile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">outfile</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="n">outfile</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">nodata_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">,</span>
     <span class="n">n_cores</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
@@ -5242,15 +5242,15 @@
     <span class="n">ray_ip_head</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">task_inflation_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">logfile</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">loglevel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+    <span class="n">loglevel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"INFO"</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Interpolate wavelength bands that are either no data or Nan.</span>
 <span class="sd">    The interpolation will only be applied to pixel-vectors that include partial NaNs.</span>
 <span class="sd">    This is meant to be used if the number of wavelengths missing is minor, and has not</span>
 <span class="sd">    been widely tested if a large number of wavelength vlues are missing.</span>
 
-<span class="sd">    The interpolation will do two checks. One for &quot;nodata values,&quot; the</span>
+<span class="sd">    The interpolation will do two checks. One for "nodata values," the</span>
 <span class="sd">    other for NaN values. Motivated by some sensor products which have rdn data </span>
 <span class="sd">    with both no data, and NaN values.</span>
 
@@ -5275,7 +5275,7 @@
 <span class="sd">        File path to write logs to</span>
 <span class="sd">    loglevel: str</span>
 <span class="sd">        Logging level with which to run ISOFIT</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Get size of the image to interpolate</span>
     <span class="n">ds</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">infile</span><span class="p">))</span>
     <span class="n">ds_shape</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">shape</span>
@@ -5284,12 +5284,12 @@
     <span class="c1"># If you want to make a new file</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">outfile</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Interpolation to write to new file, but no path given.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Interpolation to write to new file, but no path given."</span><span class="p">)</span>
 
         <span class="n">output_metadata</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">infile</span><span class="p">))</span><span class="o">.</span><span class="n">metadata</span>
         <span class="n">img</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">create_image</span><span class="p">(</span>
             <span class="n">envi_header</span><span class="p">(</span><span class="n">outfile</span><span class="p">),</span>
-            <span class="n">ext</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">ext</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
             <span class="n">metadata</span><span class="o">=</span><span class="n">output_metadata</span><span class="p">,</span>
             <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
@@ -5302,14 +5302,14 @@
 
     <span class="c1"># Define ray dict in the same way as extractions.py</span>
     <span class="n">ray_dict</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;ignore_reinit_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="n">ray_address</span><span class="p">,</span>
-        <span class="s2">&quot;include_dashboard&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;_temp_dir&quot;</span><span class="p">:</span> <span class="n">ray_temp_dir</span><span class="p">,</span>
-        <span class="s2">&quot;_redis_password&quot;</span><span class="p">:</span> <span class="n">ray_redis_password</span><span class="p">,</span>
+        <span class="s2">"ignore_reinit_error"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"address"</span><span class="p">:</span> <span class="n">ray_address</span><span class="p">,</span>
+        <span class="s2">"include_dashboard"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"_temp_dir"</span><span class="p">:</span> <span class="n">ray_temp_dir</span><span class="p">,</span>
+        <span class="s2">"_redis_password"</span><span class="p">:</span> <span class="n">ray_redis_password</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">ray_ip_head</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ray_redis_password</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">ray_dict</span><span class="p">[</span><span class="s2">&quot;num_cpus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_cores</span>
+        <span class="n">ray_dict</span><span class="p">[</span><span class="s2">"num_cpus"</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_cores</span>
 
     <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="n">ray_dict</span><span class="p">)</span>
 
@@ -5343,27 +5343,27 @@
     <span class="n">total_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Interpolations complete.  </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">total_time</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">s total, &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">ds_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">ds_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s, &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">ds_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">ds_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="o">/</span><span class="n">n_workers</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s/core&quot;</span>
+        <span class="sa">f</span><span class="s2">"Interpolations complete.  </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">total_time</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">s total, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">ds_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">ds_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">ds_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">ds_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="o">/</span><span class="n">n_workers</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s/core"</span>
     <span class="p">)</span>
 
 
 <span class="c1"># Input arguments</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;interpolate_spectra&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">interpolate_spectra</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"interpolate_spectra"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">interpolate_spectra</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;infile&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--outfile&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--inplace&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--nodata_value&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">9999</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--n_cores&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--logfile&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--loglevel&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"infile"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--outfile"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--inplace"</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--nodata_value"</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">9999</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--n_cores"</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--logfile"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--loglevel"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.interpolate_spectra.cli"><a href="../../../../api/isofit/utils/interpolate_spectra/#isofit.utils.interpolate_spectra.cli" title="Go to docs">[docs]</a></div>
 
     <span class="n">interpolate_spectra</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
+    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">"Done"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

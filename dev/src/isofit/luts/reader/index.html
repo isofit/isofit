@@ -5475,9 +5475,9 @@
 <span class="normal">619</span>
 <span class="normal">620</span>
 <span class="normal">621</span>
-<span class="normal">622</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">622</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Manages the reading and subsetting of look-up tables (LUTs)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -5497,7 +5497,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">inspect_lut_dimensions</span><span class="p">(</span><span class="n">lut_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span><div class="mkapi-source-link" id="isofit.luts.reader.inspect_lut_dimensions"><a href="../../../../api/isofit/luts/reader/#isofit.luts.reader.inspect_lut_dimensions" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inspect a prebuilt LUT file to determine available dimensions and their grid points.</span>
+<span class="w">    </span><span class="sd">"""Inspect a prebuilt LUT file to determine available dimensions and their grid points.</span>
 
 <span class="sd">    Supports both NetCDF (.nc) and Zarr formats.</span>
 
@@ -5508,40 +5508,40 @@
 <span class="sd">        dict: Mapping dimension names to numpy arrays of grid points</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        &gt;&gt;&gt; dims = inspect_lut_dimensions(&quot;lut.nc&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; dims = inspect_lut_dimensions("lut.nc")</span>
 <span class="sd">        &gt;&gt;&gt; dims.keys()</span>
-<span class="sd">        dict_keys([&#39;H2OSTR&#39;, &#39;AOT550&#39;, &#39;observer_zenith&#39;, &#39;wl&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; dims[&#39;H2OSTR&#39;]</span>
+<span class="sd">        dict_keys(['H2OSTR', 'AOT550', 'observer_zenith', 'wl'])</span>
+<span class="sd">        &gt;&gt;&gt; dims['H2OSTR']</span>
 <span class="sd">        array([0.5, 1.0, 1.5, 2.0, 2.5])</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">lut_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">lut_path</span><span class="p">)</span>
 
     <span class="c1"># Detect format based on file extension or directory structure</span>
-    <span class="k">if</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.zarr&quot;</span> <span class="ow">or</span> <span class="p">(</span>
-        <span class="n">lut_path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.nc&quot;</span>
+    <span class="k">if</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">".zarr"</span> <span class="ow">or</span> <span class="p">(</span>
+        <span class="n">lut_path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">".nc"</span>
     <span class="p">):</span>
         <span class="k">return</span> <span class="n">_inspect_zarr_dimensions</span><span class="p">(</span><span class="n">lut_path</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.nc&quot;</span> <span class="ow">or</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+    <span class="k">elif</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">".nc"</span> <span class="ow">or</span> <span class="n">lut_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">_inspect_netcdf_dimensions</span><span class="p">(</span><span class="n">lut_path</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Cannot determine LUT format for: </span><span class="si">{</span><span class="n">lut_path</span><span class="si">}</span><span class="s2">. &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Expected .nc file (NetCDF) or .zarr directory (Zarr).&quot;</span>
+            <span class="sa">f</span><span class="s2">"Cannot determine LUT format for: </span><span class="si">{</span><span class="n">lut_path</span><span class="si">}</span><span class="s2">. "</span>
+            <span class="sa">f</span><span class="s2">"Expected .nc file (NetCDF) or .zarr directory (Zarr)."</span>
         <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_inspect_netcdf_dimensions</span><span class="p">(</span><span class="n">lut_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inspect NetCDF LUT dimensions.</span>
+<span class="w">    </span><span class="sd">"""Inspect NetCDF LUT dimensions.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        lut_path: Path to the NetCDF LUT file</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        dict: Mapping dimension names to numpy arrays of grid points</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">lut_dimensions</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">lut_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ncds</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">lut_path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">ncds</span><span class="p">:</span>
         <span class="c1"># Iterate through all variables that could be LUT dimensions</span>
         <span class="c1"># These are typically 1-D coordinate variables</span>
         <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="n">ncds</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
@@ -5558,18 +5558,18 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_inspect_zarr_dimensions</span><span class="p">(</span><span class="n">lut_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inspect Zarr LUT dimensions using xarray.</span>
+<span class="w">    </span><span class="sd">"""Inspect Zarr LUT dimensions using xarray.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        lut_path: Path to the Zarr LUT store</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        dict: Mapping dimension names to numpy arrays of grid points</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">lut_dimensions</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="c1"># Open zarr store with xarray (don&#39;t load data, just inspect)</span>
-    <span class="k">with</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">lut_path</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;zarr&quot;</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+    <span class="c1"># Open zarr store with xarray (don't load data, just inspect)</span>
+    <span class="k">with</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">lut_path</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">"zarr"</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
         <span class="c1"># Extract all coordinate dimensions</span>
         <span class="k">for</span> <span class="n">coord_name</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
             <span class="n">coord_data</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">coord_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
@@ -5580,96 +5580,96 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">subsetting</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">subset</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.reader.subsetting"><a href="../../../../api/isofit/luts/reader/#isofit.luts.reader.subsetting" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Subsets a Dataset</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Estimated dataset size: </span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">nbytes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GB&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Estimated dataset size: </span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">nbytes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GB"</span><span class="p">)</span>
 
     <span class="c1"># The strategy dict must contain all coordinate keys in the lut file</span>
-    <span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span> <span class="o">-</span> <span class="p">({</span><span class="s2">&quot;wl&quot;</span><span class="p">}</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">subset</span><span class="p">))</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span> <span class="o">-</span> <span class="p">({</span><span class="s2">"wl"</span><span class="p">}</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">subset</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
         <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-            <span class="s2">&quot;The following keys are in the LUT file but not specified how to be handled by the config:&quot;</span>
+            <span class="s2">"The following keys are in the LUT file but not specified how to be handled by the config:"</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">:</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Subset dictionary (engine.lut_names) is missing keys that are present in the LUT dimensions </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">missing</span><span class="si">=}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Subset dictionary (engine.lut_names) is missing keys that are present in the LUT dimensions </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">missing</span><span class="si">=}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="c1"># Operations to perform</span>
-    <span class="n">opts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;isel&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">&quot;interp&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+    <span class="n">opts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"isel"</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">"interp"</span><span class="p">:</span> <span class="p">{}}</span>
 
     <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">strat</span> <span class="ow">in</span> <span class="n">subset</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">idx</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">indexes</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
 
         <span class="c1"># Exact subset</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strat</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="n">isel</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;isel&quot;</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">get_indexer</span><span class="p">(</span><span class="n">strat</span><span class="p">)</span>
+            <span class="n">isel</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s2">"isel"</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">get_indexer</span><span class="p">(</span><span class="n">strat</span><span class="p">)</span>
             <span class="k">if</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">in</span> <span class="n">isel</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Lists in the subset must be an exact subset of the dimension. Invalid selection on </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">idx</span><span class="p">[</span><span class="n">isel</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Lists in the subset must be an exact subset of the dimension. Invalid selection on </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">idx</span><span class="p">[</span><span class="n">isel</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
                 <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strat</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="c1"># Interpolation</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">:=</span> <span class="n">strat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;interp&quot;</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">i</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">get_indexer</span><span class="p">([</span><span class="n">v</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;ffill&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">:=</span> <span class="n">strat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"interp"</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">get_indexer</span><span class="p">([</span><span class="n">v</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="s2">"ffill"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">sel</span> <span class="o">=</span> <span class="n">i</span>
                 <span class="c1"># Only slice and interpolate if v is not gridpoint</span>
                 <span class="k">if</span> <span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">v</span><span class="p">:</span>
-                    <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;interp&quot;</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="n">opts</span><span class="p">[</span><span class="s2">"interp"</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
                     <span class="n">sel</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
 
             <span class="c1"># Encompassing subset</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">i</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">get_indexer</span><span class="p">([</span><span class="n">strat</span><span class="p">[</span><span class="s2">&quot;gte&quot;</span><span class="p">]],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;ffill&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">j</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">get_indexer</span><span class="p">([</span><span class="n">strat</span><span class="p">[</span><span class="s2">&quot;lte&quot;</span><span class="p">]],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;bfill&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="k">if</span> <span class="n">idx</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">strat</span><span class="p">[</span><span class="s2">&quot;lte&quot;</span><span class="p">]:</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">get_indexer</span><span class="p">([</span><span class="n">strat</span><span class="p">[</span><span class="s2">"gte"</span><span class="p">]],</span> <span class="n">method</span><span class="o">=</span><span class="s2">"ffill"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">j</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">get_indexer</span><span class="p">([</span><span class="n">strat</span><span class="p">[</span><span class="s2">"lte"</span><span class="p">]],</span> <span class="n">method</span><span class="o">=</span><span class="s2">"bfill"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">idx</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">strat</span><span class="p">[</span><span class="s2">"lte"</span><span class="p">]:</span>
                     <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">sel</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
 
-            <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;isel&quot;</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">sel</span>
+            <span class="n">opts</span><span class="p">[</span><span class="s2">"isel"</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">sel</span>
 
-    <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Operations: </span><span class="si">{</span><span class="n">opts</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Operations: </span><span class="si">{</span><span class="n">opts</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;isel&quot;</span><span class="p">]:</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selecting&quot;</span><span class="p">)</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="o">**</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;isel&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="p">[</span><span class="s2">"isel"</span><span class="p">]:</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Selecting"</span><span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="o">**</span><span class="n">opts</span><span class="p">[</span><span class="s2">"isel"</span><span class="p">])</span>
 
-    <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Estimated isel size: </span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">nbytes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GB&quot;</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Estimated isel size: </span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">nbytes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GB"</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;interp&quot;</span><span class="p">]:</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Loading for interp&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="p">[</span><span class="s2">"interp"</span><span class="p">]:</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Loading for interp"</span><span class="p">)</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 
-        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Interpolating&quot;</span><span class="p">)</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="o">**</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;interp&quot;</span><span class="p">])</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Interpolating"</span><span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="o">**</span><span class="n">opts</span><span class="p">[</span><span class="s2">"interp"</span><span class="p">])</span>
 
-    <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Estimated final size: </span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">nbytes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GB&quot;</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Estimated final size: </span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">nbytes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GB"</span><span class="p">)</span>
 
     <span class="c1"># Save this subsetting strategy to the attributes for future reference</span>
-    <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;lut_subset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span>
+    <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"lut_subset"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">ds</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">check_nans</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.reader.check_nans"><a href="../../../../api/isofit/luts/reader/#isofit.luts.reader.check_nans" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks for NaNs in the Dataset</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">nans</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">nans</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">nans</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
-                <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> is fully NaN, leaving as-is&quot;</span><span class="p">)</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> is fully NaN, leaving as-is"</span><span class="p">)</span>
                 <span class="k">continue</span>
 
             <span class="n">count</span> <span class="o">=</span> <span class="n">nans</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">data</span>
             <span class="n">total</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">data</span>
 
             <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> is partially NaN (</span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">count</span><span class="o">/</span><span class="n">total</span><span class="si">:</span><span class="s2">.2%</span><span class="si">}</span><span class="s2">), replacing with 0s&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> is partially NaN (</span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">count</span><span class="o">/</span><span class="n">total</span><span class="si">:</span><span class="s2">.2%</span><span class="si">}</span><span class="s2">), replacing with 0s"</span>
             <span class="p">)</span>
             <span class="n">ds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
@@ -5683,7 +5683,7 @@
     <span class="n">load</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    path : str</span>
@@ -5706,161 +5706,161 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; # Create a test path for the examples to load</span>
-<span class="sd">    &gt;&gt;&gt; path = &#39;subsetting_example.nc&#39;</span>
+<span class="sd">    &gt;&gt;&gt; path = 'subsetting_example.nc'</span>
 <span class="sd">    &gt;&gt;&gt; lut_dims = {</span>
-<span class="sd">    ...     &#39;AOT550&#39;: [0.001, 0.1009, 0.2008, 0.3007, 0.4006, 0.5005, 0.6004, 0.7003, 0.8002, 0.9001, 1.],</span>
-<span class="sd">    ...     &#39;H2OSTR&#39;: [0.2231, 0.4637, 0.7042, 0.9447, 1.1853, 1.4258, 1.6664, 1.9069, 2.1474, 2.388, 2.6285, 2.869, 3.1096, 3.3501],</span>
-<span class="sd">    ...     &#39;observer_zenith&#39;: [7.2155, 9.8900],</span>
-<span class="sd">    ...     &#39;surface_elevation_km&#39;: [0., 0.2361, 0.4721, 0.7082, 0.9442, 1.1803, 1.4164, 1.6524, 1.8885, 2.1245, 2.3606, 2.5966, 2.8327, 3.0688, 3.3048, 3.5409, 3.7769, 4.013],</span>
-<span class="sd">    ...     &#39;wl&#39;: range(285)</span>
+<span class="sd">    ...     'AOT550': [0.001, 0.1009, 0.2008, 0.3007, 0.4006, 0.5005, 0.6004, 0.7003, 0.8002, 0.9001, 1.],</span>
+<span class="sd">    ...     'H2OSTR': [0.2231, 0.4637, 0.7042, 0.9447, 1.1853, 1.4258, 1.6664, 1.9069, 2.1474, 2.388, 2.6285, 2.869, 3.1096, 3.3501],</span>
+<span class="sd">    ...     'observer_zenith': [7.2155, 9.8900],</span>
+<span class="sd">    ...     'surface_elevation_km': [0., 0.2361, 0.4721, 0.7082, 0.9442, 1.1803, 1.4164, 1.6524, 1.8885, 2.1245, 2.3606, 2.5966, 2.8327, 3.0688, 3.3048, 3.5409, 3.7769, 4.013],</span>
+<span class="sd">    ...     'wl': range(285)</span>
 <span class="sd">    ... }</span>
 <span class="sd">    &gt;&gt;&gt; ds = xr.Dataset(coords=lut_dims)</span>
 <span class="sd">    &gt;&gt;&gt; ds.to_netcdf(path)</span>
 
 <span class="sd">    &gt;&gt;&gt; # Subset: Exact values along the dimension</span>
 <span class="sd">    &gt;&gt;&gt; subset = {</span>
-<span class="sd">    ...     &#39;AOT550&#39;: None,</span>
-<span class="sd">    ...     &#39;H2OSTR&#39;: [1.1853, 2.869],</span>
-<span class="sd">    ...     &#39;observer_zenith&#39;: None,</span>
-<span class="sd">    ...     &#39;surface_elevation_km&#39;: None,</span>
+<span class="sd">    ...     'AOT550': None,</span>
+<span class="sd">    ...     'H2OSTR': [1.1853, 2.869],</span>
+<span class="sd">    ...     'observer_zenith': None,</span>
+<span class="sd">    ...     'surface_elevation_km': None,</span>
 <span class="sd">    ... }</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).dims</span>
-<span class="sd">    Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 792})</span>
+<span class="sd">    Frozen({'wl': 285, 'point': 792})</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).unstack().dims</span>
-<span class="sd">    Frozen({&#39;AOT550&#39;: 11, &#39;H2OSTR&#39;: 2, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})</span>
+<span class="sd">    Frozen({'AOT550': 11, 'H2OSTR': 2, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})</span>
 
 <span class="sd">    &gt;&gt;&gt; # Interpolate H2OSTR to 1.5</span>
 <span class="sd">    &gt;&gt;&gt; subset = {</span>
-<span class="sd">    ...     &#39;AOT550&#39;: None,</span>
-<span class="sd">    ...     &#39;H2OSTR&#39;: {</span>
-<span class="sd">    ...         &#39;interp&#39;: 1.5</span>
+<span class="sd">    ...     'AOT550': None,</span>
+<span class="sd">    ...     'H2OSTR': {</span>
+<span class="sd">    ...         'interp': 1.5</span>
 <span class="sd">    ...     },</span>
-<span class="sd">    ...     &#39;observer_zenith&#39;: None,</span>
-<span class="sd">    ...     &#39;surface_elevation_km&#39;: None,</span>
+<span class="sd">    ...     'observer_zenith': None,</span>
+<span class="sd">    ...     'surface_elevation_km': None,</span>
 <span class="sd">    ... }</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).dims</span>
-<span class="sd">    Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 396})</span>
+<span class="sd">    Frozen({'wl': 285, 'point': 396})</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).unstack().dims</span>
-<span class="sd">    Frozen({&#39;AOT550&#39;: 11, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})</span>
+<span class="sd">    Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})</span>
 
 <span class="sd">    &gt;&gt;&gt; # Subset: 1.1853 &lt; H2OSTR &lt; 2.869</span>
 <span class="sd">    &gt;&gt;&gt; subset = {</span>
-<span class="sd">    ...     &#39;AOT550&#39;: None,</span>
-<span class="sd">    ...     &#39;H2OSTR&#39;: {</span>
-<span class="sd">    ...         &#39;gt&#39;: 1.1853,</span>
-<span class="sd">    ...         &#39;lt&#39;: 2.869</span>
+<span class="sd">    ...     'AOT550': None,</span>
+<span class="sd">    ...     'H2OSTR': {</span>
+<span class="sd">    ...         'gt': 1.1853,</span>
+<span class="sd">    ...         'lt': 2.869</span>
 <span class="sd">    ...     },</span>
-<span class="sd">    ...     &#39;observer_zenith&#39;: None,</span>
-<span class="sd">    ...     &#39;surface_elevation_km&#39;: None,</span>
+<span class="sd">    ...     'observer_zenith': None,</span>
+<span class="sd">    ...     'surface_elevation_km': None,</span>
 <span class="sd">    ... }</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).dims</span>
-<span class="sd">    Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 2376})</span>
+<span class="sd">    Frozen({'wl': 285, 'point': 2376})</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).unstack().dims</span>
-<span class="sd">    Frozen({&#39;AOT550&#39;: 11, &#39;H2OSTR&#39;: 6, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})</span>
+<span class="sd">    Frozen({'AOT550': 11, 'H2OSTR': 6, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})</span>
 
 <span class="sd">    &gt;&gt;&gt; # Subset: 1.1853 &lt;= H2OSTR &lt;= 2.869, encompassed</span>
 <span class="sd">    &gt;&gt;&gt; subset = {</span>
-<span class="sd">    ...     &#39;AOT550&#39;: None,</span>
-<span class="sd">    ...     &#39;H2OSTR&#39;: {</span>
-<span class="sd">    ...         &#39;gte&#39;: 1.1853,</span>
-<span class="sd">    ...         &#39;lte&#39;: 2.869</span>
+<span class="sd">    ...     'AOT550': None,</span>
+<span class="sd">    ...     'H2OSTR': {</span>
+<span class="sd">    ...         'gte': 1.1853,</span>
+<span class="sd">    ...         'lte': 2.869</span>
 <span class="sd">    ...     },</span>
-<span class="sd">    ...     &#39;observer_zenith&#39;: None,</span>
-<span class="sd">    ...     &#39;surface_elevation_km&#39;: None</span>
+<span class="sd">    ...     'observer_zenith': None,</span>
+<span class="sd">    ...     'surface_elevation_km': None</span>
 <span class="sd">    ... }</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).dims</span>
-<span class="sd">    Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 3960})</span>
+<span class="sd">    Frozen({'wl': 285, 'point': 3960})</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).unstack().dims</span>
-<span class="sd">    Frozen({&#39;AOT550&#39;: 11, &#39;H2OSTR&#39;: 10, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})</span>
+<span class="sd">    Frozen({'AOT550': 11, 'H2OSTR': 10, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})</span>
 
 <span class="sd">    &gt;&gt;&gt; # Subset: 1.1853 &lt;= H2OSTR &lt;= 2.869, not encompassed</span>
 <span class="sd">    &gt;&gt;&gt; subset = {</span>
-<span class="sd">    ...     &#39;AOT550&#39;: None,</span>
-<span class="sd">    ...     &#39;H2OSTR&#39;: {</span>
-<span class="sd">    ...         &#39;gte&#39;: 1.1853,</span>
-<span class="sd">    ...         &#39;lte&#39;: 2.869,</span>
-<span class="sd">    ...         &#39;encompass&#39;: False</span>
+<span class="sd">    ...     'AOT550': None,</span>
+<span class="sd">    ...     'H2OSTR': {</span>
+<span class="sd">    ...         'gte': 1.1853,</span>
+<span class="sd">    ...         'lte': 2.869,</span>
+<span class="sd">    ...         'encompass': False</span>
 <span class="sd">    ...     },</span>
-<span class="sd">    ...     &#39;observer_zenith&#39;: None,</span>
-<span class="sd">    ...     &#39;surface_elevation_km&#39;: None</span>
+<span class="sd">    ...     'observer_zenith': None,</span>
+<span class="sd">    ...     'surface_elevation_km': None</span>
 <span class="sd">    ... }</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).dims</span>
-<span class="sd">    Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 3168})</span>
+<span class="sd">    Frozen({'wl': 285, 'point': 3168})</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).unstack().dims</span>
-<span class="sd">    Frozen({&#39;AOT550&#39;: 11, &#39;H2OSTR&#39;: 8, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})</span>
+<span class="sd">    Frozen({'AOT550': 11, 'H2OSTR': 8, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})</span>
 
 <span class="sd">    &gt;&gt;&gt; # Subset: Exact value, squeeze dimension</span>
 <span class="sd">    &gt;&gt;&gt; subset = {</span>
-<span class="sd">    ...     &#39;AOT550&#39;: None,</span>
-<span class="sd">    ...     &#39;H2OSTR&#39;: 2.869,</span>
-<span class="sd">    ...     &#39;observer_zenith&#39;: None,</span>
-<span class="sd">    ...     &#39;surface_elevation_km&#39;: None</span>
+<span class="sd">    ...     'AOT550': None,</span>
+<span class="sd">    ...     'H2OSTR': 2.869,</span>
+<span class="sd">    ...     'observer_zenith': None,</span>
+<span class="sd">    ...     'surface_elevation_km': None</span>
 <span class="sd">    ... }</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).dims</span>
-<span class="sd">    Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 396})</span>
+<span class="sd">    Frozen({'wl': 285, 'point': 396})</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).unstack().dims</span>
-<span class="sd">    Frozen({&#39;AOT550&#39;: 11, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})</span>
+<span class="sd">    Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})</span>
 
 <span class="sd">    &gt;&gt;&gt; # Subset: Using mean, squeeze dimension</span>
 <span class="sd">    &gt;&gt;&gt; subset = {</span>
-<span class="sd">    ...     &#39;AOT550&#39;: None,</span>
-<span class="sd">    ...     &#39;H2OSTR&#39;: &#39;mean&#39;,</span>
-<span class="sd">    ...     &#39;observer_zenith&#39;: None,</span>
-<span class="sd">    ...     &#39;surface_elevation_km&#39;: None</span>
+<span class="sd">    ...     'AOT550': None,</span>
+<span class="sd">    ...     'H2OSTR': 'mean',</span>
+<span class="sd">    ...     'observer_zenith': None,</span>
+<span class="sd">    ...     'surface_elevation_km': None</span>
 <span class="sd">    ... }</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).dims</span>
-<span class="sd">    Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 396})</span>
+<span class="sd">    Frozen({'wl': 285, 'point': 396})</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).unstack().dims</span>
-<span class="sd">    Frozen({&#39;AOT550&#39;: 11, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})</span>
+<span class="sd">    Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})</span>
 
 <span class="sd">    &gt;&gt;&gt; # Subset: Using max, squeeze dimension</span>
 <span class="sd">    &gt;&gt;&gt; subset = {</span>
-<span class="sd">    ...     &#39;AOT550&#39;: None,</span>
-<span class="sd">    ...     &#39;H2OSTR&#39;: &#39;max&#39;,</span>
-<span class="sd">    ...     &#39;observer_zenith&#39;: None,</span>
-<span class="sd">    ...     &#39;surface_elevation_km&#39;: None</span>
+<span class="sd">    ...     'AOT550': None,</span>
+<span class="sd">    ...     'H2OSTR': 'max',</span>
+<span class="sd">    ...     'observer_zenith': None,</span>
+<span class="sd">    ...     'surface_elevation_km': None</span>
 <span class="sd">    ... }</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).dims</span>
-<span class="sd">    Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 396})</span>
+<span class="sd">    Frozen({'wl': 285, 'point': 396})</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).unstack().dims</span>
-<span class="sd">    Frozen({&#39;AOT550&#39;: 11, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})</span>
+<span class="sd">    Frozen({'AOT550': 11, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})</span>
 
 <span class="sd">    &gt;&gt;&gt; # Multiple subsets</span>
 <span class="sd">    &gt;&gt;&gt; subset = {</span>
-<span class="sd">    ...     &#39;AOT550&#39;: [0.2008, 0.4006, 0.6004],</span>
-<span class="sd">    ...     &#39;H2OSTR&#39;: {</span>
-<span class="sd">    ...         &#39;gte&#39;: 1.1853,</span>
-<span class="sd">    ...         &#39;lte&#39;: 2.869</span>
+<span class="sd">    ...     'AOT550': [0.2008, 0.4006, 0.6004],</span>
+<span class="sd">    ...     'H2OSTR': {</span>
+<span class="sd">    ...         'gte': 1.1853,</span>
+<span class="sd">    ...         'lte': 2.869</span>
 <span class="sd">    ...     },</span>
-<span class="sd">    ...     &#39;observer_zenith&#39;: None,</span>
-<span class="sd">    ...     &#39;surface_elevation_km&#39;: None</span>
+<span class="sd">    ...     'observer_zenith': None,</span>
+<span class="sd">    ...     'surface_elevation_km': None</span>
 <span class="sd">    ... }</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).dims</span>
-<span class="sd">    Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 1080})</span>
+<span class="sd">    Frozen({'wl': 285, 'point': 1080})</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).unstack().dims</span>
-<span class="sd">    Frozen({&#39;AOT550&#39;: 3, &#39;H2OSTR&#39;: 10, &#39;observer_zenith&#39;: 2, &#39;surface_elevation_km&#39;: 18, &#39;wl&#39;: 285})</span>
+<span class="sd">    Frozen({'AOT550': 3, 'H2OSTR': 10, 'observer_zenith': 2, 'surface_elevation_km': 18, 'wl': 285})</span>
 
 <span class="sd">    &gt;&gt;&gt; # Multiple subsets</span>
 <span class="sd">    &gt;&gt;&gt; subset = {</span>
-<span class="sd">    ...     &#39;AOT550&#39;: [0.2008, 0.4006, 0.6004],</span>
-<span class="sd">    ...     &#39;H2OSTR&#39;: {</span>
-<span class="sd">    ...         &#39;gte&#39;: 1.1853,</span>
-<span class="sd">    ...         &#39;lte&#39;: 2.869</span>
+<span class="sd">    ...     'AOT550': [0.2008, 0.4006, 0.6004],</span>
+<span class="sd">    ...     'H2OSTR': {</span>
+<span class="sd">    ...         'gte': 1.1853,</span>
+<span class="sd">    ...         'lte': 2.869</span>
 <span class="sd">    ...     },</span>
-<span class="sd">    ...     &#39;observer_zenith&#39;: 7.2155,</span>
-<span class="sd">    ...     &#39;surface_elevation_km&#39;: &#39;mean&#39;</span>
+<span class="sd">    ...     'observer_zenith': 7.2155,</span>
+<span class="sd">    ...     'surface_elevation_km': 'mean'</span>
 <span class="sd">    ... }</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).dims</span>
-<span class="sd">    Frozen({&#39;wl&#39;: 285, &#39;point&#39;: 30})</span>
+<span class="sd">    Frozen({'wl': 285, 'point': 30})</span>
 <span class="sd">    &gt;&gt;&gt; load(path, subset).unstack().dims</span>
-<span class="sd">    Frozen({&#39;AOT550&#39;: 3, &#39;H2OSTR&#39;: 10, &#39;wl&#39;: 285})</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    Frozen({'AOT550': 3, 'H2OSTR': 10, 'wl': 285})</span>
+<span class="sd">    """</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
     <span class="c1"># Windows needs to define the engine as the xarray auto-discover breaks</span>
     <span class="n">engine</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
-        <span class="n">engine</span> <span class="o">=</span> <span class="s2">&quot;zarr&quot;</span>
+        <span class="n">engine</span> <span class="o">=</span> <span class="s2">"zarr"</span>
 
     <span class="n">xropen</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span>
     <span class="k">if</span> <span class="n">mf</span><span class="p">:</span>
@@ -5868,44 +5868,44 @@
 
     <span class="n">ds</span> <span class="o">=</span> <span class="n">xropen</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="n">engine</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-    <span class="n">status</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ISOFIT status&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;not set&gt;&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">status</span> <span class="o">!=</span> <span class="s2">&quot;success&quot;</span><span class="p">:</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ISOFIT status"</span><span class="p">,</span> <span class="s2">"&lt;not set&gt;"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">status</span> <span class="o">!=</span> <span class="s2">"success"</span><span class="p">:</span>
         <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;The LUT status is </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">, there may be issues with it downstream&quot;</span>
+            <span class="sa">f</span><span class="s2">"The LUT status is </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">, there may be issues with it downstream"</span>
         <span class="p">)</span>
         <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s2">&quot;To fix this error and you know the the LUT is correct, set the attribute &#39;ISOFIT status&#39; to &#39;success&#39;&quot;</span>
+            <span class="s2">"To fix this error and you know the the LUT is correct, set the attribute 'ISOFIT status' to 'success'"</span>
         <span class="p">)</span>
 
-    <span class="n">version</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ISOFIT version&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;not set&gt;&quot;</span><span class="p">)</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ISOFIT version"</span><span class="p">,</span> <span class="s2">"&lt;not set&gt;"</span><span class="p">)</span>
     <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;This LUT was created with ISOFIT version </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">, you are running ISOFIT </span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"This LUT was created with ISOFIT version </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">, you are running ISOFIT </span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
 
-    <span class="c1"># Special case that doesn&#39;t require defining the entire grid subsetting strategy</span>
+    <span class="c1"># Special case that doesn't require defining the entire grid subsetting strategy</span>
     <span class="k">if</span> <span class="n">subset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Subset was None, using entire store&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Subset was None, using entire store"</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Subsetting with: </span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Subsetting with: </span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="n">ds</span> <span class="o">=</span> <span class="n">subsetting</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">subset</span><span class="p">)</span>
 
-        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Subsetting finished&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Subsetting finished"</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;The subsetting strategy must be a dictionary&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"The subsetting strategy must be a dictionary"</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Bad subsetting strategy, expected either a dict or a NoneType: </span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Bad subsetting strategy, expected either a dict or a NoneType: </span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
-    <span class="n">dims</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_dims</span><span class="p">(</span><span class="s2">&quot;wl&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
+    <span class="n">dims</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_dims</span><span class="p">(</span><span class="s2">"wl"</span><span class="p">)</span><span class="o">.</span><span class="n">dims</span>
 
     <span class="c1"># Extract the grid, for convenience</span>
-    <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;lut_grid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">dim</span><span class="p">:</span> <span class="n">ds</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">}</span>
+    <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"lut_grid"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">dim</span><span class="p">:</span> <span class="n">ds</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">}</span>
 
     <span class="c1"># Create the point dimension -&gt; Coords now len(points)</span>
     <span class="k">if</span> <span class="n">stack</span><span class="p">:</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">dims</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="s2">&quot;wl&quot;</span><span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">dims</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s2">"point"</span><span class="p">,</span> <span class="s2">"wl"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
         <span class="n">check_nans</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
@@ -5917,60 +5917,60 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Reader</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.reader.Reader"><a href="../../../../api/isofit/luts/reader/#isofit.luts.reader.Reader" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    LUT reader class to manage the reading and manipulation of LUT stores</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">build_interpolators</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">lut_subset</span><span class="o">=</span><span class="p">{},</span>
-        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s2">"r"</span><span class="p">,</span>
         <span class="n">load_kwargs</span><span class="o">=</span><span class="p">{},</span>
         <span class="n">postprocess</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">write_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        build_interpolators : bool, default=False</span>
 <span class="sd">            Call self.build_interpolators() after initialization</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;lut_path&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Inheritor class must define &#39;lut_path&#39;&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"lut_path"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">"Inheritor class must define 'lut_path'"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">lut_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_path</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Prebuilt LUT provided&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Prebuilt LUT provided"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No LUT provided, attempting to build it&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No LUT provided, attempting to build it"</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;write&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"write"</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="bp">NotImplemented</span><span class="p">(</span>
-                    <span class="s2">&quot;This object did not inherit the LUT Writer class and therefore cannot write a LUT, please use a defined engine instead&quot;</span>
+                    <span class="s2">"This object did not inherit the LUT Writer class and therefore cannot write a LUT, please use a defined engine instead"</span>
                 <span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="o">**</span><span class="n">write_kwargs</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">lut</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="n">lut_subset</span><span class="p">,</span> <span class="o">**</span><span class="n">load_kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;RT_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;transm&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"RT_mode"</span><span class="p">,</span> <span class="s2">"transm"</span><span class="p">)</span>
 
         <span class="c1"># Write the NetCDF information to the log file so devs have that info during debugging</span>
-        <span class="c1"># Have to create a fileobj to capture the text because it doesn&#39;t return (prints straight to stdout by default)</span>
+        <span class="c1"># Have to create a fileobj to capture the text because it doesn't return (prints straight to stdout by default)</span>
         <span class="n">info</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;LUT information:</span><span class="se">\n</span><span class="si">{</span><span class="n">info</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"LUT information:</span><span class="se">\n</span><span class="si">{</span><span class="n">info</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;lut_grid&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;lut_grid&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"lut_grid"</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"lut_grid"</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;lut_names&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"lut_names"</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span><span class="p">)</span>
 
         <span class="c1"># REVIEW: Is this still necessary?</span>
-        <span class="c1"># remove &#39;point&#39; if added to lut_names after subsetting</span>
-        <span class="c1"># if &quot;point&quot; in self.lut_names:</span>
-        <span class="c1">#     remove = np.where(self.lut_names == &quot;point&quot;)</span>
+        <span class="c1"># remove 'point' if added to lut_names after subsetting</span>
+        <span class="c1"># if "point" in self.lut_names:</span>
+        <span class="c1">#     remove = np.where(self.lut_names == "point")</span>
         <span class="c1">#     self.lut_names = np.delete(self.lut_names, remove)</span>
 
         <span class="k">if</span> <span class="n">postprocess</span><span class="p">:</span>
@@ -5980,36 +5980,36 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">build_interpolators</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Enables key indexing for easier access to the numpy object store in</span>
 <span class="sd">        self.lut[key]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">load</span><span class="p">()</span><span class="o">.</span><span class="n">data</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">lut_postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.reader.Reader.lut_postprocess"><a href="../../../../api/isofit/luts/reader/#isofit.luts.reader.Reader.lut_postprocess" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Any additional post processing that may need to be applied to the LUT before</span>
 <span class="sd">        building interpolators</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">pass</span>
 <div class="mkapi-source-link" id="isofit.luts.reader.Reader.build_interpolators"><a href="../../../../api/isofit/luts/reader/#isofit.luts.reader.Reader.build_interpolators" title="Go to docs">[docs]</a></div>
-    <span class="k">def</span><span class="w"> </span><span class="nf">build_interpolators</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interpolator_style</span><span class="o">=</span><span class="s2">&quot;mlg_numba&quot;</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_interpolators</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interpolator_style</span><span class="o">=</span><span class="s2">"mlg_numba"</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Builds the interpolators using the LUT store</span>
 
 <span class="sd">        TODO: optional load from/write to disk</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_keys</span><span class="o">.</span><span class="n">alldim</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">cached</span> <span class="o">=</span> <span class="n">SimpleNamespace</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolators</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="n">ds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="s2">&quot;point&quot;</span><span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="s2">"point"</span><span class="p">)</span>
 
         <span class="c1"># Make sure its in expected order, wl at the end</span>
         <span class="n">lut_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">)</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">lut_names</span><span class="p">),</span> <span class="s2">&quot;wl&quot;</span><span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">lut_names</span><span class="p">),</span> <span class="s2">"wl"</span><span class="p">)</span>
 
         <span class="n">grid</span> <span class="o">=</span> <span class="p">[</span><span class="n">ds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">lut_names</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
@@ -6022,7 +6022,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolators</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.reader.Reader.interpolate"><a href="../../../../api/isofit/luts/reader/#isofit.luts.reader.Reader.interpolate" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">""" """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="p">(</span><span class="n">point</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached</span><span class="o">.</span><span class="n">point</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached</span><span class="o">.</span><span class="n">value</span>
 
@@ -6042,7 +6042,7 @@
         <span class="k">return</span> <span class="n">value</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">resample_wl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.reader.Reader.resample_wl"><a href="../../../../api/isofit/luts/reader/#isofit.luts.reader.Reader.resample_wl" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resamples the LUT wavelengths to a new given wavelengths</span>
 
 <span class="sd">        Parameters</span>
@@ -6053,40 +6053,40 @@
 <span class="sd">            fwhm for common.resample_spectrum</span>
 <span class="sd">        srf_file : str, default=None</span>
 <span class="sd">            OCI srf_file</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span>
         <span class="n">ds</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 
         <span class="c1"># Discover variables along the wl dim</span>
-        <span class="n">keys</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">ds</span> <span class="k">if</span> <span class="s2">&quot;wl&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span><span class="p">}</span> <span class="o">-</span> <span class="p">{</span><span class="s2">&quot;fwhm&quot;</span><span class="p">}</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">ds</span> <span class="k">if</span> <span class="s2">"wl"</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span><span class="p">}</span> <span class="o">-</span> <span class="p">{</span><span class="s2">"fwhm"</span><span class="p">}</span>
 
         <span class="n">kwargs</span> <span class="o">|=</span> <span class="p">{</span>
-            <span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span>
-            <span class="s2">&quot;wl2&quot;</span><span class="p">:</span> <span class="n">wl</span><span class="p">,</span>
-            <span class="s2">&quot;fwhm2&quot;</span><span class="p">:</span> <span class="n">fwhm</span><span class="p">,</span>
+            <span class="s2">"wl"</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span>
+            <span class="s2">"wl2"</span><span class="p">:</span> <span class="n">wl</span><span class="p">,</span>
+            <span class="s2">"fwhm2"</span><span class="p">:</span> <span class="n">fwhm</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="n">conv_ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">apply_ufunc</span><span class="p">(</span>
             <span class="n">common</span><span class="o">.</span><span class="n">resample_spectrum</span><span class="p">,</span>
             <span class="n">ds</span><span class="p">[</span><span class="n">keys</span><span class="p">],</span>
             <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span>
-            <span class="n">input_core_dims</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;wl&quot;</span><span class="p">]],</span>  <span class="c1"># Only operate on keys with this dim</span>
-            <span class="n">exclude_dims</span><span class="o">=</span><span class="nb">set</span><span class="p">([</span><span class="s2">&quot;wl&quot;</span><span class="p">]),</span>  <span class="c1"># Allows changing the wl size</span>
-            <span class="n">output_core_dims</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;wl&quot;</span><span class="p">]],</span>  <span class="c1"># Adds wl to the expected output dims</span>
-            <span class="n">keep_attrs</span><span class="o">=</span><span class="s2">&quot;override&quot;</span><span class="p">,</span>
-            <span class="c1"># on_missing_core_dim = &#39;copy&#39; # Newer versions of xarray support this</span>
+            <span class="n">input_core_dims</span><span class="o">=</span><span class="p">[[</span><span class="s2">"wl"</span><span class="p">]],</span>  <span class="c1"># Only operate on keys with this dim</span>
+            <span class="n">exclude_dims</span><span class="o">=</span><span class="nb">set</span><span class="p">([</span><span class="s2">"wl"</span><span class="p">]),</span>  <span class="c1"># Allows changing the wl size</span>
+            <span class="n">output_core_dims</span><span class="o">=</span><span class="p">[[</span><span class="s2">"wl"</span><span class="p">]],</span>  <span class="c1"># Adds wl to the expected output dims</span>
+            <span class="n">keep_attrs</span><span class="o">=</span><span class="s2">"override"</span><span class="p">,</span>
+            <span class="c1"># on_missing_core_dim = 'copy' # Newer versions of xarray support this</span>
         <span class="p">)</span>
         <span class="c1"># If not on newer versions, add keys not on the wl dim</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">drop_dims</span><span class="p">(</span><span class="s2">&quot;wl&quot;</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">drop_dims</span><span class="p">(</span><span class="s2">"wl"</span><span class="p">)):</span>
             <span class="n">conv_ds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
         <span class="c1"># Override the fwhm</span>
-        <span class="n">conv_ds</span><span class="p">[</span><span class="s2">&quot;fwhm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;wl&quot;</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">)</span>
+        <span class="n">conv_ds</span><span class="p">[</span><span class="s2">"fwhm"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"wl"</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">lut</span> <span class="o">=</span> <span class="n">conv_ds</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">subset_wl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.reader.Reader.subset_wl"><a href="../../../../api/isofit/luts/reader/#isofit.luts.reader.Reader.subset_wl" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Subsets along the wavelength dimension</span>
 
 <span class="sd">        Parameters</span>
@@ -6094,8 +6094,8 @@
 <span class="sd">        rng : tuple[float, float]</span>
 <span class="sd">            Subselects using &lt;= rng[1] &gt;= rng[0]</span>
 <span class="sd">            Subselects using rng[0] &lt;= wl &lt;= rng[1]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Subsetting wavelengths to range: </span><span class="si">{</span><span class="n">rng</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Subsetting wavelengths to range: </span><span class="si">{</span><span class="n">rng</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lut</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">wl</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="o">*</span><span class="n">rng</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
 

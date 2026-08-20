@@ -5320,7 +5320,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ResourceTracker</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.debug.resource_tracker.ResourceTracker"><a href="../../../../api/isofit/debug/resource_tracker/#isofit.debug.resource_tracker.ResourceTracker" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Tracks system resources</span>
 
 <span class="sd">    Parameters</span>
@@ -5332,7 +5332,7 @@
 
 <span class="sd">            the first call will contain the non-changing values:</span>
 <span class="sd">                used_cores : int</span>
-<span class="sd">                    Number of CPU cores in use. See the &#39;cores&#39; parameter for more</span>
+<span class="sd">                    Number of CPU cores in use. See the 'cores' parameter for more</span>
 <span class="sd">                total_cores : int</span>
 <span class="sd">                    Total number of cores available on the system via os.cpu_count()</span>
 <span class="sd">                sys_mem_total : float</span>
@@ -5367,7 +5367,7 @@
 <span class="sd">                timestamp : float</span>
 <span class="sd">                    Timestamp of the resource record via time.time()</span>
 <span class="sd">                status : str</span>
-<span class="sd">                    Main process status, eg. &#39;running&#39;, &#39;sleeping&#39;</span>
+<span class="sd">                    Main process status, eg. 'running', 'sleeping'</span>
 <span class="sd">                children : list[dict]</span>
 <span class="sd">                    Information of child processes:</span>
 <span class="sd">                        pid : int</span>
@@ -5383,7 +5383,7 @@
 <span class="sd">                        cpu : float</span>
 <span class="sd">                            Child process CPU percentage over the interval</span>
 <span class="sd">                        status : str</span>
-<span class="sd">                            Child process status, eg. &#39;running&#39;, &#39;sleeping&#39;</span>
+<span class="sd">                            Child process status, eg. 'running', 'sleeping'</span>
 
 <span class="sd">            if summarize is enabled, these will also be included:</span>
 <span class="sd">                mem_app_total : float</span>
@@ -5405,18 +5405,18 @@
 <span class="sd">        Must be greater than 0. Values less than 0.1 risk high CPU usage and skewing</span>
 <span class="sd">        polled results</span>
 <span class="sd">        The CPU usage is calculated as the percentage of CPU used over this interval</span>
-<span class="sd">    units : tuple[str, float], default=(&quot;GB&quot;, 1024**3)</span>
+<span class="sd">    units : tuple[str, float], default=("GB", 1024**3)</span>
 <span class="sd">        Units to convert the memory values to. Must be in the form of (str, float)</span>
 <span class="sd">        where the float is used to divide the bytes values that psutil returns</span>
 <span class="sd">        Some possible conversions:</span>
-<span class="sd">            - (&#39;b&#39;, 1/8)      # Convert to bits (multiply by 8)</span>
-<span class="sd">            - (&#39;B&#39;, 1)        # No conversion, leave as the default bytes</span>
-<span class="sd">            - (&#39;KB&#39;, 1024)    # Kilobytes</span>
-<span class="sd">            - (&#39;MB&#39;, 1024**2) # Megabytes</span>
-<span class="sd">            - (&#39;GB&#39;, 1024**3) # Gigabytes, default</span>
-<span class="sd">    cores : int | &#39;all&#39;, default=1</span>
+<span class="sd">            - ('b', 1/8)      # Convert to bits (multiply by 8)</span>
+<span class="sd">            - ('B', 1)        # No conversion, leave as the default bytes</span>
+<span class="sd">            - ('KB', 1024)    # Kilobytes</span>
+<span class="sd">            - ('MB', 1024**2) # Megabytes</span>
+<span class="sd">            - ('GB', 1024**3) # Gigabytes, default</span>
+<span class="sd">    cores : int | 'all', default=1</span>
 <span class="sd">        Number of cores being used by the source program. This is used for calculating</span>
-<span class="sd">        the average CPU percentage. Can be passed &#39;all&#39; to retrieve the os.cpu_count()</span>
+<span class="sd">        the average CPU percentage. Can be passed 'all' to retrieve the os.cpu_count()</span>
 <span class="sd">    round : int | bool, default=2</span>
 <span class="sd">        Round the memory variables to this many decimals. Set to False or 0 to disable</span>
 <span class="sd">        True will be set to 1</span>
@@ -5440,34 +5440,34 @@
 <span class="sd">        rt.start()</span>
 <span class="sd">        time.sleep(10)</span>
 <span class="sd">        rt.stop()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Informational dict to describe all the possible keys</span>
     <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;used_cores&quot;</span><span class="p">:</span> <span class="s2">&quot;Number of CPU cores in use. See the &#39;cores&#39; parameter for more&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;total_cores&quot;</span><span class="p">:</span> <span class="s2">&quot;Total number of cores available on the system via os.cpu_count()&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sys_mem_total&quot;</span><span class="p">:</span> <span class="s2">&quot;Total memory of the system&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mem_unit&quot;</span><span class="p">:</span> <span class="s2">&quot;Unit label that the memory values are in&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mem_value&quot;</span><span class="p">:</span> <span class="s2">&quot;The value used to convert the bytes to the mem_unit. This may be used to reverse the conversion&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;poll_interval&quot;</span><span class="p">:</span> <span class="s2">&quot;Resource polling interval&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="s2">&quot;The start timestamp of the resource tracker via time.time()&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;pid&quot;</span><span class="p">:</span> <span class="s2">&quot;Process ID&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Process name&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mem_total&quot;</span><span class="p">:</span> <span class="s2">&quot;Approximate total memory of the process (actual + shared)&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mem_actual&quot;</span><span class="p">:</span> <span class="s2">&quot;Approximate private memory in use by the process&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mem_shared&quot;</span><span class="p">:</span> <span class="s2">&quot;Approximate shared memory&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;cpu&quot;</span><span class="p">:</span> <span class="s2">&quot;Process CPU percentage over the interval&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sys_cpu_per_core&quot;</span><span class="p">:</span> <span class="s2">&quot;Per-core usage percentage over the interval&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="s2">&quot;Timestamp of the resource record via time.time()&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;Main process status, eg. &#39;running&#39;, &#39;sleeping&#39;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;children&quot;</span><span class="p">:</span> <span class="s2">&quot;List of child processes and their information&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mem_app_total&quot;</span><span class="p">:</span> <span class="s2">&quot;Approximate total memory of the main process + children&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mem_app_actual&quot;</span><span class="p">:</span> <span class="s2">&quot;Approximate total private memory over all processes&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mem_app_shared_avg&quot;</span><span class="p">:</span> <span class="s2">&quot;Approximate average shared memory over all processes&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mem_used&quot;</span><span class="p">:</span> <span class="s2">&quot;Memory in use by the system&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mem_avail&quot;</span><span class="p">:</span> <span class="s2">&quot;Remaining available memory, defined as free + reclaimable&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;cpu_avg&quot;</span><span class="p">:</span> <span class="s2">&quot;Average CPU percentage calculated as: sum(main + children) / cores&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sys_cpu&quot;</span><span class="p">:</span> <span class="s2">&quot;System-wide CPU percentage over the interval&quot;</span><span class="p">,</span>
+        <span class="s2">"used_cores"</span><span class="p">:</span> <span class="s2">"Number of CPU cores in use. See the 'cores' parameter for more"</span><span class="p">,</span>
+        <span class="s2">"total_cores"</span><span class="p">:</span> <span class="s2">"Total number of cores available on the system via os.cpu_count()"</span><span class="p">,</span>
+        <span class="s2">"sys_mem_total"</span><span class="p">:</span> <span class="s2">"Total memory of the system"</span><span class="p">,</span>
+        <span class="s2">"mem_unit"</span><span class="p">:</span> <span class="s2">"Unit label that the memory values are in"</span><span class="p">,</span>
+        <span class="s2">"mem_value"</span><span class="p">:</span> <span class="s2">"The value used to convert the bytes to the mem_unit. This may be used to reverse the conversion"</span><span class="p">,</span>
+        <span class="s2">"poll_interval"</span><span class="p">:</span> <span class="s2">"Resource polling interval"</span><span class="p">,</span>
+        <span class="s2">"timestamp"</span><span class="p">:</span> <span class="s2">"The start timestamp of the resource tracker via time.time()"</span><span class="p">,</span>
+        <span class="s2">"pid"</span><span class="p">:</span> <span class="s2">"Process ID"</span><span class="p">,</span>
+        <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"Process name"</span><span class="p">,</span>
+        <span class="s2">"mem_total"</span><span class="p">:</span> <span class="s2">"Approximate total memory of the process (actual + shared)"</span><span class="p">,</span>
+        <span class="s2">"mem_actual"</span><span class="p">:</span> <span class="s2">"Approximate private memory in use by the process"</span><span class="p">,</span>
+        <span class="s2">"mem_shared"</span><span class="p">:</span> <span class="s2">"Approximate shared memory"</span><span class="p">,</span>
+        <span class="s2">"cpu"</span><span class="p">:</span> <span class="s2">"Process CPU percentage over the interval"</span><span class="p">,</span>
+        <span class="s2">"sys_cpu_per_core"</span><span class="p">:</span> <span class="s2">"Per-core usage percentage over the interval"</span><span class="p">,</span>
+        <span class="s2">"timestamp"</span><span class="p">:</span> <span class="s2">"Timestamp of the resource record via time.time()"</span><span class="p">,</span>
+        <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"Main process status, eg. 'running', 'sleeping'"</span><span class="p">,</span>
+        <span class="s2">"children"</span><span class="p">:</span> <span class="s2">"List of child processes and their information"</span><span class="p">,</span>
+        <span class="s2">"mem_app_total"</span><span class="p">:</span> <span class="s2">"Approximate total memory of the main process + children"</span><span class="p">,</span>
+        <span class="s2">"mem_app_actual"</span><span class="p">:</span> <span class="s2">"Approximate total private memory over all processes"</span><span class="p">,</span>
+        <span class="s2">"mem_app_shared_avg"</span><span class="p">:</span> <span class="s2">"Approximate average shared memory over all processes"</span><span class="p">,</span>
+        <span class="s2">"mem_used"</span><span class="p">:</span> <span class="s2">"Memory in use by the system"</span><span class="p">,</span>
+        <span class="s2">"mem_avail"</span><span class="p">:</span> <span class="s2">"Remaining available memory, defined as free + reclaimable"</span><span class="p">,</span>
+        <span class="s2">"cpu_avg"</span><span class="p">:</span> <span class="s2">"Average CPU percentage calculated as: sum(main + children) / cores"</span><span class="p">,</span>
+        <span class="s2">"sys_cpu"</span><span class="p">:</span> <span class="s2">"System-wide CPU percentage over the interval"</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">thread</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -5475,50 +5475,50 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">dict</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span>
         <span class="n">interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-        <span class="n">units</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;GB&quot;</span><span class="p">,</span> <span class="mi">1024</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
-        <span class="n">cores</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">units</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"GB"</span><span class="p">,</span> <span class="mi">1024</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span>
+        <span class="n">cores</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"all"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="nb">round</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="n">summarize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">allow_unsafe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="c1"># Check the &#39;callback&#39; parameter</span>
+        <span class="c1"># Check the 'callback' parameter</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">callback</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The &#39;callback&#39; parameter must be a callable&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The 'callback' parameter must be a callable"</span><span class="p">)</span>
 
-        <span class="c1"># Check the &#39;interval&#39; parameter</span>
+        <span class="c1"># Check the 'interval' parameter</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The &#39;interval&#39; parameter must be an integer&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The 'interval' parameter must be an integer"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">interval</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The &#39;interval&#39; parameter must be greater than 0&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The 'interval' parameter must be greater than 0"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">interval</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;High CPU usage risk with an interval less than 0.1&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">"High CPU usage risk with an interval less than 0.1"</span>
             <span class="k">if</span> <span class="n">allow_unsafe</span><span class="p">:</span>
                 <span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot; - If this is intended, set allow_unsafe=True&quot;</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">" - If this is intended, set allow_unsafe=True"</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-        <span class="c1"># Check the &#39;round&#39; parameter</span>
+        <span class="c1"># Check the 'round' parameter</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">round</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
             <span class="nb">round</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">round</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The &#39;round&#39; parameter must be an integer&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The 'round' parameter must be an integer"</span><span class="p">)</span>
 
-        <span class="c1"># Check the &#39;cores&#39; parameter</span>
+        <span class="c1"># Check the 'cores' parameter</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cores</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">cores</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cores</span> <span class="o">==</span> <span class="s2">"all"</span><span class="p">:</span>
                 <span class="n">cores</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                    <span class="s2">&quot;The &#39;cores&#39; parameter must be either an int or &#39;all&#39;&quot;</span>
+                    <span class="s2">"The 'cores' parameter must be either an int or 'all'"</span>
                 <span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cores</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">cores</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;The &#39;cores&#39; parameter must be greater than 0&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">"The 'cores' parameter must be greater than 0"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;The &#39;cores&#39; parameter must be either an int or &#39;all&#39;&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">"The 'cores' parameter must be either an int or 'all'"</span><span class="p">)</span>
 
-        <span class="c1"># Check the &#39;units&#39; parameter</span>
+        <span class="c1"># Check the 'units' parameter</span>
         <span class="k">if</span> <span class="p">(</span>
             <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span>
             <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">units</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span>
@@ -5526,11 +5526,11 @@
             <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">units</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                <span class="s2">&quot;The &#39;units&#39; parameter must be a two item tuple consisting of (str label, float divisor)&quot;</span>
+                <span class="s2">"The 'units' parameter must be a two item tuple consisting of (str label, float divisor)"</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">units</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                <span class="s2">&quot;The divisor in the &#39;units&#39; parameter must not be zero&quot;</span>
+                <span class="s2">"The divisor in the 'units' parameter must not be zero"</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">callback</span>
@@ -5541,26 +5541,26 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">unitLabel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span> <span class="o">=</span> <span class="n">units</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_track</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        System resource tracker intended to be set in a thread</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">sys</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span>
         <span class="n">proc</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">Process</span><span class="p">()</span>
         <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;pid&quot;</span><span class="p">:</span> <span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span>
-            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">proc</span><span class="o">.</span><span class="n">name</span><span class="p">(),</span>
+            <span class="s2">"pid"</span><span class="p">:</span> <span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span>
+            <span class="s2">"name"</span><span class="p">:</span> <span class="n">proc</span><span class="o">.</span><span class="n">name</span><span class="p">(),</span>
         <span class="p">}</span>
 
         <span class="c1"># Record non-changing values as the first line</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;used_cores&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cores</span><span class="p">,</span>
-                <span class="s2">&quot;total_cores&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(),</span>
-                <span class="s2">&quot;mem_unit&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitLabel</span><span class="p">,</span>
-                <span class="s2">&quot;mem_value&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span><span class="p">,</span>
-                <span class="s2">&quot;sys_mem_total&quot;</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">total</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span><span class="p">,</span>
-                <span class="s2">&quot;poll_interval&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
-                <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+                <span class="s2">"used_cores"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cores</span><span class="p">,</span>
+                <span class="s2">"total_cores"</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(),</span>
+                <span class="s2">"mem_unit"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitLabel</span><span class="p">,</span>
+                <span class="s2">"mem_value"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span><span class="p">,</span>
+                <span class="s2">"sys_mem_total"</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">total</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span><span class="p">,</span>
+                <span class="s2">"poll_interval"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
+                <span class="s2">"timestamp"</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
             <span class="p">}</span>
         <span class="p">)</span>
 
@@ -5583,33 +5583,33 @@
 
             <span class="c1"># Main process</span>
             <span class="n">mem</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">memory_full_info</span><span class="p">()</span>
-            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mem</span><span class="o">.</span><span class="n">rss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span>
-            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_actual&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mem</span><span class="o">.</span><span class="n">uss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span>
-            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_shared&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">mem</span><span class="o">.</span><span class="n">rss</span> <span class="o">-</span> <span class="n">mem</span><span class="o">.</span><span class="n">uss</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span>
-            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;cpu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">cpu_percent</span><span class="p">()</span>
-            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">status</span><span class="p">()</span>
-            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">"mem_total"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mem</span><span class="o">.</span><span class="n">rss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">"mem_actual"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mem</span><span class="o">.</span><span class="n">uss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">"mem_shared"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">mem</span><span class="o">.</span><span class="n">rss</span> <span class="o">-</span> <span class="n">mem</span><span class="o">.</span><span class="n">uss</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">"cpu"</span><span class="p">]</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">cpu_percent</span><span class="p">()</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">"status"</span><span class="p">]</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">status</span><span class="p">()</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">"timestamp"</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
             <span class="c1"># Get the system CPU usage</span>
-            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;sys_cpu_per_core&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">cpu_percent</span><span class="p">(</span><span class="n">percpu</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># per core</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">"sys_cpu_per_core"</span><span class="p">]</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">cpu_percent</span><span class="p">(</span><span class="n">percpu</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># per core</span>
 
             <span class="c1"># Reset children every loop</span>
             <span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;children&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">children</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">"children"</span><span class="p">]</span> <span class="o">=</span> <span class="n">children</span>
 
-            <span class="c1"># Retrieve child processes&#39; info (ray workers, etc)</span>
+            <span class="c1"># Retrieve child processes' info (ray workers, etc)</span>
             <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">childProcs</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">mem</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">memory_full_info</span><span class="p">()</span>
                     <span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                         <span class="p">{</span>
-                            <span class="s2">&quot;pid&quot;</span><span class="p">:</span> <span class="n">child</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span>
-                            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">(),</span>
-                            <span class="s2">&quot;cpu&quot;</span><span class="p">:</span> <span class="n">child</span><span class="o">.</span><span class="n">cpu_percent</span><span class="p">(),</span>
-                            <span class="s2">&quot;mem_total&quot;</span><span class="p">:</span> <span class="n">mem</span><span class="o">.</span><span class="n">rss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span><span class="p">,</span>
-                            <span class="s2">&quot;mem_actual&quot;</span><span class="p">:</span> <span class="n">mem</span><span class="o">.</span><span class="n">uss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span><span class="p">,</span>
-                            <span class="s2">&quot;mem_shared&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">mem</span><span class="o">.</span><span class="n">rss</span> <span class="o">-</span> <span class="n">mem</span><span class="o">.</span><span class="n">uss</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span><span class="p">,</span>
-                            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">child</span><span class="o">.</span><span class="n">status</span><span class="p">(),</span>
+                            <span class="s2">"pid"</span><span class="p">:</span> <span class="n">child</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span>
+                            <span class="s2">"name"</span><span class="p">:</span> <span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">(),</span>
+                            <span class="s2">"cpu"</span><span class="p">:</span> <span class="n">child</span><span class="o">.</span><span class="n">cpu_percent</span><span class="p">(),</span>
+                            <span class="s2">"mem_total"</span><span class="p">:</span> <span class="n">mem</span><span class="o">.</span><span class="n">rss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span><span class="p">,</span>
+                            <span class="s2">"mem_actual"</span><span class="p">:</span> <span class="n">mem</span><span class="o">.</span><span class="n">uss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span><span class="p">,</span>
+                            <span class="s2">"mem_shared"</span><span class="p">:</span> <span class="p">(</span><span class="n">mem</span><span class="o">.</span><span class="n">rss</span> <span class="o">-</span> <span class="n">mem</span><span class="o">.</span><span class="n">uss</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span><span class="p">,</span>
+                            <span class="s2">"status"</span><span class="p">:</span> <span class="n">child</span><span class="o">.</span><span class="n">status</span><span class="p">(),</span>
                         <span class="p">}</span>
                     <span class="p">)</span>
                 <span class="k">except</span> <span class="n">psutil</span><span class="o">.</span><span class="n">NoSuchProcess</span><span class="p">:</span>
@@ -5620,35 +5620,35 @@
                 <span class="n">sys</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span>
 
                 <span class="c1"># Total app memory usage</span>
-                <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_app_total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mem_total&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">children</span><span class="p">])</span> <span class="o">+</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_total&quot;</span><span class="p">]</span>
+                <span class="n">info</span><span class="p">[</span><span class="s2">"mem_app_total"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="p">[</span><span class="s2">"mem_total"</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">children</span><span class="p">])</span> <span class="o">+</span> <span class="n">info</span><span class="p">[</span><span class="s2">"mem_total"</span><span class="p">]</span>
                 <span class="p">)</span>
-                <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_app_actual&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mem_actual&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">children</span><span class="p">])</span> <span class="o">+</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_actual&quot;</span><span class="p">]</span>
+                <span class="n">info</span><span class="p">[</span><span class="s2">"mem_app_actual"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="p">[</span><span class="s2">"mem_actual"</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">children</span><span class="p">])</span> <span class="o">+</span> <span class="n">info</span><span class="p">[</span><span class="s2">"mem_actual"</span><span class="p">]</span>
                 <span class="p">)</span>
-                <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_app_shared_avg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mem_shared&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">children</span><span class="p">])</span> <span class="o">+</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_shared&quot;</span><span class="p">]</span>
+                <span class="n">info</span><span class="p">[</span><span class="s2">"mem_app_shared_avg"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="p">[</span><span class="s2">"mem_shared"</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">children</span><span class="p">])</span> <span class="o">+</span> <span class="n">info</span><span class="p">[</span><span class="s2">"mem_shared"</span><span class="p">]</span>
                 <span class="p">)</span>
-                <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_app_shared_avg&quot;</span><span class="p">]</span> <span class="o">/=</span> <span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">info</span><span class="p">[</span><span class="s2">"mem_app_shared_avg"</span><span class="p">]</span> <span class="o">/=</span> <span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
 
                 <span class="c1"># System memory used</span>
-                <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_used&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">used</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span>
+                <span class="n">info</span><span class="p">[</span><span class="s2">"mem_used"</span><span class="p">]</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">used</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span>
 
                 <span class="c1"># Remaining available memory</span>
-                <span class="n">info</span><span class="p">[</span><span class="s2">&quot;mem_avail&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">available</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span>
+                <span class="n">info</span><span class="p">[</span><span class="s2">"mem_avail"</span><span class="p">]</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">available</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitValue</span>
 
                 <span class="c1"># Average CPU usage</span>
-                <span class="n">info</span><span class="p">[</span><span class="s2">&quot;cpu_avg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;cpu&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">children</span><span class="p">])</span> <span class="o">+</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;cpu&quot;</span><span class="p">]</span>
-                <span class="n">info</span><span class="p">[</span><span class="s2">&quot;cpu_avg&quot;</span><span class="p">]</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cores</span>
+                <span class="n">info</span><span class="p">[</span><span class="s2">"cpu_avg"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="p">[</span><span class="s2">"cpu"</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">children</span><span class="p">])</span> <span class="o">+</span> <span class="n">info</span><span class="p">[</span><span class="s2">"cpu"</span><span class="p">]</span>
+                <span class="n">info</span><span class="p">[</span><span class="s2">"cpu_avg"</span><span class="p">]</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cores</span>
 
-                <span class="n">info</span><span class="p">[</span><span class="s2">&quot;sys_cpu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;sys_cpu_per_core&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span>
-                    <span class="n">info</span><span class="p">[</span><span class="s2">&quot;sys_cpu_per_core&quot;</span><span class="p">]</span>
+                <span class="n">info</span><span class="p">[</span><span class="s2">"sys_cpu"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">"sys_cpu_per_core"</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span>
+                    <span class="n">info</span><span class="p">[</span><span class="s2">"sys_cpu_per_core"</span><span class="p">]</span>
                 <span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">round</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="p">[</span><span class="n">info</span><span class="p">]</span> <span class="o">+</span> <span class="n">children</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                        <span class="k">if</span> <span class="s2">&quot;mem&quot;</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">or</span> <span class="s2">&quot;cpu&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="s2">"mem"</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">or</span> <span class="s2">"cpu"</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
                             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
                                 <span class="k">continue</span>
                             <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">round</span><span class="p">)</span>
@@ -5656,35 +5656,35 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.debug.resource_tracker.ResourceTracker.start"><a href="../../../../api/isofit/debug/resource_tracker/#isofit.debug.resource_tracker.ResourceTracker.start" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Starts the _track function in a thread</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stopEvent</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
             <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_track</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
-        <span class="c1"># Kill the thread even if stop isn&#39;t manually called</span>
+        <span class="c1"># Kill the thread even if stop isn't manually called</span>
         <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">is_running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.debug.resource_tracker.ResourceTracker.is_running"><a href="../../../../api/isofit/debug/resource_tracker/#isofit.debug.resource_tracker.ResourceTracker.is_running" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Checks if there is a thread running</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">is_alive</span><span class="p">()</span>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.debug.resource_tracker.ResourceTracker.stop"><a href="../../../../api/isofit/debug/resource_tracker/#isofit.debug.resource_tracker.ResourceTracker.stop" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Sets the stop event to kill any running threads</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stopEvent</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">FileResources</span><span class="p">(</span><span class="n">ResourceTracker</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.debug.resource_tracker.FileResources"><a href="../../../../api/isofit/debug/resource_tracker/#isofit.debug.resource_tracker.FileResources" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Subclass of ResourceTracker that writes the polled resources to a json list file</span>
 
 <span class="sd">    Parameters</span>
@@ -5701,7 +5701,7 @@
 <span class="sd">        import time</span>
 <span class="sd">        from isofit.debug.resource_tracker import FileResources</span>
 
-<span class="sd">        fr = ResourceTracker(&quot;resources.jsonl&quot;, reset=True)</span>
+<span class="sd">        fr = ResourceTracker("resources.jsonl", reset=True)</span>
 <span class="sd">        fr.start()</span>
 <span class="sd">        time.sleep(10)</span>
 <span class="sd">        fr.stop()</span>
@@ -5709,14 +5709,14 @@
 <span class="sd">    See Also</span>
 <span class="sd">    --------</span>
 <span class="sd">    ResourceTracker</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s2">&quot;callback&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"callback"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not accept a callback parameter&quot;</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not accept a callback parameter"</span>
             <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -5725,25 +5725,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">reset</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">io</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">io</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span>
 
             <span class="c1"># Record the keys info dict as the first line</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">io</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">io</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span>
 
         <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">close</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.debug.resource_tracker.FileResources.write"><a href="../../../../api/isofit/debug/resource_tracker/#isofit.debug.resource_tracker.FileResources.write" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Writes the resource information as a JSON object per line</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        info : dict</span>
 <span class="sd">            A dictionary containing resource information to log</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">info</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="sd">        """</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">info</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
 
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -5756,13 +5756,13 @@
             <span class="k">except</span><span class="p">:</span>
                 <span class="c1"># Other reasons should report</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span>
-                    <span class="s2">&quot;Encountered unknown exception when attempting to write resources&quot;</span>
+                    <span class="s2">"Encountered unknown exception when attempting to write resources"</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">stream</span><span class="p">(</span><span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sleep</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.debug.resource_tracker.stream"><a href="../../../../api/isofit/debug/resource_tracker/#isofit.debug.resource_tracker.stream" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Generator that yields parsed JSONL objects from a growing json file produced by</span>
 <span class="sd">    FileResources</span>
 
@@ -5777,8 +5777,8 @@
 <span class="sd">    ------</span>
 <span class="sd">    dict</span>
 <span class="sd">        Parsed JSONL object from each line</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
             <span class="k">try</span><span class="p">:</span>

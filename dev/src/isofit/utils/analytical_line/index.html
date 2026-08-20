@@ -5513,14 +5513,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5589,19 +5589,19 @@
     <span class="n">atm_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">skyview_factor_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">bgrfl_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">loglevel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+    <span class="n">loglevel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"INFO"</span><span class="p">,</span>
     <span class="n">logfile</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;algebraic&quot;</span><span class="p">,</span>
+    <span class="n">initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"algebraic"</span><span class="p">,</span>
     <span class="n">segmentation_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    TODO: Description</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-        <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">level</span><span class="o">=</span><span class="n">loglevel</span><span class="p">,</span>
         <span class="n">filename</span><span class="o">=</span><span class="n">logfile</span><span class="p">,</span>
-        <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S&quot;</span><span class="p">,</span>
+        <span class="n">datefmt</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">n_cores</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
@@ -5609,7 +5609,7 @@
 
     <span class="c1"># Config handling</span>
     <span class="k">if</span> <span class="n">isofit_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">file</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">isofit_dir</span><span class="p">,</span> <span class="s2">&quot;config&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;*_isofit.json&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">file</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">isofit_dir</span><span class="p">,</span> <span class="s2">"config"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"*_isofit.json"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">file</span> <span class="o">=</span> <span class="n">isofit_config</span>
 
@@ -5625,31 +5625,31 @@
     <span class="n">lbl_file</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">segmentation_file</span>
         <span class="k">if</span> <span class="n">segmentation_file</span>
-        <span class="k">else</span> <span class="p">(</span><span class="n">subs_state_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_subs_state&quot;</span><span class="p">,</span> <span class="s2">&quot;_lbl&quot;</span><span class="p">))</span>
+        <span class="k">else</span> <span class="p">(</span><span class="n">subs_state_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"_subs_state"</span><span class="p">,</span> <span class="s2">"_lbl"</span><span class="p">))</span>
     <span class="p">)</span>
     <span class="n">analytical_rfl_path</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">output_rfl_file</span>
         <span class="k">if</span> <span class="n">output_rfl_file</span>
-        <span class="k">else</span> <span class="p">(</span><span class="n">subs_state_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_subs_state&quot;</span><span class="p">,</span> <span class="s2">&quot;_rfl&quot;</span><span class="p">))</span>
+        <span class="k">else</span> <span class="p">(</span><span class="n">subs_state_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"_subs_state"</span><span class="p">,</span> <span class="s2">"_rfl"</span><span class="p">))</span>
     <span class="p">)</span>
     <span class="n">analytical_rfl_unc_path</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">output_unc_file</span>
         <span class="k">if</span> <span class="n">output_unc_file</span>
-        <span class="k">else</span> <span class="p">(</span><span class="n">subs_state_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_subs_state&quot;</span><span class="p">,</span> <span class="s2">&quot;_uncert&quot;</span><span class="p">))</span>
+        <span class="k">else</span> <span class="p">(</span><span class="n">subs_state_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"_subs_state"</span><span class="p">,</span> <span class="s2">"_uncert"</span><span class="p">))</span>
     <span class="p">)</span>
 
     <span class="c1"># Files names for non-surface reflectance states</span>
     <span class="n">analytical_non_rfl_surf_file</span> <span class="o">=</span> <span class="n">subs_state_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-        <span class="s2">&quot;_subs_state&quot;</span><span class="p">,</span> <span class="s2">&quot;_surf_non_rfl&quot;</span>
+        <span class="s2">"_subs_state"</span><span class="p">,</span> <span class="s2">"_surf_non_rfl"</span>
     <span class="p">)</span>
     <span class="n">analytical_non_rfl_surf_unc_file</span> <span class="o">=</span> <span class="n">subs_state_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-        <span class="s2">&quot;_subs_state&quot;</span><span class="p">,</span> <span class="s2">&quot;_surf_non_rfl_uncert&quot;</span>
+        <span class="s2">"_subs_state"</span><span class="p">,</span> <span class="s2">"_surf_non_rfl_uncert"</span>
     <span class="p">)</span>
 
     <span class="n">atm_file</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">atm_file</span>
         <span class="k">if</span> <span class="n">atm_file</span>
-        <span class="k">else</span> <span class="p">(</span><span class="n">subs_state_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_subs_state&quot;</span><span class="p">,</span> <span class="s2">&quot;_atm_interp&quot;</span><span class="p">))</span>
+        <span class="k">else</span> <span class="p">(</span><span class="n">subs_state_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"_subs_state"</span><span class="p">,</span> <span class="s2">"_atm_interp"</span><span class="p">))</span>
     <span class="p">)</span>
 
     <span class="c1"># Get full statevector for image</span>
@@ -5688,26 +5688,26 @@
 
     <span class="c1"># Construct surf rfl output</span>
     <span class="n">output_metadata</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;data type&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
-        <span class="s2">&quot;file type&quot;</span><span class="p">:</span> <span class="s2">&quot;ENVI Standard&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;byte order&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">&quot;no data value&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">9999</span><span class="p">,</span>
-        <span class="s2">&quot;wavelength units&quot;</span><span class="p">:</span> <span class="s2">&quot;Nanometers&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;wavelength&quot;</span><span class="p">:</span> <span class="n">wl_init</span><span class="p">,</span>
-        <span class="s2">&quot;fwhm&quot;</span><span class="p">:</span> <span class="n">fwhm_init</span><span class="p">,</span>
-        <span class="s2">&quot;lines&quot;</span><span class="p">:</span> <span class="n">rdn_meta</span><span class="p">[</span><span class="s2">&quot;lines&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;samples&quot;</span><span class="p">:</span> <span class="n">rdn_meta</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;interleave&quot;</span><span class="p">:</span> <span class="s2">&quot;bil&quot;</span><span class="p">,</span>
+        <span class="s2">"data type"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="s2">"file type"</span><span class="p">:</span> <span class="s2">"ENVI Standard"</span><span class="p">,</span>
+        <span class="s2">"byte order"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">"no data value"</span><span class="p">:</span> <span class="o">-</span><span class="mi">9999</span><span class="p">,</span>
+        <span class="s2">"wavelength units"</span><span class="p">:</span> <span class="s2">"Nanometers"</span><span class="p">,</span>
+        <span class="s2">"wavelength"</span><span class="p">:</span> <span class="n">wl_init</span><span class="p">,</span>
+        <span class="s2">"fwhm"</span><span class="p">:</span> <span class="n">fwhm_init</span><span class="p">,</span>
+        <span class="s2">"lines"</span><span class="p">:</span> <span class="n">rdn_meta</span><span class="p">[</span><span class="s2">"lines"</span><span class="p">],</span>
+        <span class="s2">"samples"</span><span class="p">:</span> <span class="n">rdn_meta</span><span class="p">[</span><span class="s2">"samples"</span><span class="p">],</span>
+        <span class="s2">"interleave"</span><span class="p">:</span> <span class="s2">"bil"</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="k">if</span> <span class="s2">&quot;map info&quot;</span> <span class="ow">in</span> <span class="n">rdn_meta</span><span class="p">:</span>
-        <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;map info&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">rdn_meta</span><span class="p">[</span><span class="s2">&quot;map info&quot;</span><span class="p">]))</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span>
+    <span class="k">if</span> <span class="s2">"map info"</span> <span class="ow">in</span> <span class="n">rdn_meta</span><span class="p">:</span>
+        <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"map info"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"{"</span> <span class="o">+</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">rdn_meta</span><span class="p">[</span><span class="s2">"map info"</span><span class="p">]))</span> <span class="o">+</span> <span class="s2">"}"</span>
         <span class="p">)</span>
 
-    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;band names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"band names"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">full_statevector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">full_idx_surf_rfl</span><span class="p">))</span>
     <span class="p">]</span>
-    <span class="n">bbl</span> <span class="o">=</span> <span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">outside_ret_windows</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span>
+    <span class="n">bbl</span> <span class="o">=</span> <span class="s2">"{"</span> <span class="o">+</span> <span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">outside_ret_windows</span><span class="p">])</span> <span class="o">+</span> <span class="s2">"}"</span>
     <span class="n">num_bands</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_idx_surf_rfl</span><span class="p">)</span>
     <span class="n">engine_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">engine_name</span>
     <span class="n">isofit_version</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">isofit_version</span>
@@ -5715,41 +5715,41 @@
         <span class="n">output_metadata</span><span class="p">,</span>
         <span class="n">analytical_rfl_path</span><span class="p">,</span>
         <span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">num_bands</span><span class="p">,</span> <span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-        <span class="n">bands</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">num_bands</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">bands</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">num_bands</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">bbl</span><span class="o">=</span><span class="n">bbl</span><span class="p">,</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;L2A Analytical per-pixel surface retrieval (segmentation_size=</span><span class="si">{</span><span class="n">segmentation_size</span><span class="si">}</span><span class="s2">, engine=</span><span class="si">{</span><span class="n">engine_name</span><span class="si">}</span><span class="s2">, isofit_version=</span><span class="si">{</span><span class="n">isofit_version</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="sa">f</span><span class="s2">"L2A Analytical per-pixel surface retrieval (segmentation_size=</span><span class="si">{</span><span class="n">segmentation_size</span><span class="si">}</span><span class="s2">, engine=</span><span class="si">{</span><span class="n">engine_name</span><span class="si">}</span><span class="s2">, isofit_version=</span><span class="si">{</span><span class="n">isofit_version</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">),</span>
     <span class="p">)</span>
 
     <span class="c1"># Construct surf rfl uncertainty output</span>
-    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;band names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"band names"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">full_statevector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">full_idx_surf_rfl</span><span class="p">))</span>
     <span class="p">]</span>
     <span class="n">unc_output</span> <span class="o">=</span> <span class="n">initialize_output</span><span class="p">(</span>
         <span class="n">output_metadata</span><span class="p">,</span>
         <span class="n">analytical_rfl_unc_path</span><span class="p">,</span>
         <span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">num_bands</span><span class="p">,</span> <span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-        <span class="n">bands</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">num_bands</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">bands</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">num_bands</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">bbl</span><span class="o">=</span><span class="n">bbl</span><span class="p">,</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;L2A Analytical per-pixel surface retrieval uncertainty (segmentation_size=</span><span class="si">{</span><span class="n">segmentation_size</span><span class="si">}</span><span class="s2">, engine=</span><span class="si">{</span><span class="n">engine_name</span><span class="si">}</span><span class="s2">, isofit_version=</span><span class="si">{</span><span class="n">isofit_version</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="sa">f</span><span class="s2">"L2A Analytical per-pixel surface retrieval uncertainty (segmentation_size=</span><span class="si">{</span><span class="n">segmentation_size</span><span class="si">}</span><span class="s2">, engine=</span><span class="si">{</span><span class="n">engine_name</span><span class="si">}</span><span class="s2">, isofit_version=</span><span class="si">{</span><span class="n">isofit_version</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">),</span>
     <span class="p">)</span>
 
     <span class="c1"># If there are more idx in surface than rfl, there are non_rfl surface states</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_idx_surface</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_idx_surf_rfl</span><span class="p">):</span>
         <span class="n">n_non_rfl_bands</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_idx_surface</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_idx_surf_rfl</span><span class="p">)</span>
-        <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;band names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"band names"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">full_statevector</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">full_idx_surf_rfl</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_non_rfl_bands</span><span class="p">)</span>
         <span class="p">]</span>
         <span class="n">non_rfl_output</span> <span class="o">=</span> <span class="n">initialize_output</span><span class="p">(</span>
             <span class="n">output_metadata</span><span class="p">,</span>
             <span class="n">analytical_non_rfl_surf_file</span><span class="p">,</span>
             <span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">n_non_rfl_bands</span><span class="p">,</span> <span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-            <span class="n">bands</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_non_rfl_bands</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">bands</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n_non_rfl_bands</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
             <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;L2A Analytical per-pixel non_rfl surface retrieval  (segmentation_size=</span><span class="si">{</span><span class="n">segmentation_size</span><span class="si">}</span><span class="s2">, engine=</span><span class="si">{</span><span class="n">engine_name</span><span class="si">}</span><span class="s2">, isofit_version=</span><span class="si">{</span><span class="n">isofit_version</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="sa">f</span><span class="s2">"L2A Analytical per-pixel non_rfl surface retrieval  (segmentation_size=</span><span class="si">{</span><span class="n">segmentation_size</span><span class="si">}</span><span class="s2">, engine=</span><span class="si">{</span><span class="n">engine_name</span><span class="si">}</span><span class="s2">, isofit_version=</span><span class="si">{</span><span class="n">isofit_version</span><span class="si">}</span><span class="s2">)"</span>
             <span class="p">),</span>
         <span class="p">)</span>
 
@@ -5757,9 +5757,9 @@
             <span class="n">output_metadata</span><span class="p">,</span>
             <span class="n">analytical_non_rfl_surf_unc_file</span><span class="p">,</span>
             <span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">n_non_rfl_bands</span><span class="p">,</span> <span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-            <span class="n">bands</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_non_rfl_bands</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">bands</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n_non_rfl_bands</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
             <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;L2A Analytical per-pixel non_rfl surface retrieval uncertainty  (segmentation_size=</span><span class="si">{</span><span class="n">segmentation_size</span><span class="si">}</span><span class="s2">, engine=</span><span class="si">{</span><span class="n">engine_name</span><span class="si">}</span><span class="s2">, isofit_version=</span><span class="si">{</span><span class="n">isofit_version</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="sa">f</span><span class="s2">"L2A Analytical per-pixel non_rfl surface retrieval uncertainty  (segmentation_size=</span><span class="si">{</span><span class="n">segmentation_size</span><span class="si">}</span><span class="s2">, engine=</span><span class="si">{</span><span class="n">engine_name</span><span class="si">}</span><span class="s2">, isofit_version=</span><span class="si">{</span><span class="n">isofit_version</span><span class="si">}</span><span class="s2">)"</span>
             <span class="p">),</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -5768,12 +5768,12 @@
 
     <span class="c1"># Ray initialization</span>
     <span class="n">ray_dict</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;ignore_reinit_error&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_ignore_reinit_error</span><span class="p">,</span>
-        <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ip_head</span><span class="p">,</span>
-        <span class="s2">&quot;_temp_dir&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_temp_dir</span><span class="p">,</span>
-        <span class="s2">&quot;include_dashboard&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_include_dashboard</span><span class="p">,</span>
-        <span class="s2">&quot;_redis_password&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">redis_password</span><span class="p">,</span>
-        <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">,</span>
+        <span class="s2">"ignore_reinit_error"</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_ignore_reinit_error</span><span class="p">,</span>
+        <span class="s2">"address"</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ip_head</span><span class="p">,</span>
+        <span class="s2">"_temp_dir"</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_temp_dir</span><span class="p">,</span>
+        <span class="s2">"include_dashboard"</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">ray_include_dashboard</span><span class="p">,</span>
+        <span class="s2">"_redis_password"</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">redis_password</span><span class="p">,</span>
+        <span class="s2">"num_cpus"</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="n">ray_dict</span><span class="p">)</span>
     <span class="n">n_workers</span> <span class="o">=</span> <span class="n">n_cores</span>
@@ -5781,8 +5781,8 @@
     <span class="c1"># Set up the memory-contiguous multi-state pixel map by sub</span>
     <span class="n">index_pairs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">meshgrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">range</span><span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
-    <span class="n">index_pairs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">meshgrid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;f&quot;</span><span class="p">)</span>
-    <span class="n">index_pairs</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">meshgrid</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;f&quot;</span><span class="p">)</span>
+    <span class="n">index_pairs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">meshgrid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">"f"</span><span class="p">)</span>
+    <span class="n">index_pairs</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">meshgrid</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">"f"</span><span class="p">)</span>
     <span class="k">del</span> <span class="n">meshgrid</span>
 
     <span class="n">cache_atmosphere</span> <span class="o">=</span> <span class="kc">None</span>
@@ -5851,9 +5851,9 @@
     <span class="n">total_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Analytical line inversions complete.  </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">total_time</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">s total, &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s, &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="o">/</span><span class="n">n_cores</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s/core&quot;</span>
+        <span class="sa">f</span><span class="s2">"Analytical line inversions complete.  </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">total_time</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">s total, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">rdns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">rdns</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">total_time</span><span class="o">/</span><span class="n">n_cores</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> spectra/s/core"</span>
     <span class="p">)</span>
 
 
@@ -5886,18 +5886,18 @@
         <span class="n">skyview_factor_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">bgrfl_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Worker class to help run a subset of spectra.</span>
 <span class="sd">        Args:</span>
 <span class="sd">            fm: isofit forward_model</span>
 <span class="sd">            loglevel: output logging level</span>
 <span class="sd">            logfile: output logging file</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-            <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span>
             <span class="n">level</span><span class="o">=</span><span class="n">loglevel</span><span class="p">,</span>
             <span class="n">filename</span><span class="o">=</span><span class="n">logfile</span><span class="p">,</span>
-            <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S&quot;</span><span class="p">,</span>
+            <span class="n">datefmt</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># Persist config</span>
@@ -5910,7 +5910,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">surface_class_str</span> <span class="o">=</span> <span class="n">surface_class_str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">class_idx_pairs</span> <span class="o">=</span> <span class="n">class_idx_pairs</span>
 
-        <span class="c1"># Will fail if env.data isn&#39;t set up</span>
+        <span class="c1"># Will fail if env.data isn't set up</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">esd</span> <span class="o">=</span> <span class="n">load_esd</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">full_statevector</span> <span class="o">=</span> <span class="n">full_statevector</span>
@@ -5923,19 +5923,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">winidx</span> <span class="o">=</span> <span class="n">retrieve_winidx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
 
         <span class="c1"># input arrays</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rdn</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">rdn_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loc</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">loc_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">obs_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rt_state</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">atm_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rdn</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">rdn_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loc</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">loc_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">obs_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rt_state</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">atm_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subs_state</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">subs_state_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span>
-            <span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span>
+            <span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lbl</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">lbl_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lbl</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">lbl_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">)</span>
 
         <span class="c1"># Open skyview file for ALAlg, or create an array of 1s.</span>
         <span class="k">if</span> <span class="n">skyview_factor_file</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">svf</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">skyview_factor_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span>
-                <span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span>
+                <span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">svf</span> <span class="o">=</span> <span class="p">[]</span>
@@ -5943,7 +5943,7 @@
         <span class="c1"># Open background rfl file</span>
         <span class="k">if</span> <span class="n">bgrfl_file</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">bgrfl_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span>
-                <span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span>
+                <span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="o">=</span> <span class="p">[]</span>
@@ -5962,7 +5962,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">hash_table</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hash_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">max_hash_table_size</span>
 
-        <span class="c1"># Can&#39;t see any reason to leave these as optional</span>
+        <span class="c1"># Can't see any reason to leave these as optional</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subs_state_file</span> <span class="o">=</span> <span class="n">subs_state_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lbl_file</span> <span class="o">=</span> <span class="n">lbl_file</span>
 
@@ -5987,29 +5987,29 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">per_pixel_heuristic_prior</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">per_pixel_heuristic_prior</span>
 <div class="mkapi-source-link" id="isofit.utils.analytical_line.Worker.run_chunks"><a href="../../../../api/isofit/utils/analytical_line/#isofit.utils.analytical_line.Worker.run_chunks" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="nf">run_chunks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line_breaks</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        TODO: Description</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Unpack arguments</span>
         <span class="n">start_line</span><span class="p">,</span> <span class="n">stop_line</span> <span class="o">=</span> <span class="n">line_breaks</span>
 
         <span class="c1"># Set up outputs</span>
         <span class="n">output_rfl</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rfl_outpath</span><span class="p">))</span>
-            <span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">start_line</span><span class="p">:</span><span class="n">stop_line</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+            <span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">start_line</span><span class="p">:</span><span class="n">stop_line</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
             <span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="p">)</span>
 
         <span class="n">output_rfl_unc</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unc_outpath</span><span class="p">))</span>
-            <span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">start_line</span><span class="p">:</span><span class="n">stop_line</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+            <span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">start_line</span><span class="p">:</span><span class="n">stop_line</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
             <span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">non_rfl_unc_outpath</span><span class="p">:</span>
             <span class="n">output_non_rfl</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">non_rfl_outpath</span><span class="p">))</span>
-                <span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span>
+                <span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span>
                     <span class="n">start_line</span><span class="p">:</span><span class="n">stop_line</span><span class="p">,</span> <span class="o">...</span>
                 <span class="p">]</span>
                 <span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -6017,7 +6017,7 @@
 
             <span class="n">output_non_rfl_unc</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">non_rfl_unc_outpath</span><span class="p">))</span>
-                <span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span>
+                <span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span>
                     <span class="n">start_line</span><span class="p">:</span><span class="n">stop_line</span><span class="p">,</span> <span class="o">...</span>
                 <span class="p">]</span>
                 <span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -6049,7 +6049,7 @@
                 <span class="n">full_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
             <span class="p">)</span>
 
-            <span class="c1"># &quot;Atmospheric&quot; state ALWAYS comes from all bands in the</span>
+            <span class="c1"># "Atmospheric" state ALWAYS comes from all bands in the</span>
             <span class="c1"># atm_interpolated file</span>
             <span class="n">x_atmosphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rt_state</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="p">:]</span>
 
@@ -6060,7 +6060,7 @@
             <span class="c1"># need to improve that implementation</span>
             <span class="n">iv_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">analytical_iv_idx</span>
 
-            <span class="c1"># Populate the &quot;background&quot; superpixel</span>
+            <span class="c1"># Populate the "background" superpixel</span>
             <span class="n">lbl_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lbl</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
             <span class="n">sub_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">nstate</span><span class="p">)</span>
             <span class="n">sub_state</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subs_state</span><span class="p">[</span><span class="n">lbl_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">iv_idx</span><span class="p">]</span>
@@ -6077,11 +6077,11 @@
             <span class="c1"># ALGEBRAIC uses invert_algebraic for rfl,</span>
             <span class="c1"># and the superpixel for non_rfl surface elements</span>
             <span class="c1"># SIMPLE uses invert_simple for rfl and non_rfl surface elements</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initializer</span> <span class="o">==</span> <span class="s2">&quot;superpixel&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initializer</span> <span class="o">==</span> <span class="s2">"superpixel"</span><span class="p">:</span>
                 <span class="n">x0</span> <span class="o">=</span> <span class="n">sub_state</span>
                 <span class="n">x0</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_atmosphere</span>
 
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">initializer</span> <span class="o">==</span> <span class="s2">&quot;algebraic&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">initializer</span> <span class="o">==</span> <span class="s2">"algebraic"</span><span class="p">:</span>
                 <span class="n">x_surface</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
                 <span class="n">rfl_est</span><span class="p">,</span> <span class="n">coeffs</span> <span class="o">=</span> <span class="n">invert_algebraic</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="p">,</span>
@@ -6102,12 +6102,12 @@
                     <span class="p">]</span>
                 <span class="p">)</span>
 
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">initializer</span> <span class="o">==</span> <span class="s2">&quot;simple&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">initializer</span> <span class="o">==</span> <span class="s2">"simple"</span><span class="p">:</span>
                 <span class="n">x0</span> <span class="o">=</span> <span class="n">invert_simple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="p">,</span> <span class="n">meas</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
                 <span class="n">x0</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_atmosphere</span>
 
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No valid initializer given for AOE algorithm&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No valid initializer given for AOE algorithm"</span><span class="p">)</span>
 
             <span class="c1"># Update the bounds and set prior to initial (if that is the run</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_pixel_heuristic_prior</span><span class="p">:</span>
@@ -6152,8 +6152,8 @@
                 <span class="p">]</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Analytical line writing lines: </span><span class="si">{</span><span class="n">start_line</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">stop_line</span><span class="si">}</span><span class="s2">. &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Surface: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_class_str</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Analytical line writing lines: </span><span class="si">{</span><span class="n">start_line</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">stop_line</span><span class="si">}</span><span class="s2">. "</span>
+            <span class="sa">f</span><span class="s2">"Surface: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_class_str</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
         <span class="c1"># Output surface rfl</span>
@@ -6189,36 +6189,36 @@
             <span class="p">)</span>
 
 
-<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;analytical_line&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;rdn_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;loc_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;obs_file&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;isofit_dir&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--isofit_config&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--segmentation_file&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;TODO&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--n_atm_neighbors&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;TODO&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--n_cores&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;TODO&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--smoothing_sigma&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;TODO&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--output_rfl_file&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;TODO&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--output_unc_file&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;TODO&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--skyview_factor_file&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;TODO&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--bgrfl_file&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;TODO&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--atm_file&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;TODO&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--loglevel&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;TODO&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--logfile&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;TODO&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"analytical_line"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"rdn_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"loc_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"obs_file"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"isofit_dir"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--isofit_config"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--segmentation_file"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"TODO"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--n_atm_neighbors"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"TODO"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--n_cores"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"TODO"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--smoothing_sigma"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"TODO"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--output_rfl_file"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"TODO"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--output_unc_file"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"TODO"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--skyview_factor_file"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"TODO"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--bgrfl_file"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"TODO"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--atm_file"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"TODO"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--loglevel"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"TODO"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"INFO"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--logfile"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"TODO"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.analytical_line.cli"><a href="../../../../api/isofit/utils/analytical_line/#isofit.utils.analytical_line.cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Execute the analytical line algorithm&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Execute the analytical line algorithm"""</span>
 
-    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">&quot;Running analytical line&quot;</span><span class="p">)</span>
+    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">"Running analytical line"</span><span class="p">)</span>
 
     <span class="n">analytical_line</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
+    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">"Done"</span><span class="p">)</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-        <span class="s2">&quot;analytical_line.py can no longer be called this way.  Run as:</span><span class="se">\n</span><span class="s2"> isofit analytical_line [ARGS]&quot;</span>
+        <span class="s2">"analytical_line.py can no longer be called this way.  Run as:</span><span class="se">\n</span><span class="s2"> isofit analytical_line [ARGS]"</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

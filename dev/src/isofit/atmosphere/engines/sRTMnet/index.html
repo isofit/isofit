@@ -5694,14 +5694,14 @@
 <span class="normal">799</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5736,43 +5736,43 @@
 
 <span class="k">class</span><span class="w"> </span><span class="nc">SRTMnetModel</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SRTMnetModel"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SRTMnetModel" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n_cores</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the SRTMnet model by loading weights and biases from an HDF5 file.</span>
+<span class="w">        </span><span class="sd">"""Initializes the SRTMnet model by loading weights and biases from an HDF5 file.</span>
 <span class="sd">        This new version uses torch, but gives the same results as the</span>
 <span class="sd">        sRTMnet original (tensorflow) and previous isofit (numpy) implementations.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            input_file (str, optional): Path to the file containing model weights.</span>
-<span class="sd">            key (str, optional): Key to select specific weights in the file (6c format). If &#39;3c&#39;, read all (sRTMnet 3c format).</span>
+<span class="sd">            key (str, optional): Key to select specific weights in the file (6c format). If '3c', read all (sRTMnet 3c format).</span>
 <span class="sd">            n_cores (int, optional): Number of CPU cores to use if using cpu.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
-        <span class="c1"># some keys, we&#39;ll legit go through uniquely.  Some, we must go through in pairs</span>
+        <span class="c1"># some keys, we'll legit go through uniquely.  Some, we must go through in pairs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">biases</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;dir-dir&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;transm_down_dir&quot;</span><span class="p">,</span> <span class="s2">&quot;transm_up_dir&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"dir-dir"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"transm_down_dir"</span><span class="p">,</span> <span class="s2">"transm_up_dir"</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="n">key</span>
-        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;dir-dif&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;transm_down_dir&quot;</span><span class="p">,</span> <span class="s2">&quot;transm_up_dif&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"dir-dif"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"transm_down_dir"</span><span class="p">,</span> <span class="s2">"transm_up_dif"</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="n">key</span>
-        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;dif-dir&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;transm_down_dif&quot;</span><span class="p">,</span> <span class="s2">&quot;transm_up_dir&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"dif-dir"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"transm_down_dif"</span><span class="p">,</span> <span class="s2">"transm_up_dir"</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="n">key</span>
-        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;dif-dif&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;transm_down_dif&quot;</span><span class="p">,</span> <span class="s2">&quot;transm_up_dif&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"dif-dif"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"transm_down_dif"</span><span class="p">,</span> <span class="s2">"transm_up_dif"</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="n">key</span>
-        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;3c&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;transm_down_dif&quot;</span><span class="p">,</span> <span class="s2">&quot;rhoatm&quot;</span><span class="p">,</span> <span class="s2">&quot;sphalb&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"3c"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"transm_down_dif"</span><span class="p">,</span> <span class="s2">"rhoatm"</span><span class="p">,</span> <span class="s2">"sphalb"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">&quot;3c&quot;</span><span class="p">:</span>  <span class="c1"># 6c model</span>
-            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">"3c"</span><span class="p">:</span>  <span class="c1"># 6c model</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">ckey</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_keys</span><span class="p">:</span>
                     <span class="n">w_list</span><span class="p">,</span> <span class="n">b_list</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-                    <span class="n">w_group</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;weights_</span><span class="si">{</span><span class="n">ckey</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
-                    <span class="n">b_group</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;biases_</span><span class="si">{</span><span class="n">ckey</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+                    <span class="n">w_group</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"weights_</span><span class="si">{</span><span class="n">ckey</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
+                    <span class="n">b_group</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">"biases_</span><span class="si">{</span><span class="n">ckey</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
 
                     <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">w_group</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                         <span class="n">w_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -5789,44 +5789,44 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">ckey</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ParameterList</span><span class="p">(</span><span class="n">w_list</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">biases</span><span class="p">[</span><span class="n">ckey</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ParameterList</span><span class="p">(</span><span class="n">b_list</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>  <span class="c1"># 3c model</span>
-            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
                 <span class="n">w_list</span><span class="p">,</span> <span class="n">b_list</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;model_weights&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="k">if</span> <span class="s2">&quot;dense&quot;</span> <span class="ow">in</span> <span class="n">n</span><span class="p">:</span>
-                        <span class="n">group</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;model_weights&quot;</span><span class="p">][</span><span class="n">n</span><span class="p">][</span><span class="n">n</span><span class="p">]</span>
-                        <span class="k">if</span> <span class="s2">&quot;kernel:0&quot;</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
-                            <span class="n">w</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;kernel:0&quot;</span><span class="p">][:]</span>
-                            <span class="n">b</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;bias:0&quot;</span><span class="p">][:]</span>
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">model</span><span class="p">[</span><span class="s2">"model_weights"</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="s2">"dense"</span> <span class="ow">in</span> <span class="n">n</span><span class="p">:</span>
+                        <span class="n">group</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">"model_weights"</span><span class="p">][</span><span class="n">n</span><span class="p">][</span><span class="n">n</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="s2">"kernel:0"</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
+                            <span class="n">w</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">"kernel:0"</span><span class="p">][:]</span>
+                            <span class="n">b</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">"bias:0"</span><span class="p">][:]</span>
                         <span class="k">else</span><span class="p">:</span>
-                            <span class="n">w</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;kernel&quot;</span><span class="p">][:]</span>
-                            <span class="n">b</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;bias&quot;</span><span class="p">][:]</span>
+                            <span class="n">w</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">"kernel"</span><span class="p">][:]</span>
+                            <span class="n">b</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">"bias"</span><span class="p">][:]</span>
                         <span class="n">w_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
                         <span class="n">b_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="s2">&quot;3c&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ParameterList</span><span class="p">(</span><span class="n">w_list</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">biases</span><span class="p">[</span><span class="s2">&quot;3c&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ParameterList</span><span class="p">(</span><span class="n">b_list</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="s2">"3c"</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ParameterList</span><span class="p">(</span><span class="n">w_list</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">biases</span><span class="p">[</span><span class="s2">"3c"</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ParameterList</span><span class="p">(</span><span class="n">b_list</span><span class="p">)</span>
 
         <span class="c1"># Determine device</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cuda"</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"cpu"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">mps</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;mps&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"mps"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cpu&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"cpu"</span><span class="p">:</span>
             <span class="c1"># This seems to work well despite global OMP / MKL options, though some systmes may need</span>
             <span class="c1"># those to be set differently</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">set_num_threads</span><span class="p">(</span><span class="n">n_cores</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SRTMnetModel.forward"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SRTMnetModel.forward" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward model structure</span>
+<span class="w">        </span><span class="sd">"""Forward model structure</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (torch.Tensor): batched input data</span>
 <span class="sd">            key (str): key to select which weights/biases to use</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            torch.Tensor: batched emulated data</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># x: (batch, input_dim)</span>
         <span class="c1"># weights: (input_dim, output_dim)</span>
         <span class="c1"># (batch, input_dim) @ (input_dim, output_dim) -&gt; (batch, output_dim)</span>
@@ -5839,41 +5839,41 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">batch_resample</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SRTMnetModel.batch_resample"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SRTMnetModel.batch_resample" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">convert_to_rdn</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">resample_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resample helpf function</span>
+<span class="w">        </span><span class="sd">"""Resample helpf function</span>
 <span class="sd">        Args:</span>
 <span class="sd">            out (np.ndarray): output data to resample</span>
 <span class="sd">            convert_to_rdn (bool): whether to convert to radiance before resampling</span>
 <span class="sd">            resample_dict (dict, optional): dictionary containing resampling parameters</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            np.ndarray: resampled output data</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Resample the direct product, converting to radiance for rhoatm</span>
         <span class="k">if</span> <span class="n">resample_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">out</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">convert_to_rdn</span><span class="p">:</span>
-                <span class="n">coszen</span> <span class="o">=</span> <span class="n">resample_dict</span><span class="p">[</span><span class="s2">&quot;emulator_coszen&quot;</span><span class="p">]</span>
+                <span class="n">coszen</span> <span class="o">=</span> <span class="n">resample_dict</span><span class="p">[</span><span class="s2">"emulator_coszen"</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">coszen</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="n">coszen</span> <span class="o">=</span> <span class="n">coszen</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
                 <span class="n">out_r</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">transm_to_rdn</span><span class="p">(</span>
                     <span class="n">out</span><span class="p">,</span>
                     <span class="n">coszen</span><span class="p">,</span>
-                    <span class="n">resample_dict</span><span class="p">[</span><span class="s2">&quot;emulator_sol_irr&quot;</span><span class="p">],</span>
+                    <span class="n">resample_dict</span><span class="p">[</span><span class="s2">"emulator_sol_irr"</span><span class="p">],</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">out_r</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
             <span class="n">out_r</span> <span class="o">=</span> <span class="n">resample_spectrum</span><span class="p">(</span>
                 <span class="n">out_r</span><span class="p">,</span>
-                <span class="n">resample_dict</span><span class="p">[</span><span class="s2">&quot;emu_wl&quot;</span><span class="p">],</span>
-                <span class="n">resample_dict</span><span class="p">[</span><span class="s2">&quot;wl&quot;</span><span class="p">],</span>
-                <span class="n">resample_dict</span><span class="p">[</span><span class="s2">&quot;fwhm&quot;</span><span class="p">],</span>
-                <span class="n">H</span><span class="o">=</span><span class="n">resample_dict</span><span class="p">[</span><span class="s2">&quot;emulator_H&quot;</span><span class="p">],</span>
+                <span class="n">resample_dict</span><span class="p">[</span><span class="s2">"emu_wl"</span><span class="p">],</span>
+                <span class="n">resample_dict</span><span class="p">[</span><span class="s2">"wl"</span><span class="p">],</span>
+                <span class="n">resample_dict</span><span class="p">[</span><span class="s2">"fwhm"</span><span class="p">],</span>
+                <span class="n">H</span><span class="o">=</span><span class="n">resample_dict</span><span class="p">[</span><span class="s2">"emulator_H"</span><span class="p">],</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">out_r</span>
 <div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SRTMnetModel.resample_dict_batch"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SRTMnetModel.resample_dict_batch" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="nf">resample_dict_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resample_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">batch_slice</span><span class="p">:</span> <span class="nb">slice</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle batching for the resample dict.  Right now, only coszen</span>
+<span class="w">        </span><span class="sd">"""Handle batching for the resample dict.  Right now, only coszen</span>
 <span class="sd">        might need to be batched.</span>
 
 <span class="sd">        Args:</span>
@@ -5881,15 +5881,15 @@
 <span class="sd">            batch_slice (slice): slice object for the current batch</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: resample_dict with batch_slice applied to emulator_coszen</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">resample_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
         <span class="n">batch_resample_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">resample_dict</span><span class="p">)</span>
-        <span class="n">coszen</span> <span class="o">=</span> <span class="n">batch_resample_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;emulator_coszen&quot;</span><span class="p">)</span>
+        <span class="n">coszen</span> <span class="o">=</span> <span class="n">batch_resample_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"emulator_coszen"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">coszen</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">&quot;emulator_coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coszen</span><span class="p">[</span><span class="n">batch_slice</span><span class="p">]</span>
+            <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">"emulator_coszen"</span><span class="p">]</span> <span class="o">=</span> <span class="n">coszen</span><span class="p">[</span><span class="n">batch_slice</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">batch_resample_dict</span>
 
@@ -5903,14 +5903,14 @@
         <span class="n">response_offset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">resample_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predicts model output for either 6c or 3c model.  General model formulation is:</span>
+<span class="w">        </span><span class="sd">"""Predicts model output for either 6c or 3c model.  General model formulation is:</span>
 <span class="sd">        x = surrogate_data</span>
 <span class="sd">        y = emulator(x) / response_scaler + response_offset + x</span>
 <span class="sd">        return &lt; y &gt; resampled to desired wavelengths</span>
 
 <span class="sd">        In the case of the 6c model, we also calculate all coupled terms at high spectral resolution,</span>
 <span class="sd">        converting to radiance and then convolving.  We leave transmitance and sphalb in</span>
-<span class="sd">        &#39;transmittance units&#39;, but convert rhoatm to radiance.</span>
+<span class="sd">        'transmittance units', but convert rhoatm to radiance.</span>
 
 <span class="sd">        In contrast, the 3c model convolves directly in transmittance units.  This is undesireable,</span>
 <span class="sd">        but we have left for historical consistency.  Ideally, user will shift to the 6c model.</span>
@@ -5925,7 +5925,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            np.array: emulated output</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Handle numpy input</span>
         <span class="n">x_tensor</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">_x</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_x</span><span class="p">,</span> <span class="n">da</span><span class="o">.</span><span class="n">Array</span><span class="p">)</span> <span class="k">else</span> <span class="n">_x</span> <span class="k">for</span> <span class="n">_x</span> <span class="ow">in</span> <span class="n">surrogate_data</span>
@@ -5935,12 +5935,12 @@
 
         <span class="n">outdict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">&quot;3c&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">"3c"</span><span class="p">:</span>
                 <span class="n">outdict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">outdict</span><span class="p">[</span><span class="s2">&quot;transm_down_dif&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="n">outdict</span><span class="p">[</span><span class="s2">&quot;rhoatm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="n">outdict</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">outdict</span><span class="p">[</span><span class="s2">"transm_down_dif"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">outdict</span><span class="p">[</span><span class="s2">"rhoatm"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">outdict</span><span class="p">[</span><span class="s2">"sphalb"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="n">is_paired</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">is_paired</span><span class="p">:</span>
@@ -5962,11 +5962,11 @@
                 <span class="n">out</span> <span class="o">+=</span> <span class="n">surrogate_data_emulator_wl</span><span class="p">[</span><span class="n">_key</span><span class="p">][</span><span class="n">batch_slice</span><span class="p">]</span>
 
                 <span class="c1"># Resample the direct product, converting to radiance for rhoatm</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">&quot;3c&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">"3c"</span><span class="p">:</span>
                     <span class="n">outdict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">batch_resample</span><span class="p">(</span>
                             <span class="n">out</span><span class="p">,</span>
-                            <span class="n">convert_to_rdn</span><span class="o">=</span><span class="p">(</span><span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;rhoatm&quot;</span><span class="p">),</span>
+                            <span class="n">convert_to_rdn</span><span class="o">=</span><span class="p">(</span><span class="n">key</span> <span class="o">==</span> <span class="s2">"rhoatm"</span><span class="p">),</span>
                             <span class="n">resample_dict</span><span class="o">=</span><span class="n">batch_resample_dict</span><span class="p">,</span>
                         <span class="p">)</span>
                     <span class="p">)</span>
@@ -5990,20 +5990,20 @@
 
             <span class="k">if</span> <span class="n">is_paired</span><span class="p">:</span>  <span class="c1"># only happens with 6c</span>
                 <span class="k">if</span> <span class="n">batch_resample_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">coszen</span> <span class="o">=</span> <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">&quot;emulator_coszen&quot;</span><span class="p">]</span>
+                    <span class="n">coszen</span> <span class="o">=</span> <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">"emulator_coszen"</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">coszen</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                         <span class="n">coszen</span> <span class="o">=</span> <span class="n">coszen</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
                     <span class="n">product</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">transm_to_rdn</span><span class="p">(</span>
                         <span class="n">product</span><span class="p">,</span>
                         <span class="n">coszen</span><span class="p">,</span>
-                        <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">&quot;emulator_sol_irr&quot;</span><span class="p">],</span>
+                        <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">"emulator_sol_irr"</span><span class="p">],</span>
                     <span class="p">)</span>
                     <span class="n">product</span> <span class="o">=</span> <span class="n">resample_spectrum</span><span class="p">(</span>
                         <span class="n">product</span><span class="p">,</span>
-                        <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">&quot;emu_wl&quot;</span><span class="p">],</span>
-                        <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">&quot;wl&quot;</span><span class="p">],</span>
-                        <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">&quot;fwhm&quot;</span><span class="p">],</span>
-                        <span class="n">H</span><span class="o">=</span><span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">&quot;emulator_H&quot;</span><span class="p">],</span>
+                        <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">"emu_wl"</span><span class="p">],</span>
+                        <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">"wl"</span><span class="p">],</span>
+                        <span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">"fwhm"</span><span class="p">],</span>
+                        <span class="n">H</span><span class="o">=</span><span class="n">batch_resample_dict</span><span class="p">[</span><span class="s2">"emulator_H"</span><span class="p">],</span>
                     <span class="p">)</span>
                 <span class="n">outdict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">product_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">product</span><span class="p">)</span>
 
@@ -6015,31 +6015,31 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">SimulatedModtranRT</span><span class="p">(</span><span class="n">BaseAtmosphere</span><span class="p">,</span> <span class="n">Writer</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A hybrid surrogate-model and emulator of MODTRAN-like results.  A description of</span>
 <span class="sd">    the model can be found in:</span>
 <span class="sd">        P.G. Brodrick, D.R. Thompson, J.E. Fahlen, M.L. Eastwood, C.M. Sarture, S.R. Lundeen, W. Olson-Duvall,</span>
 <span class="sd">        N. Carmon, and R.O. Green. Generalized radiative transfer emulation for imaging spectroscopy reflectance</span>
 <span class="sd">        retrievals. Remote Sensing of Environment, 261:112476, 2021.doi: 10.1016/j.rse.2021.112476.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">lut_quantities</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;rhoatm&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sphalb&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;transm_down_dir&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;transm_down_dif&quot;</span><span class="p">,</span>  <span class="c1"># NOTE: Formerly transm</span>
-        <span class="s2">&quot;transm_up_dif&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;transm_up_dir&quot;</span><span class="p">,</span>  <span class="c1"># NOTE: Formerly transup</span>
+        <span class="s2">"rhoatm"</span><span class="p">,</span>
+        <span class="s2">"sphalb"</span><span class="p">,</span>
+        <span class="s2">"transm_down_dir"</span><span class="p">,</span>
+        <span class="s2">"transm_down_dif"</span><span class="p">,</span>  <span class="c1"># NOTE: Formerly transm</span>
+        <span class="s2">"transm_up_dif"</span><span class="p">,</span>
+        <span class="s2">"transm_up_dir"</span><span class="p">,</span>  <span class="c1"># NOTE: Formerly transup</span>
     <span class="p">}</span>
     <span class="n">aux_quantities</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;lut_names&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="s2">&quot;feature_point_names&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="s2">&quot;rt_quantities&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="s2">&quot;solar_irr&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-        <span class="s2">&quot;emulator_wavelengths&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-        <span class="s2">&quot;simulator_wavelengths&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-        <span class="s2">&quot;response_scaler&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
-        <span class="s2">&quot;response_offset&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="s2">"lut_names"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="s2">"feature_point_names"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="s2">"rt_quantities"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="s2">"solar_irr"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+        <span class="s2">"emulator_wavelengths"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+        <span class="s2">"simulator_wavelengths"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+        <span class="s2">"response_scaler"</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="s2">"response_offset"</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">_disable_makeSim</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -6049,10 +6049,10 @@
         <span class="c1"># so divide by 2.5 for safety</span>
         <span class="c1"># REVIEW: is there a better strategy?</span>
         <span class="n">mem</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">mem</span><span class="o">.</span><span class="n">total</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">2.5</span><span class="p">)</span><span class="si">}</span><span class="s2">gb&quot;</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attempting to use shard size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">mem</span><span class="o">.</span><span class="n">total</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="o">**</span><span class="mi">30</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">2.5</span><span class="p">)</span><span class="si">}</span><span class="s2">gb"</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Attempting to use shard size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="c1"># Because sRTMnet doesn&#39;t use makeSim and instead processes shards</span>
+        <span class="c1"># Because sRTMnet doesn't use makeSim and instead processes shards</span>
         <span class="c1"># sequentially in preSim, have to enable the shard buffer here</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="o">*</span><span class="n">args</span><span class="p">,</span>
@@ -6063,28 +6063,28 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">preSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.preSim"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.preSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        sRTMnet leverages 6S to simulate results which is best done before sRTMnet begins</span>
 <span class="sd">        simulations itself</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Track the sRTMnet file used in the LUT attributes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">&quot;sRTMnet&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">"sRTMnet"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">))</span>
 
         <span class="c1"># Get the component mode up front</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">emulator_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.h5&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">component_mode</span> <span class="o">=</span> <span class="s2">&quot;3c&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">emulator_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".h5"</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">component_mode</span> <span class="o">=</span> <span class="s2">"3c"</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">emulator_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.6c&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">component_mode</span> <span class="o">=</span> <span class="s2">&quot;6c&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">emulator_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".6c"</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">component_mode</span> <span class="o">=</span> <span class="s2">"6c"</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Invalid extension for emulator aux file. Use .npz or .6c&quot;</span>
+                <span class="sa">f</span><span class="s2">"Invalid extension for emulator aux file. Use .npz or .6c"</span>
             <span class="p">)</span>
 
         <span class="c1"># Pack the emulator Aux the same regardless of input file type.</span>
         <span class="c1"># Enforce types</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_mode</span> <span class="o">==</span> <span class="s2">&quot;3c&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_mode</span> <span class="o">==</span> <span class="s2">"3c"</span><span class="p">:</span>
             <span class="n">aux</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">emulator_aux_file</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
             <span class="n">aux_dict</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux_quantities</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -6095,7 +6095,7 @@
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">aux</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux_quantities</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
                         <span class="n">aux</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
@@ -6107,11 +6107,11 @@
 
         <span class="c1"># TODO: Disable when sRTMnet_v120_aux is updated</span>
         <span class="n">aux_rt_quantities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-            <span class="n">aux</span><span class="p">[</span><span class="s2">&quot;rt_quantities&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;transm&quot;</span><span class="p">,</span> <span class="s2">&quot;transm_down_dif&quot;</span><span class="p">,</span> <span class="n">aux</span><span class="p">[</span><span class="s2">&quot;rt_quantities&quot;</span><span class="p">]</span>
+            <span class="n">aux</span><span class="p">[</span><span class="s2">"rt_quantities"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"transm"</span><span class="p">,</span> <span class="s2">"transm_down_dif"</span><span class="p">,</span> <span class="n">aux</span><span class="p">[</span><span class="s2">"rt_quantities"</span><span class="p">]</span>
         <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 
         <span class="c1"># Emulator keys (sRTMnet)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">emu_wl</span> <span class="o">=</span> <span class="n">aux</span><span class="p">[</span><span class="s2">&quot;emulator_wavelengths&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emu_wl</span> <span class="o">=</span> <span class="n">aux</span><span class="p">[</span><span class="s2">"emulator_wavelengths"</span><span class="p">]</span>
 
         <span class="c1"># Simulation wavelengths overrides, always fixed size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim_wl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">350</span><span class="p">,</span> <span class="mi">2500</span> <span class="o">+</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
@@ -6121,7 +6121,7 @@
         <span class="n">config</span> <span class="o">=</span> <span class="n">build_sixs_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">full_config</span><span class="p">)</span>
 
         <span class="c1"># Build the 6S simulations</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building simulator and executing (6S)&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Building simulator and executing (6S)"</span><span class="p">)</span>
         <span class="n">sim</span> <span class="o">=</span> <span class="n">SixSRT</span><span class="p">(</span>
             <span class="n">config</span><span class="p">,</span>
             <span class="n">wl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_wl</span><span class="p">,</span>
@@ -6131,7 +6131,7 @@
             <span class="n">build_interpolators</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">postprocess</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">shard_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shard_size</span><span class="p">,</span>
-            <span class="n">load_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;load&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="n">load_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"load"</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure_and_exit</span><span class="p">:</span>
@@ -6142,23 +6142,23 @@
 
         <span class="c1"># Convert our irradiance to date 0 then back to current date</span>
         <span class="c1"># sc - If statement to make sure tsis solar model is used if supplied</span>
-        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">irradiance_file</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;tsis_f0_0p1.txt&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">irradiance_file</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"tsis_f0_0p1.txt"</span><span class="p">:</span>
             <span class="c1"># Load coarser TSIS model to match emulator expectations</span>
             <span class="n">_</span><span class="p">,</span> <span class="n">sol_irr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">irradiance_file</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/tsis_f0_0p5.txt&quot;</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">irradiance_file</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">"/tsis_f0_0p5.txt"</span>
             <span class="p">)</span><span class="o">.</span><span class="n">T</span>
             <span class="n">sol_irr</span> <span class="o">=</span> <span class="n">sol_irr</span> <span class="o">/</span> <span class="mi">10</span>  <span class="c1"># Convert to uW cm-2 sr-1 nm-1</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">sol_irr</span> <span class="o">=</span> <span class="n">aux</span><span class="p">[</span><span class="s2">&quot;solar_irr&quot;</span><span class="p">]</span>  <span class="c1"># Otherwise, use sRTMnet f0</span>
+            <span class="n">sol_irr</span> <span class="o">=</span> <span class="n">aux</span><span class="p">[</span><span class="s2">"solar_irr"</span><span class="p">]</span>  <span class="c1"># Otherwise, use sRTMnet f0</span>
         <span class="n">irr_ref</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">esd</span><span class="p">[</span><span class="mi">200</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># Irradiance factor</span>
         <span class="n">irr_cur</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">esd</span><span class="p">[</span><span class="n">sim</span><span class="o">.</span><span class="n">day_of_year</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># Factor for current date</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim_sol_irr</span> <span class="o">=</span> <span class="n">sol_irr</span> <span class="o">*</span> <span class="n">irr_ref</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">irr_cur</span><span class="o">**</span><span class="mi">2</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">aux</span> <span class="o">=</span> <span class="n">aux</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sim_coszen</span> <span class="o">=</span> <span class="n">sim</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim_coszen</span> <span class="o">=</span> <span class="n">sim</span><span class="p">[</span><span class="s2">"coszen"</span><span class="p">]</span>
 
         <span class="n">sixs</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">lut</span><span class="p">[</span><span class="n">aux_rt_quantities</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="p">,</span> <span class="s2">&quot;groups&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="p">,</span> <span class="s2">"groups"</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sharded</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">sixs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">outshape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">),)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span>
@@ -6168,15 +6168,15 @@
 
         <span class="c1"># Insert these into the LUT file</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;coszen&quot;</span><span class="p">:</span> <span class="n">sim</span><span class="p">[</span><span class="s2">&quot;coszen&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;solzen&quot;</span><span class="p">:</span> <span class="n">sim</span><span class="p">[</span><span class="s2">&quot;solzen&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;solar_irr&quot;</span><span class="p">:</span> <span class="n">resample_spectrum</span><span class="p">(</span>
+            <span class="s2">"coszen"</span><span class="p">:</span> <span class="n">sim</span><span class="p">[</span><span class="s2">"coszen"</span><span class="p">],</span>
+            <span class="s2">"solzen"</span><span class="p">:</span> <span class="n">sim</span><span class="p">[</span><span class="s2">"solzen"</span><span class="p">],</span>
+            <span class="s2">"solar_irr"</span><span class="p">:</span> <span class="n">resample_spectrum</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim_sol_irr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">emu_wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span>
             <span class="p">),</span>
         <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">sharded</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">,</span> <span class="n">sixs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.sharded"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.sharded" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Process sRTMnet in Zarr shard groups. This enables processing of</span>
 <span class="sd">        larger-than-memory LUTs.</span>
 
@@ -6186,20 +6186,20 @@
 <span class="sd">            The 6S engine</span>
 <span class="sd">        sixs : xarray.Dataset</span>
 <span class="sd">            The 6S LUT of only the aux_rt_quantities</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">groups</span>
 
         <span class="c1"># Retrieve the dimensional ordering of the shards</span>
-        <span class="n">dims</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;shard order&quot;</span><span class="p">]</span>
+        <span class="n">dims</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"shard order"</span><span class="p">]</span>
 
         <span class="c1"># Ensure the 6S LUT is in the same dimensional ordering as the sRTMnet LUT</span>
         <span class="c1"># have to unstack so that shard slicing works as expected</span>
         <span class="n">order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut_grid</span><span class="p">)</span>
-        <span class="n">sixs</span> <span class="o">=</span> <span class="n">sixs</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s2">&quot;wl&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">order</span><span class="p">)</span>
+        <span class="n">sixs</span> <span class="o">=</span> <span class="n">sixs</span><span class="o">.</span><span class="n">unstack</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s2">"wl"</span><span class="p">,</span> <span class="o">*</span><span class="n">order</span><span class="p">)</span>
 
         <span class="n">outshape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">shards</span><span class="p">)</span>
 
-        <span class="n">report</span> <span class="o">=</span> <span class="n">Track</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">&quot;shards processed&quot;</span><span class="p">,</span> <span class="nb">print</span><span class="o">=</span><span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">)</span>
+        <span class="n">report</span> <span class="o">=</span> <span class="n">Track</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">"shards processed"</span><span class="p">,</span> <span class="nb">print</span><span class="o">=</span><span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">groups</span><span class="p">):</span>
             <span class="c1"># Get the index slicing for this shard and format it for xarray slicing</span>
             <span class="c1"># xarray: dict[dim, slice]</span>
@@ -6209,7 +6209,7 @@
 
             <span class="c1"># Load the shard into memory and re-stack the point dim (sRTMnet expects)</span>
             <span class="n">shard</span> <span class="o">=</span> <span class="n">sixs</span><span class="p">[</span><span class="n">todict</span><span class="p">]</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
-            <span class="n">shard</span> <span class="o">=</span> <span class="n">shard</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">dims</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="s2">&quot;wl&quot;</span><span class="p">)</span>
+            <span class="n">shard</span> <span class="o">=</span> <span class="n">shard</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">point</span><span class="o">=</span><span class="n">dims</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s2">"point"</span><span class="p">,</span> <span class="s2">"wl"</span><span class="p">)</span>
 
             <span class="c1"># Process the shard through sRTMnet</span>
             <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">shard</span><span class="p">,</span> <span class="n">outshape</span><span class="p">)</span>
@@ -6223,7 +6223,7 @@
             <span class="n">report</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">,</span> <span class="n">outshape</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.process"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.process" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Process sRTMnet</span>
 
 <span class="sd">        Parameters</span>
@@ -6232,17 +6232,17 @@
 <span class="sd">            The 6S LUT of only the aux_rt_quantities</span>
 <span class="sd">        outshape : tuple of ints</span>
 <span class="sd">            The output shape of the array</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1">## Prepare the sim results for the emulator</span>
         <span class="c1"># In some atmospheres the values get down to basically 0, which 6S can’t quite handle and will resolve to NaN instead of 0</span>
         <span class="c1"># Safe to replace here</span>
         <span class="k">if</span> <span class="n">sim</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Simulator detected to have NaNs, replacing with 0s&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Simulator detected to have NaNs, replacing with 0s"</span><span class="p">)</span>
             <span class="n">sim</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># Interpolate the sim results from its wavelengths to the emulator wavelengths</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Interpolating simulator quantities to emulator size&quot;</span><span class="p">)</span>
-        <span class="n">resample</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">interp</span><span class="p">({</span><span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="p">[</span><span class="s2">&quot;emulator_wavelengths&quot;</span><span class="p">]})</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Interpolating simulator quantities to emulator size"</span><span class="p">)</span>
+        <span class="n">resample</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">interp</span><span class="p">({</span><span class="s2">"wl"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="p">[</span><span class="s2">"emulator_wavelengths"</span><span class="p">]})</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">emulator_sol_irr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim_sol_irr</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emulator_coszen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_emulator_coszen</span><span class="p">(</span><span class="n">sim</span><span class="p">)</span>
@@ -6250,35 +6250,35 @@
 
         <span class="c1"># Pack into dictionary for passing convenience to torch</span>
         <span class="n">resample_dict</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;emu_wl&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">emu_wl</span><span class="p">,</span>
-            <span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span>
-            <span class="s2">&quot;fwhm&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">,</span>
-            <span class="s2">&quot;emulator_H&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">emulator_H</span><span class="p">,</span>
-            <span class="s2">&quot;emulator_coszen&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">emulator_coszen</span><span class="p">,</span>
-            <span class="s2">&quot;emulator_sol_irr&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">emulator_sol_irr</span><span class="p">,</span>
+            <span class="s2">"emu_wl"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">emu_wl</span><span class="p">,</span>
+            <span class="s2">"wl"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span>
+            <span class="s2">"fwhm"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">,</span>
+            <span class="s2">"emulator_H"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">emulator_H</span><span class="p">,</span>
+            <span class="s2">"emulator_coszen"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">emulator_coszen</span><span class="p">,</span>
+            <span class="s2">"emulator_sol_irr"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">emulator_sol_irr</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="kn">import</span><span class="w"> </span><span class="nn">multiprocessing</span>
 
-        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading and predicting with emulator on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="si">}</span><span class="s2"> cores&quot;</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loading and predicting with emulator on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="si">}</span><span class="s2"> cores"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_mode</span> <span class="o">==</span> <span class="s2">&quot;3c&quot;</span><span class="p">:</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Detected hdf5 (3c) emulator file format&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_mode</span> <span class="o">==</span> <span class="s2">"3c"</span><span class="p">:</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Detected hdf5 (3c) emulator file format"</span><span class="p">)</span>
 
             <span class="c1"># Stack the quantities together along a new dimension</span>
             <span class="c1"># named `quantity`</span>
-            <span class="n">resample</span> <span class="o">=</span> <span class="n">resample</span><span class="o">.</span><span class="n">to_array</span><span class="p">(</span><span class="s2">&quot;quantity&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">stack</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;quantity&quot;</span><span class="p">,</span> <span class="s2">&quot;wl&quot;</span><span class="p">])</span>
+            <span class="n">resample</span> <span class="o">=</span> <span class="n">resample</span><span class="o">.</span><span class="n">to_array</span><span class="p">(</span><span class="s2">"quantity"</span><span class="p">)</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">stack</span><span class="o">=</span><span class="p">[</span><span class="s2">"quantity"</span><span class="p">,</span> <span class="s2">"wl"</span><span class="p">])</span>
 
             <span class="c1">## Reduce from 3D to 2D by stacking along the wavelength</span>
             <span class="c1"># dim for each quantity. Convert to DataArray to stack</span>
             <span class="c1"># the variables along a new `quantity` dimension</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">to_array</span><span class="p">(</span><span class="s2">&quot;quantity&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">stack</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;quantity&quot;</span><span class="p">,</span> <span class="s2">&quot;wl&quot;</span><span class="p">])</span>
-            <span class="n">response_scaler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;response_scaler&quot;</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">)</span>
-            <span class="n">response_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;response_offset&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">to_array</span><span class="p">(</span><span class="s2">"quantity"</span><span class="p">)</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">stack</span><span class="o">=</span><span class="p">[</span><span class="s2">"quantity"</span><span class="p">,</span> <span class="s2">"wl"</span><span class="p">])</span>
+            <span class="n">response_scaler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"response_scaler"</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">)</span>
+            <span class="n">response_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"response_offset"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
             <span class="n">emulator</span> <span class="o">=</span> <span class="n">SRTMnetModel</span><span class="p">(</span>
                 <span class="n">input_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">,</span>
-                <span class="n">key</span><span class="o">=</span><span class="s2">&quot;3c&quot;</span><span class="p">,</span>
+                <span class="n">key</span><span class="o">=</span><span class="s2">"3c"</span><span class="p">,</span>
                 <span class="n">n_cores</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">lp</span> <span class="o">=</span> <span class="n">emulator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
@@ -6294,15 +6294,15 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Detected 6c emulator file format&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Detected 6c emulator file format"</span><span class="p">)</span>
 
             <span class="c1"># This is an array of feature points tacked onto the interpolated 6s values</span>
-            <span class="n">feature_point_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="p">[</span><span class="s2">&quot;feature_point_names&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">feature_point_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="p">[</span><span class="s2">"feature_point_names"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
             <span class="n">add_vector</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_point_names</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">feature_point_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;None&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_point_names</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">feature_point_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">"None"</span><span class="p">:</span>
                 <span class="c1"># Populate the 6S parameter values from a modtran template file</span>
-                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-                    <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)[</span><span class="s2">&quot;MODTRAN&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">]</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)[</span><span class="s2">"MODTRAN"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">]</span>
 
                 <span class="n">add_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_point_names</span><span class="p">)))</span>
                 <span class="k">for</span> <span class="n">_fpn</span><span class="p">,</span> <span class="n">fpn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">feature_point_names</span><span class="p">):</span>
@@ -6310,33 +6310,33 @@
                         <span class="n">add_vector</span><span class="p">[:,</span> <span class="n">feature_point_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">fpn</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span>
                             <span class="p">:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">fpn</span><span class="p">)</span>
                         <span class="p">]</span>
-                    <span class="k">elif</span> <span class="n">fpn</span> <span class="o">==</span> <span class="s2">&quot;H2OSTR&quot;</span><span class="p">:</span>
+                    <span class="k">elif</span> <span class="n">fpn</span> <span class="o">==</span> <span class="s2">"H2OSTR"</span><span class="p">:</span>
                         <span class="n">add_vector</span><span class="p">[:,</span> <span class="n">_fpn</span><span class="p">]</span> <span class="o">=</span> <span class="mf">2.5</span>
-                        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using default const H2OSTR of 2.5 g/cm2.&quot;</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">fpn</span> <span class="o">==</span> <span class="s2">&quot;AERFRAC_2&quot;</span> <span class="ow">or</span> <span class="n">fpn</span> <span class="o">==</span> <span class="s2">&quot;AOT550&quot;</span><span class="p">:</span>
+                        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using default const H2OSTR of 2.5 g/cm2."</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">fpn</span> <span class="o">==</span> <span class="s2">"AERFRAC_2"</span> <span class="ow">or</span> <span class="n">fpn</span> <span class="o">==</span> <span class="s2">"AOT550"</span><span class="p">:</span>
                         <span class="n">add_vector</span><span class="p">[:,</span> <span class="n">_fpn</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.06</span>
-                        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using default const AOD of 0.06.&quot;</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">fpn</span> <span class="o">==</span> <span class="s2">&quot;observer_altitude_km&quot;</span><span class="p">:</span>
-                        <span class="n">add_vector</span><span class="p">[:,</span> <span class="n">_fpn</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;H1ALT&quot;</span><span class="p">]</span>
-                    <span class="k">elif</span> <span class="n">fpn</span> <span class="o">==</span> <span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">:</span>
-                        <span class="n">add_vector</span><span class="p">[:,</span> <span class="n">_fpn</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;SURFACE&quot;</span><span class="p">][</span><span class="s2">&quot;GNDALT&quot;</span><span class="p">]</span>
+                        <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using default const AOD of 0.06."</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">fpn</span> <span class="o">==</span> <span class="s2">"observer_altitude_km"</span><span class="p">:</span>
+                        <span class="n">add_vector</span><span class="p">[:,</span> <span class="n">_fpn</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"H1ALT"</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">fpn</span> <span class="o">==</span> <span class="s2">"surface_elevation_km"</span><span class="p">:</span>
+                        <span class="n">add_vector</span><span class="p">[:,</span> <span class="n">_fpn</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"SURFACE"</span><span class="p">][</span><span class="s2">"GNDALT"</span><span class="p">]</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Feature point </span><span class="si">{</span><span class="n">fpn</span><span class="si">}</span><span class="s2"> not found in points&quot;</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Feature point </span><span class="si">{</span><span class="n">fpn</span><span class="si">}</span><span class="s2"> not found in points"</span><span class="p">)</span>
 
             <span class="n">total_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
             <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;dir-dir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;transm_down_dir&quot;</span><span class="p">,</span> <span class="s2">&quot;transm_up_dir&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;dir-dif&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;transm_down_dir&quot;</span><span class="p">,</span> <span class="s2">&quot;transm_up_dif&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;dif-dir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;transm_down_dif&quot;</span><span class="p">,</span> <span class="s2">&quot;transm_up_dir&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;dif-dif&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;transm_down_dif&quot;</span><span class="p">,</span> <span class="s2">&quot;transm_up_dif&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;rhoatm&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;rhoatm&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;sphalb&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">],</span>
+                <span class="s2">"dir-dir"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"transm_down_dir"</span><span class="p">,</span> <span class="s2">"transm_up_dir"</span><span class="p">],</span>
+                <span class="s2">"dir-dif"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"transm_down_dir"</span><span class="p">,</span> <span class="s2">"transm_up_dif"</span><span class="p">],</span>
+                <span class="s2">"dif-dir"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"transm_down_dif"</span><span class="p">,</span> <span class="s2">"transm_up_dir"</span><span class="p">],</span>
+                <span class="s2">"dif-dif"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"transm_down_dif"</span><span class="p">,</span> <span class="s2">"transm_up_dif"</span><span class="p">],</span>
+                <span class="s2">"rhoatm"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"rhoatm"</span><span class="p">],</span>
+                <span class="s2">"sphalb"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"sphalb"</span><span class="p">],</span>
             <span class="p">}</span>
             <span class="c1"># for key in aux_rt_quantities:</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">key_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading emulator </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loading emulator </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                 <span class="n">emulator</span> <span class="o">=</span> <span class="n">SRTMnetModel</span><span class="p">(</span>
                     <span class="n">input_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">emulator_file</span><span class="p">,</span>
@@ -6344,9 +6344,9 @@
                     <span class="n">n_cores</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cores</span><span class="p">,</span>
                 <span class="p">)</span>
 
-                <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Emulating </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="n">response_scaler</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="p">[</span><span class="s2">&quot;response_scaler&quot;</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span>
-                <span class="n">response_offset</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="p">[</span><span class="s2">&quot;response_offset&quot;</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Emulating </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">response_scaler</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="p">[</span><span class="s2">"response_scaler"</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span>
+                <span class="n">response_offset</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="p">[</span><span class="s2">"response_offset"</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span>
 
                 <span class="n">lp</span> <span class="o">=</span> <span class="n">emulator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
                     <span class="p">[</span><span class="n">sim</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">[</span><span class="n">key</span><span class="p">]],</span>  <span class="c1"># surrogate data (6S)</span>
@@ -6358,7 +6358,7 @@
                     <span class="n">response_offset</span><span class="o">=</span><span class="n">response_offset</span><span class="p">,</span>
                     <span class="n">resample_dict</span><span class="o">=</span><span class="n">resample_dict</span><span class="p">,</span>
                 <span class="p">)</span>
-                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cleanup </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cleanup </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">del</span> <span class="n">emulator</span>
 
                 <span class="k">for</span> <span class="n">outkey</span> <span class="ow">in</span> <span class="n">lp</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -6366,20 +6366,20 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
                 <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">key_start_time</span>
-                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Predict time (</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Predict time (</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
 
-            <span class="c1"># predicts.attrs[&quot;component_mode&quot;] = &quot;6c&quot;</span>
+            <span class="c1"># predicts.attrs["component_mode"] = "6c"</span>
             <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">total_start_time</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total prediction: </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total prediction: </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">=</span> <span class="s2">&quot;rdn&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">&quot;RT_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;rdn&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rt_mode</span> <span class="o">=</span> <span class="s2">"rdn"</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">"RT_mode"</span><span class="p">,</span> <span class="s2">"rdn"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lut</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_emulator_coszen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the cosine of solar zenith aligned to the stacked point order.</span>
+<span class="w">        </span><span class="sd">"""Return the cosine of solar zenith aligned to the stacked point order.</span>
 <span class="sd">        When solar_zenith is in the LUT, for radiance conversion we need to pull</span>
-<span class="sd">        each points csza, not a universal value. If sza isn&#39;t in the lut, just</span>
+<span class="sd">        each points csza, not a universal value. If sza isn't in the lut, just</span>
 <span class="sd">        use the value from the sim.</span>
 
 <span class="sd">        Args:</span>
@@ -6387,93 +6387,93 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            np.ndarray: cosine of solar zenith aligned to the stacked point order</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s2">&quot;solar_zenith&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="s2">"solar_zenith"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim_coszen</span>
 
-        <span class="n">solar_zenith_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;solar_zenith&quot;</span><span class="p">)</span>
+        <span class="n">solar_zenith_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lut_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"solar_zenith"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="s2">&quot;point&quot;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">coords</span> <span class="ow">and</span> <span class="s2">&quot;solar_zenith&quot;</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
-            <span class="n">solar_zenith</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sim</span><span class="p">[</span><span class="s2">&quot;solar_zenith&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">solar_zenith</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">solar_zenith</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">sim</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="s2">"point"</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">coords</span> <span class="ow">and</span> <span class="s2">"solar_zenith"</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">coords</span><span class="p">:</span>
+            <span class="n">solar_zenith</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sim</span><span class="p">[</span><span class="s2">"solar_zenith"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">solar_zenith</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">solar_zenith</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">sim</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"point"</span><span class="p">]:</span>
                 <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">solar_zenith</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;points&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"points"</span><span class="p">):</span>
             <span class="n">solar_zenith</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="n">solar_zenith_index</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">solar_zenith</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">sim</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">solar_zenith</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">sim</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">"point"</span><span class="p">]:</span>
                 <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">solar_zenith</span><span class="p">))</span>
 
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Unable to align solar_zenith LUT coordinates while obtaining coszen array.&quot;</span>
+            <span class="s2">"Unable to align solar_zenith LUT coordinates while obtaining coszen array."</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">makeSim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.makeSim"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.makeSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        sRTMnet does not implement a makeSim because it leverages 6S as its simulator</span>
 <span class="sd">        As such, preSim() to create 6S, readSim() to process the 6S results</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">pass</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">readSim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.readSim"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.readSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resamples the predicts produced by preSim to be saved in self.lut_path</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">postSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.postSim"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.SimulatedModtranRT.postSim" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Post-simulation adjustments for sRTMnet.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">{}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">build_sixs_config</span><span class="p">(</span><span class="n">config</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.sRTMnet.build_sixs_config"><a href="../../../../../api/isofit/atmosphere/engines/sRTMnet/#isofit.atmosphere.engines.sRTMnet.build_sixs_config" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Builds a configuration object for a 6S simulation using a MODTRAN template</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># First create a copy of the starting config</span>
     <span class="n">full_config</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">full_config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">atmosphere</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;MODTRAN template file does not exist: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"MODTRAN template file does not exist: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="c1"># Populate the 6S parameter values from a modtran template file</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)[</span><span class="s2">&quot;MODTRAN&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MODTRANINPUT&quot;</span><span class="p">]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">template_file</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)[</span><span class="s2">"MODTRAN"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">"MODTRANINPUT"</span><span class="p">]</span>
 
     <span class="c1"># Do a quickk conversion to put things in solar azimuth/zenith terms for 6s</span>
     <span class="n">dt</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;IDAY&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;GMTIME&quot;</span><span class="p">])</span>
+        <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"IDAY"</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"GMTIME"</span><span class="p">])</span>
     <span class="p">)</span>
 
-    <span class="n">relative_azimuth</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;PARM1&quot;</span><span class="p">]</span>
-    <span class="n">observer_azimuth</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;TRUEAZ&quot;</span><span class="p">]</span>
+    <span class="n">relative_azimuth</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"PARM1"</span><span class="p">]</span>
+    <span class="n">observer_azimuth</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"TRUEAZ"</span><span class="p">]</span>
     <span class="c1"># RT simulations commonly only depend on the relative azimuth,</span>
-    <span class="c1"># so we don&#39;t care if we do view azimuth + or - relative azimuth.</span>
+    <span class="c1"># so we don't care if we do view azimuth + or - relative azimuth.</span>
     <span class="c1"># In addition, sRTMnet was only trained on relative azimuth = 0°,</span>
     <span class="c1"># so providing different values here would have no implications.</span>
     <span class="n">solar_azimuth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
         <span class="n">observer_azimuth</span> <span class="o">+</span> <span class="n">relative_azimuth</span><span class="p">,</span> <span class="n">observer_azimuth</span> <span class="o">-</span> <span class="n">relative_azimuth</span>
     <span class="p">)</span>
-    <span class="n">solar_zenith</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;PARM2&quot;</span><span class="p">]</span>
+    <span class="n">solar_zenith</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"PARM2"</span><span class="p">]</span>
 
     <span class="c1"># Tweak parameter values for sRTMnet</span>
     <span class="n">config</span><span class="o">.</span><span class="n">aerosol_model_file</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">config</span><span class="o">.</span><span class="n">aerosol_template_file</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">config</span><span class="o">.</span><span class="n">day</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">day</span>
     <span class="n">config</span><span class="o">.</span><span class="n">month</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">month</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">elev</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;SURFACE&quot;</span><span class="p">][</span><span class="s2">&quot;GNDALT&quot;</span><span class="p">]</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">alt</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;H1ALT&quot;</span><span class="p">]</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">elev</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"SURFACE"</span><span class="p">][</span><span class="s2">"GNDALT"</span><span class="p">]</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">alt</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"H1ALT"</span><span class="p">]</span>
     <span class="n">config</span><span class="o">.</span><span class="n">solzen</span> <span class="o">=</span> <span class="n">solar_zenith</span>
     <span class="n">config</span><span class="o">.</span><span class="n">solaz</span> <span class="o">=</span> <span class="n">solar_azimuth</span>
     <span class="c1"># the MODTRAN config provides the view zenith in MODTRAN convention,</span>
     <span class="c1"># so substract from 180 here as 6s follows the ANG OBS file convention</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">viewzen</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">-</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;GEOMETRY&quot;</span><span class="p">][</span><span class="s2">&quot;OBSZEN&quot;</span><span class="p">]</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">viewzen</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">-</span> <span class="n">data</span><span class="p">[</span><span class="s2">"GEOMETRY"</span><span class="p">][</span><span class="s2">"OBSZEN"</span><span class="p">]</span>
     <span class="n">config</span><span class="o">.</span><span class="n">viewaz</span> <span class="o">=</span> <span class="n">observer_azimuth</span>
     <span class="n">config</span><span class="o">.</span><span class="n">wlinf</span> <span class="o">=</span> <span class="mf">0.35</span>
     <span class="n">config</span><span class="o">.</span><span class="n">wlsup</span> <span class="o">=</span> <span class="mf">2.5</span>
@@ -6481,7 +6481,7 @@
     <span class="c1"># Save 6S to a different lut file, prepend 6S to the sRTMnet lut_path</span>
     <span class="c1"># REVIEW: Should this write to sim_path instead? I think so</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">lut_path</span><span class="p">)</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">lut_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;6S.</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">lut_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"6S.</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Ensure sim_path is set so 6S knows where to write simulation files</span>
     <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">sim_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

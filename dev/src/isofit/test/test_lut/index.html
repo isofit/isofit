@@ -4796,14 +4796,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -4822,18 +4822,18 @@
 
 <span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">xfail</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_combined</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.test_lut.test_combined"><a href="../../../../api/isofit/test/test_lut/#isofit.test.test_lut.test_combined" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test class reuse.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Test class reuse."""</span>
 
-    <span class="n">monkeypatch</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="s2">&quot;examples/20171108_Pasadena/&quot;</span><span class="p">)</span>
+    <span class="n">monkeypatch</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="s2">"examples/20171108_Pasadena/"</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading config file from the Pasadena example.&quot;</span><span class="p">)</span>
-    <span class="n">config_file</span> <span class="o">=</span> <span class="s2">&quot;configs/ang20171108t184227_beckmanlawn-multimodtran-topoflux.json&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Loading config file from the Pasadena example."</span><span class="p">)</span>
+    <span class="n">config_file</span> <span class="o">=</span> <span class="s2">"configs/ang20171108t184227_beckmanlawn-multimodtran-topoflux.json"</span>
     <span class="n">full_config</span> <span class="o">=</span> <span class="n">configs</span><span class="o">.</span><span class="n">create_new_config</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Initialize radiative transfer engine without prebuilt LUT file.&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Initialize radiative transfer engine without prebuilt LUT file."</span><span class="p">)</span>
     <span class="n">engine</span> <span class="o">=</span> <span class="n">ModtranRT</span><span class="p">(</span><span class="n">full_config</span><span class="o">=</span><span class="n">full_config</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Run radiative transfer simulations.&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Run radiative transfer simulations."</span><span class="p">)</span>
     <span class="n">engine</span><span class="o">.</span><span class="n">runSimulations</span><span class="p">()</span>
     <span class="k">del</span> <span class="n">engine</span>
 </code></pre></div></td></tr></table></div>

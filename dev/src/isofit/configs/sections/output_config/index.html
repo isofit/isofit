@@ -4937,14 +4937,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -4960,101 +4960,101 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">OutputConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.output_config.OutputConfig"><a href="../../../../../api/isofit/configs/sections/output_config/#isofit.configs.sections.output_config.OutputConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Output file(s) configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_state_file_header</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;statevector&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{State Parameter, Value}&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"statevector"</span><span class="p">,</span>
+            <span class="s2">"{State Parameter, Value}"</span><span class="p">,</span>
+            <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_state_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">estimated_state_file</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_reflectance_file_header</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;wavelength&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{Wavelength (nm), Lambertian Reflectance}&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{0.0,1.0}&quot;</span><span class="p">,</span>
+            <span class="s2">"wavelength"</span><span class="p">,</span>
+            <span class="s2">"{Wavelength (nm), Lambertian Reflectance}"</span><span class="p">,</span>
+            <span class="s2">"{0.0,1.0}"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_reflectance_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">estimated_reflectance_file</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_emission_file_header</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;wavelength&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{Wavelength (nm), Emitted Radiance (uW nm-1 cm-2 sr-1)}&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"wavelength"</span><span class="p">,</span>
+            <span class="s2">"{Wavelength (nm), Emitted Radiance (uW nm-1 cm-2 sr-1)}"</span><span class="p">,</span>
+            <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_estimated_emission_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">estimated_emission_file</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_modeled_radiance_file_header</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;wavelength&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{Wavelength (nm), Modeled Radiance (uW nm-1 cm-2 sr-1)}&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"wavelength"</span><span class="p">,</span>
+            <span class="s2">"{Wavelength (nm), Modeled Radiance (uW nm-1 cm-2 sr-1)}"</span><span class="p">,</span>
+            <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_modeled_radiance_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modeled_radiance_file</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_apparent_reflectance_file_header</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;wavelength&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{Wavelength (nm), Apparent Surface Reflectance}&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"wavelength"</span><span class="p">,</span>
+            <span class="s2">"{Wavelength (nm), Apparent Surface Reflectance}"</span><span class="p">,</span>
+            <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_apparent_reflectance_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">apparent_reflectance_file</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_path_radiance_file_header</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;wavelength&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{Wavelength (nm), Path Radiance (uW nm-1 cm-2 sr-1)}&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"wavelength"</span><span class="p">,</span>
+            <span class="s2">"{Wavelength (nm), Path Radiance (uW nm-1 cm-2 sr-1)}"</span><span class="p">,</span>
+            <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_path_radiance_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path_radiance_file</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_simulated_measurement_file_header</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;wavelength&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{Wavelength (nm), Simulated Radiance (uW nm-1 cm-2 sr-1)}&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"wavelength"</span><span class="p">,</span>
+            <span class="s2">"{Wavelength (nm), Simulated Radiance (uW nm-1 cm-2 sr-1)}"</span><span class="p">,</span>
+            <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_simulated_measurement_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">simulated_measurement_file</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_algebraic_inverse_file_header</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;wavelength&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{Wavelength (nm), Apparent Surface Reflectance}&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"wavelength"</span><span class="p">,</span>
+            <span class="s2">"{Wavelength (nm), Apparent Surface Reflectance}"</span><span class="p">,</span>
+            <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_algebraic_inverse_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">algebraic_inverse_file</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_atmospheric_coefficients_file_header</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;atm_coeffs&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{Wavelength (nm), Atmospheric Optical Parameters}&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"atm_coeffs"</span><span class="p">,</span>
+            <span class="s2">"{Wavelength (nm), Atmospheric Optical Parameters}"</span><span class="p">,</span>
+            <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_atmospheric_coefficients_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">atmospheric_coefficients_file</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_radiometry_correction_file_header</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;wavelength&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{Wavelength (nm), Radiometric Correction Factors}&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"wavelength"</span><span class="p">,</span>
+            <span class="s2">"{Wavelength (nm), Radiometric Correction Factors}"</span><span class="p">,</span>
+            <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_radiometry_correction_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">radiometry_correction_file</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_spectral_calibration_file_header</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spectral_calibration_file_header</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"wavelength"</span><span class="p">,</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_spectral_calibration_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spectral_calibration_file</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_posterior_uncertainty_file_header</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;statevector&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;{State Parameter, Value}&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"statevector"</span><span class="p">,</span>
+            <span class="s2">"{State Parameter, Value}"</span><span class="p">,</span>
+            <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_posterior_uncertainty_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">posterior_uncertainty_file</span> <span class="o">=</span> <span class="kc">None</span>
@@ -5070,14 +5070,14 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_all_output_file_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.output_config.OutputConfig.get_all_output_file_names"><a href="../../../../../api/isofit/configs/sections/output_config/#isofit.configs.sections.output_config.OutputConfig.get_all_output_file_names" title="Go to docs">[docs]</a></div>
         <span class="n">keys</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_nontype_attributes</span><span class="p">():</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_</span><span class="si">{}</span><span class="s2">_header&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_</span><span class="si">{}</span><span class="s2">_header"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">)):</span>
                 <span class="n">keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">keys</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_output_files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.output_config.OutputConfig.get_output_files"><a href="../../../../../api/isofit/configs/sections/output_config/#isofit.configs.sections.output_config.OutputConfig.get_output_files" title="Go to docs">[docs]</a></div>
         <span class="n">names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_output_file_names</span><span class="p">()</span>
         <span class="n">elements</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
-        <span class="n">headers</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_</span><span class="si">{}</span><span class="s2">_header&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_</span><span class="si">{}</span><span class="s2">_header"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
 
         <span class="n">valid</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">]</span>
         <span class="n">elements</span> <span class="o">=</span> <span class="p">[</span><span class="n">elements</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span> <span class="k">if</span> <span class="n">valid</span><span class="p">[</span><span class="n">x</span><span class="p">]]</span>

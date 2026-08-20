@@ -5116,14 +5116,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5161,7 +5161,7 @@
     <span class="n">loglevel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">logfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Args:</span>
 <span class="sd">        start_line:               line to start empirical line run at</span>
 <span class="sd">        stop_line:                line to stop empirical line run at</span>
@@ -5177,12 +5177,12 @@
 <span class="sd">        logfile:                  logging file</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-        <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">level</span><span class="o">=</span><span class="n">loglevel</span><span class="p">,</span>
         <span class="n">filename</span><span class="o">=</span><span class="n">logfile</span><span class="p">,</span>
-        <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S&quot;</span><span class="p">,</span>
+        <span class="n">datefmt</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Load reference images</span>
@@ -5194,20 +5194,20 @@
     <span class="p">)</span>
 
     <span class="n">n_reference_lines</span><span class="p">,</span> <span class="n">n_state_bands</span><span class="p">,</span> <span class="n">n_reference_columns</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="nb">int</span><span class="p">(</span><span class="n">reference_state_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span> <span class="s2">&quot;bands&quot;</span><span class="p">,</span> <span class="s2">&quot;samples&quot;</span><span class="p">)</span>
+        <span class="nb">int</span><span class="p">(</span><span class="n">reference_state_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"lines"</span><span class="p">,</span> <span class="s2">"bands"</span><span class="p">,</span> <span class="s2">"samples"</span><span class="p">)</span>
     <span class="p">]</span>
 
     <span class="c1"># Load input images</span>
     <span class="n">input_locations_img</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
         <span class="n">envi_header</span><span class="p">(</span><span class="n">input_locations_file</span><span class="p">),</span> <span class="n">input_locations_file</span>
     <span class="p">)</span>
-    <span class="n">n_location_bands</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">input_locations_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;bands&quot;</span><span class="p">])</span>
+    <span class="n">n_location_bands</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">input_locations_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"bands"</span><span class="p">])</span>
     <span class="n">n_input_samples</span> <span class="o">=</span> <span class="n">input_locations_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">n_input_lines</span> <span class="o">=</span> <span class="n">input_locations_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="c1"># Load reference data</span>
     <span class="n">reference_locations_mm</span> <span class="o">=</span> <span class="n">reference_locations_img</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span>
-        <span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span>
     <span class="n">reference_locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reference_locations_mm</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
         <span class="p">(</span><span class="n">n_reference_lines</span><span class="p">,</span> <span class="n">n_location_bands</span><span class="p">)</span>
@@ -5215,13 +5215,13 @@
 
     <span class="n">atm_bands</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">x</span> <span class="ow">in</span> <span class="n">atm_band_names</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">reference_state_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;band names&quot;</span><span class="p">]]</span>
+            <span class="p">[</span><span class="n">x</span> <span class="ow">in</span> <span class="n">atm_band_names</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">reference_state_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"band names"</span><span class="p">]]</span>
         <span class="p">)</span>
     <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="n">n_atm_bands</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atm_bands</span><span class="p">)</span>
     <span class="n">reference_state_mm</span> <span class="o">=</span> <span class="n">reference_state_img</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span>
-        <span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span>
+        <span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span>
     <span class="n">reference_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reference_state_mm</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">atm_bands</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
         <span class="p">(</span><span class="n">n_reference_lines</span><span class="p">,</span> <span class="n">n_atm_bands</span><span class="p">)</span>
@@ -5244,7 +5244,7 @@
     <span class="c1"># Third element, and the first two are latitude/longitude coordinates</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nneighbors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">n_atm_bands</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;assuming neighbors applies to all atm bands&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"assuming neighbors applies to all atm bands"</span><span class="p">)</span>
         <span class="n">nneighbors</span> <span class="o">=</span> <span class="p">[</span><span class="n">nneighbors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_atm_bands</span><span class="p">)]</span>
 
     <span class="c1"># Iterate through image</span>
@@ -5253,7 +5253,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">segmentation_img</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
             <span class="c1"># Load inline input data</span>
             <span class="n">input_locations_mm</span> <span class="o">=</span> <span class="n">input_locations_img</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span>
-                <span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span>
             <span class="p">)</span>
             <span class="n">input_locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">input_locations_mm</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
             <span class="n">output_atm_row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_input_samples</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">atm_bands</span><span class="p">)))</span> <span class="o">+</span> <span class="n">nodata_value</span>
@@ -5274,7 +5274,7 @@
                     <span class="n">bhat</span> <span class="o">=</span> <span class="n">hash_table</span><span class="p">[</span><span class="n">hash_idx</span><span class="p">]</span>
 
                 <span class="k">if</span> <span class="n">bhat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="c1"># Use the max number of neighbors...we&#39;ll zero out unwanted components below</span>
+                    <span class="c1"># Use the max number of neighbors...we'll zero out unwanted components below</span>
                     <span class="n">dists</span><span class="p">,</span> <span class="n">nn</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">nneighbors</span><span class="p">))</span>
                     <span class="n">xv</span> <span class="o">=</span> <span class="n">reference_locations</span><span class="p">[</span><span class="n">nn</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="n">loc_scaling</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
                     <span class="n">yv</span> <span class="o">=</span> <span class="n">reference_state</span><span class="p">[</span><span class="n">nn</span><span class="p">,</span> <span class="p">:]</span>
@@ -5310,7 +5310,7 @@
 
             <span class="n">elapsed</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="s2">&quot;row </span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">, (</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2"> local), </span><span class="si">{}</span><span class="s2"> spectra per second&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">"row </span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">, (</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2"> local), </span><span class="si">{}</span><span class="s2"> spectra per second"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                     <span class="n">row</span><span class="p">,</span>
                     <span class="n">n_input_lines</span><span class="p">,</span>
                     <span class="nb">int</span><span class="p">(</span><span class="n">row</span> <span class="o">-</span> <span class="n">start_line</span><span class="p">),</span>
@@ -5342,12 +5342,12 @@
     <span class="n">atm_band_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
     <span class="n">nneighbors</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">nodata_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">,</span>
-    <span class="n">loglevel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+    <span class="n">loglevel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"INFO"</span><span class="p">,</span>
     <span class="n">logfile</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">n_cores</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
     <span class="n">gaussian_smoothing_sigma</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Perform an empirical line interpolation and gaussian smoothing to atmospheric parameters.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        reference_state_file:     source file for retrieved superpixel state</span>
@@ -5364,7 +5364,7 @@
 <span class="sd">        gaussian_smoothing_sigma: sigma value to apply to gaussian smoothing of atmospheric parameters</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">nneighbors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">nneighbors</span> <span class="o">=</span> <span class="p">[</span><span class="mi">400</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">gaussian_smoothing_sigma</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -5373,48 +5373,48 @@
         <span class="n">n_cores</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-        <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">level</span><span class="o">=</span><span class="n">loglevel</span><span class="p">,</span>
         <span class="n">filename</span><span class="o">=</span><span class="n">logfile</span><span class="p">,</span>
-        <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S&quot;</span><span class="p">,</span>
+        <span class="n">datefmt</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">reference_state_img</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">reference_state_file</span><span class="p">))</span>
     <span class="n">input_locations_img</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">input_locations_file</span><span class="p">))</span>
 
-    <span class="n">n_input_lines</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">input_locations_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;lines&quot;</span><span class="p">])</span>
-    <span class="n">n_input_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">input_locations_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">])</span>
+    <span class="n">n_input_lines</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">input_locations_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"lines"</span><span class="p">])</span>
+    <span class="n">n_input_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">input_locations_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"samples"</span><span class="p">])</span>
 
     <span class="c1"># Create output files</span>
     <span class="n">output_metadata</span> <span class="o">=</span> <span class="n">reference_state_img</span><span class="o">.</span><span class="n">metadata</span>
-    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;interleave&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;bil&quot;</span>
-    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;lines&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_locations_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;lines&quot;</span><span class="p">]</span>
-    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_locations_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">]</span>
+    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"interleave"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"bil"</span>
+    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"lines"</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_locations_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"lines"</span><span class="p">]</span>
+    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"samples"</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_locations_img</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"samples"</span><span class="p">]</span>
 
-    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;band names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atm_band_names</span>
-    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Interpolated atmospheric state&quot;</span>
-    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;bands&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atm_band_names</span><span class="p">)</span>
-    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;bbl&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atm_band_names</span><span class="p">))])</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span>
+    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"band names"</span><span class="p">]</span> <span class="o">=</span> <span class="n">atm_band_names</span>
+    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"description"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"Interpolated atmospheric state"</span>
+    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"bands"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atm_band_names</span><span class="p">)</span>
+    <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"bbl"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">"{"</span> <span class="o">+</span> <span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atm_band_names</span><span class="p">))])</span> <span class="o">+</span> <span class="s2">"}"</span>
     <span class="p">)</span>
 
-    <span class="k">del</span> <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;fwhm&quot;</span><span class="p">]</span>
-    <span class="k">del</span> <span class="n">output_metadata</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+    <span class="k">del</span> <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"fwhm"</span><span class="p">]</span>
+    <span class="k">del</span> <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"wavelength"</span><span class="p">]</span>
 
     <span class="n">output_atm_img</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">create_image</span><span class="p">(</span>
-        <span class="n">envi_header</span><span class="p">(</span><span class="n">output_atm_file</span><span class="p">),</span> <span class="n">ext</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">output_metadata</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span>
+        <span class="n">envi_header</span><span class="p">(</span><span class="n">output_atm_file</span><span class="p">),</span> <span class="n">ext</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">output_metadata</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span>
 
-    <span class="c1"># Now cleanup inputs and outputs, we&#39;ll write dynamically above</span>
+    <span class="c1"># Now cleanup inputs and outputs, we'll write dynamically above</span>
     <span class="k">del</span> <span class="n">output_atm_img</span><span class="p">,</span> <span class="n">reference_state_img</span><span class="p">,</span> <span class="n">input_locations_img</span>
 
     <span class="c1"># Initialize ray cluster</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s2">&quot;ignore_reinit_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">})</span>
+    <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s2">"ignore_reinit_error"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"num_cpus"</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">})</span>
 
     <span class="n">n_cores</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">n_cores</span><span class="p">,</span> <span class="n">n_input_lines</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Beginning atmospheric interpolation </span><span class="si">{</span><span class="n">n_cores</span><span class="si">}</span><span class="s2"> cores&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Beginning atmospheric interpolation </span><span class="si">{</span><span class="n">n_cores</span><span class="si">}</span><span class="s2"> cores"</span><span class="p">)</span>
 
     <span class="c1"># Break data into sections</span>
     <span class="n">line_sections</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_input_lines</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">n_cores</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
@@ -5442,8 +5442,8 @@
 
     <span class="n">total_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="s2">&quot;Parallel atmospheric interpolations complete.  </span><span class="si">{}</span><span class="s2"> s total, </span><span class="si">{}</span><span class="s2"> spectra/s, </span><span class="si">{}</span><span class="s2">&quot;</span>
-        <span class="s2">&quot; spectra/s/core&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="s2">"Parallel atmospheric interpolations complete.  </span><span class="si">{}</span><span class="s2"> s total, </span><span class="si">{}</span><span class="s2"> spectra/s, </span><span class="si">{}</span><span class="s2">"</span>
+        <span class="s2">" spectra/s/core"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="n">total_time</span><span class="p">,</span>
             <span class="n">line_sections</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_input_samples</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">,</span>
             <span class="n">line_sections</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_input_samples</span> <span class="o">/</span> <span class="n">total_time</span> <span class="o">/</span> <span class="n">n_cores</span><span class="p">,</span>
@@ -5451,11 +5451,11 @@
     <span class="p">)</span>
 
     <span class="n">atm_img</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">output_atm_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">output_atm_file</span><span class="p">))</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gaussian_smoothing_sigma</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">atm_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;assuming gaussian smoothing applies to all atm bands&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"assuming gaussian smoothing applies to all atm bands"</span><span class="p">)</span>
         <span class="n">gaussian_smoothing_sigma</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">gaussian_smoothing_sigma</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">atm_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="p">]</span>

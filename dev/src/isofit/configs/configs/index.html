@@ -4969,14 +4969,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5000,7 +5000,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.configs.Config"><a href="../../../../api/isofit/configs/configs/#isofit.configs.configs.Config" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Handles the reading and formatting of configuration files.  Please note - there are many ways to do this, some</span>
 <span class="sd">    of which require fewer lines of code.  This method was chosen to facilitate more clarity when using / adding /</span>
 <span class="sd">    modifying code, particularly given the highly flexible nature of Isofit.</span>
@@ -5014,8 +5014,8 @@
 <span class="sd">    Example::</span>
 <span class="sd">        class GenericConfigSection(BaseConfigSection):</span>
 <span class="sd">            _attribute_type = str</span>
-<span class="sd">            attribute = &#39;my attribute&#39;</span>
-<span class="sd">            \&quot;&quot;&quot;</span><span class="nb">str</span><span class="p">:</span> <span class="n">attribute</span> <span class="n">does</span> <span class="n">whatever</span> <span class="n">it</span> <span class="n">happens</span> <span class="n">to</span> <span class="n">do</span>\<span class="s2">&quot;&quot;&quot;</span>
+<span class="sd">            attribute = 'my attribute'</span>
+<span class="sd">            \"""</span><span class="nb">str</span><span class="p">:</span> <span class="n">attribute</span> <span class="n">does</span> <span class="n">whatever</span> <span class="n">it</span> <span class="n">happens</span> <span class="n">to</span> <span class="n">do</span>\<span class="s2">"""</span>
 
 <span class="s2">    To validate that attributes have appropriate relationships or characteristics, use the hidden _check_config_validity</span>
 <span class="s2">    method to add more detailed validation checks. Simply return a list of string descriptions of errors from the</span>
@@ -5023,42 +5023,42 @@
 <span class="s2">        def _check_config_validity(self) -&gt; List[str]:</span>
 <span class="s2">            errors = list()</span>
 <span class="s2">            if self.attribute_min &gt;= self.attribute_max:</span>
-<span class="s2">                errors.append(&#39;attribute_min must be less than attribute_max.&#39;)</span>
+<span class="s2">                errors.append('attribute_min must be less than attribute_max.')</span>
 <span class="s2">            return errors</span>
 
-<span class="s2">    &quot;&quot;&quot;</span>
+<span class="s2">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configdict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_input_type</span> <span class="o">=</span> <span class="n">InputConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input</span> <span class="o">=</span> <span class="n">InputConfig</span><span class="p">({})</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;InputConfig: Input config. Holds all input file information.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""InputConfig: Input config. Holds all input file information.</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_output_type</span> <span class="o">=</span> <span class="n">OutputConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">OutputConfig</span><span class="p">({})</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;OutputConfig: Output config. Holds all output file information.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""OutputConfig: Output config. Holds all output file information.</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_forward_model_type</span> <span class="o">=</span> <span class="n">ForwardModelConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">forward_model</span> <span class="o">=</span> <span class="n">ForwardModelConfig</span><span class="p">({})</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;ForwardModelConfig: forward_model config. Holds information about surface models,</span>
+<span class="w">        </span><span class="sd">"""ForwardModelConfig: forward_model config. Holds information about surface models,</span>
 <span class="sd">        atmosphere radiative transfer models, and the instrument.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_implementation_type</span> <span class="o">=</span> <span class="n">ImplementationConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">implementation</span> <span class="o">=</span> <span class="n">ImplementationConfig</span><span class="p">({})</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;ImplementationConfig: holds information regarding how isofit is to be run, including relevant sub-configs</span>
+<span class="w">        </span><span class="sd">"""ImplementationConfig: holds information regarding how isofit is to be run, including relevant sub-configs</span>
 <span class="sd">        (e.g. inversion information).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Load sub-classes and attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_config_options</span><span class="p">(</span><span class="n">configdict</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.configs.Config.get_config_errors"><a href="../../../../api/isofit/configs/configs/#isofit.configs.configs.Config.get_config_errors" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get configuration option errors by checking the validity of each config section.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checking config sections for configuration issues&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Checking config sections for configuration issues"</span><span class="p">)</span>
 
         <span class="n">errors</span><span class="p">,</span> <span class="n">warnings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_config_validity</span><span class="p">()</span>
         <span class="n">errors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_inter_section_validity</span><span class="p">())</span>
@@ -5070,19 +5070,19 @@
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Configuration error(s) found.  See log for details.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">"Configuration error(s) found.  See log for details."</span><span class="p">)</span>
 
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Configuration file checks complete, no errors found.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Configuration file checks complete, no errors found."</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">check_inter_section_validity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.configs.Config.check_inter_section_validity"><a href="../../../../api/isofit/configs/configs/#isofit.configs.configs.Config.check_inter_section_validity" title="Go to docs">[docs]</a></div>
         <span class="n">return_errors</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;simulation&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">"simulation"</span>
             <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">reflectance_file</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="p">):</span>
             <span class="n">return_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="s2">&quot;If implementation.mode is set to simulation, input.reflectance_file&quot;</span>
-                <span class="s2">&quot; must be set&quot;</span>
+                <span class="s2">"If implementation.mode is set to simulation, input.reflectance_file"</span>
+                <span class="s2">" must be set"</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">return_errors</span>
 
@@ -5101,29 +5101,29 @@
             <span class="n">value_b</span> <span class="o">=</span> <span class="n">section_b</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">value_a</span> <span class="o">!=</span> <span class="n">value_b</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="s2">&quot;Configs have different values for option </span><span class="si">{}</span><span class="s2"> in section </span><span class="si">{}</span><span class="s2">:  </span><span class="si">{}</span><span class="s2">&quot;</span>
-                    <span class="s2">&quot; and </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">value_a</span><span class="p">,</span> <span class="n">value_b</span><span class="p">)</span>
+                    <span class="s2">"Configs have different values for option </span><span class="si">{}</span><span class="s2"> in section </span><span class="si">{}</span><span class="s2">:  </span><span class="si">{}</span><span class="s2">"</span>
+                    <span class="s2">" and </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">value_a</span><span class="p">,</span> <span class="n">value_b</span><span class="p">)</span>
                 <span class="p">)</span>
                 <span class="n">differing_items</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="nb">dict</span><span class="p">())[</span><span class="n">option</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">value_a</span><span class="p">,</span> <span class="n">value_b</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">differing_items</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">create_new_config</span><span class="p">(</span><span class="n">config_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Config</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.configs.configs.create_new_config"><a href="../../../../api/isofit/configs/configs/#isofit.configs.configs.create_new_config" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a config file from disk.</span>
+<span class="w">    </span><span class="sd">"""Load a config file from disk.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        config_file: file to load config from.  Currently accepted formats: JSON and YAML</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Config object, having completed all necessary config checks</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading config file: </span><span class="si">{</span><span class="n">config_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loading config file: </span><span class="si">{</span><span class="n">config_file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="c1"># pdb.set_trace()</span>
             <span class="n">config_dict</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Unexpected configuration file time, only json and yaml supported:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Unexpected configuration file time, only json and yaml supported:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="n">configdir</span><span class="p">,</span> <span class="n">f</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span>

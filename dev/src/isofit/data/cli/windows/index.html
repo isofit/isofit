@@ -5009,9 +5009,9 @@
 <span class="normal">203</span>
 <span class="normal">204</span>
 <span class="normal">205</span>
-<span class="normal">206</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">206</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Windows helper downloader (MinGW64 and Portable Git)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -5026,67 +5026,67 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data.download</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_file</span><span class="p">,</span> <span class="n">prepare_output</span><span class="p">,</span> <span class="n">unzip</span>
 
 <span class="n">ESSENTIAL</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="n">CMD</span> <span class="o">=</span> <span class="s2">&quot;windows&quot;</span>
-<span class="n">MINGW</span> <span class="o">=</span> <span class="s2">&quot;https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-msvcrt-r2/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64msvcrt-13.0.0-r2.zip&quot;</span>
-<span class="n">GIT_PORTABLE</span> <span class="o">=</span> <span class="s2">&quot;https://github.com/git-for-windows/git/releases/download/v2.53.0.windows.1/PortableGit-2.53.0-64-bit.7z.exe&quot;</span>
+<span class="n">CMD</span> <span class="o">=</span> <span class="s2">"windows"</span>
+<span class="n">MINGW</span> <span class="o">=</span> <span class="s2">"https://github.com/brechtsanders/winlibs_mingw/releases/download/15.2.0posix-13.0.0-msvcrt-r2/winlibs-i686-posix-dwarf-gcc-15.2.0-mingw-w64msvcrt-13.0.0-r2.zip"</span>
+<span class="n">GIT_PORTABLE</span> <span class="o">=</span> <span class="s2">"https://github.com/git-for-windows/git/releases/download/v2.53.0.windows.1/PortableGit-2.53.0-64-bit.7z.exe"</span>
 
 <span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">download_mingw</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.windows.download_mingw"><a href="../../../../../api/isofit/data/cli/windows/#isofit.data.cli.windows.download_mingw" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">download_mingw</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.windows.download_mingw"><a href="../../../../../api/isofit/data/cli/windows/#isofit.data.cli.windows.download_mingw" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Downloads MinGW64 for Windows</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;Windows&quot;</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MinGW download is only supported on Windows&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"Windows"</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"MinGW download is only supported on Windows"</span><span class="p">)</span>
         <span class="k">return</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downloading MinGW64&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Downloading MinGW64"</span><span class="p">)</span>
 
     <span class="n">output</span> <span class="o">=</span> <span class="n">prepare_output</span><span class="p">(</span>
-        <span class="n">path</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;windows&quot;</span><span class="p">,</span> <span class="s2">&quot;MinGW64&quot;</span><span class="p">),</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">isdir</span><span class="o">=</span><span class="kc">True</span>
+        <span class="n">path</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"windows"</span><span class="p">,</span> <span class="s2">"MinGW64"</span><span class="p">),</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">isdir</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">output</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="n">zipfile</span> <span class="o">=</span> <span class="n">download_file</span><span class="p">(</span><span class="n">MINGW</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;MinGW64.zip&quot;</span><span class="p">)</span>
+    <span class="n">zipfile</span> <span class="o">=</span> <span class="n">download_file</span><span class="p">(</span><span class="n">MINGW</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"MinGW64.zip"</span><span class="p">)</span>
     <span class="n">avail</span> <span class="o">=</span> <span class="n">unzip</span><span class="p">(</span><span class="n">zipfile</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">rename</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Done, now available at: </span><span class="si">{</span><span class="n">avail</span><span class="si">}</span><span class="s2">/bin&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Done, now available at: </span><span class="si">{</span><span class="n">avail</span><span class="si">}</span><span class="s2">/bin"</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span>
-        <span class="s2">&quot;You may need to add it to your PATH environment variable, ISOFIT will also do this automatically at runtime&quot;</span>
+        <span class="s2">"You may need to add it to your PATH environment variable, ISOFIT will also do this automatically at runtime"</span>
     <span class="p">)</span>
 
-    <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">&quot;path.mingw&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{windows}</span><span class="s2">/MinGW64/bin&quot;</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">"path.mingw"</span><span class="p">,</span> <span class="s2">"</span><span class="si">{windows}</span><span class="s2">/MinGW64/bin"</span><span class="p">)</span>
     <span class="n">env</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
     <span class="n">env</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">download_portable_git</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.windows.download_portable_git"><a href="../../../../../api/isofit/data/cli/windows/#isofit.data.cli.windows.download_portable_git" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Downloads Portable Git for Windows and extracts it</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;Windows&quot;</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Portable Git download is only supported on Windows&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"Windows"</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Portable Git download is only supported on Windows"</span><span class="p">)</span>
         <span class="k">return</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downloading Portable Git (Windows)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Downloading Portable Git (Windows)"</span><span class="p">)</span>
 
     <span class="n">output</span> <span class="o">=</span> <span class="n">prepare_output</span><span class="p">(</span>
-        <span class="n">path</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;windows&quot;</span><span class="p">,</span> <span class="s2">&quot;PortableGit&quot;</span><span class="p">),</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">isdir</span><span class="o">=</span><span class="kc">True</span>
+        <span class="n">path</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"windows"</span><span class="p">,</span> <span class="s2">"PortableGit"</span><span class="p">),</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">isdir</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">output</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="n">exe_file</span> <span class="o">=</span> <span class="n">download_file</span><span class="p">(</span><span class="n">GIT_PORTABLE</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;PortableGit.exe&quot;</span><span class="p">)</span>
+    <span class="n">exe_file</span> <span class="o">=</span> <span class="n">download_file</span><span class="p">(</span><span class="n">GIT_PORTABLE</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"PortableGit.exe"</span><span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Extracting Portable Git (this may take a while)...&quot;</span><span class="p">)</span>
-        <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">exe_file</span><span class="si">}</span><span class="s1">&quot; -y -o&quot;</span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Extracting Portable Git (this may take a while)..."</span><span class="p">)</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'"</span><span class="si">{</span><span class="n">exe_file</span><span class="si">}</span><span class="s1">" -y -o"</span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s1">"'</span>
         <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Failed to extract Portable Git automatically. Please extract </span><span class="si">{</span><span class="n">exe_file</span><span class="si">}</span><span class="s2"> manually to </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Failed to extract Portable Git automatically. Please extract </span><span class="si">{</span><span class="n">exe_file</span><span class="si">}</span><span class="s2"> manually to </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="k">return</span>
 
@@ -5095,15 +5095,15 @@
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
         <span class="k">pass</span>
 
-    <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">&quot;path.git&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{windows}</span><span class="s2">/PortableGit/bin&quot;</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">"path.git"</span><span class="p">,</span> <span class="s2">"</span><span class="si">{windows}</span><span class="s2">/PortableGit/bin"</span><span class="p">)</span>
     <span class="n">env</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
     <span class="n">env</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Done, now available at: </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Done, now available at: </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.windows.download"><a href="../../../../../api/isofit/data/cli/windows/#isofit.data.cli.windows.download" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Downloads Windows helper tools (MinGW64 and Portable Git)</span>
 
 <span class="sd">    Parameters</span>
@@ -5114,13 +5114,13 @@
 <span class="sd">        Overwrite an existing installation</span>
 <span class="sd">    **_ : dict</span>
 <span class="sd">        Ignores unused params for compatibility with download_all()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">download_mingw</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
     <span class="n">download_portable_git</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
 
 <div class="mkapi-source-link" id="isofit.data.cli.windows.validate"><a href="../../../../../api/isofit/data/cli/windows/#isofit.data.cli.windows.validate" title="Go to docs">[docs]</a></div>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checkForUpdate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Validates Windows helper tools installation.</span>
 <span class="sd">    On non-Windows systems, always returns True.</span>
 
@@ -5141,36 +5141,36 @@
 <span class="sd">    -------</span>
 <span class="sd">    bool</span>
 <span class="sd">        True if valid, False otherwise</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;Windows&quot;</span><span class="p">:</span>
-        <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[OK] Windows helpers not applicable on non-Windows system&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"Windows"</span><span class="p">:</span>
+        <span class="n">debug</span><span class="p">(</span><span class="s2">"[OK] Windows helpers not applicable on non-Windows system"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">windows</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Verifying path for Windows Utilities: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Verifying path for Windows Utilities: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[x] Windows Utilities path does not exist&quot;</span><span class="p">)</span>
+        <span class="n">error</span><span class="p">(</span><span class="s2">"[x] Windows Utilities path does not exist"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;MinGW64&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[x] MinGW64 not found in Windows Utilities path&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">"MinGW64"</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">error</span><span class="p">(</span><span class="s2">"[x] MinGW64 not found in Windows Utilities path"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;PortableGit&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[x] Portable Git not found in Windows Utilities path&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">"PortableGit"</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">error</span><span class="p">(</span><span class="s2">"[x] Portable Git not found in Windows Utilities path"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[OK] Windows Utilities are properly installed&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="s2">"[OK] Windows Utilities are properly installed"</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">True</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.windows.update"><a href="../../../../../api/isofit/data/cli/windows/#isofit.data.cli.windows.update" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks if an update is needed and downloads if required.</span>
 
 <span class="sd">    Parameters</span>
@@ -5179,36 +5179,36 @@
 <span class="sd">        Just check if update is needed, do not download</span>
 <span class="sd">    **kwargs : dict</span>
 <span class="sd">        Additional key-word arguments to pass to download()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">debug</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;debug&quot;</span><span class="p">,</span> <span class="nb">print</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">debug</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"debug"</span><span class="p">,</span> <span class="nb">print</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">validate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;overwrite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Executing update&quot;</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">"overwrite"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">debug</span><span class="p">(</span><span class="s2">"Executing update"</span><span class="p">)</span>
             <span class="n">download</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Please download the latest via `isofit download </span><span class="si">{</span><span class="n">CMD</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">)</span>
+            <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Please download the latest via `isofit download </span><span class="si">{</span><span class="n">CMD</span><span class="si">}</span><span class="s2">`"</span><span class="p">)</span>
 
 
 <span class="nd">@shared</span><span class="o">.</span><span class="n">download</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">CMD</span><span class="p">)</span>
-<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Root directory to download Windows helpers to, ie. [path]/windows&quot;</span><span class="p">)</span>
+<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">"Root directory to download Windows helpers to, ie. [path]/windows"</span><span class="p">)</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">overwrite</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">check</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;--mingw&quot;</span><span class="p">,</span>
+    <span class="s2">"--mingw"</span><span class="p">,</span>
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Downloads the MinGW64 (for Windows)&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Downloads the MinGW64 (for Windows)"</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;--git&quot;</span><span class="p">,</span>
+    <span class="s2">"--git"</span><span class="p">,</span>
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Downloads Portable Git (Windows)&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Downloads Portable Git (Windows)"</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">download_cli</span><span class="p">(</span><span class="n">mingw</span><span class="p">,</span> <span class="n">git</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.windows.download_cli"><a href="../../../../../api/isofit/data/cli/windows/#isofit.data.cli.windows.download_cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Downloads Windows helper tools (MinGW64, Portable Git).</span>
 <span class="sd">    If no specific tool is selected, downloads both.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">mingw</span><span class="p">:</span>
         <span class="n">download_mingw</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">git</span><span class="p">:</span>

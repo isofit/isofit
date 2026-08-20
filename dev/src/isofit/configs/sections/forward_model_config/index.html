@@ -4829,14 +4829,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -4851,55 +4851,55 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ForwardModelConfig</span><span class="p">(</span><span class="n">BaseConfigSection</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.forward_model_config.ForwardModelConfig"><a href="../../../../../api/isofit/configs/sections/forward_model_config/#isofit.configs.sections.forward_model_config.ForwardModelConfig" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Forward model configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_configdic</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_surface_type</span> <span class="o">=</span> <span class="n">SurfaceConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="p">:</span> <span class="n">SurfaceConfig</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Surface: surface config section. </span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_atmosphere_type</span> <span class="o">=</span> <span class="n">AtmosphereConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="p">:</span> <span class="n">AtmosphereConfig</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Atmosphere: atmospheric radiative transfer config section.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_type</span> <span class="o">=</span> <span class="n">InstrumentConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">:</span> <span class="n">InstrumentConfig</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Instrument: instrument config section. </span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_model_discrepancy_file_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_discrepancy_file</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Points to an numpy-format covariance matrix. </span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Backward compatibility: old configs used forward_model.radiative_transfer</span>
         <span class="c1"># with nested radiative_transfer_engines. Flatten the first engine into</span>
         <span class="c1"># forward_model.atmosphere so the rest of the code finds it.</span>
         <span class="k">if</span> <span class="p">(</span>
             <span class="n">sub_configdic</span>
-            <span class="ow">and</span> <span class="s2">&quot;radiative_transfer&quot;</span> <span class="ow">in</span> <span class="n">sub_configdic</span>
-            <span class="ow">and</span> <span class="s2">&quot;atmosphere&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sub_configdic</span>
+            <span class="ow">and</span> <span class="s2">"radiative_transfer"</span> <span class="ow">in</span> <span class="n">sub_configdic</span>
+            <span class="ow">and</span> <span class="s2">"atmosphere"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sub_configdic</span>
         <span class="p">):</span>
-            <span class="n">rt</span> <span class="o">=</span> <span class="n">sub_configdic</span><span class="p">[</span><span class="s2">&quot;radiative_transfer&quot;</span><span class="p">]</span>
-            <span class="n">engines</span> <span class="o">=</span> <span class="n">rt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;radiative_transfer_engines&quot;</span><span class="p">,</span> <span class="p">{})</span>
-            <span class="c1"># Take the first engine (usually the only one, e.g. &quot;vswir&quot;)</span>
+            <span class="n">rt</span> <span class="o">=</span> <span class="n">sub_configdic</span><span class="p">[</span><span class="s2">"radiative_transfer"</span><span class="p">]</span>
+            <span class="n">engines</span> <span class="o">=</span> <span class="n">rt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"radiative_transfer_engines"</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="c1"># Take the first engine (usually the only one, e.g. "vswir")</span>
             <span class="n">first_engine</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">engines</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="p">{})</span> <span class="k">if</span> <span class="n">engines</span> <span class="k">else</span> <span class="p">{}</span>
             <span class="n">atmosphere</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">first_engine</span><span class="p">}</span>
             <span class="c1"># Hoist statevector / lut_grid / unknowns from the RT container</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;statevector&quot;</span><span class="p">,</span> <span class="s2">&quot;lut_grid&quot;</span><span class="p">,</span> <span class="s2">&quot;unknowns&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"statevector"</span><span class="p">,</span> <span class="s2">"lut_grid"</span><span class="p">,</span> <span class="s2">"unknowns"</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">rt</span><span class="p">:</span>
                     <span class="n">atmosphere</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">rt</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
-            <span class="n">sub_configdic</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">sub_configdic</span><span class="p">,</span> <span class="s2">&quot;atmosphere&quot;</span><span class="p">:</span> <span class="n">atmosphere</span><span class="p">}</span>
+            <span class="n">sub_configdic</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">sub_configdic</span><span class="p">,</span> <span class="s2">"atmosphere"</span><span class="p">:</span> <span class="n">atmosphere</span><span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>

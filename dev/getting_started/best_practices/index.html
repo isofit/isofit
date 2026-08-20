@@ -4931,77 +4931,77 @@
 <h3 id="surface-models">Surface Models<a class="headerlink" href="#surface-models" title="Permanent link">#</a></h3>
 <p>The multicomponent surface model is most universal and forgiving. We recommend constructing Gaussian PDFs from diverse libraries of terrestrial and aquatic spectra, with correlations only in the key water absorption features at 940 and 1140 nm. Use reference wavelengths for normalization and distance calculations that exclude the deep water absorption features at 1440 and 1880 nm. An example configuration file formed from libraries in our distribution, for the wavelengths from 380-2500 nm, might be:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;output_model_file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;surface_model.mat&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;wavelength_file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;wavelengths.txt&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;normalize&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Euclidean&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;reference_windows&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="mi">400</span><span class="p">,</span><span class="w"> </span><span class="mi">1300</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">1450</span><span class="p">,</span><span class="w"> </span><span class="mi">1700</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">2100</span><span class="p">,</span><span class="w"> </span><span class="mi">2450</span><span class="p">]],</span>
-<span class="w">  </span><span class="nt">&quot;sources&quot;</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">"output_model_file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"surface_model.mat"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"wavelength_file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"wavelengths.txt"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"normalize"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Euclidean"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"reference_windows"</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="mi">400</span><span class="p">,</span><span class="w"> </span><span class="mi">1300</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">1450</span><span class="p">,</span><span class="w"> </span><span class="mi">1700</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">2100</span><span class="p">,</span><span class="w"> </span><span class="mi">2450</span><span class="p">]],</span>
+<span class="w">  </span><span class="nt">"sources"</span><span class="p">:</span>
 <span class="w">    </span><span class="p">[</span>
 <span class="w">      </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;input_spectrum_files&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">"input_spectrum_files"</span><span class="p">:</span>
 <span class="w">          </span><span class="p">[</span>
-<span class="w">            </span><span class="s2">&quot;~/.isofit/data/reflectance/surface_model_ucsb&quot;</span>
+<span class="w">            </span><span class="s2">"~/.isofit/data/reflectance/surface_model_ucsb"</span>
 <span class="w">          </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;n_components&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;windows&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="nt">"n_components"</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"windows"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">          </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">300</span><span class="p">,</span><span class="w"> </span><span class="mi">890</span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;regularizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;correlation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;decorrelated&quot;</span>
+<span class="w">            </span><span class="nt">"interval"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">300</span><span class="p">,</span><span class="w"> </span><span class="mi">890</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"regularizer"</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"correlation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"decorrelated"</span>
 <span class="w">          </span><span class="p">},</span>
 <span class="w">          </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">890</span><span class="p">,</span><span class="w"> </span><span class="mi">990</span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;regularizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1e-6</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;correlation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EM&quot;</span>
+<span class="w">            </span><span class="nt">"interval"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">890</span><span class="p">,</span><span class="w"> </span><span class="mi">990</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"regularizer"</span><span class="p">:</span><span class="w"> </span><span class="mf">1e-6</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"correlation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EM"</span>
 <span class="w">          </span><span class="p">},</span>
 <span class="w">          </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">990</span><span class="p">,</span><span class="w"> </span><span class="mi">1090</span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;regularizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;correlation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;decorrelated&quot;</span>
+<span class="w">            </span><span class="nt">"interval"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">990</span><span class="p">,</span><span class="w"> </span><span class="mi">1090</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"regularizer"</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"correlation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"decorrelated"</span>
 <span class="w">          </span><span class="p">},</span>
 <span class="w">          </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1090</span><span class="p">,</span><span class="w"> </span><span class="mi">1190</span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;regularizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1e-6</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;correlation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EM&quot;</span>
+<span class="w">            </span><span class="nt">"interval"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1090</span><span class="p">,</span><span class="w"> </span><span class="mi">1190</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"regularizer"</span><span class="p">:</span><span class="w"> </span><span class="mf">1e-6</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"correlation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EM"</span>
 <span class="w">          </span><span class="p">},</span>
 <span class="w">          </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1190</span><span class="p">,</span><span class="w"> </span><span class="mi">2500</span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;regularizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;correlation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;decorrelated&quot;</span>
+<span class="w">            </span><span class="nt">"interval"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1190</span><span class="p">,</span><span class="w"> </span><span class="mi">2500</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"regularizer"</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"correlation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"decorrelated"</span>
 <span class="w">          </span><span class="p">}</span>
 <span class="w">        </span><span class="p">]</span>
 <span class="w">      </span><span class="p">},</span>
 <span class="w">      </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;input_spectrum_files&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">"input_spectrum_files"</span><span class="p">:</span>
 <span class="w">          </span><span class="p">[</span>
-<span class="w">            </span><span class="s2">&quot;~/.isofit/data/reflectance/ocean_spectra_rev2&quot;</span>
+<span class="w">            </span><span class="s2">"~/.isofit/data/reflectance/ocean_spectra_rev2"</span>
 <span class="w">          </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;n_components&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;windows&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="nt">"n_components"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"windows"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">          </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;interval&quot;</span><span class="p">:[</span><span class="mi">300</span><span class="p">,</span><span class="w"> </span><span class="mi">890</span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;regularizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;correlation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;decorrelated&quot;</span>
+<span class="w">            </span><span class="nt">"interval"</span><span class="p">:[</span><span class="mi">300</span><span class="p">,</span><span class="w"> </span><span class="mi">890</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"regularizer"</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"correlation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"decorrelated"</span>
 <span class="w">          </span><span class="p">},</span>
 <span class="w">          </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">890</span><span class="p">,</span><span class="w"> </span><span class="mi">990</span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;regularizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1e-6</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;correlation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EM&quot;</span>
+<span class="w">            </span><span class="nt">"interval"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">890</span><span class="p">,</span><span class="w"> </span><span class="mi">990</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"regularizer"</span><span class="p">:</span><span class="w"> </span><span class="mf">1e-6</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"correlation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EM"</span>
 <span class="w">          </span><span class="p">},</span>
 <span class="w">          </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">990</span><span class="p">,</span><span class="w"> </span><span class="mi">1090</span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;regularizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;correlation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;decorrelated&quot;</span>
+<span class="w">            </span><span class="nt">"interval"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">990</span><span class="p">,</span><span class="w"> </span><span class="mi">1090</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"regularizer"</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"correlation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"decorrelated"</span>
 <span class="w">          </span><span class="p">},</span>
 <span class="w">          </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1090</span><span class="p">,</span><span class="w"> </span><span class="mi">1190</span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;regularizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1e-6</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;correlation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;EM&quot;</span>
+<span class="w">            </span><span class="nt">"interval"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1090</span><span class="p">,</span><span class="w"> </span><span class="mi">1190</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"regularizer"</span><span class="p">:</span><span class="w"> </span><span class="mf">1e-6</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"correlation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EM"</span>
 <span class="w">          </span><span class="p">},</span>
 <span class="w">          </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1190</span><span class="p">,</span><span class="w"> </span><span class="mi">2500</span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;regularizer&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;correlation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;decorrelated&quot;</span>
+<span class="w">            </span><span class="nt">"interval"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1190</span><span class="p">,</span><span class="w"> </span><span class="mi">2500</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"regularizer"</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"correlation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"decorrelated"</span>
 <span class="w">          </span><span class="p">}</span>
 <span class="w">        </span><span class="p">]</span>
 <span class="w">      </span><span class="p">}</span>
@@ -5009,82 +5009,82 @@
 <span class="p">}</span>
 </code></pre></div>
 <p>Note that the surface model is normalized with the Euclidean norm. In the top-level configuration file, the "select_on_init" parameter should be set to True, and the "selection_metric" field to "Euclidean." An example surface configuration block might be:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">&quot;surface&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;surface_category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;multicomponent_surface&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;surface_file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;surface.mat&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;select_on_init&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;selection_metric&quot;</span><span class="p">:</span><span class="s2">&quot;Euclidean&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="nt">"surface"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"surface_category"</span><span class="p">:</span><span class="w"> </span><span class="s2">"multicomponent_surface"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"surface_file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"surface.mat"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"select_on_init"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"selection_metric"</span><span class="p">:</span><span class="s2">"Euclidean"</span>
 <span class="p">},</span>
 </code></pre></div>
 <h3 id="instrument-models">Instrument Models<a class="headerlink" href="#instrument-models" title="Permanent link">#</a></h3>
 <p>We recommend instrument models based on a three-channel parametric noise description. These models predict noise-equivalent change in radiance as a function of :math:<code>L</code>, the radiance at sensor, with the relation :math:<code>L_{noisy} = a\sqrt{b+L}+c</code>. They are stored as five-column ASCII text files with columns representing: wavelength; the a, b, and c coefficients; and the Root Mean Squared approximation error for the coefficient fitting, respectively. An example is provided in the <code>data/avirisng_noise.txt</code> file. We also recommend channelized uncertainty files representing the standard deviation of residuals due to forward model or wavelength calibration and response errors. Finally, we recommend a 0-1% uncorrelated radiometric uncertainty term, depending on the confidence in the radiometric calibration of the instrument. Certain extreme cases may require higher values. An example instrument configuration might be:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">&quot;instrument&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;wavelength_file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;wavelengths.txt&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;parametric_noise_file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;~/.isofit/data/avirisng_noise.txt&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;integrations&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;unknowns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;channelized_radiometric_uncertainty_file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;~/.isofit/data/avirisng_systematic_error.txt&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;uncorrelated_radiometric_uncertainty&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.01</span>
+<div class="highlight"><pre><span></span><code><span class="nt">"instrument"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"wavelength_file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"wavelengths.txt"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"parametric_noise_file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"~/.isofit/data/avirisng_noise.txt"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"integrations"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"unknowns"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"channelized_radiometric_uncertainty_file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"~/.isofit/data/avirisng_systematic_error.txt"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"uncorrelated_radiometric_uncertainty"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.01</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
 <p>The "integrations" field represents the number of coadded spectra that contribute to the measurement; it should typically be set to unity unless one is analyzing the average spectrum from a large area.</p>
 <h3 id="atmosphere">Atmosphere<a class="headerlink" href="#atmosphere" title="Permanent link">#</a></h3>
 <p>We highly recommend the MODTRAN 6.0 radiative transfer model over LibRadTran and 6SV options for full-spectrum (380-2500) imaging spectroscopy. We recommend retrieving water vapor and aerosol optical depth in the VSWIR range, water vapor and ozone in the thermal IR. For aerosol optical properties, we recommend the third aerosol type found the aerosol file data/aerosol_model.txt. This can be selected by including the "AERFRAC_2" element in the state vector and lookup tables. For a simplified configuration that does not include variable viewing geometry, consider something like:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">&quot;radiative_transfer&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;lut_grid&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;AERFRAC_2&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.001</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1673</span><span class="p">,</span><span class="w"> </span><span class="mf">0.3336</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;H2OSTR&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span><span class="w"> </span><span class="mf">1.4</span><span class="p">,</span><span class="w"> </span><span class="mf">1.6</span><span class="p">,</span><span class="w"> </span><span class="mf">1.8</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><code><span class="nt">"radiative_transfer"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"lut_grid"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"AERFRAC_2"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.001</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1673</span><span class="p">,</span><span class="w"> </span><span class="mf">0.3336</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">"H2OSTR"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span><span class="w"> </span><span class="mf">1.4</span><span class="p">,</span><span class="w"> </span><span class="mf">1.6</span><span class="p">,</span><span class="w"> </span><span class="mf">1.8</span><span class="p">]</span>
 <span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;radiative_transfer_engines&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;vswir&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;aerosol_model_file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;~/.isofit/data/aerosol_model.txt&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;aerosol_template_file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;~/.isofit/data/aerosol_template.json&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;engine_base_dir&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;path_to_MODTRAN6.0.0/&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;engine_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;modtran&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;lut_names&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;H2OSTR&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;AERFRAC_2&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">},</span>
-<span class="w">      </span><span class="nt">&quot;lut_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;./lut_directory/&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;statevector_names&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;AERFRAC_2&quot;</span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;template_file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;path_to_modtran_6_template.json&quot;</span>
+<span class="w">  </span><span class="nt">"radiative_transfer_engines"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"vswir"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"aerosol_model_file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"~/.isofit/data/aerosol_model.txt"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"aerosol_template_file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"~/.isofit/data/aerosol_template.json"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"engine_base_dir"</span><span class="p">:</span><span class="w"> </span><span class="s2">"path_to_MODTRAN6.0.0/"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"engine_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"modtran"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"lut_names"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"H2OSTR"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="nt">"AERFRAC_2"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">},</span>
+<span class="w">      </span><span class="nt">"lut_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./lut_directory/"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"statevector_names"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"H2OSTR"</span><span class="p">,</span><span class="w"> </span><span class="s2">"AERFRAC_2"</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">"template_file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"path_to_modtran_6_template.json"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;statevector&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;AERFRAC_2&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;bounds&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.001</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;init&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.050</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;prior_mean&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.050</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;prior_sigma&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">10.0</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;scale&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">  </span><span class="nt">"statevector"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"AERFRAC_2"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"bounds"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.001</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">"init"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.050</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"prior_mean"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.050</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"prior_sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">10.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"scale"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;H2OSTR&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;bounds&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.8</span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;init&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.4</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;prior_mean&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.4</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;prior_sigma&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;scale&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.01</span>
+<span class="w">    </span><span class="nt">"H2OSTR"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"bounds"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.8</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">"init"</span><span class="p">:</span><span class="w"> </span><span class="mf">1.4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"prior_mean"</span><span class="p">:</span><span class="w"> </span><span class="mf">1.4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"prior_sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"scale"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.01</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;unknowns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;H2O_ABSCO&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span>
+<span class="w">  </span><span class="nt">"unknowns"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"H2O_ABSCO"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
 <p>Note that all atmospheric parameters have extremely wide and uninformed prior distributions. More advanced users, or those with very heterogeneous flightlines, may wish to track the unique viewing geometry of every pixel in the image. They should add the "GNDALT", "OBSZEN", and possibly "TRUEAZ" terms to the lookup tables (but not the state vector). It is important to pass in an OBS-format metadata file in the input block, so that the program knows the geometry associated with each pixel.</p>
 <h3 id="inversion-methods">Inversion Methods<a class="headerlink" href="#inversion-methods" title="Permanent link">#</a></h3>
 <p>We recommend excluding deep water features at 1440 nm and 1880 nm from the inversion windows. We recommend a multiple-start inversion with four gridpoints at low and high values of atmospheric aerosol and water vapor. A typical inversion configuration might be:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">&quot;inversion&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;integration_grid&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;AERFRAC_2&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<div class="highlight"><pre><span></span><code><span class="nt">"inversion"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"integration_grid"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"AERFRAC_2"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">      </span><span class="mf">0.03</span><span class="p">,</span>
 <span class="w">      </span><span class="mf">0.14</span>
 <span class="w">    </span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;H2OSTR&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="nt">"H2OSTR"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">      </span><span class="mf">0.5496509736776353</span><span class="p">,</span>
 <span class="w">      </span><span class="mf">1.1583518081903457</span>
 <span class="w">    </span><span class="p">]</span>
 <span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;inversion_grid_as_preseed&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;windows&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="nt">"inversion_grid_as_preseed"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"windows"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">[</span>
 <span class="w">      </span><span class="mf">400.0</span><span class="p">,</span>
 <span class="w">      </span><span class="mf">1300.0</span>

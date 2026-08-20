@@ -5178,9 +5178,9 @@
 <span class="normal">339</span>
 <span class="normal">340</span>
 <span class="normal">341</span>
-<span class="normal">342</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">342</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
@@ -5193,49 +5193,49 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data.download</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_file</span><span class="p">,</span> <span class="n">prepare_output</span>
 
 <span class="n">ESSENTIAL</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="n">CMD</span> <span class="o">=</span> <span class="s2">&quot;srtmnet&quot;</span>
-<span class="n">URL</span> <span class="o">=</span> <span class="s2">&quot;https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/&quot;</span>
+<span class="n">CMD</span> <span class="o">=</span> <span class="s2">"srtmnet"</span>
+<span class="n">URL</span> <span class="o">=</span> <span class="s2">"https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/"</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">getVersion</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.srtmnet.getVersion"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.getVersion" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">getVersion</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.srtmnet.getVersion"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.getVersion" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Retrieves the available versions and verifies the requested version is valid. Times</span>
 <span class="sd">    out after 10 seconds if the server is unavailable.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    version : str, default=&quot;latest&quot;</span>
+<span class="sd">    version : str, default="latest"</span>
 <span class="sd">        Version of sRTMnet to pull</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    str</span>
 <span class="sd">        Requested version</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">get</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">URL</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">Timeout</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[!] sRTMnet server request timed out, cannot retrieve versions&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"[!] sRTMnet server request timed out, cannot retrieve versions"</span><span class="p">)</span>
         <span class="k">return</span>
     <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConnectionError</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[!] sRTMnet server refused connection, cannot retrieve versions&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"[!] sRTMnet server refused connection, cannot retrieve versions"</span><span class="p">)</span>
         <span class="k">return</span>
 
-    <span class="n">versions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;sRTMnet_(v\d+)\.h5&quot;</span><span class="p">,</span> <span class="n">get</span><span class="o">.</span><span class="n">text</span><span class="p">)))</span>
+    <span class="n">versions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"sRTMnet_(v\d+)\.h5"</span><span class="p">,</span> <span class="n">get</span><span class="o">.</span><span class="n">text</span><span class="p">)))</span>
     <span class="n">versions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">versions</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
 
-    <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;latest&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">"latest"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">versions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">elif</span> <span class="n">version</span> <span class="ow">in</span> <span class="n">versions</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">version</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;[!] Requested version </span><span class="si">{</span><span class="n">version</span><span class="si">!r}</span><span class="s2"> does not exist, must be one of: </span><span class="si">{</span><span class="n">versions</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"[!] Requested version </span><span class="si">{</span><span class="n">version</span><span class="si">!r}</span><span class="s2"> does not exist, must be one of: </span><span class="si">{</span><span class="n">versions</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.srtmnet.download"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.download" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.srtmnet.download"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.download" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/.</span>
 
 <span class="sd">    Parameters</span>
@@ -5249,36 +5249,36 @@
 <span class="sd">    **_ : dict</span>
 <span class="sd">        Ignores unused params that may be used by other validate functions. This is to</span>
 <span class="sd">        maintain compatibility with other functions</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">version</span> <span class="o">:=</span> <span class="n">getVersion</span><span class="p">(</span><span class="n">tag</span><span class="p">))</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloading sRTMnet[</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Downloading sRTMnet[</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
 
     <span class="n">output</span> <span class="o">=</span> <span class="n">prepare_output</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">env</span><span class="o">.</span><span class="n">srtmnet</span><span class="p">,</span> <span class="n">isdir</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">output</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pulling version </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Pulling version </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Retrieving model.h5&quot;</span><span class="p">)</span>
-    <span class="n">file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sRTMnet_</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">.h5&quot;</span>
-    <span class="n">download_file</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">URL</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">output</span> <span class="o">/</span> <span class="n">file</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Retrieving model.h5"</span><span class="p">)</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"sRTMnet_</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">.h5"</span>
+    <span class="n">download_file</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">URL</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">output</span> <span class="o">/</span> <span class="n">file</span><span class="p">)</span>
 
-    <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">&quot;srtmnet.file&quot;</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">"srtmnet.file"</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Retrieving aux.npz&quot;</span><span class="p">)</span>
-    <span class="n">file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sRTMnet_</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">_aux.npz&quot;</span>
-    <span class="n">download_file</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">URL</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">output</span> <span class="o">/</span> <span class="n">file</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Retrieving aux.npz"</span><span class="p">)</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"sRTMnet_</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">_aux.npz"</span>
+    <span class="n">download_file</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">URL</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">output</span> <span class="o">/</span> <span class="n">file</span><span class="p">)</span>
 
-    <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">&quot;srtmnet.aux&quot;</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">"srtmnet.aux"</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
     <span class="n">env</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">diff_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Done, now available at: </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Done, now available at: </span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <div class="mkapi-source-link" id="isofit.data.cli.srtmnet.validate"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.validate" title="Go to docs">[docs]</a></div>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checkForUpdate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Validates an sRTMnet installation</span>
 
 <span class="sd">    Parameters</span>
@@ -5299,25 +5299,25 @@
 <span class="sd">    -------</span>
 <span class="sd">    bool</span>
 <span class="sd">        True if valid, False otherwise</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">srtmnet</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Verifying path for sRTMnet: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Verifying path for sRTMnet: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">path</span> <span class="o">:=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">))</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[x] sRTMnet path does not exist&quot;</span><span class="p">)</span>
+        <span class="n">error</span><span class="p">(</span><span class="s2">"[x] sRTMnet path does not exist"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.h5&quot;</span><span class="p">)):</span>
-        <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[x] sRTMnet model not found&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.h5"</span><span class="p">)):</span>
+        <span class="n">error</span><span class="p">(</span><span class="s2">"[x] sRTMnet model not found"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*_aux.npz&quot;</span><span class="p">)):</span>
-        <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[x] sRTMnet aux file not found&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*_aux.npz"</span><span class="p">)):</span>
+        <span class="n">error</span><span class="p">(</span><span class="s2">"[x] sRTMnet aux file not found"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[OK] Path is valid&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="s2">"[OK] Path is valid"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">checkForUpdate</span><span class="p">:</span>
         <span class="n">isUpToDate</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">error</span><span class="p">)</span>
@@ -5326,7 +5326,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">detectInstalled</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.srtmnet.detectInstalled"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.detectInstalled" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Attempt to detect a currently installed sRTMnet model and, if present, save that</span>
 <span class="sd">    information back to the ini for future reference</span>
 
@@ -5334,7 +5334,7 @@
 <span class="sd">    ----------</span>
 <span class="sd">    path : str, default=None</span>
 <span class="sd">        Path to check. If None, defaults to the ini path</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">path</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -5346,15 +5346,15 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Just retrieve the first of each extension</span>
             <span class="c1"># This may be inaccurate if multiple installs are in one directory</span>
-            <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">&quot;srtmnet.file&quot;</span><span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.h5&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">&quot;srtmnet.aux&quot;</span><span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.npz&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">"srtmnet.file"</span><span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.h5"</span><span class="p">))</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">"srtmnet.aux"</span><span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.npz"</span><span class="p">))</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
             <span class="n">env</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
         <span class="k">except</span><span class="p">:</span>
             <span class="k">pass</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">compare</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">print</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.srtmnet.compare"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.compare" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compares an existing sRTMnet file against some other provided version</span>
 
 <span class="sd">    Parameters</span>
@@ -5373,31 +5373,31 @@
 <span class="sd">    -------</span>
 <span class="sd">    bool</span>
 <span class="sd">        True if the current version is not the latest, False otherwise</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">latest</span> <span class="o">:=</span> <span class="n">getVersion</span><span class="p">(</span><span class="n">tag</span><span class="p">)):</span>
-            <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[!] Failed to retrieve latest version, try again later&quot;</span><span class="p">)</span>
+            <span class="n">error</span><span class="p">(</span><span class="s2">"[!] Failed to retrieve latest version, try again later"</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
 
         <span class="n">latest</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">latest</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">find</span> <span class="o">:=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(v\d+)&quot;</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">find</span> <span class="o">:=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(v\d+)"</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
         <span class="n">current</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">find</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[x] Version could not be parsed from the path for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[x] Version could not be parsed from the path for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="k">if</span> <span class="n">current</span> <span class="o">&lt;</span> <span class="n">version</span><span class="p">:</span>
         <span class="n">error</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;[x] The sRTMnet </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is out of date. The latest is v</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">, currently installed is v</span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"[x] The sRTMnet </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is out of date. The latest is v</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">, currently installed is v</span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="k">return</span> <span class="kc">False</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">isUpToDate</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.srtmnet.isUpToDate"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.isUpToDate" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">isUpToDate</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">print</span><span class="p">,</span> <span class="o">**</span><span class="n">_</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.srtmnet.isUpToDate"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.isUpToDate" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks the installed version against the latest release</span>
 
 <span class="sd">    Parameters</span>
@@ -5419,58 +5419,58 @@
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    The Github workflows watch for the string &quot;[x]&quot; to determine if the cache needs to</span>
+<span class="sd">    The Github workflows watch for the string "[x]" to determine if the cache needs to</span>
 <span class="sd">    update the data of this module. If your module does not include this string, the</span>
 <span class="sd">    workflows will never detect updates.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">missing</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">env</span><span class="p">[</span><span class="s2">&quot;srtmnet.file&quot;</span><span class="p">]:</span>
-        <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[x] sRTMnet file is not set in the ini, version unknown&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">env</span><span class="p">[</span><span class="s2">"srtmnet.file"</span><span class="p">]:</span>
+        <span class="n">error</span><span class="p">(</span><span class="s2">"[x] sRTMnet file is not set in the ini, version unknown"</span><span class="p">)</span>
         <span class="n">missing</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">env</span><span class="p">[</span><span class="s2">&quot;srtmnet.aux&quot;</span><span class="p">]:</span>
-        <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[x] sRTMnet aux is not set in the ini, version unknown&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">env</span><span class="p">[</span><span class="s2">"srtmnet.aux"</span><span class="p">]:</span>
+        <span class="n">error</span><span class="p">(</span><span class="s2">"[x] sRTMnet aux is not set in the ini, version unknown"</span><span class="p">)</span>
         <span class="n">missing</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
         <span class="n">debug</span><span class="p">(</span>
-            <span class="s2">&quot;Attempting to detect if a model and aux are already installed but not set in the ini&quot;</span>
+            <span class="s2">"Attempting to detect if a model and aux are already installed but not set in the ini"</span>
         <span class="p">)</span>
         <span class="n">detectInstalled</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># If the paths do not exist, env.path() will report that</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;srtmnet&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;srtmnet.file&quot;</span><span class="p">)</span>
-        <span class="n">aux</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;srtmnet&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;srtmnet.aux&quot;</span><span class="p">)</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"srtmnet"</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"srtmnet.file"</span><span class="p">)</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"srtmnet"</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"srtmnet.aux"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">model</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">aux</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[x] Missing the above&quot;</span><span class="p">)</span>
+            <span class="n">error</span><span class="p">(</span><span class="s2">"[x] Missing the above"</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="n">env</span><span class="p">[</span><span class="s2">&quot;srtmnet.file&quot;</span><span class="p">]</span>
-        <span class="n">aux</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="n">env</span><span class="p">[</span><span class="s2">&quot;srtmnet.aux&quot;</span><span class="p">]</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="n">env</span><span class="p">[</span><span class="s2">"srtmnet.file"</span><span class="p">]</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="n">env</span><span class="p">[</span><span class="s2">"srtmnet.aux"</span><span class="p">]</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Checking for updates for sRTMnet on path: </span><span class="si">{</span><span class="n">model</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Checking for updates for sRTMnet on path: </span><span class="si">{</span><span class="n">model</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">latest</span> <span class="o">:=</span> <span class="n">getVersion</span><span class="p">(</span><span class="n">tag</span><span class="p">)):</span>
-        <span class="n">error</span><span class="p">(</span><span class="s2">&quot;[!] Failed to retrieve latest version, try again later&quot;</span><span class="p">)</span>
+        <span class="n">error</span><span class="p">(</span><span class="s2">"[!] Failed to retrieve latest version, try again later"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="n">latest</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">latest</span><span class="p">)</span>
-    <span class="n">model</span> <span class="o">=</span> <span class="n">compare</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="n">latest</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
-    <span class="n">aux</span> <span class="o">=</span> <span class="n">compare</span><span class="p">(</span><span class="n">aux</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;aux&quot;</span><span class="p">,</span> <span class="n">latest</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">compare</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">"model"</span><span class="p">,</span> <span class="n">latest</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+    <span class="n">aux</span> <span class="o">=</span> <span class="n">compare</span><span class="p">(</span><span class="n">aux</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">"aux"</span><span class="p">,</span> <span class="n">latest</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">model</span> <span class="ow">or</span> <span class="n">aux</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;[OK] Path is up to date&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="s2">"[OK] Path is up to date"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="kc">True</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.srtmnet.update"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.update" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks for an update and executes a new download if it is needed</span>
 
 <span class="sd">    Parameters</span>
@@ -5479,24 +5479,24 @@
 <span class="sd">        Just check if an update is available, do not download</span>
 <span class="sd">    **kwargs : dict</span>
 <span class="sd">        Additional key-word arguments to pass to download()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">debug</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;debug&quot;</span><span class="p">,</span> <span class="nb">print</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">debug</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"debug"</span><span class="p">,</span> <span class="nb">print</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">validate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;overwrite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Executing update&quot;</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">"overwrite"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">debug</span><span class="p">(</span><span class="s2">"Executing update"</span><span class="p">)</span>
             <span class="n">download</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Please download the latest via `isofit download </span><span class="si">{</span><span class="n">CMD</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">)</span>
+            <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Please download the latest via `isofit download </span><span class="si">{</span><span class="n">CMD</span><span class="si">}</span><span class="s2">`"</span><span class="p">)</span>
 
 
 <span class="nd">@shared</span><span class="o">.</span><span class="n">download</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">CMD</span><span class="p">)</span>
-<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Root directory to download sRTMnet to, ie. [path]/sRTMnet&quot;</span><span class="p">)</span>
+<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">"Root directory to download sRTMnet to, ie. [path]/sRTMnet"</span><span class="p">)</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">tag</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">overwrite</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">check</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">download_cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.srtmnet.download_cli"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.download_cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Downloads sRTMnet from https://avng.jpl.nasa.gov/pub/PBrodrick/isofit/. Only HDF5 versions are supported at this time.</span>
 
 <span class="sd">    \b</span>
@@ -5505,20 +5505,20 @@
 <span class="sd">        - `isofit --path srtmnet /path/sRTMnet download sRTMnet`: Override the ini file. This will save the provided path for future reference.</span>
 <span class="sd">        - `isofit download sRTMnet --path /path/sRTMnet`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.</span>
 <span class="sd">    It is recommended to use the first style so the download path is remembered in the future.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">):</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"overwrite"</span><span class="p">):</span>
         <span class="n">download</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@shared</span><span class="o">.</span><span class="n">validate</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">CMD</span><span class="p">)</span>
-<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Root directory to download sRTMnet to, ie. [path]/sRTMnet&quot;</span><span class="p">)</span>
+<span class="nd">@shared</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">"Root directory to download sRTMnet to, ie. [path]/sRTMnet"</span><span class="p">)</span>
 <span class="nd">@shared</span><span class="o">.</span><span class="n">tag</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.cli.srtmnet.validate_cli"><a href="../../../../../api/isofit/data/cli/srtmnet/#isofit.data.cli.srtmnet.validate_cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Validates the installation of sRTMnet as well as checks for updates</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">validate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

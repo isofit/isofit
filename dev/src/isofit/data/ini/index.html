@@ -5480,9 +5480,9 @@
 <span class="normal">569</span>
 <span class="normal">570</span>
 <span class="normal">571</span>
-<span class="normal">572</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">572</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">ISOFIT environment module</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -5498,7 +5498,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">getWorkingDir</span><span class="p">(</span><span class="n">config</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.ini.getWorkingDir"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.getWorkingDir" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Attempts to detect if a configuration file sits in an ISOFIT working_directory</span>
 
 <span class="sd">    Parameters</span>
@@ -5509,39 +5509,39 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    wd : pathlib.Path | None</span>
-<span class="sd">        Path to the working directory, if it&#39;s detected to be valid</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        Path to the working directory, if it's detected to be valid</span>
+<span class="sd">    """</span>
     <span class="c1"># [working_directory]/config/config.json</span>
     <span class="c1">#              parent/parent/config.json</span>
     <span class="n">wd</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
 
-    <span class="n">dirs</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;config&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="s2">&quot;lut_full&quot;</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">)</span>
+    <span class="n">dirs</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"config"</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">,</span> <span class="s2">"input"</span><span class="p">,</span> <span class="s2">"lut_full"</span><span class="p">,</span> <span class="s2">"output"</span><span class="p">)</span>
     <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">wd</span> <span class="o">/</span> <span class="nb">dir</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Discovered working_directory to be: </span><span class="si">{</span><span class="n">wd</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Discovered working_directory to be: </span><span class="si">{</span><span class="n">wd</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">wd</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Ini</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.data.ini.Ini"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini" title="Go to docs">[docs]</a></div>
     <span class="c1"># Default directories to expect</span>
     <span class="n">_dirs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;data&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;examples&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;srtmnet&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sixs&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;surface&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;plots&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;libradtran&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;windows&quot;</span><span class="p">,</span>
+        <span class="s2">"data"</span><span class="p">,</span>
+        <span class="s2">"examples"</span><span class="p">,</span>
+        <span class="s2">"srtmnet"</span><span class="p">,</span>
+        <span class="s2">"sixs"</span><span class="p">,</span>
+        <span class="s2">"surface"</span><span class="p">,</span>
+        <span class="s2">"plots"</span><span class="p">,</span>
+        <span class="s2">"libradtran"</span><span class="p">,</span>
+        <span class="s2">"windows"</span><span class="p">,</span>
     <span class="p">]</span>
 
     <span class="c1"># Additional keys with default values</span>
     <span class="n">_keys</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;srtmnet.file&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;srtmnet.aux&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;libradtran.version&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">"srtmnet.file"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span>
+        <span class="s2">"srtmnet.aux"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span>
+        <span class="s2">"libradtran.version"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -5551,8 +5551,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves a value from CONFIG[SECTION] if the key doesn&#39;t exist on the module already.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Retrieves a value from CONFIG[SECTION] if the key doesn't exist on the module already.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -5563,11 +5563,11 @@
 <span class="sd">        -------</span>
 <span class="sd">        str or None</span>
 <span class="sd">            The value associated with the key if it exists in CONFIG[SECTION], otherwise None.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">section</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Simple passthrough function to __getattr__</span>
 
 <span class="sd">        Parameters</span>
@@ -5579,38 +5579,38 @@
 <span class="sd">        -------</span>
 <span class="sd">        str or None</span>
 <span class="sd">            The value associated with the key if it exists in CONFIG[SECTION], otherwise None.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">section</span><span class="p">])</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">section</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-            <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">section</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.keys"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.keys" title="Go to docs">[docs]</a></div>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">section</span><span class="p">])</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.items"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.items" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Passthrough to the items() function on the working section of the config.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        kind : &quot;dirs&quot; | &quot;keys&quot; | None</span>
+<span class="sd">        kind : "dirs" | "keys" | None</span>
 <span class="sd">            Returns an iterable for the specific items:</span>
-<span class="sd">            - &quot;dirs&quot; only keys in Ini._dirs</span>
-<span class="sd">            - &quot;dirs&quot; only keys in Ini._keys</span>
+<span class="sd">            - "dirs" only keys in Ini._dirs</span>
+<span class="sd">            - "dirs" only keys in Ini._keys</span>
 <span class="sd">            - None returns combined both</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">section</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;dirs&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"dirs"</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dirs</span><span class="p">:</span>
                     <span class="k">yield</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span>
-        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;keys&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"keys"</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keys</span><span class="p">:</span>
                     <span class="k">yield</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span>
@@ -5618,22 +5618,22 @@
             <span class="k">yield from</span> <span class="n">items</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">changeBase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.changeBase"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.changeBase" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Changes the base path for each directory.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        base : str</span>
 <span class="sd">            Path to base directory to set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
 
         <span class="c1"># Re-initialize</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dirs</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">changePath</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">/</span> <span class="n">key</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">changeKey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.changeKey"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.changeKey" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">changeKey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.changeKey"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.changeKey" title="Go to docs">[docs]</a></div>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Change the value associated with the specified key in the CONFIG[SECTION].</span>
 
 <span class="sd">        Parameters</span>
@@ -5641,9 +5641,9 @@
 <span class="sd">        key : str, dict</span>
 <span class="sd">            Key to set. Alternatively, can be a dict to iterate over setting multiple</span>
 <span class="sd">            keys at once.</span>
-<span class="sd">        value : str, default=&quot;&quot;</span>
+<span class="sd">        value : str, default=""</span>
 <span class="sd">            The new value to associate with the key.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">key</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
@@ -5652,21 +5652,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">section</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">changeSection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.changeSection"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.changeSection" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Changes the working section of the config.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        section : str</span>
 <span class="sd">            The section of the config to reference for lookups.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">section</span> <span class="o">=</span> <span class="n">section</span>
 
         <span class="k">if</span> <span class="n">section</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">section</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">changePath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.changePath"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.changePath" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Change the path associated with the specified key in the CONFIG[SECTION].</span>
 
 <span class="sd">        Parameters</span>
@@ -5675,11 +5675,11 @@
 <span class="sd">            The key whose path needs to be changed.</span>
 <span class="sd">        value : str or Path</span>
 <span class="sd">            The new path to associate with the key.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">section</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">())</span>
 <div class="mkapi-source-link" id="isofit.data.ini.Ini.load"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.load" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ini</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">section</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Load environment variables from an ini file.</span>
 
 <span class="sd">        Parameters</span>
@@ -5689,12 +5689,12 @@
 <span class="sd">            If provided, sets the global INI for the remainder of the session.</span>
 <span class="sd">        section : str, optional</span>
 <span class="sd">            Sets the working section for the session. Key lookups will use this section.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">ini</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ini</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ini</span><span class="p">)</span>
 
             <span class="c1"># Store the ini in the environment so child ray workers can re-initialize the env object correctly</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;ISOFIT_INI&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"ISOFIT_INI"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">section</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">changeSection</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
@@ -5708,9 +5708,9 @@
 
             <span class="c1"># Cache the existing $PATH, restore it on every load</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_bak</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_path_bak</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_path_bak</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"PATH"</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_bak</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"PATH"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_bak</span>
 
             <span class="c1"># Insert paths into the $PATH variable</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -5719,18 +5719,18 @@
                         <span class="n">value</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="p">)</span>
                     <span class="p">)</span>  <span class="c1"># Value may need some interpolation</span>
 
-                    <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;path.&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"path."</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                         <span class="c1"># Prepend to take precedence</span>
-                        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">pathsep</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"PATH"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">pathsep</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"PATH"</span><span class="p">]</span>
                 <span class="k">except</span><span class="p">:</span>
-                    <span class="n">Logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to process key </span><span class="si">{key}</span><span class="s2">=&#39;</span><span class="si">{value}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+                    <span class="n">Logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">"Failed to process key </span><span class="si">{key}</span><span class="s2">='</span><span class="si">{value}</span><span class="s2">'"</span><span class="p">)</span>
 
-            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded ini from: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loaded ini from: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ini does not exist, falling back to defaults: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ini does not exist, falling back to defaults: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <div class="mkapi-source-link" id="isofit.data.ini.Ini.save"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.save" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ini</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">diff_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Save CONFIG variables to the INI (ini) file.</span>
 
 <span class="sd">        Parameters</span>
@@ -5741,12 +5741,12 @@
 <span class="sd">        diff_only : bool, default=True</span>
 <span class="sd">            Only save if there is a difference between the currently existing ini file and the config in memory.</span>
 <span class="sd">            If False, will save regardless, possibly overwriting an existing file</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">ini</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ini</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ini</span><span class="p">)</span>
 
             <span class="c1"># Store the ini in the environment so child ray workers can re-initialize the env object correctly</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;ISOFIT_INI&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"ISOFIT_INI"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -5763,22 +5763,22 @@
 
         <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Wrote to file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Wrote to file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">except</span><span class="p">:</span>
-                <span class="n">Logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to dump ini to file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to dump ini to file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ini</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">path</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.path"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.path" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="p">,</span> <span class="nb">dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">path</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Retrieves a path under one of the env directories and validates the path exists.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        dir : str</span>
-<span class="sd">            One of the env directories, eg. &quot;data&quot;, &quot;examples&quot;</span>
+<span class="sd">            One of the env directories, eg. "data", "examples"</span>
 <span class="sd">        *path : List[str]</span>
 <span class="sd">            Path to a file under the `dir`</span>
 <span class="sd">        key : str, default=None</span>
@@ -5786,7 +5786,7 @@
 <span class="sd">            directory and the key will be a file name</span>
 <span class="sd">        template : bool, default=False</span>
 <span class="sd">            Returns the path as a template string. The path will still be validated,</span>
-<span class="sd">            but the return will be &quot;{env.[dir]}/*path&quot;, to be used with Ini.replace</span>
+<span class="sd">            but the return will be "{env.[dir]}/*path", to be used with Ini.replace</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -5797,32 +5797,32 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from isofit.data import env</span>
 <span class="sd">        &gt;&gt;&gt; env.load()</span>
-<span class="sd">        &gt;&gt;&gt; env.path(&quot;data&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; env.path("data")</span>
 <span class="sd">        ~/.isofit/data</span>
-<span class="sd">        &gt;&gt;&gt; env.path(&quot;examples&quot;, &quot;20171108_Pasadena&quot;, &quot;configs&quot;, &quot;ang20171108t184227_surface.json&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; env.path("examples", "20171108_Pasadena", "configs", "ang20171108t184227_surface.json")</span>
 <span class="sd">        ~/.isofit/examples/20171108_Pasadena/configs/ang20171108t184227_surface.json</span>
-<span class="sd">        &gt;&gt;&gt; env.path(&quot;srtmnet&quot;, key=&quot;srtmnet.file&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; env.path("srtmnet", key="srtmnet.file")</span>
 <span class="sd">        ~/.isofit/srtmnet/sRTMnet_v120.h5</span>
-<span class="sd">        &gt;&gt;&gt; env.path(&quot;srtmnet&quot;, key=&quot;srtmnet.aux&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; env.path("srtmnet", key="srtmnet.aux")</span>
 <span class="sd">        ~/.isofit/srtmnet/sRTMnet_v120_aux.npz</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">([</span><span class="nb">dir</span><span class="p">],</span> <span class="n">debug</span><span class="o">=</span><span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">template</span><span class="p">:</span>
-            <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;{env.&quot;</span> <span class="o">+</span> <span class="nb">dir</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"{env."</span> <span class="o">+</span> <span class="nb">dir</span> <span class="o">+</span> <span class="s2">"}"</span><span class="p">,</span> <span class="o">*</span><span class="n">path</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="nb">dir</span><span class="p">],</span> <span class="o">*</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
 
-        <span class="c1"># Retrieve the value stored for the given key if it&#39;s set</span>
+        <span class="c1"># Retrieve the value stored for the given key if it's set</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">and</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
             <span class="n">path</span> <span class="o">/=</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">template</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">error</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;The following path does not exist, please verify your installation environment: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"The following path does not exist, please verify your installation environment: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">Logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">raise_path_errors</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">raise_path_errors</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span>
-                <span class="s2">&quot;true&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+                <span class="s2">"true"</span><span class="p">,</span>
+                <span class="s2">"1"</span><span class="p">,</span>
             <span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
 
@@ -5831,15 +5831,15 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">toTemplate</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.toTemplate"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.toTemplate" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">,</span>
-        <span class="n">replace</span><span class="o">=</span><span class="s2">&quot;dirs&quot;</span><span class="p">,</span>
+        <span class="n">replace</span><span class="o">=</span><span class="s2">"dirs"</span><span class="p">,</span>
         <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">report</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Recursively converts string values in a dict to be template values which can be</span>
 <span class="sd">        converted back using Ini.fromTemplate(). Template values are in the form of</span>
-<span class="sd">        &quot;{env.[value]}&quot;.</span>
+<span class="sd">        "{env.[value]}".</span>
 
 <span class="sd">        \b</span>
 <span class="sd">        Parameters</span>
@@ -5847,25 +5847,25 @@
 <span class="sd">        data : str | dict</span>
 <span class="sd">            The dictionary to walk over and update values. If string, checks if this</span>
 <span class="sd">            exists as a file and loads that in as the data dict</span>
-<span class="sd">        replace : &quot;dirs&quot; | &quot;keys&quot; | None, default=&quot;dirs&quot;</span>
+<span class="sd">        replace : "dirs" | "keys" | None, default="dirs"</span>
 <span class="sd">            Defines what kind of values from the ini to replace in strings:</span>
-<span class="sd">            - &quot;dirs&quot; only replace directory paths</span>
-<span class="sd">            - &quot;keys&quot; only replace key strings</span>
+<span class="sd">            - "dirs" only replace directory paths</span>
+<span class="sd">            - "keys" only replace key strings</span>
 <span class="sd">            - None replaces both</span>
-<span class="sd">            Recommended to only use &quot;dirs&quot; to remain consistent. &quot;keys&quot; can have</span>
+<span class="sd">            Recommended to only use "dirs" to remain consistent. "keys" can have</span>
 <span class="sd">            unintended consequences and may replace more than it should</span>
 <span class="sd">        save : bool, default=True</span>
 <span class="sd">            If the data was a file and this is enabled, saves the converted data dict</span>
-<span class="sd">            to another file. The new file will simply append &quot;.tmpl&quot; to its name</span>
+<span class="sd">            to another file. The new file will simply append ".tmpl" to its name</span>
 <span class="sd">        report : bool, default=True</span>
 <span class="sd">            Reports if no value in the input data was changed</span>
 <span class="sd">        **kwargs : dict</span>
 <span class="sd">            Additional strings to replace. The values are replaced in a string with the</span>
 <span class="sd">            key of the kwarg. For example:</span>
-<span class="sd">            &gt;&gt;&gt; kwargs = {&quot;xyz&quot;: &quot;abc&quot;}</span>
-<span class="sd">            &gt;&gt;&gt; data[&quot;some_key&quot;] = &quot;replace abc here&quot;</span>
+<span class="sd">            &gt;&gt;&gt; kwargs = {"xyz": "abc"}</span>
+<span class="sd">            &gt;&gt;&gt; data["some_key"] = "replace abc here"</span>
 <span class="sd">            will be replaced as:</span>
-<span class="sd">            &gt;&gt;&gt; data[&quot;some_key&quot;] = &quot;replace {xyz} here&quot;</span>
+<span class="sd">            &gt;&gt;&gt; data["some_key"] = "replace {xyz} here"</span>
 <span class="sd">            This is to be used with Ini.fromTemplate to replace values that are not</span>
 <span class="sd">            found in the ini object</span>
 
@@ -5875,19 +5875,19 @@
 <span class="sd">        data : dict | pathlib.Path</span>
 <span class="sd">            In-place replaced string values with template values</span>
 <span class="sd">            If saved as a new file, returns the path instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">file</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">file</span> <span class="o">:=</span> <span class="n">Path</span><span class="p">(</span><span class="n">data</span><span class="p">))</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                     <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
-                <span class="c1"># Attempt to discover the working directory if it&#39;s in an ISOFIT output</span>
-                <span class="k">if</span> <span class="s2">&quot;working_directory&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="c1"># Attempt to discover the working directory if it's in an ISOFIT output</span>
+                <span class="k">if</span> <span class="s2">"working_directory"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">wd</span> <span class="o">:=</span> <span class="n">getWorkingDir</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
-                        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;working_directory&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wd</span>
+                        <span class="n">kwargs</span><span class="p">[</span><span class="s2">"working_directory"</span><span class="p">]</span> <span class="o">=</span> <span class="n">wd</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">&quot;If `data` is not a dict, it must be a file&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">"If `data` is not a dict, it must be a file"</span><span class="p">)</span>
 
         <span class="n">orig</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">report</span><span class="p">:</span>
@@ -5899,27 +5899,27 @@
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">replace</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
-                        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> =&gt; env.</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s2">&quot;{env.&quot;</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span><span class="p">)</span>
+                        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> =&gt; env.</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s2">"{env."</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">"}"</span><span class="p">)</span>
 
                 <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
-                        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> =&gt; </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span><span class="p">)</span>
+                        <span class="n">Logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> =&gt; </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s2">"{"</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">"}"</span><span class="p">)</span>
 
                 <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
         <span class="k">if</span> <span class="n">orig</span> <span class="o">!=</span> <span class="n">data</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">save</span> <span class="ow">and</span> <span class="n">file</span><span class="p">:</span>
-                <span class="n">out</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.tmpl&quot;</span><span class="p">)</span>
-                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.tmpl"</span><span class="p">)</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                     <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
 
-                <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved converted json to: </span><span class="si">{</span><span class="n">out</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saved converted json to: </span><span class="si">{</span><span class="n">out</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">out</span>
         <span class="k">elif</span> <span class="n">report</span><span class="p">:</span>
             <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;No value in the config was replaced. Are the paths in the ini in the config?&quot;</span>
+                <span class="s2">"No value in the config was replaced. Are the paths in the ini in the config?"</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">data</span>
@@ -5927,9 +5927,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">fromTemplate</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.fromTemplate"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.fromTemplate" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">prepend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Recursively replaces the template values in found in string values with the</span>
-<span class="sd">        real value from the ini. Template values are in the form of &quot;{env.[value]}&quot;.</span>
+<span class="sd">        real value from the ini. Template values are in the form of "{env.[value]}".</span>
 <span class="sd">        This is an in-place operation.</span>
 
 <span class="sd">        \b</span>
@@ -5940,19 +5940,19 @@
 <span class="sd">            exists as a file and loads that in as the data dict</span>
 <span class="sd">        save : bool, default=True</span>
 <span class="sd">            If the data was a file and this is enabled, saves the converted data dict</span>
-<span class="sd">            to another file. If the input file ends with &quot;.tmpl&quot; then it will simply be</span>
-<span class="sd">            cut. If it doesn&#39;t or already exists, then the output filename will be the</span>
+<span class="sd">            to another file. If the input file ends with ".tmpl" then it will simply be</span>
+<span class="sd">            cut. If it doesn't or already exists, then the output filename will be the</span>
 <span class="sd">            input filename prepended with `prepend` value.</span>
 <span class="sd">        prepend : str, default=None</span>
 <span class="sd">            Prepend a string to the output filename. If not set and the input filename</span>
-<span class="sd">            doesn&#39;t end with &quot;.tmpl&quot;, then this is auto-set to &quot;replaced&quot;</span>
+<span class="sd">            doesn't end with ".tmpl", then this is auto-set to "replaced"</span>
 <span class="sd">        **kwargs : dict</span>
 <span class="sd">            Additional strings to replace. The values are replaced in a string with the</span>
 <span class="sd">            key of the kwarg. For example:</span>
-<span class="sd">            &gt;&gt;&gt; kwargs = {&quot;xyz&quot;: &quot;abc&quot;}</span>
-<span class="sd">            &gt;&gt;&gt; data[&quot;some_key&quot;] = &quot;replace {xyz} here&quot;</span>
+<span class="sd">            &gt;&gt;&gt; kwargs = {"xyz": "abc"}</span>
+<span class="sd">            &gt;&gt;&gt; data["some_key"] = "replace {xyz} here"</span>
 <span class="sd">            will be replaced as:</span>
-<span class="sd">            &gt;&gt;&gt; data[&quot;some_key&quot;] = &quot;replace abc here&quot;</span>
+<span class="sd">            &gt;&gt;&gt; data["some_key"] = "replace abc here"</span>
 <span class="sd">            This is to be used with Ini.toTemplate to replace values that are not found</span>
 <span class="sd">            in the ini object</span>
 
@@ -5962,95 +5962,95 @@
 <span class="sd">        data : dict | pathlib.Path</span>
 <span class="sd">            In-place replaced template values with actual from a loaded ini</span>
 <span class="sd">            If saved as a new file, returns the path instead</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># On the first call, this may be a file so load it</span>
         <span class="n">file</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">file</span> <span class="o">:=</span> <span class="n">Path</span><span class="p">(</span><span class="n">data</span><span class="p">))</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                     <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
-                <span class="c1"># Attempt to discover the working directory if it&#39;s in an ISOFIT output</span>
-                <span class="k">if</span> <span class="s2">&quot;working_directory&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="c1"># Attempt to discover the working directory if it's in an ISOFIT output</span>
+                <span class="k">if</span> <span class="s2">"working_directory"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">wd</span> <span class="o">:=</span> <span class="n">getWorkingDir</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
-                        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;working_directory&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wd</span>
+                        <span class="n">kwargs</span><span class="p">[</span><span class="s2">"working_directory"</span><span class="p">]</span> <span class="o">=</span> <span class="n">wd</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">&quot;If `data` is not a dict, it must be a file&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">"If `data` is not a dict, it must be a file"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">fromTemplate</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                <span class="c1"># Find all &quot;{env.[value]}&quot;</span>
-                <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;{env\.(\w+)}&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+                <span class="c1"># Find all "{env.[value]}"</span>
+                <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"{env\.(\w+)}"</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
                     <span class="c1"># Replace in-place</span>
-                    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;{env.&quot;</span> <span class="o">+</span> <span class="nb">dir</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="nb">dir</span><span class="p">])</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"{env."</span> <span class="o">+</span> <span class="nb">dir</span> <span class="o">+</span> <span class="s2">"}"</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="nb">dir</span><span class="p">])</span>
 
-                <span class="k">for</span> <span class="n">extra</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;{(\w+)}&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">extra</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"{(\w+)}"</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">extra</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-                        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="n">extra</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">extra</span><span class="p">]))</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"{"</span> <span class="o">+</span> <span class="n">extra</span> <span class="o">+</span> <span class="s2">"}"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">extra</span><span class="p">]))</span>
 
                 <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
         <span class="k">if</span> <span class="n">save</span> <span class="ow">and</span> <span class="n">file</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.tmpl&quot;</span><span class="p">:</span>
-                <span class="n">out</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">".tmpl"</span><span class="p">:</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">prepend</span><span class="p">:</span>
-                    <span class="n">prepend</span> <span class="o">=</span> <span class="s2">&quot;replaced&quot;</span>
+                    <span class="n">prepend</span> <span class="o">=</span> <span class="s2">"replaced"</span>
             <span class="k">elif</span> <span class="ow">not</span> <span class="n">prepend</span><span class="p">:</span>
                 <span class="n">out</span> <span class="o">=</span> <span class="n">file</span>
-                <span class="n">prepend</span> <span class="o">=</span> <span class="s2">&quot;replaced&quot;</span>
+                <span class="n">prepend</span> <span class="o">=</span> <span class="s2">"replaced"</span>
 
             <span class="k">if</span> <span class="n">prepend</span><span class="p">:</span>
-                <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prepend</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">out</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prepend</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">out</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
 
-            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved converted json to: </span><span class="si">{</span><span class="n">out</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saved converted json to: </span><span class="si">{</span><span class="n">out</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">out</span>
 
         <span class="k">return</span> <span class="n">data</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.reset"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.reset" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resets the object to the defaults defined by ISOFIT</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        save : bool, default=False</span>
 <span class="sd">            Saves the reset to the default ini file: ~/.isofit/isofit.ini</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">section</span> <span class="o">=</span> <span class="s2">&quot;DEFAULT&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">section</span> <span class="o">=</span> <span class="s2">"DEFAULT"</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">changeBase</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;.isofit/&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">changeBase</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">".isofit/"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_keys</span><span class="p">)</span>
 
         <span class="c1"># Use the environment variable path to an ini over the default if it is present</span>
         <span class="c1"># This is typically used by ray workers to retrieve the correct ini</span>
-        <span class="k">if</span> <span class="n">ini</span> <span class="o">:=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ISOFIT_INI&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ini</span> <span class="o">:=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ISOFIT_INI"</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ini</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ini</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">ini</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">/</span> <span class="s2">&quot;isofit.ini&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ini</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base</span> <span class="o">/</span> <span class="s2">"isofit.ini"</span>
 
         <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="n">keys</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.data.ini.Ini.validate"><a href="../../../../api/isofit/data/ini/#isofit.data.ini.Ini.validate" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Validates known products.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        keys : list</span>
 <span class="sd">            List of products to validate</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Should never be raised as this function is defined and set in isofit.data.cli.__init__</span>
-        <span class="c1"># If this is hit, there&#39;s a critical environment issue</span>
+        <span class="c1"># If this is hit, there's a critical environment issue</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s2">&quot;ISOFIT failed to attach the validation function to this object&quot;</span>
+            <span class="s2">"ISOFIT failed to attach the validation function to this object"</span>
         <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

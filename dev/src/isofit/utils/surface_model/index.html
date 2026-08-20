@@ -5331,14 +5331,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5376,24 +5376,24 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">unpack_statevector</span><span class="p">(</span><span class="n">statevector</span><span class="p">,</span> <span class="n">surface_category</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.surface_model.unpack_statevector"><a href="../../../../api/isofit/utils/surface_model/#isofit.utils.surface_model.unpack_statevector" title="Go to docs">[docs]</a></div>
     <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;statevec_names&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;bounds&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;prior_mean&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;prior_sigma&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"statevec_names"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"bounds"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"init"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"prior_mean"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"prior_sigma"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"scale"</span><span class="p">:</span> <span class="p">[],</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">statevector</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{}</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">statevector</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">statevector</span><span class="p">:</span>
-            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;statevec_names&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
-            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;bounds&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;bounds&quot;</span><span class="p">])</span>
-            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;init&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;init&quot;</span><span class="p">])</span>
-            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;prior_mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;prior_mean&quot;</span><span class="p">])</span>
-            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;prior_sigma&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;prior_sigma&quot;</span><span class="p">])</span>
-            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;scale&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;scale&quot;</span><span class="p">])</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">"statevec_names"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"name"</span><span class="p">])</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">"bounds"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"bounds"</span><span class="p">])</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">"init"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"init"</span><span class="p">])</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">"prior_mean"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"prior_mean"</span><span class="p">])</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">"prior_sigma"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"prior_sigma"</span><span class="p">])</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">"scale"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"scale"</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">data</span>
 
@@ -5419,7 +5419,7 @@
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">13</span><span class="p">,</span>
     <span class="n">multisurface</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The surface model tool contains everything you need to build basic</span>
+<span class="w">    </span><span class="sd">"""The surface model tool contains everything you need to build basic</span>
 <span class="sd">    multicomponent (i.e. colleciton of Gaussian) surface priors for the</span>
 <span class="sd">    multicomponent surface model.</span>
 
@@ -5432,7 +5432,7 @@
 <span class="sd">        seed: seed used for clustering</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Set seed for random draws later</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
@@ -5444,39 +5444,39 @@
     <span class="k">if</span> <span class="n">wavelength_path</span><span class="p">:</span>
         <span class="n">wavelength_file</span> <span class="o">=</span> <span class="n">wavelength_path</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s2">&quot;wavelength_file&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"wavelength_file"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Missing config parameter &#39;wavelength_file&#39;, set via surface_model(wavelength_path=...)&quot;</span>
+                <span class="s2">"Missing config parameter 'wavelength_file', set via surface_model(wavelength_path=...)"</span>
             <span class="p">)</span>
-        <span class="n">wavelength_file</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;wavelength_file&quot;</span><span class="p">])</span>
+        <span class="n">wavelength_file</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">"wavelength_file"</span><span class="p">])</span>
 
     <span class="k">if</span> <span class="n">output_path</span><span class="p">:</span>
         <span class="n">outfile</span> <span class="o">=</span> <span class="n">output_path</span>
 
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s2">&quot;output_model_file&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"output_model_file"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Missing config parameter &#39;output_model_file&#39;, set via surface_model(output_path=...)&quot;</span>
+                <span class="s2">"Missing config parameter 'output_model_file', set via surface_model(output_path=...)"</span>
             <span class="p">)</span>
-        <span class="n">outfile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;output_model_file&quot;</span><span class="p">])</span>
+        <span class="n">outfile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">"output_model_file"</span><span class="p">])</span>
 
     <span class="c1"># Determine top level parameters</span>
-    <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;sources&quot;</span><span class="p">,</span> <span class="s2">&quot;normalize&quot;</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"sources"</span><span class="p">,</span> <span class="s2">"normalize"</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">q</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Missing parameter: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">q</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Missing parameter: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">q</span><span class="p">)</span>
 
-    <span class="n">normalize</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;normalize&quot;</span><span class="p">]</span>
-    <span class="n">reference_windows</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;reference_windows&quot;</span><span class="p">]</span>
+    <span class="n">normalize</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">"normalize"</span><span class="p">]</span>
+    <span class="n">reference_windows</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">"reference_windows"</span><span class="p">]</span>
 
     <span class="c1"># Get selection metric if it exists</span>
-    <span class="n">selection_metric</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;selection_metric&quot;</span><span class="p">,</span> <span class="s2">&quot;Euclidean&quot;</span><span class="p">)</span>
+    <span class="n">selection_metric</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"selection_metric"</span><span class="p">,</span> <span class="s2">"Euclidean"</span><span class="p">)</span>
 
     <span class="c1"># load wavelengths file, and change units to nm if needed</span>
     <span class="n">fwhm</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">wavelength_file</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.hdr&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">wavelength_file</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">".hdr"</span><span class="p">:</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">wavelength_file</span><span class="p">)</span>
-        <span class="n">wl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]])</span>
-        <span class="n">fwhm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fwhm&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">wl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"wavelength"</span><span class="p">]])</span>
+        <span class="n">fwhm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fwhm"</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Assumes</span>
         <span class="c1"># [:, 0] - Wavelength</span>
@@ -5505,83 +5505,83 @@
 
     <span class="c1"># create basic model template</span>
     <span class="n">model</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;normalize&quot;</span><span class="p">:</span> <span class="n">normalize</span><span class="p">,</span>
-        <span class="s2">&quot;selection_metric&quot;</span><span class="p">:</span> <span class="n">selection_metric</span><span class="p">,</span>
-        <span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="n">wl</span><span class="p">,</span>
-        <span class="s2">&quot;fwhm&quot;</span><span class="p">:</span> <span class="n">fwhm</span><span class="p">,</span>
-        <span class="s2">&quot;means&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;covs&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;attribute_means&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;attribute_covs&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;refwl&quot;</span><span class="p">:</span> <span class="n">refwl</span><span class="p">,</span>
-        <span class="s2">&quot;surface_categories&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"normalize"</span><span class="p">:</span> <span class="n">normalize</span><span class="p">,</span>
+        <span class="s2">"selection_metric"</span><span class="p">:</span> <span class="n">selection_metric</span><span class="p">,</span>
+        <span class="s2">"wl"</span><span class="p">:</span> <span class="n">wl</span><span class="p">,</span>
+        <span class="s2">"fwhm"</span><span class="p">:</span> <span class="n">fwhm</span><span class="p">,</span>
+        <span class="s2">"means"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"covs"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"attribute_means"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"attribute_covs"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"attributes"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"refwl"</span><span class="p">:</span> <span class="n">refwl</span><span class="p">,</span>
+        <span class="s2">"surface_categories"</span><span class="p">:</span> <span class="p">[],</span>
     <span class="p">}</span>
 
-    <span class="c1"># each &quot;source&quot; (i.e. spectral library) is treated separately</span>
-    <span class="k">for</span> <span class="n">si</span><span class="p">,</span> <span class="n">source_config</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;sources&quot;</span><span class="p">]):</span>
+    <span class="c1"># each "source" (i.e. spectral library) is treated separately</span>
+    <span class="k">for</span> <span class="n">si</span><span class="p">,</span> <span class="n">source_config</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"sources"</span><span class="p">]):</span>
         <span class="c1"># Determine source parameters</span>
-        <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;input_spectrum_files&quot;</span><span class="p">,</span> <span class="s2">&quot;windows&quot;</span><span class="p">,</span> <span class="s2">&quot;n_components&quot;</span><span class="p">,</span> <span class="s2">&quot;windows&quot;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"input_spectrum_files"</span><span class="p">,</span> <span class="s2">"windows"</span><span class="p">,</span> <span class="s2">"n_components"</span><span class="p">,</span> <span class="s2">"windows"</span><span class="p">]:</span>
             <span class="k">if</span> <span class="n">q</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Source </span><span class="si">%i</span><span class="s2"> is missing a parameter: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">q</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Source </span><span class="si">%i</span><span class="s2"> is missing a parameter: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">q</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">multisurface</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">&quot;surface_category&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">"surface_category"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Source </span><span class="si">%i</span><span class="s2"> is missing a parameter: surface_category&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">si</span><span class="p">)</span>
+                    <span class="s2">"Source </span><span class="si">%i</span><span class="s2"> is missing a parameter: surface_category"</span> <span class="o">%</span> <span class="p">(</span><span class="n">si</span><span class="p">)</span>
                 <span class="p">)</span>
 
         <span class="c1"># Determine whether we should synthesize our own mixtures</span>
-        <span class="k">if</span> <span class="s2">&quot;mixtures&quot;</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">:</span>
-            <span class="n">mixtures</span> <span class="o">=</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">&quot;mixtures&quot;</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="s2">&quot;mixtures&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
-            <span class="n">mixtures</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;mixtures&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"mixtures"</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">:</span>
+            <span class="n">mixtures</span> <span class="o">=</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">"mixtures"</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s2">"mixtures"</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="n">mixtures</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">"mixtures"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">mixtures</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="c1"># open input files associated with this source</span>
         <span class="n">infiles</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">fi</span><span class="p">)</span> <span class="k">for</span> <span class="n">fi</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">&quot;input_spectrum_files&quot;</span><span class="p">]</span>
+            <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">fi</span><span class="p">)</span> <span class="k">for</span> <span class="n">fi</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">"input_spectrum_files"</span><span class="p">]</span>
         <span class="p">]</span>
 
         <span class="c1"># associate attributes, if they exist. These will not be used</span>
         <span class="c1"># in the retrieval, but can be used in post-analysis</span>
-        <span class="k">if</span> <span class="s2">&quot;input_attribute_files&quot;</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"input_attribute_files"</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">:</span>
             <span class="n">infiles_attributes</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">fi</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">fi</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">&quot;input_attribute_files&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">fi</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">"input_attribute_files"</span><span class="p">]</span>
             <span class="p">]</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">infiles_attributes</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">infiles</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;spectrum / attribute file mismatch&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">"spectrum / attribute file mismatch"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">infiles_attributes</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">fi</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">&quot;input_spectrum_files&quot;</span><span class="p">]]</span>
+            <span class="n">infiles_attributes</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">fi</span> <span class="ow">in</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">"input_spectrum_files"</span><span class="p">]]</span>
 
-        <span class="n">ncomp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">source_config</span><span class="p">[</span><span class="s2">&quot;n_components&quot;</span><span class="p">])</span>
-        <span class="n">windows</span> <span class="o">=</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">&quot;windows&quot;</span><span class="p">]</span>
+        <span class="n">ncomp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">source_config</span><span class="p">[</span><span class="s2">"n_components"</span><span class="p">])</span>
+        <span class="n">windows</span> <span class="o">=</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">"windows"</span><span class="p">]</span>
 
         <span class="c1"># Surface model handling</span>
-        <span class="n">surface_category</span> <span class="o">=</span> <span class="n">source_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surface_category&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">surface_category</span> <span class="o">=</span> <span class="n">source_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"surface_category"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
 
         <span class="c1"># load spectra</span>
         <span class="n">spectra</span><span class="p">,</span> <span class="n">attributes</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">infile</span><span class="p">,</span> <span class="n">attribute_file</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">infiles</span><span class="p">,</span> <span class="n">infiles_attributes</span><span class="p">):</span>
             <span class="n">rfl</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">infile</span><span class="p">),</span> <span class="n">infile</span><span class="p">)</span>
-            <span class="n">nl</span><span class="p">,</span> <span class="n">nb</span><span class="p">,</span> <span class="n">ns</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">rfl</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span> <span class="s2">&quot;bands&quot;</span><span class="p">,</span> <span class="s2">&quot;samples&quot;</span><span class="p">)]</span>
-            <span class="n">swl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">rfl</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]])</span>
+            <span class="n">nl</span><span class="p">,</span> <span class="n">nb</span><span class="p">,</span> <span class="n">ns</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">rfl</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"lines"</span><span class="p">,</span> <span class="s2">"bands"</span><span class="p">,</span> <span class="s2">"samples"</span><span class="p">)]</span>
+            <span class="n">swl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">rfl</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"wavelength"</span><span class="p">]])</span>
 
             <span class="c1"># Maybe convert to nanometers</span>
             <span class="k">if</span> <span class="n">swl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
                 <span class="n">swl</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">micron_to_nm</span><span class="p">(</span><span class="n">swl</span><span class="p">)</span>
 
             <span class="c1"># Load library and adjust interleave, if needed</span>
-            <span class="n">rfl_mm</span> <span class="o">=</span> <span class="n">rfl</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">rfl_mm</span> <span class="o">=</span> <span class="n">rfl</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rfl_mm</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:])</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nl</span> <span class="o">*</span> <span class="n">ns</span><span class="p">,</span> <span class="n">nb</span><span class="p">)</span>
 
             <span class="c1"># import spectra and resample</span>
             <span class="k">for</span> <span class="n">x1</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
                 <span class="n">p</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span>
-                    <span class="n">swl</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span>
+                    <span class="n">swl</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"linear"</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">"extrapolate"</span>
                 <span class="p">)</span>
                 <span class="n">spectra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">(</span><span class="n">wl</span><span class="p">))</span>
 
@@ -5589,25 +5589,25 @@
             <span class="k">if</span> <span class="n">attribute_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">attr</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="n">attribute_file</span><span class="p">),</span> <span class="n">attribute_file</span><span class="p">)</span>
                 <span class="n">nla</span><span class="p">,</span> <span class="n">nba</span><span class="p">,</span> <span class="n">nsa</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="nb">int</span><span class="p">(</span><span class="n">attr</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span> <span class="s2">&quot;bands&quot;</span><span class="p">,</span> <span class="s2">&quot;samples&quot;</span><span class="p">)</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">attr</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"lines"</span><span class="p">,</span> <span class="s2">"bands"</span><span class="p">,</span> <span class="s2">"samples"</span><span class="p">)</span>
                 <span class="p">]</span>
 
                 <span class="c1"># Load library and adjust interleave, if needed</span>
-                <span class="n">attr_mm</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">&quot;bip&quot;</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">attr_mm</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"bip"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                 <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">attr_mm</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:])</span>
                 <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nla</span> <span class="o">*</span> <span class="n">nsa</span><span class="p">,</span> <span class="n">nba</span><span class="p">)</span>
-                <span class="n">model</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;band names&quot;</span><span class="p">]</span>
+                <span class="n">model</span><span class="p">[</span><span class="s2">"attributes"</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"band names"</span><span class="p">]</span>
 
                 <span class="c1"># import spectra and resample</span>
                 <span class="k">for</span> <span class="n">x1</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
                     <span class="n">attributes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">attributes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">attributes</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">spectra</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Mismatch in number of spectra vs. attributes&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">"Mismatch in number of spectra vs. attributes"</span><span class="p">)</span>
 
         <span class="c1"># calculate mixtures, if needed</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">attributes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">mixtures</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Synthetic mixtures w/ attributes is not advised&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Synthetic mixtures w/ attributes is not advised"</span><span class="p">)</span>
 
         <span class="n">n</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">spectra</span><span class="p">))</span>
         <span class="n">nmix</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">mixtures</span><span class="p">)</span>
@@ -5629,14 +5629,14 @@
         <span class="c1">## Accumulate total list of window indices</span>
         <span class="c1"># window_idx = -np.ones((nchan), dtype=int)</span>
         <span class="c1"># for wi, win in enumerate(windows):</span>
-        <span class="c1">#    active_wl = np.logical_and(wl &gt;= win[&#39;interval&#39;][0], wl &lt; win[&#39;interval&#39;][1])</span>
+        <span class="c1">#    active_wl = np.logical_and(wl &gt;= win['interval'][0], wl &lt; win['interval'][1])</span>
         <span class="c1">#    window_idx[active_wl] = wi</span>
 
         <span class="c1"># Two step model generation.  First step is k-means clustering.</span>
-        <span class="c1"># This is more &quot;stable&quot; than Expectation Maximization with an</span>
+        <span class="c1"># This is more "stable" than Expectation Maximization with an</span>
         <span class="c1"># unconstrained covariance matrix</span>
         <span class="n">kmeans</span> <span class="o">=</span> <span class="n">KMeans</span><span class="p">(</span>
-            <span class="n">init</span><span class="o">=</span><span class="s2">&quot;k-means++&quot;</span><span class="p">,</span> <span class="n">n_clusters</span><span class="o">=</span><span class="n">ncomp</span><span class="p">,</span> <span class="n">n_init</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span>
+            <span class="n">init</span><span class="o">=</span><span class="s2">"k-means++"</span><span class="p">,</span> <span class="n">n_clusters</span><span class="o">=</span><span class="n">ncomp</span><span class="p">,</span> <span class="n">n_init</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span>
         <span class="p">)</span>
         <span class="n">kmeans</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">spectra</span><span class="p">)</span>
         <span class="n">Z</span> <span class="o">=</span> <span class="n">kmeans</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">spectra</span><span class="p">)</span>
@@ -5647,7 +5647,7 @@
 
         <span class="c1"># now fit the full covariance for each component</span>
         <span class="k">for</span> <span class="n">ci</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncomp</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">ci</span><span class="p">,</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">&quot;input_spectrum_files&quot;</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">ci</span><span class="p">,</span> <span class="n">source_config</span><span class="p">[</span><span class="s2">"input_spectrum_files"</span><span class="p">])</span>
 
             <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">spectra</span><span class="p">[</span><span class="n">Z</span> <span class="o">==</span> <span class="n">ci</span><span class="p">,</span> <span class="p">:],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">spectra</span><span class="p">[</span><span class="n">Z</span> <span class="o">==</span> <span class="n">ci</span><span class="p">,</span> <span class="p">:],</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -5661,7 +5661,7 @@
             <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
                 <span class="n">window_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span>
-                        <span class="n">wl</span> <span class="o">&gt;=</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">wl</span> <span class="o">&lt;</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">wl</span> <span class="o">&gt;=</span> <span class="n">window</span><span class="p">[</span><span class="s2">"interval"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">wl</span> <span class="o">&lt;</span> <span class="n">window</span><span class="p">[</span><span class="s2">"interval"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
                     <span class="p">)</span>
                 <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">window_idx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -5670,9 +5670,9 @@
 
                 <span class="c1"># To minimize bias, leave the channels independent</span>
                 <span class="c1"># and uncorrelated</span>
-                <span class="k">if</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;correlation&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;decorrelated&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">window</span><span class="p">[</span><span class="s2">"correlation"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"decorrelated"</span><span class="p">:</span>
                     <span class="n">c_diag</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="n">C</span><span class="p">[</span><span class="n">window_range</span><span class="p">,</span> <span class="n">window_range</span><span class="p">]</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="s2">&quot;regularizer&quot;</span><span class="p">])</span>
+                        <span class="n">C</span><span class="p">[</span><span class="n">window_range</span><span class="p">,</span> <span class="n">window_range</span><span class="p">]</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="s2">"regularizer"</span><span class="p">])</span>
                     <span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">window_idx</span><span class="p">))</span>
                     <span class="n">C</span><span class="p">[</span><span class="n">window_range</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
                     <span class="n">C</span><span class="p">[:,</span> <span class="n">window_range</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
@@ -5681,7 +5681,7 @@
             <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
                 <span class="n">window_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span>
-                        <span class="n">wl</span> <span class="o">&gt;=</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">wl</span> <span class="o">&lt;</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">wl</span> <span class="o">&gt;=</span> <span class="n">window</span><span class="p">[</span><span class="s2">"interval"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">wl</span> <span class="o">&lt;</span> <span class="n">window</span><span class="p">[</span><span class="s2">"interval"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
                     <span class="p">)</span>
                 <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">window_idx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -5691,43 +5691,43 @@
                 <span class="c1"># Each spectral interval, or window, is constructed</span>
                 <span class="c1"># using one of several rules.  We can draw the covariance</span>
                 <span class="c1"># directly from the data...</span>
-                <span class="k">if</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;correlation&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;EM&quot;</span><span class="p">,</span> <span class="s2">&quot;EM-gauss&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">window</span><span class="p">[</span><span class="s2">"correlation"</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"EM"</span><span class="p">,</span> <span class="s2">"EM-gauss"</span><span class="p">]:</span>
                     <span class="n">cdiag</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="n">C_base</span><span class="p">[</span><span class="n">window_range</span><span class="p">,</span> <span class="n">window_range</span><span class="p">]</span>
-                        <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">window_idx</span><span class="p">))</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="s2">&quot;regularizer&quot;</span><span class="p">])</span>
+                        <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">window_idx</span><span class="p">))</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="s2">"regularizer"</span><span class="p">])</span>
                     <span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-                    <span class="k">if</span> <span class="s2">&quot;isolated&quot;</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="ow">and</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;isolated&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s2">"isolated"</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="ow">and</span> <span class="n">window</span><span class="p">[</span><span class="s2">"isolated"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                         <span class="n">C</span><span class="p">[</span><span class="n">window_range</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
                         <span class="n">C</span><span class="p">[:,</span> <span class="n">window_range</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
                     <span class="n">C</span><span class="p">[</span><span class="n">window_range</span><span class="p">,</span> <span class="n">window_range</span><span class="p">]</span> <span class="o">=</span> <span class="n">cdiag</span>
                 <span class="n">window_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span>
-                        <span class="n">wl</span> <span class="o">&gt;=</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">wl</span> <span class="o">&lt;</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">wl</span> <span class="o">&gt;=</span> <span class="n">window</span><span class="p">[</span><span class="s2">"interval"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">wl</span> <span class="o">&lt;</span> <span class="n">window</span><span class="p">[</span><span class="s2">"interval"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
                     <span class="p">)</span>
                 <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">window_idx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">continue</span>
                 <span class="n">window_range</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">window_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">window_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;correlation&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;GP&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">window</span><span class="p">[</span><span class="s2">"correlation"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"GP"</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">window_idx</span><span class="p">:</span>
                         <span class="c1"># Alternatively, we can use a band diagonal form,</span>
                         <span class="c1"># a Gaussian process that promotes local smoothness.</span>
-                        <span class="n">width</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="s2">&quot;gp_width&quot;</span><span class="p">])</span>
-                        <span class="n">magnitude</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="s2">&quot;gp_magnitude&quot;</span><span class="p">])</span>
+                        <span class="n">width</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="s2">"gp_width"</span><span class="p">])</span>
+                        <span class="n">magnitude</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="s2">"gp_magnitude"</span><span class="p">])</span>
                         <span class="n">kernel</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">((</span><span class="n">wl</span> <span class="o">-</span> <span class="n">wl</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">/</span> <span class="n">width</span><span class="p">)</span>
                         <span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span> <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> <span class="n">magnitude</span>
                         <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">kernel</span>
                         <span class="n">C</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">kernel</span>
-                        <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="s2">&quot;regularizer&quot;</span><span class="p">])</span>
+                        <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">window</span><span class="p">[</span><span class="s2">"regularizer"</span><span class="p">])</span>
 
-                <span class="k">elif</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;correlation&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;decorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;EM&quot;</span><span class="p">]:</span>
+                <span class="k">elif</span> <span class="n">window</span><span class="p">[</span><span class="s2">"correlation"</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"decorrelated"</span><span class="p">,</span> <span class="s2">"EM"</span><span class="p">]:</span>
                     <span class="c1"># already handled</span>
                     <span class="k">continue</span>
 
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="s2">&quot;I do not recognize the method &quot;</span> <span class="o">+</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;correlation&quot;</span><span class="p">]</span>
+                        <span class="s2">"I do not recognize the method "</span> <span class="o">+</span> <span class="n">window</span><span class="p">[</span><span class="s2">"correlation"</span><span class="p">]</span>
                     <span class="p">)</span>
 
             <span class="c1"># Now do any cross-block feathering by augmenting the precision matrix</span>
@@ -5735,75 +5735,75 @@
             <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
                 <span class="n">window_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span>
-                        <span class="n">wl</span> <span class="o">&gt;=</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">wl</span> <span class="o">&lt;</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">wl</span> <span class="o">&gt;=</span> <span class="n">window</span><span class="p">[</span><span class="s2">"interval"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">wl</span> <span class="o">&lt;</span> <span class="n">window</span><span class="p">[</span><span class="s2">"interval"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
                     <span class="p">)</span>
                 <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">window_idx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">continue</span>
 
-                <span class="c1"># Look for the &quot;feather_forward&quot; or &quot;feather_backward&quot; options</span>
-                <span class="k">if</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;correlation&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;EM&quot;</span><span class="p">,</span> <span class="s2">&quot;decorrelated&quot;</span><span class="p">]:</span>
-                    <span class="k">if</span> <span class="s2">&quot;feather_backward&quot;</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                <span class="c1"># Look for the "feather_forward" or "feather_backward" options</span>
+                <span class="k">if</span> <span class="n">window</span><span class="p">[</span><span class="s2">"correlation"</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"EM"</span><span class="p">,</span> <span class="s2">"decorrelated"</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="s2">"feather_backward"</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
                         <span class="n">P</span><span class="p">[</span><span class="n">window_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">window_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">-=</span> <span class="p">(</span>
-                            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;feather_backward&quot;</span><span class="p">]</span>
+                            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">window</span><span class="p">[</span><span class="s2">"feather_backward"</span><span class="p">]</span>
                         <span class="p">)</span>
                         <span class="n">P</span><span class="p">[</span><span class="n">window_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">window_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="p">(</span>
-                            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;feather_backward&quot;</span><span class="p">]</span>
+                            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">window</span><span class="p">[</span><span class="s2">"feather_backward"</span><span class="p">]</span>
                         <span class="p">)</span>
-                    <span class="k">if</span> <span class="s2">&quot;feather_forward&quot;</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                    <span class="k">if</span> <span class="s2">"feather_forward"</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
                         <span class="n">P</span><span class="p">[</span><span class="n">window_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">window_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">-=</span> <span class="p">(</span>
-                            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;feather_forward&quot;</span><span class="p">]</span>
+                            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">window</span><span class="p">[</span><span class="s2">"feather_forward"</span><span class="p">]</span>
                         <span class="p">)</span>
                         <span class="n">P</span><span class="p">[</span><span class="n">window_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">window_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="p">(</span>
-                            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">window</span><span class="p">[</span><span class="s2">&quot;feather_forward&quot;</span><span class="p">]</span>
+                            <span class="mf">1.0</span> <span class="o">/</span> <span class="n">window</span><span class="p">[</span><span class="s2">"feather_forward"</span><span class="p">]</span>
                         <span class="p">)</span>
             <span class="n">C</span> <span class="o">=</span> <span class="n">inv</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
 
             <span class="c1"># Normalize the component spectrum if desired</span>
-            <span class="k">if</span> <span class="n">normalize</span> <span class="o">==</span> <span class="s2">&quot;Euclidean&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">normalize</span> <span class="o">==</span> <span class="s2">"Euclidean"</span><span class="p">:</span>
                 <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">normind</span><span class="p">],</span> <span class="mi">2</span><span class="p">)))</span>
-            <span class="k">elif</span> <span class="n">normalize</span> <span class="o">==</span> <span class="s2">&quot;RMS&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">normalize</span> <span class="o">==</span> <span class="s2">"RMS"</span><span class="p">:</span>
                 <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">normind</span><span class="p">],</span> <span class="mi">2</span><span class="p">)))</span>
-            <span class="k">elif</span> <span class="n">normalize</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">normalize</span> <span class="o">==</span> <span class="s2">"None"</span><span class="p">:</span>
                 <span class="n">z</span> <span class="o">=</span> <span class="mf">1.0</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unrecognized normalization: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">normalize</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Unrecognized normalization: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">"</span> <span class="o">%</span> <span class="n">normalize</span><span class="p">)</span>
             <span class="n">m</span> <span class="o">=</span> <span class="n">m</span> <span class="o">/</span> <span class="n">z</span>
             <span class="n">C</span> <span class="o">=</span> <span class="n">C</span> <span class="o">/</span> <span class="p">(</span><span class="n">z</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">Cinv</span> <span class="o">=</span> <span class="n">svd_inv</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
             <span class="k">except</span><span class="p">:</span>
-                <span class="n">errstr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;C from group </span><span class="si">{</span><span class="n">si</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="si">}</span><span class="s2"> is not invertible.&quot;</span>
+                <span class="n">errstr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"C from group </span><span class="si">{</span><span class="n">si</span><span class="p">,</span><span class="w"> </span><span class="n">ci</span><span class="si">}</span><span class="s2"> is not invertible."</span>
                 <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">errstr</span><span class="p">)</span>
 
-            <span class="n">model</span><span class="p">[</span><span class="s2">&quot;means&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-            <span class="n">model</span><span class="p">[</span><span class="s2">&quot;covs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
+            <span class="n">model</span><span class="p">[</span><span class="s2">"means"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="n">model</span><span class="p">[</span><span class="s2">"covs"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">attributes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">model</span><span class="p">[</span><span class="s2">&quot;attribute_means&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m_attr</span><span class="p">)</span>
-                <span class="n">model</span><span class="p">[</span><span class="s2">&quot;attribute_covs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">C_attr</span><span class="p">)</span>
+                <span class="n">model</span><span class="p">[</span><span class="s2">"attribute_means"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m_attr</span><span class="p">)</span>
+                <span class="n">model</span><span class="p">[</span><span class="s2">"attribute_covs"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">C_attr</span><span class="p">)</span>
 
-            <span class="n">model</span><span class="p">[</span><span class="s2">&quot;surface_categories&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">surface_category</span><span class="p">)</span>
+            <span class="n">model</span><span class="p">[</span><span class="s2">"surface_categories"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">surface_category</span><span class="p">)</span>
 
-    <span class="n">model</span><span class="p">[</span><span class="s2">&quot;means&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;means&quot;</span><span class="p">])</span>
-    <span class="n">model</span><span class="p">[</span><span class="s2">&quot;covs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;covs&quot;</span><span class="p">])</span>
-    <span class="n">model</span><span class="p">[</span><span class="s2">&quot;attribute_means&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;attribute_means&quot;</span><span class="p">])</span>
-    <span class="n">model</span><span class="p">[</span><span class="s2">&quot;attribute_covs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;attribute_covs&quot;</span><span class="p">])</span>
+    <span class="n">model</span><span class="p">[</span><span class="s2">"means"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"means"</span><span class="p">])</span>
+    <span class="n">model</span><span class="p">[</span><span class="s2">"covs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"covs"</span><span class="p">])</span>
+    <span class="n">model</span><span class="p">[</span><span class="s2">"attribute_means"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"attribute_means"</span><span class="p">])</span>
+    <span class="n">model</span><span class="p">[</span><span class="s2">"attribute_covs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"attribute_covs"</span><span class="p">])</span>
 
     <span class="k">if</span> <span class="n">multisurface</span><span class="p">:</span>
         <span class="c1"># Divide up model dict based on surface_type</span>
-        <span class="n">surface_categories</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;surface_categories&quot;</span><span class="p">])</span>
+        <span class="n">surface_categories</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"surface_categories"</span><span class="p">])</span>
         <span class="k">for</span> <span class="n">surface_category</span> <span class="ow">in</span> <span class="n">surface_categories</span><span class="p">:</span>
             <span class="n">type_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
             <span class="n">type_model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
                 <span class="n">unpack_statevector</span><span class="p">(</span>
-                    <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;statevector&quot;</span><span class="p">),</span> <span class="n">surface_category</span><span class="o">=</span><span class="n">surface_category</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"statevector"</span><span class="p">),</span> <span class="n">surface_category</span><span class="o">=</span><span class="n">surface_category</span>
                 <span class="p">)</span>
             <span class="p">)</span>
 
-            <span class="n">statevector_categories</span> <span class="o">=</span> <span class="n">type_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;statevector_surface_category&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">statevector_categories</span> <span class="o">=</span> <span class="n">type_model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"statevector_surface_category"</span><span class="p">,</span> <span class="p">[])</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">statevector_categories</span><span class="p">):</span>
                 <span class="n">i</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="n">i</span>
@@ -5811,67 +5811,67 @@
                     <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="n">surface_category</span>
                 <span class="p">]</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
-                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;statevec_names&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;bounds&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;prior_mean&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;prior_sigma&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;statevector_surface_category&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"statevec_names"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"bounds"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"init"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"prior_mean"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"prior_sigma"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"scale"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"statevector_surface_category"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">i</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;statevec_names&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;statevec_names&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
-                    <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;bounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;bounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
-                    <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;init&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;init&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
-                    <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;prior_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;prior_mean&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
-                    <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;prior_sigma&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;prior_sigma&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
-                    <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;scale&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;scale&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
-                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;statevector_surface_category&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="n">type_model</span><span class="p">[</span><span class="s2">"statevec_names"</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">"statevec_names"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">type_model</span><span class="p">[</span><span class="s2">"bounds"</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">"bounds"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">type_model</span><span class="p">[</span><span class="s2">"init"</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">"init"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">type_model</span><span class="p">[</span><span class="s2">"prior_mean"</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">"prior_mean"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">type_model</span><span class="p">[</span><span class="s2">"prior_sigma"</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">"prior_sigma"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">type_model</span><span class="p">[</span><span class="s2">"scale"</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">"scale"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">type_model</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"statevector_surface_category"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
-            <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;surface_categories&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="n">surface_category</span><span class="p">)</span>
-            <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;means&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;means&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
-            <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;covs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;covs&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"surface_categories"</span><span class="p">])</span> <span class="o">==</span> <span class="n">surface_category</span><span class="p">)</span>
+            <span class="n">type_model</span><span class="p">[</span><span class="s2">"means"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"means"</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">type_model</span><span class="p">[</span><span class="s2">"covs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"covs"</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
 
             <span class="c1"># To handle surfaces with 1 component, this check returns true</span>
-            <span class="k">if</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;means&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;covs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;means&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;means&quot;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
-                <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;covs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;covs&quot;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="k">if</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">"means"</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">"covs"</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">type_model</span><span class="p">[</span><span class="s2">"means"</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">"means"</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="n">type_model</span><span class="p">[</span><span class="s2">"covs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_model</span><span class="p">[</span><span class="s2">"covs"</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
 
-            <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;surface_categories&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="nb">str</span><span class="p">(</span><span class="n">stype</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">stype</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;surface_categories&quot;</span><span class="p">])[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">type_model</span><span class="p">[</span><span class="s2">"surface_categories"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">stype</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">stype</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"surface_categories"</span><span class="p">])[</span><span class="n">i</span><span class="p">]</span>
             <span class="p">]</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;attribute_means&quot;</span><span class="p">]):</span>
-                <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;attribute_means&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;attribute_means&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
-                <span class="n">type_model</span><span class="p">[</span><span class="s2">&quot;attribute_covs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;attribute_covs&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"attribute_means"</span><span class="p">]):</span>
+                <span class="n">type_model</span><span class="p">[</span><span class="s2">"attribute_means"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"attribute_means"</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">type_model</span><span class="p">[</span><span class="s2">"attribute_covs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s2">"attribute_covs"</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
 
             <span class="n">name</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
-            <span class="n">type_outfile</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">surface_category</span><span class="p">)</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">type_outfile</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">surface_category</span><span class="p">)</span><span class="si">}{</span><span class="n">ext</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">scipy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">savemat</span><span class="p">(</span><span class="n">type_outfile</span><span class="p">,</span> <span class="n">type_model</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">unpack_statevector</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;statevector&quot;</span><span class="p">)))</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">unpack_statevector</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"statevector"</span><span class="p">)))</span>
         <span class="n">scipy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">savemat</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
 
 
 <span class="c1"># Input arguments</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;surface_model&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;config_path&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"surface_model"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"config_path"</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;--wavelength_path&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Input wavelengths to three-column wavelength file to use&quot;</span>
+    <span class="s2">"--wavelength_path"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Input wavelengths to three-column wavelength file to use"</span>
 <span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--output_path&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to write the created surface model to&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--seed&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Seed for reproducibility&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--output_path"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Path to write the created surface model to"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--seed"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Seed for reproducibility"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.surface_model.cli"><a href="../../../../api/isofit/utils/surface_model/#isofit.utils.surface_model.cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a new surface model to a block of data&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build a new surface model to a block of data"""</span>
 
     <span class="c1"># SimpleNamespace converts a dict into dot-notational</span>
     <span class="n">surface_model</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
+    <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">"Done"</span><span class="p">)</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-        <span class="s2">&quot;surface_model.py cannot be called this way.  Run as:</span><span class="se">\n</span><span class="s2"> isofit surface_model [CONFIG_PATH]&quot;</span>
+        <span class="s2">"surface_model.py cannot be called this way.  Run as:</span><span class="se">\n</span><span class="s2"> isofit surface_model [CONFIG_PATH]"</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

@@ -4776,34 +4776,34 @@
 <span class="normal">25</span>
 <span class="normal">26</span>
 <span class="normal">27</span>
-<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;``pytest`` configuration&quot;&quot;&quot;</span>
+<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""``pytest`` configuration"""</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">pytest_collection_modifyitems</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.test.conftest.pytest_collection_modifyitems"><a href="../../../../api/isofit/test/conftest/#isofit.test.conftest.pytest_collection_modifyitems" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Modify collected tests.</span>
+<span class="w">    </span><span class="sd">"""Modify collected tests.</span>
 
 <span class="sd">    ``pytest`` does not offer a mechanism for selecting only tests lacking a</span>
 <span class="sd">    marker. Instead, detect tests without a marker, and quietly add an</span>
 <span class="sd">    ``unmarked`` marker that can be used to select these tests.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Detecting an unmarked test is actually a bit difficult. Any marker</span>
-    <span class="c1"># generated with &#39;@pytest.mark&#39; counts as a marked test, including</span>
-    <span class="c1"># &#39;@pytest.mark.parametrize()&#39;. To get around this, we set</span>
-    <span class="c1"># &#39;addopts = --strict-markers&#39; in &#39;pytest.ini&#39; to force all markers to be</span>
+    <span class="c1"># generated with '@pytest.mark' counts as a marked test, including</span>
+    <span class="c1"># '@pytest.mark.parametrize()'. To get around this, we set</span>
+    <span class="c1"># 'addopts = --strict-markers' in 'pytest.ini' to force all markers to be</span>
     <span class="c1"># registered, then we can consider any marker that is not registered to be</span>
     <span class="c1"># a bulitin marker, and thus consider any test not marked with a custom</span>
-    <span class="c1"># marker to be &#39;unmarked&#39;.</span>
+    <span class="c1"># marker to be 'unmarked'.</span>
 
     <span class="c1"># Names of markers that are explicitly listed in the config file. I had to</span>
-    <span class="c1"># read the &#39;$ pytest&#39; source code to figure out how to do this. This is how</span>
-    <span class="c1"># &#39;$ pytest --markers&#39; works - the &#39;pytest&#39; library does not provide any</span>
+    <span class="c1"># read the '$ pytest' source code to figure out how to do this. This is how</span>
+    <span class="c1"># '$ pytest --markers' works - the 'pytest' library does not provide any</span>
     <span class="c1"># abstraction for retrieving this information.</span>
-    <span class="n">registered_markers</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">getini</span><span class="p">(</span><span class="s2">&quot;markers&quot;</span><span class="p">)]</span>
+    <span class="n">registered_markers</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">getini</span><span class="p">(</span><span class="s2">"markers"</span><span class="p">)]</span>
 
     <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">registered_markers</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">iter_markers</span><span class="p">()):</span>
-            <span class="n">item</span><span class="o">.</span><span class="n">add_marker</span><span class="p">(</span><span class="s2">&quot;unmarked&quot;</span><span class="p">)</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">add_marker</span><span class="p">(</span><span class="s2">"unmarked"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

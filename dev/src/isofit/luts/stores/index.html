@@ -5030,10 +5030,10 @@
 <span class="normal">207</span>
 <span class="normal">208</span>
 <span class="normal">209</span>
-<span class="normal">210</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">210</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Base class for creating ISOFIT LUTs. Must be subclassed to implement the store creation</span>
 <span class="sd">logic.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -5051,7 +5051,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.stores.create"><a href="../../../../api/isofit/luts/stores/#isofit.luts.stores.create" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Factory function to return the correct Create subclass</span>
 
 <span class="sd">    Parameters</span>
@@ -5067,17 +5067,17 @@
 <span class="sd">    -------</span>
 <span class="sd">    obj</span>
 <span class="sd">        Create subclass object</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="n">ext</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">suffix</span>
 
-    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s2">&quot;.nc&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s2">".nc"</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">.netcdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">CreateNetCDF</span> <span class="k">as</span> <span class="bp">cls</span>
-    <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s2">&quot;.zarr&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s2">".zarr"</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">.zarr</span><span class="w"> </span><span class="kn">import</span> <span class="n">CreateZarr</span> <span class="k">as</span> <span class="bp">cls</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-            <span class="s2">&quot;The LUT path extension must be one of the supported stores&quot;</span>
+            <span class="s2">"The LUT path extension must be one of the supported stores"</span>
         <span class="p">)</span>
 
     <span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -5091,17 +5091,17 @@
         <span class="n">keys</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
         <span class="n">wl</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">grid</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
-        <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span>
+        <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"w"</span><span class="p">,</span>
         <span class="n">attrs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
         <span class="n">consts</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
         <span class="n">onedim</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
         <span class="n">alldim</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
         <span class="n">zeros</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
-        <span class="n">chunks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">chunks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
         <span class="n">init</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Prepare a LUT path</span>
 
 <span class="sd">        Parameters</span>
@@ -5115,10 +5115,10 @@
 <span class="sd">            The wavelength array.</span>
 <span class="sd">        grid : dict</span>
 <span class="sd">            The LUT grid, formatted as {str: Iterable}.</span>
-<span class="sd">        mode : str, default=&quot;w&quot;</span>
+<span class="sd">        mode : str, default="w"</span>
 <span class="sd">            Mode to open with.</span>
 <span class="sd">        attrs: dict, defaults={}</span>
-<span class="sd">            Dict of dataset attributes, ie. {&quot;RT_mode&quot;: &quot;transm&quot;}</span>
+<span class="sd">            Dict of dataset attributes, ie. {"RT_mode": "transm"}</span>
 <span class="sd">        consts : dict, optional, default={}</span>
 <span class="sd">            Dictionary of constant values. Appends/replaces current Create.consts list.</span>
 <span class="sd">        onedim : dict, optional, default={}</span>
@@ -5127,16 +5127,16 @@
 <span class="sd">            Dictionary of multi-dimensional data. Appends/replaces to the current Create.alldim list.</span>
 <span class="sd">        zeros : List[str], optional, default=[]</span>
 <span class="sd">            List of zero values. Appends to the current Create.zeros list.</span>
-<span class="sd">        chunks : list[int] | &quot;auto&quot;, default=&quot;auto&quot;</span>
-<span class="sd">            Chunking strategy to use on alldim variables. &quot;auto&quot; will chunk along the point dimension</span>
+<span class="sd">        chunks : list[int] | "auto", default="auto"</span>
+<span class="sd">            Chunking strategy to use on alldim variables. "auto" will chunk along the point dimension</span>
 <span class="sd">        init : bool, default=True</span>
 <span class="sd">            Call the initialize function</span>
 <span class="sd">        *kwargs : dict</span>
 <span class="sd">            Captures any additional key-word arguments and ignores</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Track the ISOFIT version that created this LUT</span>
-        <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;ISOFIT version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">__version__</span>
-        <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;ISOFIT status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&lt;incomplete&gt;&quot;</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s2">"ISOFIT version"</span><span class="p">]</span> <span class="o">=</span> <span class="n">__version__</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s2">"ISOFIT status"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"&lt;incomplete&gt;"</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">keys</span> <span class="o">=</span> <span class="n">keys</span>
@@ -5145,7 +5145,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hold</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;wl&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">)}</span> <span class="o">|</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">grid</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"wl"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">)}</span> <span class="o">|</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">grid</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dims</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">point_dims</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
 
@@ -5156,14 +5156,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">alldim</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">keys</span><span class="o">.</span><span class="n">alldim</span><span class="p">,</span> <span class="o">**</span><span class="n">alldim</span><span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">chunks</span> <span class="o">=</span> <span class="n">chunks</span>
-        <span class="k">if</span> <span class="n">chunks</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">chunks</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">)]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">init</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">pointIndices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span><div class="mkapi-source-link" id="isofit.luts.stores.Create.pointIndices"><a href="../../../../api/isofit/luts/stores/#isofit.luts.stores.Create.pointIndices" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the indices of the point in the grid.</span>
 
 <span class="sd">        Parameters</span>
@@ -5175,13 +5175,13 @@
 <span class="sd">        -------</span>
 <span class="sd">        List[int]</span>
 <span class="sd">            Mapped point values to index positions.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">==</span> <span class="n">val</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span>
         <span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">queuePoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.stores.Create.queuePoint"><a href="../../../../api/isofit/luts/stores/#isofit.luts.stores.Create.queuePoint" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Queues a point and its data to the internal hold list which is used by the</span>
 <span class="sd">        flush function to write these points to disk.</span>
 
@@ -5191,18 +5191,18 @@
 <span class="sd">            The coordinates of the point in the grid.</span>
 <span class="sd">        data : dict</span>
 <span class="sd">            Data for this point to write.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hold</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">point</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.stores.Create.flush"><a href="../../../../api/isofit/luts/stores/#isofit.luts.stores.Create.flush" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Flushes the (point, data) pairs held in the hold list to the LUT</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        finalize : bool, default=False</span>
 <span class="sd">            Calls the `finalize` function</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Subclass flush</span>
         <span class="n">unknowns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flush</span><span class="p">()</span>
 
@@ -5212,14 +5212,14 @@
         <span class="c1"># Reduce the number of warnings produced per flush</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unknowns</span><span class="p">:</span>
             <span class="n">Logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Attempted to assign a key that is not recognized, skipping: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Attempted to assign a key that is not recognized, skipping: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">finalize</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">writePoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.luts.stores.Create.writePoint"><a href="../../../../api/isofit/luts/stores/#isofit.luts.stores.Create.writePoint" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Queues a point and immediately flushes to disk.</span>
 
 <span class="sd">        Parameters</span>
@@ -5228,18 +5228,18 @@
 <span class="sd">            The coordinates of the point in the grid.</span>
 <span class="sd">        data : dict</span>
 <span class="sd">            Data for this point to write.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">queuePoint</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.luts.stores.Create.finalize"><a href="../../../../api/isofit/luts/stores/#isofit.luts.stores.Create.finalize" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Finalizes the store by writing any remaining attributes to disk</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">&quot;ISOFIT status&quot;</span><span class="p">,</span> <span class="s2">&quot;success&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setAttr</span><span class="p">(</span><span class="s2">"ISOFIT status"</span><span class="p">,</span> <span class="s2">"success"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(shape=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(shape=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="si">}</span><span class="s2">)"</span>
 </code></pre></div></td></tr></table></div>
 
 

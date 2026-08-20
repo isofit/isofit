@@ -6000,14 +6000,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -6037,9 +6037,9 @@
     <span class="n">output_directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">resolution</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
     <span class="n">obs_or_loc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;slope&quot;</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"slope"</span><span class="p">,</span>
     <span class="n">n_angles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
-    <span class="n">logging_level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+    <span class="n">logging_level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"INFO"</span><span class="p">,</span>
     <span class="n">log_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">n_cores</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">keep_horizon_files</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -6048,18 +6048,18 @@
     <span class="n">ray_temp_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">ray_ip_head</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Applies sky view factor calculation for a given projected DEM or DSM. Much of this code was borrowed from ARS Topo-Calc.</span>
 <span class="sd">    The key thing here was to create a python-only, rasterio-free port of this that could be used within ISOFIT. We also included</span>
-<span class="sd">    improvements that are current in Jeff Dozier&#39;s horizon method in Matlab (https://github.com/DozierJeff/Topographic-Horizons).</span>
+<span class="sd">    improvements that are current in Jeff Dozier's horizon method in Matlab (https://github.com/DozierJeff/Topographic-Horizons).</span>
 <span class="sd">    Following suggestions from Dozier (2021), multiprocessing is leveraged here w.r.t. to n_angles rotating the image. As default,</span>
 <span class="sd">    sky view is computed with n angles = 64 which in most cases is of sufficient accuracy to resolve but more angles may be used.</span>
 
-<span class="sd">    Optionally to this horizon based method, one can pass method=&quot;slope&quot; to compute a faster estimate that may be sufficent for regions with lower relief.</span>
+<span class="sd">    Optionally to this horizon based method, one can pass method="slope" to compute a faster estimate that may be sufficent for regions with lower relief.</span>
 <span class="sd">    The slope based estimate is simply, svf = cos^2(slope/2).</span>
 
-<span class="sd">    Yet another option is to pass an ISOFIT &quot;OBS&quot; or &quot;LOC&quot; file as input and using the obs_or_loc arg.</span>
-<span class="sd">    OBS files have slope data and can be used for method=&#39;slope&#39; only. LOC files have elevation data and can be used for method=&#39;slope&#39;.</span>
+<span class="sd">    Yet another option is to pass an ISOFIT "OBS" or "LOC" file as input and using the obs_or_loc arg.</span>
+<span class="sd">    OBS files have slope data and can be used for method='slope' only. LOC files have elevation data and can be used for method='slope'.</span>
 <span class="sd">    One can also use the full horizon method on the LOC file although this is not recommended because the edges miss information</span>
 <span class="sd">    (a warning will be triggered in this case).</span>
 
@@ -6067,64 +6067,64 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    input : str</span>
-<span class="sd">        Path to the projected ENVI File. If `obs_or_loc` is None or &quot;loc&quot; input is elevation. If is &quot;obs&quot;, then it&#39;s a slope product.</span>
+<span class="sd">        Path to the projected ENVI File. If `obs_or_loc` is None or "loc" input is elevation. If is "obs", then it's a slope product.</span>
 <span class="sd">    output_directory : str</span>
 <span class="sd">        Directory path for temporary files and outputs during processing; similar to apply_oe.</span>
 <span class="sd">    resolution : float, optional</span>
 <span class="sd">        Spatial resolution of the projected DEM in coordinate units (GSD in meters). Required for elevation input data.</span>
 <span class="sd">    obs_or_loc : str, optional</span>
-<span class="sd">        Options here are &#39;obs&#39;, &#39;loc&#39;, or None. Default is None. If &#39;obs&#39; is selected, it will pick the slope data from index 6 in OBS file.</span>
-<span class="sd">        If &#39;loc&#39; is selected it well select the elevation data from index 2. None will assume a single band elevation data is passed.</span>
+<span class="sd">        Options here are 'obs', 'loc', or None. Default is None. If 'obs' is selected, it will pick the slope data from index 6 in OBS file.</span>
+<span class="sd">        If 'loc' is selected it well select the elevation data from index 2. None will assume a single band elevation data is passed.</span>
 <span class="sd">    method : str, optional</span>
-<span class="sd">        Options are either &quot;horizon&quot; or &quot;slope&quot;. Passing &quot;horizon&quot; runs the full computation and is recommended for very steep terrain.</span>
-<span class="sd">        Passing &quot;slope&quot;&quot; runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes.</span>
+<span class="sd">        Options are either "horizon" or "slope". Passing "horizon" runs the full computation and is recommended for very steep terrain.</span>
+<span class="sd">        Passing "slope"" runs the simplifed calculation of svf=cos^2(slope/2) and can be useful for more mild slopes.</span>
 <span class="sd">    n_angles : int, optional</span>
 <span class="sd">        Number of angles used in horizon calculations (default is 64).</span>
 <span class="sd">        As a reference, n=72 computes every 5deg, n=64 every 5.6deg, n=32 every 11.25deg, etc.</span>
 <span class="sd">    keep_horizon_files : bool, optional</span>
 <span class="sd">        Horizon angles are created in output_dir as netcdfs. False deletes files, and True keeps them. These angles are based from zenith.</span>
 <span class="sd">    logging_level : str, optional</span>
-<span class="sd">        Logging verbosity level (default is &quot;INFO&quot;); similar to apply_oe.</span>
+<span class="sd">        Logging verbosity level (default is "INFO"); similar to apply_oe.</span>
 <span class="sd">    log_file : str or None, optional</span>
 <span class="sd">        File path to write logs; similar to apply_oe.</span>
 <span class="sd">    n_cores : int, optional</span>
-<span class="sd">        Number of CPU cores to use for parallel processing (default is 1). Only used for method=&quot;horizon&quot;.</span>
+<span class="sd">        Number of CPU cores to use for parallel processing (default is 1). Only used for method="horizon".</span>
 <span class="sd">        Note: n_cores should ideally not be larger than n_angles.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># set up logging for skyview.</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-        <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging_level</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">log_file</span>
+        <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging_level</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">log_file</span>
     <span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting skyview utility...&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting skyview utility..."</span><span class="p">)</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
     <span class="c1"># safeguards on possible incorrect inputs.</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="n">err_str</span> <span class="o">=</span> <span class="s2">&quot;input must be a string.&quot;</span>
+        <span class="n">err_str</span> <span class="o">=</span> <span class="s2">"input must be a string."</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_angles</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">n_angles</span> <span class="o">&lt;</span> <span class="mi">16</span><span class="p">:</span>
-        <span class="n">err_str</span> <span class="o">=</span> <span class="s2">&quot;n_angles must be a positive integer greater than 16.&quot;</span>
+        <span class="n">err_str</span> <span class="o">=</span> <span class="s2">"n_angles must be a positive integer greater than 16."</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_cores</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">n_cores</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">err_str</span> <span class="o">=</span> <span class="s2">&quot;n_cores must be a positive integer.&quot;</span>
+        <span class="n">err_str</span> <span class="o">=</span> <span class="s2">"n_cores must be a positive integer."</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span>
 
     <span class="c1"># Construct svf output path.</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">isdir</span><span class="p">(</span><span class="n">output_directory</span><span class="p">):</span>
-        <span class="n">err_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;The output directory, </span><span class="si">{</span><span class="n">output_directory</span><span class="si">}</span><span class="s2">, does not exist or was not found.&quot;</span>
+        <span class="n">err_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"The output directory, </span><span class="si">{</span><span class="n">output_directory</span><span class="si">}</span><span class="s2">, does not exist or was not found."</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">svf_hdr_path</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="s2">&quot;sky_view_factor.hdr&quot;</span><span class="p">)</span>
+        <span class="n">svf_hdr_path</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="s2">"sky_view_factor.hdr"</span><span class="p">)</span>
 
     <span class="c1"># ensuring n_cores does not exceed n_angles</span>
-    <span class="c1"># See, &quot;Revisiting Topographic Horizons in the Era of Big Data and Parallel Computing&quot;</span>
+    <span class="c1"># See, "Revisiting Topographic Horizons in the Era of Big Data and Parallel Computing"</span>
     <span class="c1"># In our case, we split it on rotation and forward/backward. and so max workers = n_angles.</span>
     <span class="n">n_cores_max</span> <span class="o">=</span> <span class="n">n_angles</span>
     <span class="k">if</span> <span class="n">n_cores</span> <span class="o">&gt;</span> <span class="n">n_cores_max</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;n_cores=</span><span class="si">{</span><span class="n">n_cores</span><span class="si">}</span><span class="s2">, but max can be </span><span class="si">{</span><span class="n">n_cores_max</span><span class="si">}</span><span class="s2"> for n_angles=</span><span class="si">{</span><span class="n">n_angles</span><span class="si">}</span><span class="s2">. Setting n_cores=</span><span class="si">{</span><span class="n">n_cores_max</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="sa">f</span><span class="s2">"n_cores=</span><span class="si">{</span><span class="n">n_cores</span><span class="si">}</span><span class="s2">, but max can be </span><span class="si">{</span><span class="n">n_cores_max</span><span class="si">}</span><span class="s2"> for n_angles=</span><span class="si">{</span><span class="n">n_angles</span><span class="si">}</span><span class="s2">. Setting n_cores=</span><span class="si">{</span><span class="n">n_cores_max</span><span class="si">}</span><span class="s2">."</span>
         <span class="p">)</span>
         <span class="n">n_cores</span> <span class="o">=</span> <span class="n">n_cores_max</span>
 
@@ -6134,25 +6134,25 @@
     <span class="p">)</span>
     <span class="n">svf_metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
         <span class="p">{</span>
-            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Sky View Factor&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;bands&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;data ignore value&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">9999</span><span class="p">,</span>
-            <span class="s2">&quot;data type&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
-            <span class="s2">&quot;interleave&quot;</span><span class="p">:</span> <span class="s2">&quot;bip&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;byte order&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;band names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Sky View Factor&quot;</span><span class="p">],</span>
+            <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"Sky View Factor"</span><span class="p">,</span>
+            <span class="s2">"bands"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"data ignore value"</span><span class="p">:</span> <span class="o">-</span><span class="mi">9999</span><span class="p">,</span>
+            <span class="s2">"data type"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s2">"interleave"</span><span class="p">:</span> <span class="s2">"bip"</span><span class="p">,</span>
+            <span class="s2">"byte order"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">"band names"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Sky View Factor"</span><span class="p">],</span>
         <span class="p">}</span>
     <span class="p">)</span>
     <span class="c1"># Initialize file with metadata</span>
     <span class="n">initialize_output</span><span class="p">(</span>
         <span class="n">output_metadata</span><span class="o">=</span><span class="n">svf_metadata</span><span class="p">,</span>
-        <span class="n">outpath</span><span class="o">=</span><span class="n">svf_hdr_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.hdr&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+        <span class="n">outpath</span><span class="o">=</span><span class="n">svf_hdr_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">".hdr"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
         <span class="n">out_shape</span><span class="o">=</span><span class="p">(</span><span class="n">dem_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dem_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
     <span class="p">)</span>
 
     <span class="c1"># If only computing slope method, we do not need to set up Ray.</span>
-    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;slope&quot;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">obs_or_loc</span> <span class="o">!=</span> <span class="s2">&quot;obs&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"slope"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">obs_or_loc</span> <span class="o">!=</span> <span class="s2">"obs"</span><span class="p">:</span>
             <span class="n">slope</span><span class="p">,</span> <span class="n">aspect</span> <span class="o">=</span> <span class="n">gradient_d8</span><span class="p">(</span>
                 <span class="n">dem_data</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">resolution</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">resolution</span><span class="p">,</span> <span class="n">aspect_rad</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span>
@@ -6167,31 +6167,31 @@
         <span class="k">del</span> <span class="n">out_mm</span>
 
     <span class="c1"># Else if, run the full horizon method.</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;horizon&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"horizon"</span><span class="p">:</span>
 
         <span class="c1"># raise error if horizon method passed but slope data is input.</span>
-        <span class="k">if</span> <span class="n">obs_or_loc</span> <span class="o">==</span> <span class="s2">&quot;obs&quot;</span><span class="p">:</span>
-            <span class="n">err_str</span> <span class="o">=</span> <span class="s2">&quot;A slope product was passed to horizon method, but this method requires the elevation product.&quot;</span>
+        <span class="k">if</span> <span class="n">obs_or_loc</span> <span class="o">==</span> <span class="s2">"obs"</span><span class="p">:</span>
+            <span class="n">err_str</span> <span class="o">=</span> <span class="s2">"A slope product was passed to horizon method, but this method requires the elevation product."</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span>
 
         <span class="c1"># raise warning for running loc file on horizon.</span>
-        <span class="k">if</span> <span class="n">obs_or_loc</span> <span class="o">==</span> <span class="s2">&quot;loc&quot;</span><span class="p">:</span>
-            <span class="n">warn_str</span> <span class="o">=</span> <span class="s2">&quot;Running the horizon method with LOC file. Resulting skyview may be incorrect on edges.&quot;</span>
+        <span class="k">if</span> <span class="n">obs_or_loc</span> <span class="o">==</span> <span class="s2">"loc"</span><span class="p">:</span>
+            <span class="n">warn_str</span> <span class="o">=</span> <span class="s2">"Running the horizon method with LOC file. Resulting skyview may be incorrect on edges."</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">warn_str</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">warn_str</span><span class="p">)</span>
 
         <span class="c1"># Start up a ray instance for parallel work</span>
         <span class="n">rayargs</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;ignore_reinit_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-            <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="n">ray_address</span><span class="p">,</span>
-            <span class="s2">&quot;include_dashboard&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-            <span class="s2">&quot;_temp_dir&quot;</span><span class="p">:</span> <span class="n">ray_temp_dir</span><span class="p">,</span>
-            <span class="s2">&quot;_redis_password&quot;</span><span class="p">:</span> <span class="n">ray_redis_password</span><span class="p">,</span>
-            <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">,</span>
+            <span class="s2">"ignore_reinit_error"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">"address"</span><span class="p">:</span> <span class="n">ray_address</span><span class="p">,</span>
+            <span class="s2">"include_dashboard"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">"_temp_dir"</span><span class="p">:</span> <span class="n">ray_temp_dir</span><span class="p">,</span>
+            <span class="s2">"_redis_password"</span><span class="p">:</span> <span class="n">ray_redis_password</span><span class="p">,</span>
+            <span class="s2">"num_cpus"</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="n">rayargs</span><span class="p">)</span>
 
-        <span class="n">horizon_dir</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="s2">&quot;horizon_files&quot;</span><span class="p">)</span>
+        <span class="n">horizon_dir</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="s2">"horizon_files"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">isdir</span><span class="p">(</span><span class="n">horizon_dir</span><span class="p">):</span>
             <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">horizon_dir</span><span class="p">)</span>
 
@@ -6230,7 +6230,7 @@
         <span class="c1"># set up integral for skyview</span>
         <span class="n">qIntegrand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">dem_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">angles</span><span class="p">:</span>
-            <span class="n">file_path</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">horizon_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;horizon_angle_</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="si">}</span><span class="s2">.nc&quot;</span><span class="p">)</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">horizon_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"horizon_angle_</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="si">}</span><span class="s2">.nc"</span><span class="p">)</span>
             <span class="n">h</span> <span class="o">=</span> <span class="n">load_horizon</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">)</span>
             <span class="n">azimuth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
             <span class="n">cos_aspect</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">aspect</span> <span class="o">-</span> <span class="n">azimuth</span><span class="p">)</span>
@@ -6255,15 +6255,15 @@
         <span class="k">del</span> <span class="n">out_mm</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">keep_horizon_files</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Removing temporary horizon files...&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Removing temporary horizon files..."</span><span class="p">)</span>
             <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">horizon_dir</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">err_str</span> <span class="o">=</span> <span class="s2">&quot;method must be either &#39;horizon&#39; or &#39;slope&#39;.&quot;</span>
+        <span class="n">err_str</span> <span class="o">=</span> <span class="s2">"method must be either 'horizon' or 'slope'."</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Skyview calculation completed in </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">}</span><span class="s2"> seconds using </span><span class="si">{</span><span class="n">n_cores</span><span class="si">}</span><span class="s2"> cores.&quot;</span>
+        <span class="sa">f</span><span class="s2">"Skyview calculation completed in </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">}</span><span class="s2"> seconds using </span><span class="si">{</span><span class="n">n_cores</span><span class="si">}</span><span class="s2"> cores."</span>
     <span class="p">)</span>
 
 
@@ -6278,15 +6278,15 @@
     <span class="n">logging_level</span><span class="p">,</span>
     <span class="n">log_file</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Each worker gets an angle and is sent to this function to compute horizons, and save to a compressed/scaled netcdf file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># set up logging for each worker.</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-        <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(asctime)s</span><span class="s2"> ||| </span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">level</span><span class="o">=</span><span class="n">logging_level</span><span class="p">,</span>
         <span class="n">filename</span><span class="o">=</span><span class="n">log_file</span><span class="p">,</span>
-        <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S&quot;</span><span class="p">,</span>
+        <span class="n">datefmt</span><span class="o">=</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">,%H:%M:%S"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># horizon angles (h)</span>
@@ -6304,7 +6304,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">save_horizon</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">output_directory</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.save_horizon"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.save_horizon" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;utility function to house metadata and information for saving horizon angles&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""utility function to house metadata and information for saving horizon angles"""</span>
 
     <span class="c1"># Scale h to uint16 with nodata=65535</span>
     <span class="n">h_nodata</span> <span class="o">=</span> <span class="mi">65535</span>
@@ -6316,42 +6316,42 @@
 
     <span class="c1"># write h to disk (scaled data reduced ~3-5x file size.)</span>
     <span class="n">angle_to_write</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Flushing horizon angle: </span><span class="si">{</span><span class="n">angle_to_write</span><span class="si">}</span><span class="s2"> to disk.&quot;</span><span class="p">)</span>
-    <span class="n">filename</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;horizon_angle_</span><span class="si">{</span><span class="n">angle_to_write</span><span class="si">}</span><span class="s2">.nc&quot;</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">nc</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;NETCDF4&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
-        <span class="n">ds</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="s2">&quot;row&quot;</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">ds</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="s2">&quot;col&quot;</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Flushing horizon angle: </span><span class="si">{</span><span class="n">angle_to_write</span><span class="si">}</span><span class="s2"> to disk."</span><span class="p">)</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"horizon_angle_</span><span class="si">{</span><span class="n">angle_to_write</span><span class="si">}</span><span class="s2">.nc"</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">nc</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"NETCDF4"</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="s2">"row"</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">createDimension</span><span class="p">(</span><span class="s2">"col"</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">var</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">createVariable</span><span class="p">(</span>
-            <span class="s2">&quot;horizon&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;u2&quot;</span><span class="p">,</span>
-            <span class="p">(</span><span class="s2">&quot;row&quot;</span><span class="p">,</span> <span class="s2">&quot;col&quot;</span><span class="p">),</span>
+            <span class="s2">"horizon"</span><span class="p">,</span>
+            <span class="s2">"u2"</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">"row"</span><span class="p">,</span> <span class="s2">"col"</span><span class="p">),</span>
             <span class="n">fill_value</span><span class="o">=</span><span class="n">h_nodata</span><span class="p">,</span>
             <span class="n">zlib</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">complevel</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">var</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">h_scaled</span>
-        <span class="n">var</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="s2">&quot;radians&quot;</span>
-        <span class="n">var</span><span class="o">.</span><span class="n">long_name</span> <span class="o">=</span> <span class="s2">&quot;Horizon angle (radians)&quot;</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="s2">"radians"</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">long_name</span> <span class="o">=</span> <span class="s2">"Horizon angle (radians)"</span>
         <span class="n">var</span><span class="o">.</span><span class="n">scale_factor</span> <span class="o">=</span> <span class="n">h_sf</span>
         <span class="n">var</span><span class="o">.</span><span class="n">add_offset</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">var</span><span class="o">.</span><span class="n">nodata</span> <span class="o">=</span> <span class="n">h_nodata</span>
         <span class="n">var</span><span class="o">.</span><span class="n">note</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;Values scaled as uint16 from 0 to pi radians;&quot;</span>
-            <span class="s2">&quot;convert back with np.pi / 65534 ;&quot;</span>
-            <span class="s2">&quot;65535 is nodata.&quot;</span>
-            <span class="s2">&quot;NOTE: angle is from zenith.&quot;</span>
+            <span class="s2">"Values scaled as uint16 from 0 to pi radians;"</span>
+            <span class="s2">"convert back with np.pi / 65534 ;"</span>
+            <span class="s2">"65535 is nodata."</span>
+            <span class="s2">"NOTE: angle is from zenith."</span>
         <span class="p">)</span>
 
     <span class="k">return</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">load_horizon</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.load_horizon"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.load_horizon" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;load horizon netcdf in for skyview calc using scale factors defined in save.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""load horizon netcdf in for skyview calc using scale factors defined in save."""</span>
     <span class="k">with</span> <span class="n">nc</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
         <span class="n">ds</span><span class="o">.</span><span class="n">set_auto_scale</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">h_nodata</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;horizon&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">nodata</span>
-        <span class="n">h_sf</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;horizon&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">scale_factor</span>
-        <span class="n">h_scaled</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;horizon&quot;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">h_nodata</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s2">"horizon"</span><span class="p">]</span><span class="o">.</span><span class="n">nodata</span>
+        <span class="n">h_sf</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s2">"horizon"</span><span class="p">]</span><span class="o">.</span><span class="n">scale_factor</span>
+        <span class="n">h_scaled</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s2">"horizon"</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
         <span class="n">h_scaled</span><span class="p">[</span><span class="n">h_scaled</span> <span class="o">==</span> <span class="n">h_nodata</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="n">h</span> <span class="o">=</span> <span class="n">h_scaled</span> <span class="o">*</span> <span class="n">h_sf</span>
     <span class="k">return</span> <span class="n">h</span>
@@ -6363,7 +6363,7 @@
     <span class="n">resolution</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
     <span class="n">sza</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
     <span class="n">saa</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
-    <span class="n">logging_level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
+    <span class="n">logging_level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"INFO"</span><span class="p">,</span>
     <span class="n">log_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">n_cores</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">ray_address</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6371,51 +6371,51 @@
     <span class="n">ray_temp_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">ray_ip_head</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Computes horizons at a specific geometry to create a binary shadow mask because nearby terrain</span>
-<span class="sd">    can cast shadows onto pixels as a function of the solar geometry that aren&#39;t always captured in cos-i.</span>
+<span class="sd">    can cast shadows onto pixels as a function of the solar geometry that aren't always captured in cos-i.</span>
 <span class="sd">    In this case, the input angle is the solar azimuth, and the solar zenith is compared to h at each pixel.</span>
 
 <span class="sd">    As of right now, this assumes solar azimuth is constant value (0-360deg). However, solar zenith (0-90deg) can vary by pixel.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-        <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging_level</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">log_file</span>
+        <span class="nb">format</span><span class="o">=</span><span class="s2">"</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(message)s</span><span class="s2">"</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging_level</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">log_file</span>
     <span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting shadow mask utility...&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting shadow mask utility..."</span><span class="p">)</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
     <span class="c1"># Ensure SAA is within 0-360 degrees.</span>
     <span class="k">if</span> <span class="n">saa</span> <span class="o">&gt;</span> <span class="mi">360</span> <span class="ow">or</span> <span class="n">saa</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">err_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Must us 0-360deg convention for solar azimuth, with 0 at North.&quot;</span>
+        <span class="n">err_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Must us 0-360deg convention for solar azimuth, with 0 at North."</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">isdir</span><span class="p">(</span><span class="n">output_directory</span><span class="p">):</span>
-        <span class="n">err_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;The output directory, </span><span class="si">{</span><span class="n">output_directory</span><span class="si">}</span><span class="s2">, does not exist or was not found.&quot;</span>
+        <span class="n">err_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"The output directory, </span><span class="si">{</span><span class="n">output_directory</span><span class="si">}</span><span class="s2">, does not exist or was not found."</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">shadow_hdr_path</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="s2">&quot;shadow_mask.hdr&quot;</span><span class="p">)</span>
+        <span class="n">shadow_hdr_path</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">output_directory</span><span class="p">,</span> <span class="s2">"shadow_mask.hdr"</span><span class="p">)</span>
 
     <span class="c1"># Load DEM data (assuming hdr).</span>
     <span class="n">dem_data</span><span class="p">,</span> <span class="n">shadow_metadata</span><span class="p">,</span> <span class="n">slope</span> <span class="o">=</span> <span class="n">load_input</span><span class="p">(</span>
-        <span class="nb">input</span><span class="o">=</span><span class="nb">input</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="n">resolution</span><span class="p">,</span> <span class="n">obs_or_loc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;horizon&quot;</span>
+        <span class="nb">input</span><span class="o">=</span><span class="nb">input</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="n">resolution</span><span class="p">,</span> <span class="n">obs_or_loc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"horizon"</span>
     <span class="p">)</span>
     <span class="n">shadow_metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
         <span class="p">{</span>
-            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Shadow Mask&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;bands&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;data ignore value&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">9999</span><span class="p">,</span>
-            <span class="s2">&quot;data type&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;byte order&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;interleave&quot;</span><span class="p">:</span> <span class="s2">&quot;bip&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;band names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Shadow Mask&quot;</span><span class="p">],</span>
+            <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"Shadow Mask"</span><span class="p">,</span>
+            <span class="s2">"bands"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"data ignore value"</span><span class="p">:</span> <span class="o">-</span><span class="mi">9999</span><span class="p">,</span>
+            <span class="s2">"data type"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"byte order"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">"interleave"</span><span class="p">:</span> <span class="s2">"bip"</span><span class="p">,</span>
+            <span class="s2">"band names"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Shadow Mask"</span><span class="p">],</span>
         <span class="p">}</span>
     <span class="p">)</span>
     <span class="n">initialize_output</span><span class="p">(</span>
         <span class="n">output_metadata</span><span class="o">=</span><span class="n">shadow_metadata</span><span class="p">,</span>
-        <span class="n">outpath</span><span class="o">=</span><span class="n">shadow_hdr_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.hdr&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+        <span class="n">outpath</span><span class="o">=</span><span class="n">shadow_hdr_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">".hdr"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
         <span class="n">out_shape</span><span class="o">=</span><span class="p">(</span><span class="n">dem_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dem_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span>
     <span class="p">)</span>
 
@@ -6431,12 +6431,12 @@
 
     <span class="c1"># Start up a ray instance for parallel work</span>
     <span class="n">rayargs</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;ignore_reinit_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="n">ray_address</span><span class="p">,</span>
-        <span class="s2">&quot;include_dashboard&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;_temp_dir&quot;</span><span class="p">:</span> <span class="n">ray_temp_dir</span><span class="p">,</span>
-        <span class="s2">&quot;_redis_password&quot;</span><span class="p">:</span> <span class="n">ray_redis_password</span><span class="p">,</span>
-        <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">,</span>
+        <span class="s2">"ignore_reinit_error"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"address"</span><span class="p">:</span> <span class="n">ray_address</span><span class="p">,</span>
+        <span class="s2">"include_dashboard"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"_temp_dir"</span><span class="p">:</span> <span class="n">ray_temp_dir</span><span class="p">,</span>
+        <span class="s2">"_redis_password"</span><span class="p">:</span> <span class="n">ray_redis_password</span><span class="p">,</span>
+        <span class="s2">"num_cpus"</span><span class="p">:</span> <span class="n">n_cores</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">ray</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="n">rayargs</span><span class="p">)</span>
 
@@ -6455,7 +6455,7 @@
     <span class="k">del</span> <span class="n">out_mm</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Shadow mask completed in </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">}</span><span class="s2"> seconds using </span><span class="si">{</span><span class="n">n_cores</span><span class="si">}</span><span class="s2"> cores.&quot;</span>
+        <span class="sa">f</span><span class="s2">"Shadow mask completed in </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">}</span><span class="s2"> seconds using </span><span class="si">{</span><span class="n">n_cores</span><span class="si">}</span><span class="s2"> cores."</span>
     <span class="p">)</span>
 
     <span class="k">return</span>
@@ -6473,10 +6473,10 @@
     <span class="k">return</span> <span class="n">h</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">load_input</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">resolution</span><span class="p">,</span> <span class="n">obs_or_loc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;slope&quot;</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.load_input"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.load_input" title="Go to docs">[docs]</a></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_input</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">resolution</span><span class="p">,</span> <span class="n">obs_or_loc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"slope"</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.load_input"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.load_input" title="Go to docs">[docs]</a></div>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">isfile</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The DEM file was not found: </span><span class="si">{</span><span class="nb">input</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The DEM file was not found: </span><span class="si">{</span><span class="nb">input</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
     <span class="n">dem</span> <span class="o">=</span> <span class="n">envi</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">envi_header</span><span class="p">(</span><span class="nb">input</span><span class="p">))</span>
     <span class="n">dem_data</span> <span class="o">=</span> <span class="n">dem</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">writeable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
@@ -6486,21 +6486,21 @@
     <span class="k">if</span> <span class="n">obs_or_loc</span><span class="p">:</span>
         <span class="n">obs_or_loc</span> <span class="o">=</span> <span class="n">obs_or_loc</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="n">obs_or_loc</span> <span class="o">!=</span> <span class="s2">&quot;obs&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">obs_or_loc</span> <span class="o">!=</span> <span class="s2">"obs"</span><span class="p">:</span>
         <span class="k">if</span> <span class="p">(</span>
             <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resolution</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">))</span>
             <span class="ow">or</span> <span class="n">resolution</span> <span class="o">&lt;=</span> <span class="mi">0</span>
             <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">resolution</span><span class="p">)</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;resolution must be positive value when using elevation data.&quot;</span>
+                <span class="s2">"resolution must be positive value when using elevation data."</span>
             <span class="p">)</span>
 
     <span class="n">max_elev</span> <span class="o">=</span> <span class="mf">10000.0</span>  <span class="c1"># slightly higher than Mt.Everest</span>
     <span class="n">min_elev</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2000.0</span>  <span class="c1"># slightly lower than Dead Sea</span>
 
     <span class="n">slope</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="n">obs_or_loc</span> <span class="o">==</span> <span class="s2">&quot;obs&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">obs_or_loc</span> <span class="o">==</span> <span class="s2">"obs"</span><span class="p">:</span>
         <span class="c1"># Assuming OBS Slope data in degrees</span>
         <span class="n">slope</span> <span class="o">=</span> <span class="n">dem_data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">6</span><span class="p">]</span>
         <span class="n">slope</span><span class="p">[</span><span class="n">slope</span> <span class="o">&gt;</span> <span class="mf">90.1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
@@ -6509,7 +6509,7 @@
         <span class="c1"># Squeeze 3D data with single band to 2D</span>
         <span class="k">if</span> <span class="n">slope</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">slope</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">slope</span> <span class="o">=</span> <span class="n">slope</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">obs_or_loc</span> <span class="o">==</span> <span class="s2">&quot;loc&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">obs_or_loc</span> <span class="o">==</span> <span class="s2">"loc"</span><span class="p">:</span>
         <span class="n">dem_data</span> <span class="o">=</span> <span class="n">dem_data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
         <span class="n">dem_data</span><span class="p">[</span><span class="n">dem_data</span> <span class="o">&gt;</span> <span class="n">max_elev</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="n">dem_data</span><span class="p">[</span><span class="n">dem_data</span> <span class="o">&lt;</span> <span class="n">min_elev</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
@@ -6517,7 +6517,7 @@
         <span class="n">dem_data</span><span class="p">[</span><span class="n">dem_data</span> <span class="o">&gt;</span> <span class="n">max_elev</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="n">dem_data</span><span class="p">[</span><span class="n">dem_data</span> <span class="o">&lt;</span> <span class="n">min_elev</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;obs_or_loc must be &#39;loc&#39;, &#39;obs&#39;, or None.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"obs_or_loc must be 'loc', 'obs', or None."</span><span class="p">)</span>
 
     <span class="c1"># Squeeze 3D data with single band to 2D</span>
     <span class="k">if</span> <span class="n">dem_data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">dem_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -6529,19 +6529,19 @@
     <span class="k">return</span> <span class="n">dem_data</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">slope</span>
 
 
-<span class="sd">&quot;&quot;&quot;NOTE:</span>
+<span class="sd">"""NOTE:</span>
 <span class="sd">The rest of the codes below were heavily borrowed from USDA-ARS topo-calc package.</span>
 
 <span class="sd">With one exception which is hor1d(). This had to be modified to improve speed.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">gradient_d8</span><span class="p">(</span><span class="n">dem</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">aspect_rad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.gradient_d8"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.gradient_d8" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculate the slope and aspect for provided dem,</span>
 <span class="sd">    using a 3x3 cell around the center</span>
 
-<span class="sd">    Given a center cell e and it&#39;s neighbors:</span>
+<span class="sd">    Given a center cell e and it's neighbors:</span>
 
 <span class="sd">    | a | b | c |</span>
 <span class="sd">    | d | e | f |</span>
@@ -6568,10 +6568,10 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        slope in radians</span>
 <span class="sd">        aspect in degrees or IPW radians</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Pad the dem</span>
-    <span class="n">dem_pad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">dem</span><span class="p">,</span> <span class="n">pad_width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;edge&quot;</span><span class="p">)</span>
+    <span class="n">dem_pad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">dem</span><span class="p">,</span> <span class="n">pad_width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"edge"</span><span class="p">)</span>
 
     <span class="c1"># top</span>
     <span class="n">dem_pad</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">dem_pad</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="p">(</span><span class="n">dem_pad</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">dem_pad</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:])</span>
@@ -6607,7 +6607,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">calc_slope</span><span class="p">(</span><span class="n">dz_dx</span><span class="p">,</span> <span class="n">dz_dy</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.calc_slope"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.calc_slope" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the slope given the finite differences</span>
+<span class="w">    </span><span class="sd">"""Calculate the slope given the finite differences</span>
 
 <span class="sd">    Arguments:</span>
 <span class="sd">        dz_dx: finite difference in the x direction</span>
@@ -6615,13 +6615,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        slope numpy array</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dz_dx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dz_dy</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">aspect</span><span class="p">(</span><span class="n">dz_dx</span><span class="p">,</span> <span class="n">dz_dy</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.aspect"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.aspect" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculate the aspect from the finite difference.</span>
 <span class="sd">    Aspect is degrees clockwise from North (0/360 degrees)</span>
 
@@ -6634,7 +6634,7 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">        aspect in degrees clockwise from North</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># return in degrees</span>
     <span class="n">a</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">dz_dy</span><span class="p">,</span> <span class="o">-</span><span class="n">dz_dx</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
@@ -6653,7 +6653,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">aspect_to_ipw_radians</span><span class="p">(</span><span class="n">a</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.aspect_to_ipw_radians"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.aspect_to_ipw_radians" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    IPW defines aspect differently than most GIS programs</span>
 <span class="sd">    so convert an aspect in degrees from due North (0/360)</span>
 <span class="sd">    to the IPW definition.</span>
@@ -6667,7 +6667,7 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">        a: aspect in radians from due South</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">arad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">180</span>
 
@@ -6675,7 +6675,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">horizon</span><span class="p">(</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">dem</span><span class="p">,</span> <span class="n">spacing</span><span class="p">,</span> <span class="n">par</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">n_cores</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.horizon"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.horizon" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate horizon angles for one direction. Horizon angles</span>
+<span class="w">    </span><span class="sd">"""Calculate horizon angles for one direction. Horizon angles</span>
 <span class="sd">    are based on Dozier and Frew 1990 and are adapted from the</span>
 <span class="sd">    IPW C code.</span>
 
@@ -6685,19 +6685,19 @@
 <span class="sd">    range.</span>
 
 <span class="sd">    Arguments:</span>
-<span class="sd">        azimuth {float} -- find horizon&#39;s along this direction</span>
+<span class="sd">        azimuth {float} -- find horizon's along this direction</span>
 <span class="sd">        dem {np.array2d} -- numpy array of dem elevations</span>
 <span class="sd">        spacing {float} -- grid spacing</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        hcos {np.array} -- cosines of angles to the horizon</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="n">dem</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;horizon input of dem is not a 2D array&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"horizon input of dem is not a 2D array"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">azimuth</span> <span class="o">&gt;</span> <span class="mi">180</span> <span class="ow">or</span> <span class="n">azimuth</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">180</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;azimuth must be between -180 and 180 degrees&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"azimuth must be between -180 and 180 degrees"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">azimuth</span> <span class="o">==</span> <span class="mi">90</span><span class="p">:</span>
         <span class="c1"># East</span>
@@ -6752,7 +6752,7 @@
         <span class="n">hcos</span> <span class="o">=</span> <span class="n">skew</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">a</span><span class="p">,</span> <span class="n">fwd</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
 
     <span class="k">else</span><span class="p">:</span>
-        <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;azimuth not valid&quot;</span><span class="p">)</span>
+        <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"azimuth not valid"</span><span class="p">)</span>
 
     <span class="c1"># sanity check</span>
     <span class="k">assert</span> <span class="n">hcos</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">dem</span><span class="o">.</span><span class="n">shape</span>
@@ -6826,7 +6826,7 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">hor2d</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">fwd</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">par</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">n_cores</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.hor2d"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.hor2d" title="Go to docs">[docs]</a></div>
     <span class="k">if</span> <span class="n">z</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input must be 2D array&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Input must be 2D array"</span><span class="p">)</span>
 
     <span class="n">nrows</span><span class="p">,</span> <span class="n">ncols</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">shape</span>
 
@@ -6861,21 +6861,21 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">adjust_spacing</span><span class="p">(</span><span class="n">spacing</span><span class="p">,</span> <span class="n">skew_angle</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.adjust_spacing"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.adjust_spacing" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust the grid spacing if a skew angle is present</span>
+<span class="w">    </span><span class="sd">"""Adjust the grid spacing if a skew angle is present</span>
 
 <span class="sd">    Arguments:</span>
 <span class="sd">        spacing {float} -- grid spacing</span>
 <span class="sd">        skew_angle {float} -- angle to adjust the spacing for [degrees]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="n">skew_angle</span> <span class="o">&gt;</span> <span class="mi">45</span> <span class="ow">or</span> <span class="n">skew_angle</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;skew angle must be between 0 and 45 degrees&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"skew angle must be between 0 and 45 degrees"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">spacing</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">skew_angle</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="mi">45</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">skew</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">fwd</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill_min</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.skew"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.skew" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Skew the origin of successive lines by a specified angle</span>
 <span class="sd">    A skew with angle of 30 degrees causes the following transformation:</span>
 
@@ -6901,13 +6901,13 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        skewed array</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="n">angle</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">arr</span>
 
     <span class="k">if</span> <span class="n">angle</span> <span class="o">&gt;</span> <span class="mi">45</span> <span class="ow">or</span> <span class="n">angle</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">45</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;skew angle must be between -45 and 45 degrees&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"skew angle must be between -45 and 45 degrees"</span><span class="p">)</span>
 
     <span class="n">nlines</span><span class="p">,</span> <span class="n">nsamps</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span>
 
@@ -6960,7 +6960,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">skew_transpose</span><span class="p">(</span><span class="n">dem</span><span class="p">,</span> <span class="n">spacing</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.skew_transpose"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.skew_transpose" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Skew and transpose the dem for the given angle.</span>
+<span class="w">    </span><span class="sd">"""Skew and transpose the dem for the given angle.</span>
 <span class="sd">    Also calculate the new spacing given the skew.</span>
 
 <span class="sd">    Arguments:</span>
@@ -6971,7 +6971,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        t -- skew and transpose array</span>
 <span class="sd">        spacing -- new spacing adjusted for angle</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">spacing</span> <span class="o">=</span> <span class="n">adjust_spacing</span><span class="p">(</span><span class="n">spacing</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span>
     <span class="n">t</span> <span class="o">=</span> <span class="n">skew</span><span class="p">(</span><span class="n">dem</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">fill_min</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
@@ -6980,7 +6980,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">transpose_skew</span><span class="p">(</span><span class="n">dem</span><span class="p">,</span> <span class="n">spacing</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.transpose_skew"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.transpose_skew" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transpose, skew then transpose a dem for the</span>
+<span class="w">    </span><span class="sd">"""Transpose, skew then transpose a dem for the</span>
 <span class="sd">    given angle. Also calculate the new spacing</span>
 
 <span class="sd">    Arguments:</span>
@@ -6991,7 +6991,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        t -- skew and transpose array</span>
 <span class="sd">        spacing -- new spacing adjusted for angle</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">t</span> <span class="o">=</span> <span class="n">skew</span><span class="p">(</span><span class="n">dem</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">angle</span><span class="p">,</span> <span class="n">fill_min</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
     <span class="n">spacing</span> <span class="o">=</span> <span class="n">adjust_spacing</span><span class="p">(</span><span class="n">spacing</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span>
@@ -7000,40 +7000,40 @@
 
 
 <span class="c1"># Input arguments</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;skyview&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">skyview</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;output_directory&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--resolution&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--n_angles&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--keep_horizon_files&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--obs_or_loc&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--method&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;slope&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--logging_level&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--log_file&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--n_cores&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--ray_address&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--ray_redis_password&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--ray_temp_dir&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;/tmp/ray&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--ray_ip_head&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"skyview"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">skyview</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">no_args_is_help</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"input"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"output_directory"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--resolution"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--n_angles"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--keep_horizon_files"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--obs_or_loc"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--method"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"slope"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--logging_level"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"INFO"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--log_file"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--n_cores"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--ray_address"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--ray_redis_password"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--ray_temp_dir"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"/tmp/ray"</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--ray_ip_head"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;--debug_args&quot;</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Print the arguments and exit&quot;</span><span class="p">,</span>
+    <span class="s2">"--debug_args"</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Print the arguments and exit"</span><span class="p">,</span>
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="n">debug_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.skyview.cli"><a href="../../../../api/isofit/utils/skyview/#isofit.utils.skyview.cli" title="Go to docs">[docs]</a></div>
     <span class="k">if</span> <span class="n">debug_args</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Arguments to be passed:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Arguments to be passed:"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">skyview</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Done"</span><span class="p">)</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-        <span class="s2">&quot;skyview.py can no longer be called this way.  Run as:</span><span class="se">\n</span><span class="s2"> isofit skyview [ARGS]&quot;</span>
+        <span class="s2">"skyview.py can no longer be called this way.  Run as:</span><span class="se">\n</span><span class="s2"> isofit skyview [ARGS]"</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

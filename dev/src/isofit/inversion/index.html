@@ -4936,18 +4936,18 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">Inversion</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">fm</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.inversion.Inversion"><a href="../../../api/isofit/inversion/#isofit.inversion.Inversion" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Retrieves the correct Inversion model to initialize and returns</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;mcmc_inversion&quot;</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">"mcmc_inversion"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">MCMCInversion</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">fm</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;inversion&quot;</span><span class="p">,</span> <span class="s2">&quot;simulation&quot;</span><span class="p">):</span>
+    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"inversion"</span><span class="p">,</span> <span class="s2">"simulation"</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">ClassicInversion</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">fm</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># This should never be reached due to configuration checking</span>
-        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Config implementation mode node valid&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">"Config implementation mode node valid"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

@@ -5394,14 +5394,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -5435,7 +5435,7 @@
     <span class="n">wl_center</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">945</span><span class="p">,</span>
     <span class="n">wl_hi</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1040</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;From a given radiance, estimate atmospheric state with band ratios.</span>
+<span class="w">    </span><span class="sd">"""From a given radiance, estimate atmospheric state with band ratios.</span>
 <span class="sd">    Used to initialize gradient descent inversions.</span>
 
 <span class="sd">    Args:</span>
@@ -5451,7 +5451,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        x_new: updated estimate of x_atmosphere</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Identify the latest instrument wavelength calibration (possibly</span>
     <span class="c1"># state-dependent) and identify channel numbers for the band ratio.</span>
@@ -5471,7 +5471,7 @@
 
     <span class="c1"># Band ratio retrieval of H2O.  Depending on the radiative transfer</span>
     <span class="c1"># model we are using, this state parameter could go by several names.</span>
-    <span class="k">for</span> <span class="n">h2oname</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;H2OSTR&quot;</span><span class="p">,</span> <span class="s2">&quot;h2o&quot;</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">h2oname</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"H2OSTR"</span><span class="p">,</span> <span class="s2">"h2o"</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">h2oname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">:</span>
             <span class="k">continue</span>
 
@@ -5517,7 +5517,7 @@
         <span class="c1"># would optimize the continuum-relative correction</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">h2os</span><span class="p">,</span> <span class="n">areas</span><span class="p">)</span>
         <span class="n">bounds</span> <span class="o">=</span> <span class="p">(</span><span class="n">h2os</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.001</span><span class="p">,</span> <span class="n">h2os</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.001</span><span class="p">)</span>
-        <span class="n">best</span> <span class="o">=</span> <span class="n">min1d</span><span class="p">(</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">p</span><span class="p">(</span><span class="n">h</span><span class="p">)),</span> <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;bounded&quot;</span><span class="p">)</span>
+        <span class="n">best</span> <span class="o">=</span> <span class="n">min1d</span><span class="p">(</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">p</span><span class="p">(</span><span class="n">h</span><span class="p">)),</span> <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"bounded"</span><span class="p">)</span>
         <span class="n">x_new</span><span class="p">[</span><span class="n">ind_sv</span><span class="p">]</span> <span class="o">=</span> <span class="n">best</span><span class="o">.</span><span class="n">x</span>
 
     <span class="k">return</span> <span class="n">x_new</span>
@@ -5531,7 +5531,7 @@
     <span class="n">meas</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
     <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inverts radiance algebraically using Lambertian assumptions to get a</span>
+<span class="w">    </span><span class="sd">"""Inverts radiance algebraically using Lambertian assumptions to get a</span>
 <span class="sd">    reflectance.  If the appropriate transmittance terms are available,</span>
 <span class="sd">    surface slope will enter for the initial guess.  Otherwise, the surface</span>
 <span class="sd">    will be treated as if flat.</span>
@@ -5547,7 +5547,7 @@
 <span class="sd">    Return:</span>
 <span class="sd">        rfl_est: estimate of the surface reflectance based on the given surface model and specified atmospheric state</span>
 <span class="sd">        coeffs: atmospheric parameters used for the inversion, returned for convenience</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">_</span><span class="p">,</span> <span class="n">rho_init</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
     <span class="n">rho_dif_dif</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">rho_init</span>
@@ -5562,7 +5562,7 @@
         <span class="n">L_dif_dif</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">calc_atmosphere_quantities</span><span class="p">(</span><span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif</span><span class="p">)</span>
     <span class="n">L_atm</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">get_L_atm</span><span class="p">(</span><span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-    <span class="n">sphalb</span> <span class="o">=</span> <span class="n">rhi</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span>
+    <span class="n">sphalb</span> <span class="o">=</span> <span class="n">rhi</span><span class="p">[</span><span class="s2">"sphalb"</span><span class="p">]</span>
     <span class="n">Ls</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">calc_Ls</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
     <span class="n">transup</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">get_upward_transm</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="n">rhi</span><span class="p">,</span> <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">)</span>
@@ -5571,9 +5571,9 @@
     <span class="n">wl</span><span class="p">,</span> <span class="n">fwhm</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">calibration</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">)</span>
 
     <span class="c1"># Interpolate L_up linearly if needed.</span>
-    <span class="n">Ls</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">Ls</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span><span class="p">)(</span><span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">)</span>
+    <span class="n">Ls</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">Ls</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">"extrapolate"</span><span class="p">)(</span><span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">)</span>
 
-    <span class="c1"># Now convert to what&#39;s scene at the instrument</span>
+    <span class="c1"># Now convert to what's scene at the instrument</span>
     <span class="n">L_up</span> <span class="o">=</span> <span class="n">Ls</span> <span class="o">*</span> <span class="n">transup</span>
 
     <span class="c1"># Resample the components we need to use</span>
@@ -5586,18 +5586,18 @@
     <span class="n">rdn_solrfl</span> <span class="o">=</span> <span class="n">meas</span> <span class="o">-</span> <span class="n">L_up</span>
     <span class="n">rfl</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">L_tot</span> <span class="o">/</span> <span class="p">(</span><span class="n">rdn_solrfl</span> <span class="o">-</span> <span class="n">L_atm</span><span class="p">)</span> <span class="o">+</span> <span class="n">sphalb</span><span class="p">)</span>
 
-    <span class="c1"># explicity handle known nan cases - this doesn&#39;t handle nans</span>
-    <span class="c1"># that might appear from the atmosphere directly, as we don&#39;t want to</span>
+    <span class="c1"># explicity handle known nan cases - this doesn't handle nans</span>
+    <span class="c1"># that might appear from the atmosphere directly, as we don't want to</span>
     <span class="c1"># cover them up</span>
     <span class="n">rfl</span><span class="p">[</span><span class="n">rdn_solrfl</span> <span class="o">-</span> <span class="n">L_atm</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">rfl</span><span class="p">[</span><span class="n">L_tot</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="c1"># While values can go above 1, they shouldn&#39;t got that high above.</span>
+    <span class="c1"># While values can go above 1, they shouldn't got that high above.</span>
     <span class="c1"># generally it means instability</span>
     <span class="n">rfl</span><span class="p">[</span><span class="n">rfl</span> <span class="o">&gt;</span> <span class="mf">1.6</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.6</span>
 
     <span class="c1"># interpolate the output</span>
-    <span class="n">rfl_est</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">wl</span><span class="p">,</span> <span class="n">rfl</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">&quot;extrapolate&quot;</span><span class="p">)(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">)</span>
+    <span class="n">rfl_est</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">wl</span><span class="p">,</span> <span class="n">rfl</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s2">"extrapolate"</span><span class="p">)(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">)</span>
 
     <span class="c1"># Some downstream code will benefit from our precalculated</span>
     <span class="c1"># atmospheric optical parameters</span>
@@ -5616,8 +5616,8 @@
     <span class="n">diag_uncert</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">outside_ret_const</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.01</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform an analytical estimate of the conditional MAP estimate for</span>
-<span class="sd">    a fixed atmosphere.  Based on the &quot;Inner loop&quot; from Susiluoto et al. (2025).</span>
+<span class="w">    </span><span class="sd">"""Perform an analytical estimate of the conditional MAP estimate for</span>
+<span class="sd">    a fixed atmosphere.  Based on the "Inner loop" from Susiluoto et al. (2025).</span>
 <span class="sd">    doi: https://doi.org/10.3390/rs17223719</span>
 
 <span class="sd">    Args:</span>
@@ -5634,7 +5634,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        x: MAP estimate of the mean</span>
 <span class="sd">        S: diagonal conditional posterior covariance estimate</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.linalg.blas</span><span class="w"> </span><span class="kn">import</span> <span class="n">dsymv</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.linalg.lapack</span><span class="w"> </span><span class="kn">import</span> <span class="n">dpotrf</span><span class="p">,</span> <span class="n">dpotri</span>
 
@@ -5662,7 +5662,7 @@
 
     <span class="c1"># Path radiance and spherical albedo</span>
     <span class="n">L_atm</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">get_L_atm</span><span class="p">(</span><span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
-    <span class="n">s_alb</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;sphalb&quot;</span><span class="p">]</span>
+    <span class="n">s_alb</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">"sphalb"</span><span class="p">]</span>
 
     <span class="c1"># Estimation of background radiance (background terms assumed rho_dir_dif ~= rho_dif_dif)</span>
     <span class="n">L_bg</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">calc_rdn_bgrfl</span><span class="p">(</span>
@@ -5729,7 +5729,7 @@
         <span class="n">xk</span> <span class="o">=</span> <span class="n">dsymv</span><span class="p">(</span>
             <span class="mi">1</span><span class="p">,</span>
             <span class="n">C_rcond</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">dsymv</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">+</span> <span class="n">prprod</span><span class="p">[</span><span class="n">iv_idx</span><span class="p">]),</span>
+            <span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">dsymv</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">prprod</span><span class="p">[</span><span class="n">iv_idx</span><span class="p">]),</span>
         <span class="p">)</span>
 
         <span class="c1"># Save trajectory step:</span>
@@ -5756,7 +5756,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">invert_simple</span><span class="p">(</span><span class="n">fm</span><span class="p">:</span> <span class="n">ForwardModel</span><span class="p">,</span> <span class="n">meas</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">geom</span><span class="p">:</span> <span class="n">Geometry</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.inversion.inverse_simple.invert_simple"><a href="../../../../api/isofit/inversion/inverse_simple/#isofit.inversion.inverse_simple.invert_simple" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find an initial guess at the state vector. This currently uses</span>
+<span class="w">    </span><span class="sd">"""Find an initial guess at the state vector. This currently uses</span>
 <span class="sd">    traditional (non-iterative, heuristic) atmospheric correction.</span>
 
 <span class="sd">    Args:</span>
@@ -5766,7 +5766,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        x: estimate of the full statevector based on initial conditions, geometry, and a heuristic guess</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">surface</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">surface</span>
     <span class="n">atmosphere</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span>
@@ -5870,10 +5870,10 @@
     <span class="c1"># If available, get initial guess of surface elevation from location file.</span>
     <span class="k">if</span> <span class="p">(</span>
         <span class="n">geom</span><span class="o">.</span><span class="n">surface_elevation_km</span>
-        <span class="ow">and</span> <span class="s2">&quot;surface_elevation_km&quot;</span> <span class="ow">in</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">statevec_names</span>
+        <span class="ow">and</span> <span class="s2">"surface_elevation_km"</span> <span class="ow">in</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">statevec_names</span>
     <span class="p">):</span>
         <span class="n">ind_sv</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">[</span>
-            <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;surface_elevation_km&quot;</span><span class="p">)</span>
+            <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"surface_elevation_km"</span><span class="p">)</span>
         <span class="p">]</span>
         <span class="k">if</span> <span class="n">geom</span><span class="o">.</span><span class="n">surface_elevation_km</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
             <span class="n">x</span><span class="p">[</span><span class="n">ind_sv</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -5881,7 +5881,7 @@
             <span class="n">x</span><span class="p">[</span><span class="n">ind_sv</span><span class="p">]</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">surface_elevation_km</span>
 
     <span class="c1"># We record these initial values in the geometry object - the only</span>
-    <span class="c1"># &quot;stateful&quot; part of the retrieval</span>
+    <span class="c1"># "stateful" part of the retrieval</span>
     <span class="n">geom</span><span class="o">.</span><span class="n">x_surf_init</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span>
     <span class="n">geom</span><span class="o">.</span><span class="n">x_atmosphere_init</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">]</span>
 
@@ -5898,7 +5898,7 @@
     <span class="n">ewt_detection_limit</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
     <span class="n">return_abs_co</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given a reflectance estimate, fit a state vector including liquid water path length</span>
+<span class="w">    </span><span class="sd">"""Given a reflectance estimate, fit a state vector including liquid water path length</span>
 <span class="sd">    based on a simple Beer-Lambert surface model.</span>
 
 <span class="sd">    Args:</span>
@@ -5913,7 +5913,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        solution: estimated liquid water path length, intercept, and slope based on a given surface reflectance</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># make sure that wavelengths are provided in nm</span>
     <span class="k">if</span> <span class="n">wl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
         <span class="n">wl</span> <span class="o">=</span> <span class="n">units</span><span class="o">.</span><span class="n">micron_to_nm</span><span class="p">(</span><span class="n">wl</span><span class="p">)</span>
@@ -5928,11 +5928,11 @@
         <span class="n">lw_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">ewt_detection_limit</span>
 
     <span class="c1"># load imaginary part of liquid water refractive index and calculate wavelength dependent absorption coefficient</span>
-    <span class="c1"># options are: &#39;k_22c&#39;, &#39;k_minus8c&#39;, &#39;k_minus25c&#39;, &#39;k_minus7c&#39;, &#39;k_25c_H&#39;, &#39;k_20c&#39;, &#39;k_25c_S</span>
-    <span class="n">path_k</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;iop&quot;</span><span class="p">,</span> <span class="s2">&quot;k_liquid_water_ice.csv&quot;</span><span class="p">)</span>
-    <span class="n">k_wi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">path_k</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8-sig&quot;</span><span class="p">)</span>
-    <span class="n">k_wi_idx</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">&quot;wl_20c&quot;</span><span class="p">])</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">&quot;k_20c&quot;</span><span class="p">])</span>
-    <span class="n">kw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">wl_sel</span><span class="p">,</span> <span class="n">xp</span><span class="o">=</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">&quot;wl_20c&quot;</span><span class="p">][</span><span class="n">k_wi_idx</span><span class="p">],</span> <span class="n">fp</span><span class="o">=</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">&quot;k_20c&quot;</span><span class="p">][</span><span class="n">k_wi_idx</span><span class="p">])</span>
+    <span class="c1"># options are: 'k_22c', 'k_minus8c', 'k_minus25c', 'k_minus7c', 'k_25c_H', 'k_20c', 'k_25c_S</span>
+    <span class="n">path_k</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="s2">"data"</span><span class="p">,</span> <span class="s2">"iop"</span><span class="p">,</span> <span class="s2">"k_liquid_water_ice.csv"</span><span class="p">)</span>
+    <span class="n">k_wi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">path_k</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">","</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8-sig"</span><span class="p">)</span>
+    <span class="n">k_wi_idx</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">"wl_20c"</span><span class="p">])</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">"k_20c"</span><span class="p">])</span>
+    <span class="n">kw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">wl_sel</span><span class="p">,</span> <span class="n">xp</span><span class="o">=</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">"wl_20c"</span><span class="p">][</span><span class="n">k_wi_idx</span><span class="p">],</span> <span class="n">fp</span><span class="o">=</span><span class="n">k_wi</span><span class="p">[</span><span class="s2">"k_20c"</span><span class="p">][</span><span class="n">k_wi_idx</span><span class="p">])</span>
     <span class="n">abs_co_w</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">kw</span> <span class="o">/</span> <span class="n">wl_sel</span>
 
     <span class="n">rfl_meas_sel</span> <span class="o">=</span> <span class="n">rfl_meas</span><span class="p">[</span><span class="n">lw_feature_left</span> <span class="p">:</span> <span class="n">lw_feature_right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
@@ -5940,8 +5940,8 @@
     <span class="n">x_opt</span> <span class="o">=</span> <span class="n">least_squares</span><span class="p">(</span>
         <span class="n">fun</span><span class="o">=</span><span class="n">beer_lambert_model</span><span class="p">,</span>
         <span class="n">x0</span><span class="o">=</span><span class="n">lw_init</span><span class="p">,</span>
-        <span class="n">jac</span><span class="o">=</span><span class="s2">&quot;2-point&quot;</span><span class="p">,</span>
-        <span class="n">method</span><span class="o">=</span><span class="s2">&quot;trf&quot;</span><span class="p">,</span>
+        <span class="n">jac</span><span class="o">=</span><span class="s2">"2-point"</span><span class="p">,</span>
+        <span class="n">method</span><span class="o">=</span><span class="s2">"trf"</span><span class="p">,</span>
         <span class="n">bounds</span><span class="o">=</span><span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lw_bounds</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]),</span>
             <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lw_bounds</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]),</span>
@@ -5959,7 +5959,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">beer_lambert_model</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">wl</span><span class="p">,</span> <span class="n">alpha_lw</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.inversion.inverse_simple.beer_lambert_model"><a href="../../../../api/isofit/inversion/inverse_simple/#isofit.inversion.inverse_simple.beer_lambert_model" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function, which computes the vector of residuals between measured and modeled surface reflectance optimizing</span>
+<span class="w">    </span><span class="sd">"""Function, which computes the vector of residuals between measured and modeled surface reflectance optimizing</span>
 <span class="sd">    for path length of surface liquid water based on the Beer-Lambert attenuation law.</span>
 
 <span class="sd">    Args:</span>
@@ -5970,7 +5970,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        resid: residual between modeled and measured surface reflectance</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">attenuation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e7</span> <span class="o">*</span> <span class="n">alpha_lw</span><span class="p">)</span>
     <span class="n">rho</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">wl</span><span class="p">)</span> <span class="o">*</span> <span class="n">attenuation</span>

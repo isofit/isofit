@@ -5408,9 +5408,9 @@
 <span class="normal">474</span>
 <span class="normal">475</span>
 <span class="normal">476</span>
-<span class="normal">477</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">477</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Builds the examples from their template files for a given ISOFIT ini</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -5424,7 +5424,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">env</span>
 
 <span class="n">Bash</span> <span class="o">=</span> <span class="n">sns</span><span class="p">(</span>
-    <span class="n">template</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+    <span class="n">template</span><span class="o">=</span><span class="s2">"""</span><span class="se">\</span>
 <span class="s2">#!/bin/bash</span>
 
 <span class="s2"># This is a generated example script to illustrate how to execute this example via the command line</span>
@@ -5434,76 +5434,76 @@
 <span class="s2">export OMP_NUM_THREADS=1</span>
 
 <span class="s2"># Build a surface model first</span>
-<span class="s2">echo &#39;Building surface model: </span><span class="si">{surface_name}</span><span class="s2">&#39;</span>
+<span class="s2">echo 'Building surface model: </span><span class="si">{surface_name}</span><span class="s2">'</span>
 <span class="s2">isofit surface_model </span><span class="si">{surface}</span>
 
 <span class="s2"># Now run retrievals</span>
 <span class="si">{commands}</span>
-<span class="s2">&quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="n">command</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
-<span class="s2">echo &#39;Running </span><span class="si">{i}</span><span class="s2">/</span><span class="si">{total}</span><span class="s2">: </span><span class="si">{name}</span><span class="s2">&#39;</span>
+<span class="s2">"""</span><span class="p">,</span>
+    <span class="n">command</span><span class="o">=</span><span class="s2">"""</span><span class="se">\</span>
+<span class="s2">echo 'Running </span><span class="si">{i}</span><span class="s2">/</span><span class="si">{total}</span><span class="s2">: </span><span class="si">{name}</span><span class="s2">'</span>
 <span class="s2">isofit run --level DEBUG </span><span class="si">{config}</span><span class="se">\</span>
-<span class="s2">&quot;&quot;&quot;</span><span class="p">,</span>
+<span class="s2">"""</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">Pyth</span> <span class="o">=</span> <span class="n">sns</span><span class="p">(</span>
-    <span class="n">template</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+    <span class="n">template</span><span class="o">=</span><span class="s2">"""</span><span class="se">\</span>
 <span class="s2">#!/usr/bin/env python</span>
 
 <span class="s2"># Remove old output directories, if they exist</span>
 <span class="s2">import shutil</span>
 
-<span class="s2">for d in [&quot;output&quot;, &quot;lut_h2o&quot;, &quot;lut_full&quot;]:</span>
+<span class="s2">for d in ["output", "lut_h2o", "lut_full"]:</span>
 <span class="s2">    shutil.rmtree(d, ignore_errors=True)</span>
 
 <span class="s2"># These are important to set before executing</span>
 <span class="s2">import os</span>
 
-<span class="s2">os.environ[&quot;MKL_NUM_THREADS&quot;] = &quot;1&quot;</span>
-<span class="s2">os.environ[&quot;OMP_NUM_THREADS&quot;] = &quot;1&quot;</span>
+<span class="s2">os.environ["MKL_NUM_THREADS"] = "1"</span>
+<span class="s2">os.environ["OMP_NUM_THREADS"] = "1"</span>
 
 <span class="s2">from isofit.core.isofit import Isofit</span>
 <span class="s2">from isofit.utils import surface_model</span>
 
 <span class="s2"># Build the surface model</span>
-<span class="s2">print(&#39;Building surface model: </span><span class="si">{surface_name}</span><span class="s2">&#39;)</span>
-<span class="s2">surface_model(&#39;</span><span class="si">{surface}</span><span class="s2">&#39;)</span>
+<span class="s2">print('Building surface model: </span><span class="si">{surface_name}</span><span class="s2">')</span>
+<span class="s2">surface_model('</span><span class="si">{surface}</span><span class="s2">')</span>
 
 <span class="s2"># Now run retrievals</span>
 <span class="si">{commands}</span>
-<span class="s2">&quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="n">command</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
-<span class="s2">print(&#39;Running </span><span class="si">{i}</span><span class="s2">/</span><span class="si">{total}</span><span class="s2">: </span><span class="si">{name}</span><span class="s2">&#39;)</span>
-<span class="s2">model = Isofit(&#39;</span><span class="si">{config}</span><span class="s2">&#39;)</span>
+<span class="s2">"""</span><span class="p">,</span>
+    <span class="n">command</span><span class="o">=</span><span class="s2">"""</span><span class="se">\</span>
+<span class="s2">print('Running </span><span class="si">{i}</span><span class="s2">/</span><span class="si">{total}</span><span class="s2">: </span><span class="si">{name}</span><span class="s2">')</span>
+<span class="s2">model = Isofit('</span><span class="si">{config}</span><span class="s2">')</span>
 <span class="s2">model.run()</span>
 <span class="s2">del model</span><span class="se">\</span>
-<span class="s2">&quot;&quot;&quot;</span><span class="p">,</span>
+<span class="s2">"""</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">Powershell</span> <span class="o">=</span> <span class="n">sns</span><span class="p">(</span>
-    <span class="n">template</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+    <span class="n">template</span><span class="o">=</span><span class="s2">"""</span><span class="se">\</span>
 <span class="s2"># This is a generated example script to illustrate how to execute this example via the command line</span>
 <span class="s2"># Execute via: powershell -File [file].ps1</span>
 
 <span class="s2"># These are important to set before executing</span>
-<span class="s2">$env:MKL_NUM_THREADS = &quot;1&quot;</span>
-<span class="s2">$env:OMP_NUM_THREADS = &quot;1&quot;</span>
+<span class="s2">$env:MKL_NUM_THREADS = "1"</span>
+<span class="s2">$env:OMP_NUM_THREADS = "1"</span>
 
 <span class="s2"># Build a surface model first</span>
-<span class="s2">echo &#39;Building surface model: </span><span class="si">{surface_name}</span><span class="s2">&#39;</span>
+<span class="s2">echo 'Building surface model: </span><span class="si">{surface_name}</span><span class="s2">'</span>
 <span class="s2">isofit surface_model </span><span class="si">{surface}</span>
 
 <span class="s2"># Now run retrievals</span>
 <span class="si">{commands}</span>
-<span class="s2">&quot;&quot;&quot;</span><span class="p">,</span>
-    <span class="n">command</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
-<span class="s2">echo &#39;Running </span><span class="si">{i}</span><span class="s2">/</span><span class="si">{total}</span><span class="s2">: </span><span class="si">{name}</span><span class="s2">&#39;</span>
+<span class="s2">"""</span><span class="p">,</span>
+    <span class="n">command</span><span class="o">=</span><span class="s2">"""</span><span class="se">\</span>
+<span class="s2">echo 'Running </span><span class="si">{i}</span><span class="s2">/</span><span class="si">{total}</span><span class="s2">: </span><span class="si">{name}</span><span class="s2">'</span>
 <span class="s2">isofit run --level DEBUG </span><span class="si">{config}</span><span class="se">\</span>
-<span class="s2">&quot;&quot;&quot;</span><span class="p">,</span>
+<span class="s2">"""</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">OEScript</span> <span class="o">=</span> <span class="n">sns</span><span class="p">(</span>
-    <span class="n">template</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+    <span class="n">template</span><span class="o">=</span><span class="s2">"""</span><span class="se">\</span>
 <span class="s2">#!/bin/bash</span>
 
 <span class="s2"># This is a generated example script to illustrate how to execute this example via the command line</span>
@@ -5517,31 +5517,31 @@
 
 <span class="s2">isofit apply_oe </span><span class="se">\\</span>
 <span class="s2">  </span><span class="si">{args}</span><span class="s2"> </span><span class="se">\\</span>
-<span class="s2">  &quot;$@&quot;</span><span class="se">\</span>
+<span class="s2">  "$@"</span><span class="se">\</span>
 
-<span class="s2"># The &quot;$@&quot; will capture any additional options passed into the script</span>
-<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2"># The "$@" will capture any additional options passed into the script</span>
+<span class="s2">"""</span>
 <span class="p">)</span>
 
 <span class="c1"># Windows PowerShell variant</span>
 <span class="n">OEScriptPS</span> <span class="o">=</span> <span class="n">sns</span><span class="p">(</span>
-    <span class="n">template</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+    <span class="n">template</span><span class="o">=</span><span class="s2">"""</span><span class="se">\</span>
 <span class="s2"># This is a generated example script to illustrate how to execute this example via the command line</span>
 <span class="s2"># Execute via: powershell -File [file].ps1</span>
 
 <span class="s2"># These are important to set before executing</span>
-<span class="s2">$env:MKL_NUM_THREADS = &quot;1&quot;</span>
-<span class="s2">$env:OMP_NUM_THREADS = &quot;1&quot;</span>
+<span class="s2">$env:MKL_NUM_THREADS = "1"</span>
+<span class="s2">$env:OMP_NUM_THREADS = "1"</span>
 
 <span class="s2">isofit apply_oe `</span>
 <span class="s2">  </span><span class="si">{args}</span><span class="se">\</span>
-<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">"""</span>
 <span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Example</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.data.build_examples.Example"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.Example" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">requires</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="p">{}):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        name : str</span>
@@ -5550,20 +5550,20 @@
 <span class="sd">            Required downloads to validate</span>
 <span class="sd">        validate : dict, default={}</span>
 <span class="sd">            Additional kew-word arguments to pass to the env.validate() function</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">requires</span> <span class="o">=</span> <span class="n">requires</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">validate_flags</span> <span class="o">=</span> <span class="n">validate</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.Example.validate"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.Example.validate" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Passthrough method to validate required ISOFIT downloads</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Checking the required extra files are available: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">requires</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Checking the required extra files are available: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">requires</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">env</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requires</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">validate_flags</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">setPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.Example.setPath"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.Example.setPath" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Sets the working path for the example</span>
 
 <span class="sd">        Parameters</span>
@@ -5575,58 +5575,58 @@
 <span class="sd">        -------</span>
 <span class="sd">        None | False</span>
 <span class="sd">            Returns False if the example directory is not found</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error: Example directory not found&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Error: Example directory not found"</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.Example.build"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.Example.build" title="Go to docs">[docs]</a></div>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Example constructor class must define this function&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Example constructor class must define this function"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">makeConfigs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.Example.makeConfigs"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.Example.makeConfigs" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Creates configs based off the template files from an example directory</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generating configs&quot;</span><span class="p">)</span>
-        <span class="n">templates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;templates&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">))</span>
+<span class="sd">        """</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Generating configs"</span><span class="p">)</span>
+        <span class="n">templates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s2">"templates"</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*"</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">templates</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="s2">&quot;Template files not found for this example, please verify the installation&quot;</span>
+                <span class="s2">"Template files not found for this example, please verify the installation"</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="n">configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;configs&quot;</span>
+        <span class="n">configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s2">"configs"</span>
         <span class="n">configs</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">template</span> <span class="ow">in</span> <span class="n">templates</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">template</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
                 <span class="n">output</span> <span class="o">=</span> <span class="n">configs</span> <span class="o">/</span> <span class="n">template</span><span class="o">.</span><span class="n">name</span>
                 <span class="n">output</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-                <span class="k">for</span> <span class="n">tmpl</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.json&quot;</span><span class="p">:</span>
-                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating </span><span class="si">{</span><span class="n">tmpl</span><span class="o">.</span><span class="n">parent</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">tmpl</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">tmpl</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*"</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">".json"</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Creating </span><span class="si">{</span><span class="n">tmpl</span><span class="o">.</span><span class="n">parent</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">tmpl</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                         <span class="n">updateTemplate</span><span class="p">(</span><span class="n">tmpl</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c1"># Non-json files get copied directly</span>
                         <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tmpl</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
 
-            <span class="k">elif</span> <span class="n">template</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.json&quot;</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating </span><span class="si">{</span><span class="n">template</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">template</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">".json"</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Creating </span><span class="si">{</span><span class="n">template</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="n">updateTemplate</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">configs</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">configs</span> <span class="o">/</span> <span class="n">template</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">IsofitExample</span><span class="p">(</span><span class="n">Example</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.IsofitExample"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.IsofitExample" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Template for building scripts that directly call the Isofit object</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.IsofitExample.build"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.IsofitExample.build" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Makes a formatted bash script</span>
 
 <span class="sd">        Parameters</span>
@@ -5635,139 +5635,139 @@
 <span class="sd">            Path to the example root</span>
 <span class="sd">        path : pathlib.Path</span>
 <span class="sd">            Path to the subset of scripts to generate scripts for</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">makeConfigs</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;configs&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s2">"configs"</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*"</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generating scripts for: </span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Generating scripts for: </span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">makeScripts</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">makeScripts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.IsofitExample.makeScripts"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.IsofitExample.makeScripts" title="Go to docs">[docs]</a></div>
-        <span class="n">configs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">))</span>
-        <span class="n">surface</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;configs/*surface*.json&quot;</span><span class="p">))</span>
+        <span class="n">configs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*"</span><span class="p">))</span>
+        <span class="n">surface</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"configs/*surface*.json"</span><span class="p">))</span>
 
         <span class="n">bash</span><span class="p">,</span> <span class="n">pyth</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
         <span class="n">cmds</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">config</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">configs</span><span class="p">):</span>
             <span class="n">fmt</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;i&quot;</span><span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">configs</span><span class="p">),</span>
-                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                <span class="s2">&quot;config&quot;</span><span class="p">:</span> <span class="n">config</span><span class="p">,</span>
+                <span class="s2">"i"</span><span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">"total"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">configs</span><span class="p">),</span>
+                <span class="s2">"name"</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s2">"config"</span><span class="p">:</span> <span class="n">config</span><span class="p">,</span>
             <span class="p">}</span>
             <span class="n">cmds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fmt</span><span class="p">)</span>
             <span class="n">bash</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Bash</span><span class="o">.</span><span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">fmt</span><span class="p">))</span>
             <span class="n">pyth</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Pyth</span><span class="o">.</span><span class="n">command</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">fmt</span><span class="p">))</span>
 
         <span class="c1"># Shared arguments for both scripts</span>
-        <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;surface_name&quot;</span><span class="p">:</span> <span class="n">surface</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;surface&quot;</span><span class="p">:</span> <span class="n">surface</span><span class="p">}</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"surface_name"</span><span class="p">:</span> <span class="n">surface</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">"surface"</span><span class="p">:</span> <span class="n">surface</span><span class="p">}</span>
 
         <span class="c1"># Write powershell script when on Windows</span>
-        <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Windows&quot;</span><span class="p">:</span>
-            <span class="n">args</span><span class="p">[</span><span class="s2">&quot;commands&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bash</span><span class="p">)</span>
-            <span class="n">file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.ps1&quot;</span>
+        <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"Windows"</span><span class="p">:</span>
+            <span class="n">args</span><span class="p">[</span><span class="s2">"commands"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bash</span><span class="p">)</span>
+            <span class="n">file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.ps1"</span>
             <span class="n">tmpl</span> <span class="o">=</span> <span class="n">Powershell</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
             <span class="n">createScript</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">tmpl</span><span class="p">)</span>
 
         <span class="c1"># Write bash script</span>
-        <span class="n">args</span><span class="p">[</span><span class="s2">&quot;commands&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bash</span><span class="p">)</span>
-        <span class="n">file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.sh&quot;</span>
+        <span class="n">args</span><span class="p">[</span><span class="s2">"commands"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bash</span><span class="p">)</span>
+        <span class="n">file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.sh"</span>
         <span class="n">tmpl</span> <span class="o">=</span> <span class="n">Bash</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
         <span class="n">createScript</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">tmpl</span><span class="p">)</span>
 
         <span class="c1"># Write python script</span>
-        <span class="n">args</span><span class="p">[</span><span class="s2">&quot;commands&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pyth</span><span class="p">)</span>
-        <span class="n">file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.py&quot;</span>
+        <span class="n">args</span><span class="p">[</span><span class="s2">"commands"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pyth</span><span class="p">)</span>
+        <span class="n">file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.py"</span>
         <span class="n">tmpl</span> <span class="o">=</span> <span class="n">Pyth</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
         <span class="n">createScript</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">tmpl</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ApplyOEExample</span><span class="p">(</span><span class="n">Example</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.ApplyOEExample"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.ApplyOEExample" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Template for building scripts that use apply_oe</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.ApplyOEExample.build"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.ApplyOEExample.build" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="o">.</span><span class="n">makeApplyOE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">makeApplyOE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.ApplyOEExample.makeApplyOE"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.ApplyOEExample.makeApplyOE" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates apply_oe scripts using &#39;args&#39; template files</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">tmpl</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;templates&quot;</span>
-        <span class="n">surf</span> <span class="o">=</span> <span class="n">tmpl</span> <span class="o">/</span> <span class="s2">&quot;surface.json&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Creates apply_oe scripts using 'args' template files</span>
+<span class="sd">        """</span>
+        <span class="n">tmpl</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="s2">"templates"</span>
+        <span class="n">surf</span> <span class="o">=</span> <span class="n">tmpl</span> <span class="o">/</span> <span class="s2">"surface.json"</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">surf</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No surface.json configuration file found, skipping this example&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"No surface.json configuration file found, skipping this example"</span><span class="p">)</span>
             <span class="k">return</span>
 
-        <span class="n">updateTemplate</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;configs&quot;</span><span class="p">)</span>
+        <span class="n">updateTemplate</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">path</span> <span class="o">/</span> <span class="s2">"configs"</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.args.json&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.args.json"</span><span class="p">):</span>
             <span class="n">args</span> <span class="o">=</span> <span class="n">updateTemplate</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
-            <span class="n">join</span> <span class="o">=</span> <span class="s2">&quot; </span><span class="se">\\\n</span><span class="s2">  &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">join</span> <span class="o">=</span> <span class="s2">" </span><span class="se">\\\n</span><span class="s2">  "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-            <span class="n">file</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.sh&quot;</span>
+            <span class="n">file</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.sh"</span>
             <span class="n">tmpl</span> <span class="o">=</span> <span class="n">OEScript</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">join</span><span class="p">)</span>
 
             <span class="n">createScript</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">tmpl</span><span class="p">)</span>
 
             <span class="c1"># Write powershell script when on Windows</span>
-            <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Windows&quot;</span><span class="p">:</span>
-                <span class="n">file</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.ps1&quot;</span>
-                <span class="n">join</span> <span class="o">=</span> <span class="s2">&quot; `</span><span class="se">\n</span><span class="s2">  &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"Windows"</span><span class="p">:</span>
+                <span class="n">file</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.ps1"</span>
+                <span class="n">join</span> <span class="o">=</span> <span class="s2">" `</span><span class="se">\n</span><span class="s2">  "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
                 <span class="n">tmpl</span> <span class="o">=</span> <span class="n">OEScriptPS</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">join</span><span class="p">)</span>
                 <span class="n">createScript</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">tmpl</span><span class="p">)</span>
 
 
 <span class="n">Examples</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;SantaMonica&quot;</span><span class="p">:</span> <span class="n">IsofitExample</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;20151026_SantaMonica&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;sixs&quot;</span><span class="p">]</span>
+    <span class="s2">"SantaMonica"</span><span class="p">:</span> <span class="n">IsofitExample</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"20151026_SantaMonica"</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">"data"</span><span class="p">,</span> <span class="s2">"sixs"</span><span class="p">]</span>
     <span class="p">),</span>
-    <span class="s2">&quot;Pasadena&quot;</span><span class="p">:</span> <span class="n">IsofitExample</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;20171108_Pasadena&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]),</span>
-    <span class="s2">&quot;ThermalIR&quot;</span><span class="p">:</span> <span class="n">IsofitExample</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;20190806_ThermalIR&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]),</span>
-    <span class="s2">&quot;AV3Cal&quot;</span><span class="p">:</span> <span class="n">IsofitExample</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;20250308_AV3Cal_wltest&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]),</span>
-    <span class="s2">&quot;Multisurface&quot;</span><span class="p">:</span> <span class="n">IsofitExample</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;20231110_Prism_Multisurface&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+    <span class="s2">"Pasadena"</span><span class="p">:</span> <span class="n">IsofitExample</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"20171108_Pasadena"</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">"data"</span><span class="p">]),</span>
+    <span class="s2">"ThermalIR"</span><span class="p">:</span> <span class="n">IsofitExample</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"20190806_ThermalIR"</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">"data"</span><span class="p">]),</span>
+    <span class="s2">"AV3Cal"</span><span class="p">:</span> <span class="n">IsofitExample</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"20250308_AV3Cal_wltest"</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">"data"</span><span class="p">]),</span>
+    <span class="s2">"Multisurface"</span><span class="p">:</span> <span class="n">IsofitExample</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"20231110_Prism_Multisurface"</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">"data"</span><span class="p">]</span>
     <span class="p">),</span>
-    <span class="s2">&quot;ImageCube-small&quot;</span><span class="p">:</span> <span class="n">ApplyOEExample</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;image_cube/small&quot;</span><span class="p">,</span>
-        <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sixs&quot;</span><span class="p">,</span> <span class="s2">&quot;srtmnet&quot;</span><span class="p">],</span>
-        <span class="n">validate</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="s2">&quot;small&quot;</span><span class="p">},</span>
+    <span class="s2">"ImageCube-small"</span><span class="p">:</span> <span class="n">ApplyOEExample</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"image_cube/small"</span><span class="p">,</span>
+        <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">"sixs"</span><span class="p">,</span> <span class="s2">"srtmnet"</span><span class="p">],</span>
+        <span class="n">validate</span><span class="o">=</span><span class="p">{</span><span class="s2">"size"</span><span class="p">:</span> <span class="s2">"small"</span><span class="p">},</span>
     <span class="p">),</span>
-    <span class="s2">&quot;ImageCube-medium&quot;</span><span class="p">:</span> <span class="n">ApplyOEExample</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;image_cube/medium&quot;</span><span class="p">,</span>
-        <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sixs&quot;</span><span class="p">,</span> <span class="s2">&quot;srtmnet&quot;</span><span class="p">],</span>
-        <span class="n">validate</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="s2">&quot;medium&quot;</span><span class="p">},</span>
+    <span class="s2">"ImageCube-medium"</span><span class="p">:</span> <span class="n">ApplyOEExample</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"image_cube/medium"</span><span class="p">,</span>
+        <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">"sixs"</span><span class="p">,</span> <span class="s2">"srtmnet"</span><span class="p">],</span>
+        <span class="n">validate</span><span class="o">=</span><span class="p">{</span><span class="s2">"size"</span><span class="p">:</span> <span class="s2">"medium"</span><span class="p">},</span>
     <span class="p">),</span>
-    <span class="s2">&quot;LakeMary&quot;</span><span class="p">:</span> <span class="n">ApplyOEExample</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;LakeMary&quot;</span><span class="p">,</span>
-        <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sixs&quot;</span><span class="p">,</span> <span class="s2">&quot;srtmnet&quot;</span><span class="p">],</span>
+    <span class="s2">"LakeMary"</span><span class="p">:</span> <span class="n">ApplyOEExample</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"LakeMary"</span><span class="p">,</span>
+        <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">"sixs"</span><span class="p">,</span> <span class="s2">"srtmnet"</span><span class="p">],</span>
     <span class="p">),</span>
-    <span class="s2">&quot;SeaBASS-PRISM&quot;</span><span class="p">:</span> <span class="n">ApplyOEExample</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;SeaBASS_prism_001&quot;</span><span class="p">,</span>
-        <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sixs&quot;</span><span class="p">,</span> <span class="s2">&quot;srtmnet&quot;</span><span class="p">],</span>
+    <span class="s2">"SeaBASS-PRISM"</span><span class="p">:</span> <span class="n">ApplyOEExample</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"SeaBASS_prism_001"</span><span class="p">,</span>
+        <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">"sixs"</span><span class="p">,</span> <span class="s2">"srtmnet"</span><span class="p">],</span>
     <span class="p">),</span>
 <span class="p">}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="o">**</span><span class="n">flags</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.update"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.update" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Recursively updates string values with .format. This operation occurs in-place.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    obj : dict | list</span>
 <span class="sd">        Object to iterate over each child value and attempt to format</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">iterate</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Iterates over dict or list objects</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">yield from</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
@@ -5781,7 +5781,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">updateTemplate</span><span class="p">(</span><span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.updateTemplate"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.updateTemplate" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Updates a given template and writes it out to another file</span>
 
 <span class="sd">    Parameters</span>
@@ -5795,22 +5795,22 @@
 <span class="sd">    -------</span>
 <span class="sd">    config : dict</span>
 <span class="sd">        The updated template dictionary</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 
     <span class="n">update</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="o">**</span><span class="n">env</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">())</span>
 
     <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
         <span class="n">output</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output</span> <span class="o">/</span> <span class="n">template</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output</span> <span class="o">/</span> <span class="n">template</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">config</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">createScript</span><span class="p">(</span><span class="n">script</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.createScript"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.createScript" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Creates an executable script file for a given template and arguments</span>
 
 <span class="sd">    Parameters</span>
@@ -5819,16 +5819,16 @@
 <span class="sd">        Path to write the script to</span>
 <span class="sd">    template : dict</span>
 <span class="sd">        Template being used (eg. Bash or Pyth)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating </span><span class="si">{</span><span class="n">script</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Creating </span><span class="si">{</span><span class="n">script</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
         <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
 
     <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">script</span><span class="p">,</span> <span class="mo">0o744</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.build"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.build" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Builds an example directory</span>
 
 <span class="sd">    Parameters</span>
@@ -5838,52 +5838,52 @@
 <span class="sd">    validate : bool, default=True</span>
 <span class="sd">        Validates the required extra downloads for each example. Disabling this will</span>
 <span class="sd">        allow examples to build but does not guarantee they will work</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Building example: </span><span class="si">{</span><span class="n">example</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Building example: </span><span class="si">{</span><span class="n">example</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">validate</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">example</span><span class="o">.</span><span class="n">validate</span><span class="p">():</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="s2">&quot;One or more of the above required extra downloads is not valid, please correct and try again&quot;</span>
+                <span class="s2">"One or more of the above required extra downloads is not valid, please correct and try again"</span>
             <span class="p">)</span>
             <span class="k">return</span>
 
     <span class="k">if</span> <span class="n">example</span><span class="o">.</span><span class="n">setPath</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">examples</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Building example for this system: </span><span class="si">{</span><span class="n">example</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Building example for this system: </span><span class="si">{</span><span class="n">example</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">example</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
 
 
-<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;build&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"build"</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-e&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;--example&quot;</span><span class="p">,</span>
-    <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">Examples</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]),</span>
-    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+    <span class="s2">"-e"</span><span class="p">,</span>
+    <span class="s2">"--example"</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">Examples</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"all"</span><span class="p">]),</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">"all"</span><span class="p">,</span>
     <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
-    <span class="s2">&quot;-nv&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;--no-validate&quot;</span><span class="p">,</span>
+    <span class="s2">"-nv"</span><span class="p">,</span>
+    <span class="s2">"--no-validate"</span><span class="p">,</span>
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Disables validating extra installs and proceeds building examples regardless&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">"Disables validating extra installs and proceeds building examples regardless"</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">no_validate</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.data.build_examples.cli"><a href="../../../../api/isofit/data/build_examples/#isofit.data.build_examples.cli" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="w">    </span><span class="sd">"""\</span>
 <span class="sd">    Builds the ISOFIT examples</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">env</span><span class="o">.</span><span class="n">validate</span><span class="p">([</span><span class="s2">&quot;examples&quot;</span><span class="p">]):</span>
-        <span class="k">if</span> <span class="n">example</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building all examples&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">env</span><span class="o">.</span><span class="n">validate</span><span class="p">([</span><span class="s2">"examples"</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">example</span> <span class="o">==</span> <span class="s2">"all"</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Building all examples"</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">example</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Examples</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">16</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; Example </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">Examples</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">16</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">16</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">" Example </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">Examples</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span> <span class="o">+</span> <span class="s2">"="</span> <span class="o">*</span> <span class="mi">16</span><span class="p">)</span>
                 <span class="n">build</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="ow">not</span> <span class="n">no_validate</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">build</span><span class="p">(</span><span class="n">Examples</span><span class="p">[</span><span class="n">example</span><span class="p">],</span> <span class="n">validate</span><span class="o">=</span><span class="ow">not</span> <span class="n">no_validate</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;ISOFIT Examples are not installed correctly, please verify before building&quot;</span>
+            <span class="sa">f</span><span class="s2">"ISOFIT Examples are not installed correctly, please verify before building"</span>
         <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

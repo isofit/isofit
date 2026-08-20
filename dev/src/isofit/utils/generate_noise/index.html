@@ -4801,14 +4801,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -4827,25 +4827,25 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">generate_noise</span><span class="p">(</span><span class="n">config</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.generate_noise.generate_noise"><a href="../../../../api/isofit/utils/generate_noise/#isofit.utils.generate_noise.generate_noise" title="Go to docs">[docs]</a></div>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add noise to a radiance spectrum or image.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Add noise to a radiance spectrum or image."""</span>
 
     <span class="n">config</span> <span class="o">=</span> <span class="n">json_load_ascii</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">shell_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">configdir</span><span class="p">,</span> <span class="n">configfile</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">abspath</span><span class="p">(</span><span class="n">config</span><span class="p">))</span>
 
-    <span class="n">infile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;input_radiance_file&quot;</span><span class="p">])</span>
-    <span class="n">outfile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;output_radiance_file&quot;</span><span class="p">])</span>
-    <span class="n">instrument</span> <span class="o">=</span> <span class="n">Instrument</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;instrument_model&quot;</span><span class="p">])</span>
+    <span class="n">infile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">"input_radiance_file"</span><span class="p">])</span>
+    <span class="n">outfile</span> <span class="o">=</span> <span class="n">expand_path</span><span class="p">(</span><span class="n">configdir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">"output_radiance_file"</span><span class="p">])</span>
+    <span class="n">instrument</span> <span class="o">=</span> <span class="n">Instrument</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"instrument_model"</span><span class="p">])</span>
     <span class="n">geom</span> <span class="o">=</span> <span class="n">Geometry</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="n">infile</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;txt&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">infile</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"txt"</span><span class="p">):</span>
         <span class="n">rdn</span><span class="p">,</span> <span class="n">wl</span> <span class="o">=</span> <span class="n">load_spectrum</span><span class="p">(</span><span class="n">infile</span><span class="p">)</span>
         <span class="n">Sy</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">Sy</span><span class="p">(</span><span class="n">rdn</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
         <span class="n">rdn_noise</span> <span class="o">=</span> <span class="n">rdn</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rdn</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">Sy</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">w</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">wl</span><span class="p">,</span> <span class="n">rdn_noise</span><span class="p">):</span>
-                <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%8.5f</span><span class="s2"> </span><span class="si">%8.5f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
+                <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"</span><span class="si">%8.5f</span><span class="s2"> </span><span class="si">%8.5f</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Image cubes not yet implemented.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Image cubes not yet implemented."</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 
 

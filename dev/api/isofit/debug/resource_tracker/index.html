@@ -5137,7 +5137,7 @@ Function to call on each resource refresh. Signature must accept:</p>
 
 the first call will contain the non-changing values:
     used_cores : int
-        Number of CPU cores in use. See the &#39;cores&#39; parameter for more
+        Number of CPU cores in use. See the 'cores' parameter for more
     total_cores : int
         Total number of cores available on the system via os.cpu_count()
     sys_mem_total : float
@@ -5172,7 +5172,7 @@ all calls afterwards will consist of:
     timestamp : float
         Timestamp of the resource record via time.time()
     status : str
-        Main process status, eg. &#39;running&#39;, &#39;sleeping&#39;
+        Main process status, eg. 'running', 'sleeping'
     children : list[dict]
         Information of child processes:
             pid : int
@@ -5188,7 +5188,7 @@ all calls afterwards will consist of:
             cpu : float
                 Child process CPU percentage over the interval
             status : str
-                Child process status, eg. &#39;running&#39;, &#39;sleeping&#39;
+                Child process status, eg. 'running', 'sleeping'
 
 if summarize is enabled, these will also be included:
     mem_app_total : float
@@ -5403,7 +5403,7 @@ If the file exists, reset it</p>
 <div class="highlight"><pre><span></span><code>import time
 from isofit.debug.resource_tracker import FileResources
 
-fr = ResourceTracker(&quot;resources.jsonl&quot;, reset=True)
+fr = ResourceTracker("resources.jsonl", reset=True)
 fr.start()
 time.sleep(10)
 fr.stop()

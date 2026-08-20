@@ -4934,14 +4934,14 @@
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
-<span class="c1">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1">#  you may not use this file except in compliance with the License.</span>
 <span class="c1">#  You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1">#  Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#  distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1">#  See the License for the specific language governing permissions and</span>
 <span class="c1">#  limitations under the License.</span>
@@ -4961,7 +4961,7 @@
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MCMCInversion</span><span class="p">(</span><span class="n">Inversion</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.inversion.inverse_mcmc.MCMCInversion"><a href="../../../../api/isofit/inversion/inverse_mcmc/#isofit.inversion.inverse_mcmc.MCMCInversion" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_config</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span> <span class="n">forward</span><span class="p">:</span> <span class="n">ForwardModel</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize and apply defaults.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Initialize and apply defaults."""</span>
 
         <span class="n">Inversion</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_config</span><span class="p">,</span> <span class="n">forward</span><span class="p">)</span>
         <span class="n">mcmc_config</span> <span class="o">=</span> <span class="n">full_config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">inversion</span><span class="o">.</span><span class="n">mcmc</span>
@@ -4974,7 +4974,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">restart_every</span> <span class="o">=</span> <span class="n">mcmc_config</span><span class="o">.</span><span class="n">restart_every</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">stable_mvnpdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.inversion.inverse_mcmc.MCMCInversion.stable_mvnpdf"><a href="../../../../api/isofit/inversion/inverse_mcmc/#isofit.inversion.inverse_mcmc.MCMCInversion.stable_mvnpdf" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stable inverse via Singular Value Decomposition, using only the significant eigenvectors.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Stable inverse via Singular Value Decomposition, using only the significant eigenvectors."""</span>
 
         <span class="n">U</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
         <span class="n">use</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">V</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
@@ -4988,7 +4988,7 @@
         <span class="k">return</span> <span class="n">lead</span> <span class="o">+</span> <span class="n">diverg</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">log_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">rdn_meas</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">bounds</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.inversion.inverse_mcmc.MCMCInversion.log_density"><a href="../../../../api/isofit/inversion/inverse_mcmc/#isofit.inversion.inverse_mcmc.MCMCInversion.log_density" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log probability density combines prior and likelihood terms.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Log probability density combines prior and likelihood terms."""</span>
 
         <span class="c1"># First check bounds</span>
         <span class="k">if</span> <span class="n">bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
@@ -5009,8 +5009,8 @@
         <span class="k">return</span> <span class="n">pa</span> <span class="o">+</span> <span class="n">pm</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">invert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdn_meas</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.inversion.inverse_mcmc.MCMCInversion.invert"><a href="../../../../api/isofit/inversion/inverse_mcmc/#isofit.inversion.inverse_mcmc.MCMCInversion.invert" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inverts a meaurement. Returns an array of state vector samples.</span>
-<span class="sd">        Similar to Inversion.invert() but returns a list of samples.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Inverts a meaurement. Returns an array of state vector samples.</span>
+<span class="sd">        Similar to Inversion.invert() but returns a list of samples."""</span>
 
         <span class="c1"># We will truncate non-surface parameters to their bounds, but leave</span>
         <span class="c1"># Surface reflectance unconstrained so it can dip slightly below zero</span>
@@ -5054,14 +5054,14 @@
                 <span class="n">acpts</span> <span class="o">=</span> <span class="n">acpts</span> <span class="o">+</span> <span class="mi">1</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span>
-                        <span class="s2">&quot;</span><span class="si">%8.5e</span><span class="s2"> </span><span class="si">%8.5e</span><span class="s2"> ACCEPT! rate </span><span class="si">%4.2f</span><span class="s2">&quot;</span>
+                        <span class="s2">"</span><span class="si">%8.5e</span><span class="s2"> </span><span class="si">%8.5e</span><span class="s2"> ACCEPT! rate </span><span class="si">%4.2f</span><span class="s2">"</span>
                         <span class="o">%</span> <span class="p">(</span><span class="n">dens</span><span class="p">,</span> <span class="n">dens_new</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">acpts</span> <span class="o">/</span> <span class="p">(</span><span class="n">acpts</span> <span class="o">+</span> <span class="n">rejs</span><span class="p">)))</span>
                     <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">rejs</span> <span class="o">=</span> <span class="n">rejs</span> <span class="o">+</span> <span class="mi">1</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span>
-                        <span class="s2">&quot;</span><span class="si">%8.5e</span><span class="s2"> </span><span class="si">%8.5e</span><span class="s2"> REJECT  rate </span><span class="si">%4.2f</span><span class="s2">&quot;</span>
+                        <span class="s2">"</span><span class="si">%8.5e</span><span class="s2"> </span><span class="si">%8.5e</span><span class="s2"> REJECT  rate </span><span class="si">%4.2f</span><span class="s2">"</span>
                         <span class="o">%</span> <span class="p">(</span><span class="n">dens</span><span class="p">,</span> <span class="n">dens_new</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">acpts</span> <span class="o">/</span> <span class="p">(</span><span class="n">acpts</span> <span class="o">+</span> <span class="n">rejs</span><span class="p">)))</span>
                     <span class="p">)</span>
 
