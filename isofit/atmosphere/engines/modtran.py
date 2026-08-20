@@ -209,6 +209,10 @@ class ModtranRT(BaseAtmosphere, Writer):
                 b for b in parsed_blocks if np.isclose(b["mean_albedo"], a, atol=0.01)
             ]
 
+            # For the case with only zero albedo
+            if not matching_blocks:
+                continue
+
             product_names = [k for k in matching_blocks[0].keys() if k != "mean_albedo"]
 
             # This assumes the lower wavelength region (and highest fidelity model) comes first
@@ -231,19 +235,21 @@ class ModtranRT(BaseAtmosphere, Writer):
 
             parts.append(merged)
 
-        # Single transmittance files will be the first dict in the list, otherwise multiparts use two_albedo_method
         # TODO do we still want to support single transmittance MODTRAN runs?
-        chn = parts[0]
-        if len(parts) > 1:
-            Logger.debug("Using two albedo method")
-            chn = self.two_albedo_method(
-                case_0=parts[0],
-                case_1=parts[0],
-                case_2=parts[1],
-                coszen=coszen,
-                rfl_1=self.albedos[1],
-                rfl_2=self.albedos[2],
-            )
+        if not parts:
+            chn = parsed_blocks[0]
+        else:
+            chn = parts[0]
+            if len(parts) > 1:
+                Logger.debug("Using two albedo method")
+                chn = self.two_albedo_method(
+                    case_0=parts[0],
+                    case_1=parts[0],
+                    case_2=parts[1],
+                    coszen=coszen,
+                    rfl_1=self.albedos[1],
+                    rfl_2=self.albedos[2],
+                )
 
         return chn
 
