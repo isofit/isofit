@@ -55,6 +55,8 @@ class ModtranRT(BaseAtmosphere, Writer):
         self.min_samples_per_nm = min_samples_per_nm
         self.max_samples_per_nm = max_samples_per_nm
 
+        self.use_tp7 = False
+
         super().__init__(engine_config, **kwargs)
 
     @staticmethod
@@ -121,6 +123,7 @@ class ModtranRT(BaseAtmosphere, Writer):
             'transm_down_dif'    : tokens[21] + tokens[22],  # total transmittance (down * up, direct + diffuse)
             'sphalb'             : tokens[23],  # atmospheric spherical albedo
             'transm_up_dir'      : tokens[24],  # upward direct transmittance
+            'albedo'             : np.round(1-tokens[25], 3)
         }
         # fmt: on
 
@@ -162,54 +165,86 @@ class ModtranRT(BaseAtmosphere, Writer):
         chn: dict
             Channel data
         """
+
         with open(file, "r") as f:
             lines = f.readlines()
 
-        data = [lines[header:]]
-
-        # Determine if this is a multipart transmittance file, break if so
-        L = len(lines)
-        for N in range(2, 4):  # Currently support 1, 2, and 3 part transmittance files
-            # Length of each part
-            n = int(L / N)
-
-            # Check if the first line of the next part is the same
-            if lines[1] == lines[n + 1]:
-                Logger.debug(f"Channel file discovered to be {N} parts: {file}")
-
-                # Parse the lines into N many parts
-                data = []
-                for i in range(N):
-                    j = i + 1
-                    data.append(lines[n * i : n * j][header:])
-
-                # No need to check other N sizes
-                break
-        else:
-            Logger.warning(
-                "Channel file detected to be a single transmittance, support for this will be dropped in a future version."
-                + " Please start using 2 or 3 multipart transmittance files."
+        # Read each block of data
+        header_pattern = "1ST SPECTRAL"
+        header_indices = [i for i, line in enumerate(lines) if header_pattern in line]
+        data = []
+        for idx, start_idx in enumerate(header_indices):
+            end_idx = (
+                header_indices[idx + 1] if idx + 1 < len(header_indices) else len(lines)
             )
+            block = lines[start_idx + header : end_idx]
+            data.append(block)
 
-        parts = []
-        for part, lines in enumerate(data):
-            parsed = [self.parseTokens(self.parseLine(line), coszen) for line in lines]
+        # Parse every block into a dictionary of numpy arrays
+        parsed_blocks = []
+        for lines in data:
+            parsed = [
+                self.parseTokens(self.parseLine(line), coszen)
+                for line in lines
+                if line.strip()
+            ]
 
-            # Convert from: [{k1: v11, k2: v21}, {k1: v12, k2: v22}]
-            #           to: {k1: [v11, v22], k2: [v21, v22]} - as numpy arrays
             combined = {}
             for i, parse in enumerate(parsed):
                 for key, value in parse.items():
                     values = combined.setdefault(key, np.full(len(parsed), np.nan))
                     values[i] = value
 
-            parts.append(combined)
+            combined["mean_albedo"] = np.mean(combined["albedo"])
+            parsed_blocks.append(combined)
+
+        # Loop over all possible albedos and merge band models if needed
+        # NOTE excluding zero case here
+        parts = []
+        for a in self.albedos[1:]:
+
+            # Matching the albedo to a small tolerance, generally just need to determine if we
+            # are a 0.1 or a 0.5 albedo so this atol=0.01 should be sufficent.
+            matching_blocks = [
+                b for b in parsed_blocks if np.isclose(b["mean_albedo"], a, atol=0.01)
+            ]
+
+            product_names = [k for k in matching_blocks[0].keys() if k != "mean_albedo"]
+
+            # This assumes the lower wavelength region (and highest fidelity model) comes first
+            # when sorting the blocks. This is true for the CHN outputs and is how we write the input in json.
+            merged = {}
+            for prod in product_names:
+                merged[prod] = np.hstack([b[prod] for b in matching_blocks])
+
+            order1 = np.argsort(merged["wl"])
+            order2 = np.unique(merged["wl"][order1], return_index=True)[1]
+
+            # Then finally, apply the sorting logic to each product
+            ref_shape = merged["wl"].shape
+            for prod in product_names:
+                if (
+                    isinstance(merged[prod], np.ndarray)
+                    and merged[prod].shape == ref_shape
+                ):
+                    merged[prod] = merged[prod][order1][order2]
+
+            parts.append(merged)
 
         # Single transmittance files will be the first dict in the list, otherwise multiparts use two_albedo_method
+        # TODO do we still want to support single transmittance MODTRAN runs?
         chn = parts[0]
         if len(parts) > 1:
             Logger.debug("Using two albedo method")
-            chn = self.two_albedo_method(*parts, coszen, *self.albedos[1:])
+            chn = self.two_albedo_method(
+                case_0=parts[0],
+                case_1=parts[0],
+                case_2=parts[1],
+                coszen=coszen,
+                rfl_1=self.albedos[1],
+                rfl_2=self.albedos[2],
+                modtran_tp7=False,
+            )
 
         return chn
 
@@ -855,14 +890,25 @@ class ModtranRT(BaseAtmosphere, Writer):
                     # We don't need a .chn file if we're writing a tp7!
                     # Delete it. And set the DV and FWHM parameters to something
                     # arbitrarily high
-                    if "FILTNM" in case_param["MODTRANINPUT"]["SPECTRAL"]:
-                        del case_param["MODTRANINPUT"]["SPECTRAL"]["FILTNM"]
+                    if self.use_tp7:
+                        if "FILTNM" in case_param["MODTRANINPUT"]["SPECTRAL"]:
+                            del case_param["MODTRANINPUT"]["SPECTRAL"]["FILTNM"]
 
-                    for dp in ["DV", "FWHM"]:
-                        if dp in case_param["MODTRANINPUT"]["SPECTRAL"]:
-                            case_param["MODTRANINPUT"]["SPECTRAL"][dp] = (
-                                1.0 / self.min_samples_per_nm
-                            ) * 2.0
+                        for dp in ["DV", "FWHM"]:
+                            if dp in case_param["MODTRANINPUT"]["SPECTRAL"]:
+                                case_param["MODTRANINPUT"]["SPECTRAL"][dp] = (
+                                    1.0 / self.min_samples_per_nm
+                                ) * 2.0
+
+                    # else we need to make sure not to write the csv file
+                    else:
+                        if "NOFILE" in case_param["MODTRANINPUT"]["FILEOPTIONS"]:
+                            del case_param["MODTRANINPUT"]["FILEOPTIONS"]["NOFILE"]
+
+                        if "CSVPRNT" in case_param["MODTRANINPUT"]["FILEOPTIONS"]:
+                            del case_param["MODTRANINPUT"]["FILEOPTIONS"]["CSVPRNT"]
+
+                        case_param["MODTRANINPUT"]["FILEOPTIONS"]["CKPRNT"] = True
 
                     if case_count == 0:
                         param[0] = case_param
