@@ -975,7 +975,7 @@ def write_modtran_template(
                         "IEMSCT": "RT_SOLAR_AND_THERMAL",
                         "IMULT": "RT_DISORT",
                         "DISALB": False,
-                        "NSTR": 8,
+                        "NSTR": 8,  # NOTE 8 vs 16 delta(m) effect is reduced when using 2-albedo method
                         "SOLCON": 0.0,
                     },
                     "ATMOSPHERE": {
