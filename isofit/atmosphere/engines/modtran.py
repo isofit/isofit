@@ -147,7 +147,7 @@ class ModtranRT(BaseAtmosphere, Writer):
 
         return [float(match) for match in re.findall(r"(\d\S*)", line)]
 
-    def load_chn(self, file: str, coszen: float, header: int = 5) -> dict:
+    def load_chn(self, file: str, coszen: float, header: int = 4) -> dict:
         """
         Parses a MODTRAN channel file and extracts relevant data
 
@@ -221,17 +221,19 @@ class ModtranRT(BaseAtmosphere, Writer):
             for prod in product_names:
                 merged[prod] = np.hstack([b[prod] for b in matching_blocks])
 
-            order1 = np.argsort(merged["wl"])
-            order2 = np.unique(merged["wl"][order1], return_index=True)[1]
+            # Only apply the sorting if we need to do so,
+            if len(matching_blocks) > 1:
+                order1 = np.argsort(merged["wl"])
+                order2 = np.unique(merged["wl"][order1], return_index=True)[1]
 
-            # Then finally, apply the sorting logic to each product
-            ref_shape = merged["wl"].shape
-            for prod in product_names:
-                if (
-                    isinstance(merged[prod], np.ndarray)
-                    and merged[prod].shape == ref_shape
-                ):
-                    merged[prod] = merged[prod][order1][order2]
+                # Then finally, apply the sorting logic to each product
+                ref_shape = merged["wl"].shape
+                for prod in product_names:
+                    if (
+                        isinstance(merged[prod], np.ndarray)
+                        and merged[prod].shape == ref_shape
+                    ):
+                        merged[prod] = merged[prod][order1][order2]
 
             parts.append(merged)
 
@@ -576,7 +578,7 @@ class ModtranRT(BaseAtmosphere, Writer):
                 coszen=coszen,
             )
         else:
-            params = self.load_chn(file=f"{file}.chn", coszen=coszen, header=5)
+            params = self.load_chn(file=f"{file}.chn", coszen=coszen)
         params["solzen"] = solzen
         params["coszen"] = coszen
 
