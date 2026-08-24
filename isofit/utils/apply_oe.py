@@ -315,14 +315,13 @@ def apply_oe(
             )
 
     if surface_category == "lut_surface" and (analytical_line or empirical_line):
+        raise ValueError(
+            "Analytical line method does not work for LUT surface at this time."
+        )
+
     if use_background_rfl and not multipart_transmittance:
         raise ValueError(
             "ApplyOE must use multi-part transmittance to enable heterogeneous background reflectance."
-        )
-
-    if surface_category == "lut_surface" and use_superpixels:
-        raise ValueError(
-            "Analytical line method does not work for LUT surface at this time."
         )
 
     # Load in water column upper bound polynomials
