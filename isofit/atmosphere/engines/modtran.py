@@ -50,12 +50,14 @@ class ModtranRT(BaseAtmosphere, Writer):
         self, engine_config, min_samples_per_nm=10, max_samples_per_nm=100, **kwargs
     ):
         self.max_buffer_time = 0.5
+
+        # A note on the band ordering to save future selves from doing the math in our head...
+        # The larger wavelengths will get the higher fidelity band model (e.g., p1_2013 = 0.1 cm-1).
+        # The smaller wavelengths can get away with the lower fidelity band model (e.g., 01_2013 = 1 cm-1).
         self.resolutions_available = [0.1, 1, 5, 15]
         self.resolution_names = ["p1_2013", "01_2013", "05_2013", "15_2013"]
         self.min_samples_per_nm = min_samples_per_nm
         self.max_samples_per_nm = max_samples_per_nm
-
-        self.use_tp7 = False
 
         super().__init__(engine_config, **kwargs)
 
@@ -215,8 +217,8 @@ class ModtranRT(BaseAtmosphere, Writer):
 
             product_names = [k for k in matching_blocks[0].keys() if k != "mean_albedo"]
 
-            # This assumes the lower wavelength region (and highest fidelity model) comes first
-            # when sorting the blocks. This is true for the CHN outputs and is how we write the input in json.
+            # This assumes the lower wavelength region comes first when sorting the blocks.
+            # This is true for the CHN outputs and is how we write the input in json.
             merged = {}
             for prod in product_names:
                 merged[prod] = np.hstack([b[prod] for b in matching_blocks])
@@ -501,7 +503,7 @@ class ModtranRT(BaseAtmosphere, Writer):
         # always run wavelength modeles from fine to coarse spectral resolution,
         # so that for duplicates we take the finer resolution case
         samples_wl_grid = np.arange(
-            int(np.floor(np.min(self.wl))), int(np.ceil((np.max(self.wl))))
+            int(np.floor(np.min(self.wl))), int(np.ceil((np.max(self.wl)))) + 1
         )
         samples_per_res = [
             self.samples_per_nm(samples_wl_grid, res)
@@ -558,8 +560,9 @@ class ModtranRT(BaseAtmosphere, Writer):
             )
 
         for _s in range(len(self.simulation_wavelength_regions)):
+            _r = [float(x) for x in self.simulation_wavelength_regions[_s]]
             logging.info(
-                f"Using MODTRAN band model {self.wavelength_models[_s]} in simulation wavelength region: {self.simulation_wavelength_regions[_s]}"
+                f"Using MODTRAN band model {self.wavelength_models[_s]} in simulation wavelength region: {_r}"
             )
 
     def readSim(self, point):
