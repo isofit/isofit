@@ -512,7 +512,7 @@ class BaseAtmosphere(Reader):
         # This includes direct + diffuse down, but only direct up transmittance
         L_toa_1 = case_1["grnd_rflt"]
 
-        # TP7 especially floods this with divide by zero errors but can mostly be ignored
+        # MODTRAN-TP7 files especially flood this with divide by zero errors but can mostly be ignored
         with np.errstate(divide="ignore", invalid="ignore"):
 
             # Transforming back to at-surface radiance
@@ -549,8 +549,9 @@ class BaseAtmosphere(Reader):
             salb = salb_num / salb_denom
 
             # Avoid division by very small numbers.  This threshold is semi-arbitrary,
-            # but seems to work reasonably
-            salb[np.abs(salb_denom) < 0.001] = 0
+            # but seems to work reasonably. Shorter wavelengths needed a lower threshold in testing.
+            threshold = np.where(case_0["wl"] < 400, 1e-4, 1e-3)
+            salb[np.abs(salb_denom) < threshold] = 0
 
             # Similarly for the transm_up_dif case, there are a few cases where needs to be capped.
             # This threshold is also semi-arbitrary but was tested on both chn and tp7 outputs.
