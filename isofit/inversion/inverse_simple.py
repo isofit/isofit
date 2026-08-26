@@ -40,9 +40,9 @@ def heuristic_atmosphere(
     x_instrument: np.array,
     meas: np.array,
     geom: Geometry,
-    wl_lo: int = 885,
-    wl_center: int = 940,
-    wl_hi: int = 995,
+    wl_lo: int = 865,
+    wl_center: int = 945,
+    wl_hi: int = 1040,
 ):
     """From a given radiance, estimate atmospheric state with band ratios.
     Used to initialize gradient descent inversions.
@@ -215,156 +215,6 @@ def invert_algebraic(
     # atmospheric optical parameters
     coeffs = L_atm, sphalb, L_tot, transup, L_up
     return rfl_est, coeffs
-
-
-def invert_analytical(
-    fm: ForwardModel,
-    winidx: np.array,
-    meas: np.array,
-    geom: Geometry,
-    x0: np.array,
-    sub_state,
-    num_iter: int = 1,
-    diag_uncert: bool = True,
-    outside_ret_const: float = -0.01,
-):
-    """Perform an analytical estimate of the conditional MAP estimate for
-    a fixed atmosphere.  Based on the "Inner loop" from Susiluoto et al. (2025).
-    doi: https://doi.org/10.3390/rs17223719
-
-    Args:
-        fm: isofit forward model
-        winidx: indices of surface components of state vector (to be solved)
-        meas: a one-D numpy vector of radiance in uW/nm/sr/cm2
-        geom: geometry object corresponding to given measurement
-        x0: the initialization state including surface from the superpixel
-            and the atm from the smoothed atmosphere.
-        num_iter: number of interactions to run through
-        diag_uncert: flag indicating whether to diagonalize the uncertainty
-        outside_ret_const:
-
-    Returns:
-        x: MAP estimate of the mean
-        S: diagonal conditional posterior covariance estimate
-    """
-    from scipy.linalg.blas import dsymv
-    from scipy.linalg.lapack import dpotrf, dpotri
-
-    x = x0.copy()
-    x_surface, x_atmosphere, x_instrument = fm.unpack(x)
-
-    # Get all the surface quantities for the super pixel
-    sub_surface, sub_atmosphere, sub_instrument = fm.unpack(sub_state)
-
-    # Surface reflectance at the wl resolution of fm.RT
-    rho_dir_dir, rho_dif_dir = fm.calc_rfl(sub_state, geom)
-    rho_dif_dir = fm.upsample(fm.surface.wl, rho_dif_dir)
-
-    rho_dif_dif = (
-        fm.upsample(fm.surface.wl, geom.bg_rfl)
-        if isinstance(geom.bg_rfl, np.ndarray)
-        else rho_dif_dir
-    )
-    geom.bg_rfl = rho_dif_dif
-
-    # Get all the atmosphere quantities
-    r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = (
-        fm.calc_atmosphere_quantities(x_atmosphere, geom, rho_dif_dif=rho_dif_dif)
-    )
-
-    # Path radiance and spherical albedo
-    L_atm = fm.atmosphere.get_L_atm(x_atmosphere, geom)
-    s_alb = r["sphalb"]
-
-    # Estimation of background radiance (background terms assumed rho_dir_dif ~= rho_dif_dif)
-    L_bg = fm.calc_rdn_bgrfl(
-        rho_dir_dif=rho_dif_dif,
-        rho_dif_dif=rho_dif_dif,
-        L_dir_dif=L_dir_dif,
-        L_dif_dif=L_dif_dif,
-        L_tot=L_tot,
-        s_alb=s_alb,
-    )
-
-    # Get superpixel EOF shift if used
-    eof_offset = fm.eof_offset(sub_instrument)
-
-    # Get the inversion indices; Include glint indices if applicable
-    full_idx = np.concatenate((winidx, fm.idx_surf_nonrfl), axis=0)
-    outside_ret_windows = np.ones(len(fm.idx_surface), dtype=bool)
-    outside_ret_windows[full_idx] = False
-    outside_ret_windows = np.where(outside_ret_windows)[0]
-    iv_idx = fm.surface.analytical_iv_idx
-
-    # The H matrix does not change as a function of x-vector
-    H = fm.surface.analytical_model(
-        L_tot=L_tot,
-        geom=geom,
-        s_alb=s_alb,
-        L_dir_dir=L_dir_dir,
-        L_dir_dif=L_dir_dif,
-        L_dif_dir=L_dif_dir,
-        L_dif_dif=L_dif_dif,
-    )
-    # Sample just the wavelengths and states of interest
-    L = H[winidx, :][:, iv_idx]
-
-    trajectory = np.zeros((num_iter + 1, len(x)))
-    trajectory[0, :] = x
-    for n in range(num_iter):
-
-        # Measurement uncertainty
-        Seps = fm.Seps(x, meas, geom)[winidx, :][:, winidx]
-
-        # Prior mean and covariance
-        Sa, Sa_inv, Sa_inv_sqrt = fm.Sa(x, geom)
-        Sa_inv = Sa_inv[fm.idx_surface, :][:, fm.idx_surface]
-
-        xa_full = fm.xa(x, geom)
-        xa_surface = xa_full[fm.idx_surface]
-
-        # Save the product of the prior covariance and mean
-        prprod = Sa_inv @ xa_surface
-
-        x_surface, x_atmosphere, x_instrument = fm.unpack(x)
-
-        C = dpotrf(Seps, 1)[0]
-        P = dpotri(C, 1)[0]
-
-        P_tilde = ((L.T @ P) @ L).T
-        P_rcond = Sa_inv[iv_idx, :][:, iv_idx] + P_tilde
-
-        LI_rcond = dpotrf(P_rcond)[0]
-        C_rcond = dpotri(LI_rcond)[0]
-
-        y = meas[winidx] - L_atm[winidx] - eof_offset[winidx] - L_bg[winidx]
-        xk = dsymv(
-            1,
-            C_rcond,
-            (L.T @ dsymv(1, P, y, lower=1) + prprod[iv_idx]),
-        )
-
-        # Save trajectory step:
-        x_surface[iv_idx] = xk
-        if outside_ret_const is None:
-            x_surface[outside_ret_windows] = xa_surface[outside_ret_windows]
-        else:
-            x_surface[outside_ret_windows] = outside_ret_const
-
-        x[fm.idx_surface] = x_surface
-        trajectory[n + 1, :] = x
-
-    if diag_uncert:
-        if len(C_rcond):
-            full_unc = np.ones(len(x))
-            full_unc[iv_idx] = np.sqrt(np.diag(C_rcond))
-        else:
-            full_unc = np.ones(len(x))
-            full_unc[iv_idx] = [-9999 for i in x[iv_idx]]
-
-        return trajectory, full_unc
-    else:
-        return trajectory, C_rcond
 
 
 def invert_simple(fm: ForwardModel, meas: np.array, geom: Geometry):
