@@ -552,11 +552,15 @@ class Worker(object):
             # Populate the "background" superpixel
             lbl_idx = int(self.lbl[r, c, 0])
             sub_state = np.zeros(self.fm.nstate)
-            sub_state[self.fm.idx_surface] = self.subs_state[lbl_idx, 0, iv_idx]
+            sub_state[self.fm.idx_surface] = self.subs_state[
+                lbl_idx, 0, self.fm.full_idx
+            ][iv_idx]
+
             sub_state[self.fm.idx_atmosphere] = x_atmosphere
             sub_state[self.fm.idx_instrument] = self.subs_state[
-                lbl_idx, 0, self.fm.idx_instrument
-            ]
+                lbl_idx, 0, self.fm.full_idx
+            ][self.fm.idx_instrument]
+
             # Enforce non-NaN
             sub_state[np.isnan(sub_state)] = self.fm.init[np.isnan(sub_state)]
 
