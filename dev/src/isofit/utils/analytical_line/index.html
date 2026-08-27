@@ -5509,7 +5509,11 @@
 <span class="normal">708</span>
 <span class="normal">709</span>
 <span class="normal">710</span>
-<span class="normal">711</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">711</span>
+<span class="normal">712</span>
+<span class="normal">713</span>
+<span class="normal">714</span>
+<span class="normal">715</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6063,11 +6067,15 @@
             <span class="c1"># Populate the "background" superpixel</span>
             <span class="n">lbl_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lbl</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
             <span class="n">sub_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">nstate</span><span class="p">)</span>
-            <span class="n">sub_state</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subs_state</span><span class="p">[</span><span class="n">lbl_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">iv_idx</span><span class="p">]</span>
+            <span class="n">sub_state</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subs_state</span><span class="p">[</span>
+                <span class="n">lbl_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">full_idx</span>
+            <span class="p">][</span><span class="n">iv_idx</span><span class="p">]</span>
+
             <span class="n">sub_state</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_atmosphere</span>
             <span class="n">sub_state</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_instrument</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subs_state</span><span class="p">[</span>
-                <span class="n">lbl_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_instrument</span>
-            <span class="p">]</span>
+                <span class="n">lbl_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">full_idx</span>
+            <span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">idx_instrument</span><span class="p">]</span>
+
             <span class="c1"># Enforce non-NaN</span>
             <span class="n">sub_state</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">sub_state</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">init</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">sub_state</span><span class="p">)]</span>
 
