@@ -877,6 +877,12 @@ def apply_oe(
         )
 
         if presolve and use_background_rfl:
+
+            if surface_category == "lut_surface":
+                use_slic_rfls = False
+            else:
+                use_slic_rfls = True
+
             # Only create background reflectance if it doesn't already exist in /data
             # NOTE this may be useful for our single pixel pytests
             if not exists(paths.bgrfl_working_path) or (
@@ -891,7 +897,7 @@ def apply_oe(
                     mean_altitude_km=mean_altitude_km,
                     mean_elevation_km=mean_elevation_km,
                     smoothing_sigma=atm_sigma,
-                    use_slic_rfls=True,
+                    use_slic_rfls=use_slic_rfls,
                     use_superpixels=use_superpixels,
                     nodata_value=-9999,
                     chunksize=CHUNKSIZE,
