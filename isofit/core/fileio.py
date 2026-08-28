@@ -895,6 +895,8 @@ def initialize_output(output_metadata, outpath, out_shape, **kwargs):
     )
     out_mm = out_file.open_memmap(interleave="source", writable=True)
     out_mm[:, :] = np.zeros(out_shape, dtype=np.float32)
+    if "no data value" in output_metadata:
+        out_mm[...] = output_metadata["no data value"]
     del out_file
 
     return outpath
