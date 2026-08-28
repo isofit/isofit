@@ -5842,7 +5842,9 @@
 <span class="normal">897</span>
 <span class="normal">898</span>
 <span class="normal">899</span>
-<span class="normal">900</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">900</span>
+<span class="normal">901</span>
+<span class="normal">902</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6739,6 +6741,8 @@
     <span class="p">)</span>
     <span class="n">out_mm</span> <span class="o">=</span> <span class="n">out_file</span><span class="o">.</span><span class="n">open_memmap</span><span class="p">(</span><span class="n">interleave</span><span class="o">=</span><span class="s2">"source"</span><span class="p">,</span> <span class="n">writable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">out_mm</span><span class="p">[:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">out_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"no data value"</span> <span class="ow">in</span> <span class="n">output_metadata</span><span class="p">:</span>
+        <span class="n">out_mm</span><span class="p">[</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_metadata</span><span class="p">[</span><span class="s2">"no data value"</span><span class="p">]</span>
     <span class="k">del</span> <span class="n">out_file</span>
 
     <span class="k">return</span> <span class="n">outpath</span>
