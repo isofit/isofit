@@ -1509,6 +1509,7 @@ def make_atmosphere_config(
     relative_azimuth_lut_grid: np.array = None,
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
+    unknowns: dict = {},
 ):
     avc = np.sum(
         [
@@ -1547,7 +1548,12 @@ def make_atmosphere_config(
         },
         "statevector": {},
         "lut_grid": {},
-        "unknowns": {"H2O_ABSCO": 0.0},
+        # Previously configured an H2O_ABSCO, but a value effectively turns off
+        # the uncertainty quantification:
+        # "unknowns": {"H2O_ABSCO": 0.0},
+        # We now inherit from the kwargs. Could be hooked up to apply_oe in
+        # the future.
+        "unknowns": unknowns,
     }
 
     atmosphere_rte = {}

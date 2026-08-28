@@ -337,7 +337,7 @@ def invert_analytical(
         xk = dsymv(
             1,
             C_rcond,
-            (L.T @ dsymv(1, P, y) + prprod[iv_idx]),
+            (L.T @ dsymv(1, P, y, lower=1) + prprod[iv_idx]),
         )
 
         # Save trajectory step:
