@@ -18,7 +18,7 @@
 # Author: David R Thompson, david.r.thompson@jpl.nasa.gov
 #         Philip G Brodrick, philip.brodrick@jpl.nasa.gov
 #
-__version__ = "4.1.2"
+__version__ = "4.1.3"
 
 
 import logging
