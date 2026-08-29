@@ -19,6 +19,7 @@
 #
 from __future__ import annotations
 
+import logging
 import numpy as np
 import xarray as xr
 
@@ -141,6 +142,11 @@ class LUTSurface(Surface):
             terrain_style=self.terrain_style,
             build_interpolators=True,
         )
+
+        if self.itp_dd is not None:
+            logging.info("Running lut_surface with rho_hd and rho_dd.")
+        else:
+            logging.info("Running lut_surface with rho_hd only.")
 
         for key in KEYS:
             setattr(self, key, lut_params[key])
