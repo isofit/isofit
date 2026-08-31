@@ -548,15 +548,6 @@ class BaseAtmosphere(Reader):
             salb_denom = L_surf_1 - L_surf_2
             salb = salb_num / salb_denom
 
-            # Avoid division by very small numbers.  This threshold is semi-arbitrary,
-            # but seems to work reasonably. Shorter wavelengths needed a lower threshold in testing.
-            threshold = np.where(case_0["wl"] < 400, 1e-4, 1e-3)
-            salb[np.abs(salb_denom) < threshold] = 0
-
-            # Similarly for the transm_up_dif case, there are a few cases where needs to be capped.
-            # This threshold is also semi-arbitrary but was tested on both chn and tp7 outputs.
-            transm_up_dif[np.abs(L_surf_1) < 1e-5] = 0
-
             # Compute rhoatm always so both tp7 and chn match
             case_0["rhoatm"] = L_path_0 / L_solar / widths
 
@@ -570,6 +561,10 @@ class BaseAtmosphere(Reader):
             transm_down_dir = L_down_dir_1 / widths / L_solar
             # Diffuse downward transmittance
             transm_down_dif = L_down_dif_0 / widths / L_solar
+
+            # Clean up transm_up_dif and sphalb cases for very small downward transmittance
+            transm_up_dif[(transm_down_dir + transm_down_dif) < 0.001] = 0.0
+            salb[(transm_down_dir + transm_down_dif) < 0.001] = 0.0
 
         # Return some keys from the first part plus the new calculated keys
         pass_forward = [
