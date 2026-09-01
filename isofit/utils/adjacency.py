@@ -114,13 +114,14 @@ def get_adjacency_range_from_loc(
     return adj_range, pixel_size
 
 
-def background_reflectance(
+def process_background_data(
     input_radiance,
     input_loc,
     input_obs,
     paths,
     mean_altitude_km,
     mean_elevation_km,
+    mean_to_sun_zenith,
     smoothing_sigma,
     n_cores,
     logging_level,
@@ -129,8 +130,9 @@ def background_reflectance(
     use_slic_rfls=True,
     use_superpixels=True,
     nodata_value=-9999,
+    terrain_style="dem",
 ):
-    """Aggregates background reflectance term from the presolve."""
+    """Aggregates background reflectance and topography."""
 
     conf = configs.create_new_config(paths.h2o_config_path)
 
@@ -158,6 +160,10 @@ def background_reflectance(
         f"For background reflectance assuming pixel size of {km_to_m(pixel_size):.2f} m "
         f"and adjacency range of {adj_range:.2f} km."
     )
+
+    kernel_diameter = int(np.ceil(2 * np.max(adj_range) / pixel_size + 1))
+
+    del loc
 
     # Calls algebraic line using presolve config
     if not use_slic_rfls:
@@ -214,14 +220,11 @@ def background_reflectance(
         bg_rfl[:, :, :] = np.squeeze(rfl_samples[labels, :])
 
     # For now, this applies a uniform window average based on adjacency range.
-    kernel_diameter = int(np.ceil(2 * np.max(adj_range) / pixel_size + 1))
     bg_rfl[:, :, :] = uniform_filter(
         bg_rfl, size=(kernel_diameter, kernel_diameter, 1), mode=UNIFORM_FILTER_MODE
     )
+    del bg_rfl
 
-    del bg_rfl, loc
-
-    # if using superpixels, we aggregate the bg rfl before OE
     if use_superpixels:
         extractions(
             inputfile=paths.bgrfl_working_path,
@@ -235,57 +238,24 @@ def background_reflectance(
             logfile=log_file,
         )
 
-    return
-
-
-def background_topography(
-    input_obs,
-    input_loc,
-    paths,
-    mean_altitude_km,
-    mean_elevation_km,
-    mean_to_sun_zenith,
-    logging_level,
-    log_file,
-    n_cores,
-    chunksize,
-    use_superpixels=True,
-    nodata_value=-9999,
-    terrain_style="dem",
-):
-    """Aggregates topography over adjacency range for use in multipart transmittance forward model."""
-
-    # Estimate pixel size and adjacency range in km (pixel size is approx. based on loc file)
-    loc = envi.open(envi_header(input_loc), input_loc).open_memmap()
-    rows, cols, _ = loc.shape
-    adj_range, pixel_size = get_adjacency_range_from_loc(
-        loc=loc,
-        mean_altitude_km=mean_altitude_km,
-        mean_elevation_km=mean_elevation_km,
-        nodata_value=nodata_value,
-    )
-    logging.info(
-        f"For background reflectance assuming pixel size of {km_to_m(pixel_size):.2f} m "
-        f"and adjacency range of {adj_range:.2f} km."
-    )
-
-    if paths.svf_working_path is not None:
-        svf = envi.open(
+    # Now, we work through the topography data
+    svf = (
+        envi.open(
             envi_header(paths.svf_working_path), paths.svf_working_path
         ).open_memmap()
-    else:
-        svf = np.ones((rows, cols, 1))
+        if paths.svf_working_path
+        else np.ones((rows, cols, 1))
+    )
 
     if terrain_style != "flat":
         obs = envi.open(envi_header(input_obs), input_obs).open_memmap()
-        cos_i = obs[:, :, 8]
-        slope = obs[:, :, 6]
+        cos_i, slope = obs[:, :, 8], obs[:, :, 6]
     else:
         coszen = np.cos(np.radians(mean_to_sun_zenith))
-        cos_i = np.full((rows, cols, 1), fill_value=coszen)
-        slope = np.full((rows, cols, 1), fill_value=0.0)
+        cos_i, slope = np.full((rows, cols, 1), coszen), np.full((rows, cols, 1), 0.0)
+
     bands = ["cos_i_bg", "skyview_factor_bg", "slope"]
-    out_file = initialize_output(
+    topo_output = initialize_output(
         output_metadata={
             "data type": 4,
             "file type": "ENVI Standard",
@@ -300,22 +270,21 @@ def background_topography(
         bands=f"{len(bands)}",
         description="Background topography for each pixel used in OE inversion",
     )
-    bgtopo = envi.open(envi_header(out_file), out_file).open_memmap(
+    bgtopo = envi.open(envi_header(topo_output), topo_output).open_memmap(
         interleave="bip", writable=True
     )
-    bgtopo[:, :, 0] = np.squeeze(cos_i)
-    bgtopo[:, :, 1] = np.squeeze(svf)
-    bgtopo[:, :, 2] = np.squeeze(slope)
-
-    # For now, this applies a uniform window average based on adjacency range.
-    kernel_diameter = int(np.ceil(2 * np.max(adj_range) / pixel_size + 1))
-    bgtopo[:, :, :] = uniform_filter(
-        bgtopo,
-        size=(kernel_diameter, kernel_diameter, 1),
-        mode=UNIFORM_FILTER_MODE,
+    bgtopo[:, :, 0], bgtopo[:, :, 1], bgtopo[:, :, 2] = (
+        np.squeeze(cos_i),
+        np.squeeze(svf),
+        np.squeeze(slope),
     )
 
-    # if using superpixels, we aggregate the bg topo before OE
+    # For now, this applies a uniform window average based on adjacency range.
+    bgtopo[:, :, :] = uniform_filter(
+        bgtopo, size=(kernel_diameter, kernel_diameter, 1), mode=UNIFORM_FILTER_MODE
+    )
+    del bgtopo
+
     if use_superpixels:
         extractions(
             inputfile=paths.bgtopo_working_path,

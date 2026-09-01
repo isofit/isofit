@@ -31,7 +31,7 @@ from isofit.utils import (
     segment,
 )
 from isofit.utils.skyview import skyview
-from isofit.utils.adjacency import background_reflectance, background_topography
+from isofit.utils.adjacency import process_background_data
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -878,44 +878,30 @@ def apply_oe(
                 use_superpixels and not exists(paths.bgrfl_subs_path)
             ):
                 logging.info("Preparing background reflectance...")
-                background_reflectance(
+                process_background_data(
                     input_radiance=input_radiance,
                     input_loc=input_loc,
                     input_obs=input_obs,
                     paths=paths,
                     mean_altitude_km=mean_altitude_km,
                     mean_elevation_km=mean_elevation_km,
+                    mean_to_sun_zenith=mean_to_sun_zenith,
                     smoothing_sigma=atm_sigma,
+                    n_cores=n_cores,
+                    logging_level=logging_level,
+                    log_file=log_file,
+                    chunksize=CHUNKSIZE,
                     use_slic_rfls=True,
                     use_superpixels=use_superpixels,
                     nodata_value=-9999,
-                    chunksize=CHUNKSIZE,
-                    logging_level=logging_level,
-                    log_file=log_file,
-                    n_cores=n_cores,
+                    terrain_style="dem",
                 )
+
                 remove_bgrfl_file = True
 
         if config_only:
             logging.info("`config_only` enabled, exiting early")
             return
-
-        # Create cos_i_bg and skyview_factor_bg aggregated acrross adjacency range
-        background_topography(
-            input_obs=input_obs,
-            input_loc=input_loc,
-            paths=paths,
-            mean_altitude_km=mean_altitude_km,
-            mean_elevation_km=mean_elevation_km,
-            mean_to_sun_zenith=mean_to_sun_zenith,
-            logging_level=logging_level,
-            log_file=log_file,
-            n_cores=n_cores,
-            chunksize=CHUNKSIZE,
-            use_superpixels=True,
-            nodata_value=-9999,
-            terrain_style="dem",
-        )
 
         # Run retrieval
         logging.info("Running ISOFIT with full LUT")
