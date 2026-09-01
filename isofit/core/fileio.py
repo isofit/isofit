@@ -523,6 +523,18 @@ class IO:
         ):
             data["background_reflectance_file"] = None
 
+        if (
+            "background_topography_file" not in data
+            or data["background_topography_file"] is None
+        ):
+            cos_i_bg = self.coszen
+            skyview_factor_bg = 1.0
+            slope_bg = 0.0
+        else:
+            cos_i_bg = data["background_topography_file"][0]
+            skyview_factor_bg = data["background_topography_file"][1]
+            slope_bg = data["background_topography_file"][2]
+
         # We build the geometry object for this spectrum.  For files not
         # specified in the input configuration block, the associated entries
         # will be 'None'. The Geometry object will use reasonable defaults.
@@ -532,6 +544,9 @@ class IO:
             bg_rfl=data["background_reflectance_file"],
             svf=data["skyview_factor_file"],
             coszen=self.coszen,
+            cos_i_bg=cos_i_bg,
+            skyview_factor_bg=skyview_factor_bg,
+            slope_bg=slope_bg,
             full_config=self.config,
         )
 

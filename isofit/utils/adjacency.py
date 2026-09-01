@@ -32,6 +32,12 @@ from isofit.core.fileio import initialize_output
 from isofit.utils import extractions, reducers
 
 
+# Option for scipy.ndimage.uniform_filter. This matters the most for scene edges.
+# Setting this to 'nearest' is most likely saftest option for now...
+# We could also think of more custom weighting treatments for borders in future.
+UNIFORM_FILTER_MODE = "nearest"
+
+
 def approx_pixel_size(loc, nodata_value=-9999):
     """Average, approximate pixel size assuming planar locally (units in m)."""
     R = 6371000.0
@@ -67,7 +73,7 @@ def approx_pixel_size(loc, nodata_value=-9999):
     return pix_size
 
 
-def get_adjacency_range(sensor_alt_asl, ground_alt_asl, R_sat=1.0, min_range=0.2):
+def richter2011(sensor_alt_asl, ground_alt_asl, R_sat=1.0, min_range=0.2):
     """Estimate adjacency range based on Richter et al. (2011)."""
     # for satellite case
     if sensor_alt_asl > 95.0:
@@ -88,6 +94,26 @@ def get_adjacency_range(sensor_alt_asl, ground_alt_asl, R_sat=1.0, min_range=0.2
     return r
 
 
+def get_adjacency_range_from_loc(
+    loc, mean_altitude_km, mean_elevation_km, nodata_value
+):
+
+    # Assumed adjacency range of satellite [km]
+    R_SAT = 1.0
+
+    # Assumed min adjacency range [km]
+    MIN_RANGE = 0.2
+
+    pixel_size = m_to_km(approx_pixel_size(loc=loc, nodata_value=nodata_value))
+    adj_range = richter2011(
+        sensor_alt_asl=mean_altitude_km,
+        ground_alt_asl=mean_elevation_km,
+        R_sat=R_SAT,
+        min_range=MIN_RANGE,
+    )
+    return adj_range, pixel_size
+
+
 def background_reflectance(
     input_radiance,
     input_loc,
@@ -106,17 +132,6 @@ def background_reflectance(
 ):
     """Aggregates background reflectance term from the presolve."""
 
-    # Assumed adjacency range of satellite [km]
-    R_SAT = 1.0
-
-    # Assumed min adjacency range [km]
-    MIN_RANGE = 0.2
-
-    # Option for scipy.ndimage.uniform_filter. This matters the most for scene edges.
-    # Setting this to 'nearest' is most likely saftest option for now...
-    # We could also think of more custom weighting treatments for borders in future.
-    UNIFORM_FILTER_MODE = "nearest"
-
     conf = configs.create_new_config(paths.h2o_config_path)
 
     # If using multisurface, we grab the first surface from the list
@@ -133,12 +148,11 @@ def background_reflectance(
     # Estimate pixel size and adjacency range in km (pixel size is approx. based on loc file)
     loc = envi.open(envi_header(input_loc), input_loc).open_memmap()
     rows, cols, _ = loc.shape
-    pixel_size = m_to_km(approx_pixel_size(loc=loc, nodata_value=nodata_value))
-    adj_range = get_adjacency_range(
-        sensor_alt_asl=mean_altitude_km,
-        ground_alt_asl=mean_elevation_km,
-        R_sat=R_SAT,
-        min_range=MIN_RANGE,
+    adj_range, pixel_size = get_adjacency_range_from_loc(
+        loc=loc,
+        mean_altitude_km=mean_altitude_km,
+        mean_elevation_km=mean_elevation_km,
+        nodata_value=nodata_value,
     )
     logging.info(
         f"For background reflectance assuming pixel size of {km_to_m(pixel_size):.2f} m "
@@ -213,6 +227,100 @@ def background_reflectance(
             inputfile=paths.bgrfl_working_path,
             labels=paths.lbl_working_path,
             output=paths.bgrfl_subs_path,
+            chunksize=chunksize,
+            flag=nodata_value,
+            reducer=reducers.band_mean,
+            n_cores=n_cores,
+            loglevel=logging_level,
+            logfile=log_file,
+        )
+
+    return
+
+
+def background_topography(
+    input_obs,
+    input_loc,
+    paths,
+    mean_altitude_km,
+    mean_elevation_km,
+    mean_to_sun_zenith,
+    logging_level,
+    log_file,
+    n_cores,
+    chunksize,
+    use_superpixels=True,
+    nodata_value=-9999,
+    terrain_style="dem",
+):
+    """Aggregates topography over adjacency range for use in multipart transmittance forward model."""
+
+    # Estimate pixel size and adjacency range in km (pixel size is approx. based on loc file)
+    loc = envi.open(envi_header(input_loc), input_loc).open_memmap()
+    rows, cols, _ = loc.shape
+    adj_range, pixel_size = get_adjacency_range_from_loc(
+        loc=loc,
+        mean_altitude_km=mean_altitude_km,
+        mean_elevation_km=mean_elevation_km,
+        nodata_value=nodata_value,
+    )
+    logging.info(
+        f"For background reflectance assuming pixel size of {km_to_m(pixel_size):.2f} m "
+        f"and adjacency range of {adj_range:.2f} km."
+    )
+
+    if paths.svf_working_path is not None:
+        svf = envi.open(
+            envi_header(paths.svf_working_path), paths.svf_working_path
+        ).open_memmap()
+    else:
+        svf = np.ones((rows, cols, 1))
+
+    if terrain_style != "flat":
+        obs = envi.open(envi_header(input_obs), input_obs).open_memmap()
+        cos_i = obs[:, :, 8]
+        slope = obs[:, :, 6]
+    else:
+        coszen = np.cos(np.radians(mean_to_sun_zenith))
+        cos_i = np.full((rows, cols, 1), fill_value=coszen)
+        slope = np.full((rows, cols, 1), fill_value=0.0)
+    bands = ["cos_i_bg", "skyview_factor_bg", "slope"]
+    out_file = initialize_output(
+        output_metadata={
+            "data type": 4,
+            "file type": "ENVI Standard",
+            "byte order": 0,
+            "no data value": nodata_value,
+            "lines": rows,
+            "samples": cols,
+            "interleave": "bip",
+        },
+        outpath=paths.bgtopo_working_path,
+        out_shape=(rows, cols, len(bands)),
+        bands=f"{len(bands)}",
+        description="Background topography for each pixel used in OE inversion",
+    )
+    bgtopo = envi.open(envi_header(out_file), out_file).open_memmap(
+        interleave="bip", writable=True
+    )
+    bgtopo[:, :, 0] = np.squeeze(cos_i)
+    bgtopo[:, :, 1] = np.squeeze(svf)
+    bgtopo[:, :, 2] = np.squeeze(slope)
+
+    # For now, this applies a uniform window average based on adjacency range.
+    kernel_diameter = int(np.ceil(2 * np.max(adj_range) / pixel_size + 1))
+    bgtopo[:, :, :] = uniform_filter(
+        bgtopo,
+        size=(kernel_diameter, kernel_diameter, 1),
+        mode=UNIFORM_FILTER_MODE,
+    )
+
+    # if using superpixels, we aggregate the bg topo before OE
+    if use_superpixels:
+        extractions(
+            inputfile=paths.bgtopo_working_path,
+            labels=paths.lbl_working_path,
+            output=paths.bgtopo_subs_path,
             chunksize=chunksize,
             flag=nodata_value,
             reducer=reducers.band_mean,

@@ -454,14 +454,10 @@ class ForwardModel:
         # for now, this is always set to 1.0.
         b = 1.0
 
-        # Assumption of the topography of the background
-        cos_i_bg = geom.coszen
-        skyview_factor_bg = 1.0
-
         # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.
         # Downward diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
         L_dir_dir = L_coupled[0] / geom.coszen * geom.cos_i * b
-        L_dir_dif = L_coupled[2] / geom.coszen * cos_i_bg
+        L_dir_dif = L_coupled[2] / geom.coszen * geom.cos_i_bg
 
         # Note - we should really be doing the multiplication upstream before convolution - L_dif_dir and L_dif_dif terms are
         # therefor an approximation
@@ -472,8 +468,8 @@ class ForwardModel:
             + ((1 - b * t_down_dir) * geom.skyview_factor)
         )
         L_dif_dif = L_coupled[3] * (
-            (t_down_dir * (cos_i_bg / geom.coszen))
-            + ((1 - t_down_dir) * skyview_factor_bg)
+            (t_down_dir * (geom.cos_i_bg / geom.coszen))
+            + ((1 - t_down_dir) * geom.skyview_factor_bg)
         )
 
         # Re-reflection from nearby surface contributing to at surface signal
@@ -581,7 +577,7 @@ class ForwardModel:
     def calc_rdn_bgrfl_heterogeneous(
         self, rho_dir_dif, rho_dif_dif, L_dir_dif, L_dif_dif, L_tot, s_alb
     ):
-        """TOA radiance that is a function of the heterogeneous background reflectance (used in AOE)."""
+        """TOA radiance that is a function of the heterogeneous background reflectance (used in AOE and invert_algebraic)."""
         return (
             (L_dir_dif * rho_dir_dif)
             + (L_dif_dif * rho_dif_dif)
@@ -594,18 +590,14 @@ class ForwardModel:
         """TOA radiance that is a function of the background reflectance in homogenous case (used in AOE)."""
         return np.zeros_like(L_tot)
 
-    def terrain_rereflection_heterogeneous(
-        self, rho_dif_dif, geom, skyview_factor_bg=1.0, cos_slope=1.0, cos_slope_bg=1.0
-    ):
+    def terrain_rereflection_heterogeneous(self, rho_dif_dif, geom):
         """Isotropic scattering from nearby terrain."""
-        v_t = (1 + cos_slope) / 2 - geom.skyview_factor
-        v_t_avg = (1 + cos_slope_bg) / 2 - skyview_factor_bg
+        v_t = (1 + geom.cos_slope) / 2 - geom.skyview_factor
+        v_t_avg = (1 + geom.cos_slope_bg) / 2 - geom.skyview_factor_bg
         t = 1 + ((rho_dif_dif * v_t) / (1 - rho_dif_dif * v_t_avg))
         return t
 
-    def terrain_rereflection_homogeneous(
-        self, rho_dif_dif, geom, skyview_factor_bg=1.0, cos_slope=1.0, cos_slope_bg=1.0
-    ):
+    def terrain_rereflection_homogeneous(self, rho_dif_dif, geom):
         """Terrain scattering is ignored in the case dir_dir=dir_dif=dif_dir=dif_dif."""
         return 1.0
 
