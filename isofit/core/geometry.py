@@ -56,6 +56,7 @@ class Geometry:
         self.observer_azimuth = None
         self.solar_zenith = None
         self.solar_azimuth = None
+        self.slope = None
         self.observer_altitude_km = None
         self.surface_elevation_km = None
 
