@@ -101,6 +101,20 @@ class Geometry:
                 + self.path_length_km * np.cos(np.deg2rad(self.observer_zenith))
             )
 
+        # Set flat assumptions for the background topography if no information is given
+        if self.skyview_factor_bg is None:
+            self.skyview_factor_bg = 1.0
+
+        if self.slope_bg is None:
+            self.cos_slope_bg = 1.0
+        else:
+            self.cos_slope_bg = np.cos(np.radians(self.slope_bg))
+
+        if self.slope is None:
+            self.cos_slope = 1.0
+        else:
+            self.cos_slope = np.cos(np.radians(self.slope))
+
         # Determine how to treat coszen
         self.use_universal_coszen = True
 
@@ -171,19 +185,6 @@ class Geometry:
             # Set flat assumptions for the background topography if no information is given
             if self.cos_i_bg is None:
                 self.cos_i_bg = self.coszen
-
-            if self.skyview_factor_bg is None:
-                self.skyview_factor_bg = 1.0
-
-            if self.slope_bg is None:
-                self.cos_slope_bg = 1.0
-            else:
-                self.cos_slope_bg = np.cos(np.radians(self.slope_bg))
-
-            if self.slope is None:
-                self.cos_slope = 1.0
-            else:
-                self.cos_slope = np.cos(np.radians(self.slope))
 
         else:
             logging.warning(
