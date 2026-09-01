@@ -176,10 +176,14 @@ class Geometry:
 
             if self.slope_bg is None:
                 self.cos_slope_bg = 1.0
-                self.cos_slope = 1.0
             else:
                 self.cos_slope_bg = np.cos(np.radians(self.slope_bg))
+
+            if self.slope is None:
+                self.cos_slope = 1.0
+            else:
                 self.cos_slope = np.cos(np.radians(self.slope))
+
         else:
             logging.warning(
                 "Unable to determine coszen. Proceeding without will cause errors during the inversion."
