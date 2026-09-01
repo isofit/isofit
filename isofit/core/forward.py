@@ -474,8 +474,6 @@ class ForwardModel:
 
         # Re-reflection from nearby surface contributing to at surface signal
         # Assumptions: no atmospheric attenuation, and reflectance is isotropic over the field of view
-        # NOTE for now, a flat slope is assumed, such that terrain view is,
-        # v_t = (1 + cos_slope) / 2 - skyview = (1 + 1)/2  - skyview = 1 - skyview
         t = self.terrain_rereflection(rho_dif_dif=rho_dif_dif, geom=geom)
         L_dir_dir *= t
         L_dif_dir *= t
