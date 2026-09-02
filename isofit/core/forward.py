@@ -575,7 +575,7 @@ class ForwardModel:
     def calc_rdn_bgrfl_heterogeneous(
         self, rho_dir_dif, rho_dif_dif, L_dir_dif, L_dif_dif, L_tot, s_alb
     ):
-        """TOA radiance that is a function of the heterogeneous background reflectance (used in AOE and invert_algebraic)."""
+        """TOA radiance that is a function of the heterogeneous background reflectance (used in AOE)."""
         return (
             (L_dir_dif * rho_dir_dif)
             + (L_dif_dif * rho_dif_dif)
