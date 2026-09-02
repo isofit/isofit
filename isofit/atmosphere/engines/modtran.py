@@ -35,6 +35,7 @@ from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core import units
 from isofit.core.common import json_load_ascii, recursive_replace
 from isofit.luts.writer import Writer
+from isofit.core.units import modtran_rdn_in_nm
 
 Logger = logging.getLogger(__file__)
 
@@ -43,8 +44,47 @@ TROPOPAUSE_ALTITUDE_KM = 17.0
 
 class ModtranRT(BaseAtmosphere, Writer):
 
-    max_buffer_time = 0.5
     albedos = [0.0, 0.1, 0.5]
+
+    def __init__(
+        self, engine_config, min_samples_per_nm=10, max_samples_per_nm=100, **kwargs
+    ):
+        self.max_buffer_time = 0.5
+
+        # A note on the band ordering to save future selves from doing the math in our head...
+        # The larger wavelengths will get the higher fidelity band model (e.g., p1_2013 = 0.1 cm-1).
+        # The smaller wavelengths can get away with the lower fidelity band model (e.g., 01_2013 = 1 cm-1).
+        self.resolutions_available = [0.1, 1, 5, 15]
+        self.resolution_names = ["p1_2013", "01_2013", "05_2013", "15_2013"]
+        self.min_samples_per_nm = min_samples_per_nm
+        self.max_samples_per_nm = max_samples_per_nm
+
+        super().__init__(engine_config, **kwargs)
+
+    @staticmethod
+    def samples_per_nm(wl, fq_resolution):
+        fq_delta = 10**7 / wl - 10**7 / (wl + 1)
+        samples_per_nm = fq_delta / fq_resolution
+
+        return samples_per_nm
+
+    @staticmethod
+    def calc_band_model(samples_per_nm: int, wavelength: float):
+        delta_nm = 1 / float(samples_per_nm)
+        delta_freq = 10**7 / wavelength - 10**7 / (
+            wavelength + delta_nm
+        )  # do unit conversion
+
+        if delta_freq > 15:
+            return "15_2013"
+        elif delta_freq > 5:
+            return "05_2013"
+        elif delta_freq > 1:
+            return "01_2013"
+        elif delta_freq > 0.1:
+            return "p1_2013"
+        else:
+            raise ValueError(f"Unsupported resolution: {delta_freq}")
 
     @staticmethod
     def parseTokens(tokens: list, coszen: float) -> dict:
@@ -85,6 +125,7 @@ class ModtranRT(BaseAtmosphere, Writer):
             'transm_down_dif'    : tokens[21] + tokens[22],  # total transmittance (down * up, direct + diffuse)
             'sphalb'             : tokens[23],  # atmospheric spherical albedo
             'transm_up_dir'      : tokens[24],  # upward direct transmittance
+            'albedo'             : np.round(1-tokens[25], 3)
         }
         # fmt: on
 
@@ -108,7 +149,7 @@ class ModtranRT(BaseAtmosphere, Writer):
 
         return [float(match) for match in re.findall(r"(\d\S*)", line)]
 
-    def load_chn(self, file: str, coszen: float, header: int = 5) -> dict:
+    def load_chn(self, file: str, coszen: float, header: int = 4) -> dict:
         """
         Parses a MODTRAN channel file and extracts relevant data
 
@@ -126,56 +167,259 @@ class ModtranRT(BaseAtmosphere, Writer):
         chn: dict
             Channel data
         """
+
         with open(file, "r") as f:
             lines = f.readlines()
 
-        data = [lines[header:]]
-
-        # Determine if this is a multipart transmittance file, break if so
-        L = len(lines)
-        for N in range(2, 4):  # Currently support 1, 2, and 3 part transmittance files
-            # Length of each part
-            n = int(L / N)
-
-            # Check if the first line of the next part is the same
-            if lines[1] == lines[n + 1]:
-                Logger.debug(f"Channel file discovered to be {N} parts: {file}")
-
-                # Parse the lines into N many parts
-                data = []
-                for i in range(N):
-                    j = i + 1
-                    data.append(lines[n * i : n * j][header:])
-
-                # No need to check other N sizes
-                break
-        else:
-            Logger.warning(
-                "Channel file detected to be a single transmittance, support for this will be dropped in a future version."
-                + " Please start using 2 or 3 multipart transmittance files."
+        # Read each block of data
+        header_pattern = "1ST SPECTRAL"
+        header_indices = [i for i, line in enumerate(lines) if header_pattern in line]
+        data = []
+        for idx, start_idx in enumerate(header_indices):
+            end_idx = (
+                header_indices[idx + 1] if idx + 1 < len(header_indices) else len(lines)
             )
+            block = lines[start_idx + header : end_idx]
+            data.append(block)
 
-        parts = []
-        for part, lines in enumerate(data):
-            parsed = [self.parseTokens(self.parseLine(line), coszen) for line in lines]
+        # Parse every block into a dictionary of numpy arrays
+        parsed_blocks = []
+        for lines in data:
+            parsed = [
+                self.parseTokens(self.parseLine(line), coszen)
+                for line in lines
+                if line.strip()
+            ]
 
-            # Convert from: [{k1: v11, k2: v21}, {k1: v12, k2: v22}]
-            #           to: {k1: [v11, v22], k2: [v21, v22]} - as numpy arrays
             combined = {}
             for i, parse in enumerate(parsed):
                 for key, value in parse.items():
                     values = combined.setdefault(key, np.full(len(parsed), np.nan))
                     values[i] = value
 
-            parts.append(combined)
+            combined["mean_albedo"] = np.mean(combined["albedo"])
+            parsed_blocks.append(combined)
 
-        # Single transmittance files will be the first dict in the list, otherwise multiparts use two_albedo_method
-        chn = parts[0]
-        if len(parts) > 1:
-            Logger.debug("Using two albedo method")
-            chn = self.two_albedo_method(*parts, coszen, *self.albedos[1:])
+        # Loop over all possible albedos and merge band models if needed
+        # NOTE excluding zero case here
+        parts = []
+        for a in self.albedos[1:]:
+
+            # Matching the albedo to a small tolerance, generally just need to determine if we
+            # are a 0.1 or a 0.5 albedo so this atol=0.01 should be sufficent.
+            matching_blocks = [
+                b for b in parsed_blocks if np.isclose(b["mean_albedo"], a, atol=0.01)
+            ]
+
+            # For the case with only zero albedo
+            if not matching_blocks:
+                continue
+
+            product_names = [k for k in matching_blocks[0].keys() if k != "mean_albedo"]
+
+            # This assumes the lower wavelength region comes first when sorting the blocks.
+            # This is true for the CHN outputs and is how we write the input in json.
+            merged = {}
+            for prod in product_names:
+                merged[prod] = np.hstack([b[prod] for b in matching_blocks])
+
+            # Only apply the sorting if we need to do so,
+            if len(matching_blocks) > 1:
+                order1 = np.argsort(merged["wl"])
+                order2 = np.unique(merged["wl"][order1], return_index=True)[1]
+
+                # Then finally, apply the sorting logic to each product
+                ref_shape = merged["wl"].shape
+                for prod in product_names:
+                    if (
+                        isinstance(merged[prod], np.ndarray)
+                        and merged[prod].shape == ref_shape
+                    ):
+                        merged[prod] = merged[prod][order1][order2]
+
+            parts.append(merged)
+
+        # TODO do we still want to support single transmittance MODTRAN runs?
+        if not parts:
+            chn = parsed_blocks[0]
+        else:
+            chn = parts[0]
+            if len(parts) > 1:
+                Logger.debug("Using two albedo method")
+                chn = self.two_albedo_method(
+                    case_0=parts[0],
+                    case_1=parts[0],
+                    case_2=parts[1],
+                    coszen=coszen,
+                    rfl_1=self.albedos[1],
+                    rfl_2=self.albedos[2],
+                )
 
         return chn
+
+    def load_tp7(
+        self, file_path: str, num_albedos: int, num_models: int, coszen: float
+    ):
+        """Read a MODTRAN TP7 file and return the data as a dictionary, one entry
+        for each case in the file.  Don't do anything but read the data; all the data.
+
+        Parameters
+        ----------
+        file_path: str
+            Path to the MODTRAN TP7 file
+        num_albedos: int
+            Number of unique albedos
+        num_models: int
+            Number of models per albedo
+        coszen: float
+            cosine of the solar zenith angle (TOA)
+
+        Returns
+        -------
+        dict
+            Cases dictionary reordered by model then albedo.
+        """
+        with open(file_path) as f:
+            lines = f.readlines()
+
+        case_indices = [i for i, line in enumerate(lines) if "case index" in line]
+        end_indices = [i for i, line in enumerate(lines) if line.strip() == "}"]
+
+        # Go through and grab cases in way saved from MODTRAN
+        cases_data_raw = {}
+        for case_num, (start, end) in enumerate(zip(case_indices, end_indices)):
+            col1 = lines[start + 4].strip().split(",")
+            col2 = lines[start + 5].strip().split(",")
+            columns = [f"{n1.strip()} {n2.strip()}" for n1, n2 in zip(col1, col2)]
+
+            data_lines = lines[start + 6 : end]
+            cases_data_raw[case_num] = np.genfromtxt(
+                data_lines, delimiter=",", names=columns
+            )
+
+        # Get the albedos based on emiss and sort them
+        cases_list = list(cases_data_raw.values())
+        all_direct_emiss = np.array(
+            [
+                (
+                    case["direct_emiss"][0]
+                    if case["direct_emiss"].ndim > 0
+                    else case["direct_emiss"]
+                )
+                for case in cases_list
+            ]
+        )
+        all_albedos = np.round(1 - all_direct_emiss, 3)
+        sorted_indices = np.argsort(all_albedos)
+        cases_list = [cases_list[i] for i in sorted_indices]
+
+        # Raise exception of input is wrong or something else mysterious is happening in MODTRAN
+        if len(cases_list) != num_albedos * num_models:
+            raise ValueError(
+                f"Cases length ({len(cases_list)})!= num_albedos ({num_albedos}) * num_models ({num_models})"
+            )
+
+        # Albedo groups by band model which can be organized by freq
+        albedo_groups = [
+            sorted(
+                cases_list[i * num_models : (i + 1) * num_models],
+                key=lambda c: c["Freq_cm1"].min(),
+            )
+            for i in range(num_albedos)
+        ]
+
+        # Reorder: model-major, then albedo-minor, matching the merge multi band method
+        cases_data = {
+            m * num_albedos + a: albedo_groups[a][m]
+            for m in range(num_models)
+            for a in range(num_albedos)
+        }
+        product_names = cases_data[0].dtype.names
+
+        # Merge between albedo and case cases
+        merged_dicts = [{} for _ in range(num_albedos)]
+        for _m in range(len(merged_dicts)):
+            for product in product_names:
+                merged_dicts[_m][product] = []
+        case_count = 0
+        for _n in range(num_models):
+            for _a in range(num_albedos):
+                for product in product_names:
+                    merged_dicts[_a][product].append(cases_data[case_count][product])
+                case_count += 1
+
+        # Stack
+        for _m in range(len(merged_dicts)):
+            for product in product_names:
+                merged_dicts[_m][product] = np.hstack(merged_dicts[_m][product])
+
+        # Translate units, convert to wavelength, and sort
+        for _m in range(len(merged_dicts)):
+            merged_dicts[_m]["wl"] = 10**7 / merged_dicts[_m]["Freq_cm1"]
+            # lowest frequency should have the highest resolution models
+            # sort and de-dup
+            order1 = np.argsort(merged_dicts[_m]["Freq_cm1"])
+            order2 = np.unique(merged_dicts[_m]["Freq_cm1"][order1], return_index=True)[
+                1
+            ]
+            for product in product_names:
+                if product in [
+                    "grnd_rflt",
+                    "drct_rflt",
+                    "total_rad",
+                    "path_multiple_scat",
+                    "sing_scat",
+                    "ToA_irrad",
+                ]:
+                    merged_dicts[_m][product] = modtran_rdn_in_nm(
+                        merged_dicts[_m][product], merged_dicts[_m]["Freq_cm1"]
+                    )[order1][order2]
+                elif product != "Freq_cm1":
+                    merged_dicts[_m][product] = merged_dicts[_m][product][order1][
+                        order2
+                    ]
+            merged_dicts[_m]["wl"] = merged_dicts[_m]["wl"][order1][order2]
+
+        # Convert to what the rest of ISOFIT is going to expect
+        case_output_dict = {}
+        for _i, indict in enumerate(merged_dicts):
+            output_dict = {}
+            output_dict["solar_irr"] = indict["ToA_irrad"] * 1e6
+            output_dict["wl"] = indict["wl"]
+            output_dict["transm_up_dir"] = np.exp(-1 * indict["_nat_log_path_trans"])
+            output_dict["drct_rflt"] = indict["drct_rflt"] * 1e6
+            output_dict["grnd_rflt"] = indict["grnd_rflt"] * 1e6
+            output_dict["path_rdn"] = (
+                indict["sing_scat"] + indict["path_multiple_scat"]
+            ) * 1e6
+            output_dict["width"] = 1  # We're in line reads
+            output_dict["rhoatm"] = output_dict["path_rdn"] / output_dict["solar_irr"]
+
+            # The first of these is a guess - not validated.  The second is a placeholder
+            output_dict["thermal_upwelling"] = indict["surface_emission"] * 1e6
+            output_dict["thermal_downwelling"] = np.zeros_like(
+                indict["surface_emission"]
+            )
+
+            case_output_dict[_i] = output_dict
+
+            # Only need to run two_albedo method if we have multiple cases
+            # still at this point.  Note that at this time, merge_multiresolution_cases
+            # is set up to NEED to run through two_albedo_method, but this might
+            # not always be the case.
+            if len(case_output_dict) == 2:
+                params = self.two_albedo_method(
+                    case_0=case_output_dict[
+                        0
+                    ],  # TODO double check we don't actually use the zero case
+                    case_1=case_output_dict[0],
+                    case_2=case_output_dict[1],
+                    coszen=coszen,
+                    rfl_1=self.albedos[1],
+                    rfl_2=self.albedos[2],
+                )
+
+        return params
 
     @staticmethod
     def load_tp6(file):
@@ -255,6 +499,74 @@ class ModtranRT(BaseAtmosphere, Writer):
             self.aer_extc = np.array(aer_extc)
             self.aer_asym = np.array(aer_asym)
 
+        # Figure out wavelength grid to run on
+        # always run wavelength modeles from fine to coarse spectral resolution,
+        # so that for duplicates we take the finer resolution case
+        samples_wl_grid = np.arange(
+            int(np.floor(np.min(self.wl))), int(np.ceil((np.max(self.wl)))) + 1
+        )
+        samples_per_res = [
+            self.samples_per_nm(samples_wl_grid, res)
+            for res in self.resolutions_available
+        ]
+
+        self.simulation_wavelength_regions = []
+        self.wavelength_models = []
+        for _s in range(len(samples_per_res)):
+            wl_range = samples_wl_grid[
+                np.logical_and(
+                    samples_per_res[_s] >= self.min_samples_per_nm,
+                    samples_per_res[_s] <= self.max_samples_per_nm,
+                )
+            ]
+            if len(wl_range) > 0:
+                wl_range = [np.min(wl_range), np.max(wl_range)]
+                self.simulation_wavelength_regions.append(wl_range)
+                self.wavelength_models.append(self.resolution_names[_s])
+
+        if len(self.simulation_wavelength_regions) == 0:
+            raise ValueError(
+                "No valid wavelength regions found for simulation. Adjust min or max samples per nm."
+            )
+
+        # If we have a coarser model that fully encapsulates a finer model,
+        # discarde the finer model
+        if len(self.simulation_wavelength_regions) >= 2:
+            for i in range(len(self.simulation_wavelength_regions) - 1, -1, -1):
+                if (
+                    self.simulation_wavelength_regions[i][0]
+                    >= self.simulation_wavelength_regions[i - 1][0]
+                    and self.simulation_wavelength_regions[i][1]
+                    <= self.simulation_wavelength_regions[i - 1][1]
+                ):
+                    self.simulation_wavelength_regions.pop(i)
+
+        # Don't overlap by more than 1 index of wl spacing,
+        # and prioritize coarser resolution models for comp when we can:
+        if len(self.simulation_wavelength_regions) >= 2:
+            for i in range(len(self.simulation_wavelength_regions) - 2, -1, -1):
+                overlap = int(np.ceil(np.mean(np.diff(self.wl))))
+                self.simulation_wavelength_regions[i][0] = (
+                    self.simulation_wavelength_regions[i + 1][1] - overlap
+                )
+
+        if self.simulation_wavelength_regions[-1][0] > np.min(self.wl) - self.fwhm[0]:
+            self.simulation_wavelength_regions[-1][0] = np.min(self.wl) - self.fwhm[0]
+            logging.info(
+                "Adjusted first wavelength region to start at the minimum wavelength."
+            )
+        if self.simulation_wavelength_regions[0][-1] < np.max(self.wl) + self.fwhm[-1]:
+            self.simulation_wavelength_regions[0][-1] = np.max(self.wl) + self.fwhm[-1]
+            logging.info(
+                "Adjusted last wavelength region to end at the maximum wavelength."
+            )
+
+        for _s in range(len(self.simulation_wavelength_regions)):
+            _r = [float(x) for x in self.simulation_wavelength_regions[_s]]
+            logging.info(
+                f"Using MODTRAN band model {self.wavelength_models[_s]} in simulation wavelength region: {_r}"
+            )
+
     def readSim(self, point):
         """
         For a given point, parses the tp6 and chn file and returns the data
@@ -263,7 +575,15 @@ class ModtranRT(BaseAtmosphere, Writer):
 
         solzen = self.load_tp6(f"{file}.tp6")
         coszen = np.cos(np.deg2rad(solzen))
-        params = self.load_chn(f"{file}.chn", coszen)
+        if os.path.isfile(f"{file}.csv"):
+            params = self.load_tp7(
+                file_path=f"{file}.csv",
+                num_albedos=len(self.albedos[1:]),
+                num_models=len(self.simulation_wavelength_regions),
+                coszen=coszen,
+            )
+        else:
+            params = self.load_chn(file=f"{file}.chn", coszen=coszen)
         params["solzen"] = solzen
         params["coszen"] = coszen
 
@@ -294,6 +614,7 @@ class ModtranRT(BaseAtmosphere, Writer):
         vals["DISALB"] = True
         vals["NAME"] = filename_base
         vals["FILTNM"] = os.path.normpath(self.filtpath)
+        vals["CSVPRNT"] = filename_base + ".csv"
 
         # Translate to the MODTRAN OBSZEN convention, assumes we are downlooking
         if "OBSZEN" in vals and vals.get("OBSZEN") < 90:
@@ -381,9 +702,6 @@ class ModtranRT(BaseAtmosphere, Writer):
             elif key in ["EXT550", "AOT550", "AOD550"]:
                 # MODTRAN 6.0 convention treats negative visibility as AOT550
                 recursive_replace(param, "VIS", -val)
-
-            elif key == "FILTNM":
-                param[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = val
 
             elif key == "FILTNM":
                 param[0]["MODTRANINPUT"]["SPECTRAL"]["FILTNM"] = val
@@ -541,6 +859,8 @@ class ModtranRT(BaseAtmosphere, Writer):
                 recursive_replace(param, key, val)
             elif key in param[0]["MODTRANINPUT"]["ATMOSPHERE"].keys():
                 recursive_replace(param, key, val)
+            elif key in param[0]["MODTRANINPUT"]["FILEOPTIONS"].keys():
+                recursive_replace(param, key, val)
             else:
                 raise AttributeError(
                     "Unsupported MODTRAN parameter {} specified".format(key)
@@ -566,27 +886,49 @@ class ModtranRT(BaseAtmosphere, Writer):
             lvl0["ABSC"] = [float(v) / total_extc550 for v in total_absc]
 
         if self.multipart_transmittance:
-            # TODO: move setting of multipart rfl values to config
-            const_rfl = np.array(np.array(self.albedos) * 100, dtype=int)
-            # Here we copy the original config and just change the surface reflectance
-            param[0]["MODTRANINPUT"]["CASE"] = 0
-            param[0]["MODTRANINPUT"]["SURFACE"]["SURFP"][
-                "CSALB"
-            ] = f"LAMB_CONST_{const_rfl[0]}_PCT"
-            param1 = deepcopy(param[0])
-            param1["MODTRANINPUT"]["CASE"] = 1
-            param1["MODTRANINPUT"]["SURFACE"]["SURFP"][
-                "CSALB"
-            ] = f"LAMB_CONST_{const_rfl[1]}_PCT"
-            param.append(param1)
-            param2 = deepcopy(param[0])
-            param2["MODTRANINPUT"]["CASE"] = 2
-            param2["MODTRANINPUT"]["SURFACE"]["SURFP"][
-                "CSALB"
-            ] = f"LAMB_CONST_{const_rfl[2]}_PCT"
-            param.append(param2)
+            case_count = 0
+            # Ignoring the zero albedo case because it is unused in 2-albedo method
+            for albedo in self.albedos[1:]:
+                for band_name, wvl_set in zip(
+                    self.wavelength_models, self.simulation_wavelength_regions
+                ):
+                    case_param = deepcopy(param[0])
+                    case_param["MODTRANINPUT"]["CASE"] = case_count
+                    case_param["MODTRANINPUT"]["SURFACE"]["SURREF"] = albedo
+                    case_param["MODTRANINPUT"]["SPECTRAL"]["V1"] = wvl_set[0]
+                    case_param["MODTRANINPUT"]["SPECTRAL"]["V2"] = wvl_set[1]
+                    case_param["MODTRANINPUT"]["SPECTRAL"]["BMNAME"] = band_name
 
-        return json.dumps({"MODTRAN": param}), param
+                    # We don't need a .chn file if we're writing a tp7!
+                    # Delete it. And set the DV and FWHM parameters to something
+                    # arbitrarily high
+                    if self.use_tp7:
+                        if "FILTNM" in case_param["MODTRANINPUT"]["SPECTRAL"]:
+                            del case_param["MODTRANINPUT"]["SPECTRAL"]["FILTNM"]
+
+                        for dp in ["DV", "FWHM"]:
+                            if dp in case_param["MODTRANINPUT"]["SPECTRAL"]:
+                                case_param["MODTRANINPUT"]["SPECTRAL"][dp] = (
+                                    1.0 / self.min_samples_per_nm
+                                ) * 2.0
+
+                    # else we need to make sure not to write the csv file
+                    else:
+                        if "NOFILE" in case_param["MODTRANINPUT"]["FILEOPTIONS"]:
+                            del case_param["MODTRANINPUT"]["FILEOPTIONS"]["NOFILE"]
+
+                        if "CSVPRNT" in case_param["MODTRANINPUT"]["FILEOPTIONS"]:
+                            del case_param["MODTRANINPUT"]["FILEOPTIONS"]["CSVPRNT"]
+
+                        case_param["MODTRANINPUT"]["FILEOPTIONS"]["CKPRNT"] = True
+
+                    if case_count == 0:
+                        param[0] = case_param
+                    else:
+                        param.append(case_param)
+                    case_count += 1
+
+        return json.dumps({"MODTRAN": param}, cls=SerialEncoder, indent=2), param
 
     def required_results_exist(self, filename_base):
         infilename = os.path.join(self.sim_path, "LUT_" + filename_base + ".json")
@@ -629,3 +971,15 @@ class ModtranRT(BaseAtmosphere, Writer):
 
                 for w, v, wn in zip(ws, vs, wns):
                     fout.write(" %9.4f %9.7f %9.2f\n" % (w, v, wn))
+
+
+class SerialEncoder(json.JSONEncoder):
+    """Encoder for json to help ensure json objects can be passed to the workflow manager."""
+
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        else:
+            return super(SerialEncoder, self).default(obj)
