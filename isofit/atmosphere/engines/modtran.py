@@ -541,11 +541,13 @@ class ModtranRT(BaseAtmosphere, Writer):
                 ):
                     self.simulation_wavelength_regions.pop(i)
 
-        # Don't overlap by more than 1 nm, and prioritize coarser resolution models for comp when we can:
+        # Don't overlap by more than 1 index of wl spacing,
+        # and prioritize coarser resolution models for comp when we can:
         if len(self.simulation_wavelength_regions) >= 2:
             for i in range(len(self.simulation_wavelength_regions) - 2, -1, -1):
+                overlap = int(np.ceil(np.mean(np.diff(self.wl))))
                 self.simulation_wavelength_regions[i][0] = (
-                    self.simulation_wavelength_regions[i + 1][1] - 1
+                    self.simulation_wavelength_regions[i + 1][1] - overlap
                 )
 
         if self.simulation_wavelength_regions[-1][0] > np.min(self.wl) - self.fwhm[0]:
