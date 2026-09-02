@@ -49,6 +49,9 @@ class Geometry:
             bg_rfl: Background reflectance spectrum.
             svf: Sky view factor.
             coszen: Cosine of the solar zenith angle for top of atmosphere.
+            cos_i_bg: Cosine of the local solar zenith angle averaged over adjacency range.
+            skyview_factor_bg: Skyview factor averaged over adjacency range.
+            slope_bg: Terrain slope averaged over adjacency range.
             full_config: isofit config.
         """
         # Set some benign defaults...
