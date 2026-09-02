@@ -96,6 +96,9 @@ class SurfaceConfig(BaseConfigSection):
         self._wavelength_file_type = str
         self.wavelength_file = None
 
+        self._surface_lut_file_type = str
+        self.surface_lut_file = None
+
         self._select_on_init_type = bool
         self.select_on_init = True
         """bool: This field, if present and set to true, forces us to use any initialization state and never change.
@@ -207,10 +210,14 @@ class SurfaceConfig(BaseConfigSection):
             model_dict = loadmat(f)
             for i, name in enumerate(model_dict.get("statevec_names", [])):
                 for key in DefaultState._fields:
-                    if not (
-                        np.all(statevec[name][key] == model_dict[key].squeeze()[i])
-                    ):
-                        mismatch[key] = name
+                    if len(model_dict.get("statevec_names", [])) == 1:
+                        if not (np.all(statevec[name][key] == model_dict[key][i])):
+                            mismatch[key] = name
+                    else:
+                        if not (
+                            np.all(statevec[name][key] == model_dict[key].squeeze()[i])
+                        ):
+                            mismatch[key] = name
 
         if len(mismatch):
             message = (
