@@ -264,6 +264,7 @@ def process_background_data(
             "lines": rows,
             "samples": cols,
             "interleave": "bip",
+            "band names": bands,
         },
         outpath=paths.bgtopo_working_path,
         out_shape=(rows, cols, len(bands)),
