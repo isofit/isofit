@@ -39,9 +39,9 @@ def heuristic_atmosphere(
     x_instrument: np.array,
     meas: np.array,
     geom: Geometry,
-    wl_lo: int = 865,
-    wl_center: int = 945,
-    wl_hi: int = 1040,
+    wl_lo: int = 885,
+    wl_center: int = 940,
+    wl_hi: int = 995,
 ):
     """From a given radiance, estimate atmospheric state with band ratios.
     Used to initialize gradient descent inversions.
@@ -350,6 +350,9 @@ def invert_analytical(
         x[fm.idx_surface] = x_surface
         trajectory[n + 1, :] = x
 
+    A = np.eye(C_rcond.shape[0]) - (C_rcond @ Sa_inv)
+    n = len(fm.idx_atmosphere) + len(fm.idx_instrument)
+    A = np.pad(A, (0, n), mode="constant", constant_values=-9999.0)
     if diag_uncert:
         if len(C_rcond):
             full_unc = np.ones(len(x))
@@ -358,9 +361,9 @@ def invert_analytical(
             full_unc = np.ones(len(x))
             full_unc[iv_idx] = [-9999 for i in x[iv_idx]]
 
-        return trajectory, full_unc
+        return trajectory, full_unc, A
     else:
-        return trajectory, C_rcond
+        return trajectory, C_rcond, A
 
 
 def invert_simple(fm: ForwardModel, meas: np.array, geom: Geometry):

@@ -30,8 +30,8 @@ from isofit.utils import (
     reducers,
     segment,
 )
-from isofit.utils.skyview import skyview
 from isofit.utils.adjacency import background_reflectance
+from isofit.utils.skyview import skyview
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -115,6 +115,7 @@ def apply_oe(
     eof_path=None,
     terrain_style="dem",
     per_pixel_heuristic_prior=False,
+    output_averaging_kernel=False,
 ):
     """
     Applies OE over a flightline using an atmospheric radiative transfer engine. This executes
@@ -445,6 +446,7 @@ def apply_oe(
         use_background_rfl=use_background_rfl,
         dn_uncertainty_file=dn_uncertainty_file,
         eof_path=eof_path,
+        output_averaging_kernel=output_averaging_kernel,
     )
     paths.make_directories()
     paths.stage_files()
@@ -894,7 +896,7 @@ def apply_oe(
                     log_file=log_file,
                     n_cores=n_cores,
                 )
-                remove_bgrfl_file = True
+                remove_bgrfl_file = False
 
         if config_only:
             logging.info("`config_only` enabled, exiting early")
@@ -950,6 +952,7 @@ def apply_oe(
                 working_directory,
                 output_rfl_file=paths.rfl_working_path,
                 output_unc_file=paths.uncert_working_path,
+                output_dof_file=paths.degrees_of_freedom_path,
                 skyview_factor_file=paths.svf_working_path,
                 bgrfl_file=paths.bgrfl_working_path,
                 loglevel=logging_level,
@@ -1028,6 +1031,7 @@ def apply_oe(
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
 @click.option("--per_pixel_heuristic_prior", is_flag=True, default=False)
+@click.option("--output_averaging_kernel", is_flag=True, default=False)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

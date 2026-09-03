@@ -83,7 +83,14 @@ class Isofit:
         self.config.get_config_errors()
 
         # Construct and track the full statevector (all surfaces)
-        self.full_statevector, *_ = construct_full_state(deepcopy(self.config))
+        (
+            self.full_statevector,
+            self.full_idx_surface,
+            self.full_idx_surf_rfl,
+            self.full_idx_surf_nonrfl,
+            self.full_idx_rt,
+            self.full_idx_instrument,
+        ) = construct_full_state(deepcopy(self.config))
 
         # Initialize ray for parallel execution
         rayargs = {
@@ -135,7 +142,13 @@ class Isofit:
 
         # Initialize files in __init__, otherwise workers fail
         IO.initialize_output_files(
-            self.config, rdn.n_rows, rdn.n_cols, self.full_statevector
+            self.config,
+            rdn.n_rows,
+            rdn.n_cols,
+            self.full_statevector,
+            self.full_idx_surf_nonrfl,
+            self.full_idx_rt,
+            self.full_idx_instrument,
         )
         del rdn
 
@@ -228,6 +241,9 @@ class Isofit:
                     self.loglevel,
                     self.logfile,
                     self.full_statevector,
+                    self.full_idx_surf_nonrfl,
+                    self.full_idx_rt,
+                    self.full_idx_instrument,
                     len(class_idx_pairs),
                     n_workers,
                 ]
@@ -290,6 +306,9 @@ class Worker(object):
         loglevel: str,
         logfile: str,
         full_statevector: np.array = [],
+        full_idx_surf_nonrfl: np.array = [],
+        full_idx_atmosphere: np.array = [],
+        full_idx_instrument: np.array = [],
         total_samples: int = 1,
         total_workers: int = 1,
         worker_id: int = None,
@@ -319,7 +338,14 @@ class Worker(object):
         self.config = config
         self.fm = forward_model
         self.iv = Inversion(self.config, self.fm)
-        self.io = IO(self.config, self.fm, full_statevec=full_statevector)
+        self.io = IO(
+            self.config,
+            self.fm,
+            full_statevec=full_statevector,
+            full_idx_surf_nonrfl=full_idx_surf_nonrfl,
+            full_idx_atmosphere=full_idx_atmosphere,
+            full_idx_instrument=full_idx_instrument,
+        )
 
         self.total_samples = None
         if total_workers is not None:

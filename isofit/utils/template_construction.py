@@ -58,6 +58,7 @@ class Pathnames:
         use_background_rfl: bool = False,
         dn_uncertainty_file: str = None,
         eof_path=None,
+        output_averaging_kernel: bool = False,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -119,6 +120,23 @@ class Pathnames:
         self.uncert_working_path = abspath(
             join(self.output_directory, rdn_fname.replace("_rdn", "_uncert"))
         )
+        if output_averaging_kernel:
+            self.averaging_kernel_working_path = abspath(
+                join(
+                    self.output_directory,
+                    rdn_fname.replace("_rdn", "_averaging_kernel.zarr"),
+                )
+            )
+            self.degrees_of_freedom_path = abspath(
+                join(
+                    self.output_directory,
+                    rdn_fname.replace("_rdn", "_dof"),
+                )
+            )
+        else:
+            self.averaging_kernel_working_path = ""
+            self.degrees_of_freedom_path = ""
+
         self.lbl_working_path = abspath(
             join(self.output_directory, rdn_fname.replace("_rdn", "_lbl"))
         )
@@ -260,6 +278,14 @@ class Pathnames:
         self.uncert_subs_path = abspath(
             join(self.output_directory, self.fid + "_subs_uncert")
         )
+
+        if output_averaging_kernel:
+            self.averaging_kernel_subs_path = abspath(
+                join(self.output_directory, self.fid + "_subs_averaging_kernel.zarr")
+            )
+        else:
+            self.averaging_kernel_subs_path = ""
+
         self.h2o_subs_path = abspath(
             join(self.output_directory, self.fid + "_subs_h2o")
         )
@@ -766,12 +792,14 @@ def build_config(
         if presolve:
             state_output_path = paths.h2o_subs_path
             posterior_output_path = None
+            averaging_kernel_output_path = None
             rfl_output_path = None
             bgrfl_input_path = None
 
         else:
             state_output_path = paths.state_subs_path
             posterior_output_path = paths.uncert_subs_path
+            averaging_kernel_output_path = paths.averaging_kernel_subs_path
             rfl_output_path = paths.rfl_subs_path
             bgrfl_input_path = paths.bgrfl_subs_path
 
@@ -784,11 +812,13 @@ def build_config(
         if presolve:
             state_output_path = paths.h2o_working_path
             posterior_output_path = None
+            averaging_kernel_output_path = None
             rfl_output_path = None
             bgrfl_input_path = None
         else:
             state_output_path = paths.state_working_path
             posterior_output_path = paths.uncert_working_path
+            averaging_kernel_output_path = paths.averaging_kernel_working_path
             rfl_output_path = paths.rfl_working_path
             bgrfl_input_path = paths.bgrfl_working_path
 
@@ -803,6 +833,7 @@ def build_config(
     output_config = make_output_config(
         state_output_path=state_output_path,
         posterior_output_path=posterior_output_path,
+        averaging_kernel_output_path=averaging_kernel_output_path,
         rfl_output_path=rfl_output_path,
     )
 
@@ -905,7 +936,8 @@ def get_aerosol_initial_value(range_min: float, range_max: float) -> float:
     Returns:
         float: the initial/interpolation value (min + 10% of range)
     """
-    return (range_max - range_min) / 10.0 + range_min
+    return 0.05
+    # return (range_max - range_min) / 10.0 + range_min
 
 
 def get_lut_subset(vals):
@@ -1990,12 +2022,15 @@ def make_input_config(
 def make_output_config(
     state_output_path: str,
     posterior_output_path: str = None,
+    averaging_kernel_output_path: str = None,
     rfl_output_path: str = None,
 ):
     output_config = {}
     output_config["estimated_state_file"] = state_output_path
     if posterior_output_path:
         output_config["posterior_uncertainty_file"] = posterior_output_path
+    if averaging_kernel_output_path:
+        output_config["averaging_kernel_file"] = averaging_kernel_output_path
     if rfl_output_path:
         output_config["estimated_reflectance_file"] = rfl_output_path
 

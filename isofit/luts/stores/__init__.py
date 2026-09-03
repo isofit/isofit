@@ -65,7 +65,7 @@ class Create:
         onedim: dict = {},
         alldim: dict = {},
         zeros: List[str] = [],
-        chunks: List[int] | str = "auto",
+        chunks: List[int] = [],
         init: bool = True,
         **kwargs,
     ):
@@ -124,7 +124,7 @@ class Create:
         self.alldim = {**keys.alldim, **alldim}
 
         self.chunks = chunks
-        if chunks == "auto":
+        if not len(chunks):
             self.chunks = [len(self.wl)] + [1] * len(grid)
 
         if init:
