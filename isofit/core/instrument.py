@@ -67,10 +67,6 @@ class Instrument:
         self.prior_mean = np.array(config.statevector.get_all_prior_means())
         self.prior_sigma = np.array(config.statevector.get_all_prior_sigmas())
         self.Sa_cached = np.diagflat(np.power(self.prior_sigma, 2))
-       #self.Sa_normalized = self.Sa_cached / np.mean(np.diag(self.Sa_cached))
-       #self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
-       #    self.Sa_normalized
-       #)
         self.statevec_names = config.statevector.get_element_names()
 
         self.integrations = config.integrations
@@ -91,12 +87,17 @@ class Instrument:
             self.rcc_prior_mean = np.squeeze(D["mean"])
             self.rcc_idx = []
             self.prior_mean = np.append(self.prior_mean, self.rcc_prior_mean)
-            self.prior_sigma = block_diag(self.Sa_cached, self.rcc_prior_cov)
-            for i in len(self.prior_mean):
-                self.rcc_idx.append(len(statevec_names))
+            self.prior_sigma = np.append(self.prior_sigma, np.sqrt(np.diag(self.rcc_prior_cov)))
+            for i in range(len(self.prior_mean)):
+                self.rcc_idx.append(len(self.statevec_names))
                 self.statevec_names.append('RCC_%03i'%i)
+                self.scale.append(1)
+                self.bounds.append([0.1,10])
+                self.init.append(self.rcc_prior_mean[i])
+            self.Sa_cached = block_diag(self.Sa_cached, self.rcc_prior_cov)
         else:
-            self.rcc_prior = None
+            self.rcc_prior_mean = None
+            self.rcc_prior_cov = None
             self.rcc_idx = []
 
         self.n_state = len(self.statevec_names)
@@ -221,6 +222,12 @@ class Instrument:
             or config.statevector.WL_SPACE is not None
         ):
             self.calibration_fixed = False
+
+        # Finally, cache the Sa matrix inverse
+        self.Sa_normalized = self.Sa_cached / np.mean(np.diag(self.Sa_cached))
+        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
+            self.Sa_normalized
+        )
 
     def xa(self):
         """Mean of prior distribution, calculated at state x."""
@@ -401,7 +408,7 @@ class Instrument:
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
 
         rcc = np.ones_like(self.wl_init)
-        if self.rcc_prior is not None:
+        if self.rcc_prior_mean is not None:
             rcc = x_instrument[self.rcc_idx]
             
         if (
