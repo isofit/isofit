@@ -154,6 +154,14 @@ class InstrumentConfig(BaseConfigSection):
         self.eof_path = None
         """str: Path to an Empirial Orthogonal Function (EOF) file with one row per instrument channel."""
 
+        self._rcc_prior_file_type = str
+        self.rcc_prior_file = None
+        """str: Indicates a .mat file containing a mean vector "mean" 
+        and a covariance matrix "cov" represetnting  a prior over 
+        Radiometric Calibration Coefficients (RCCs) that scale the 
+        measured spectrum.  There is one RCC element for each measured 
+        channel. If not specified, these values are assumed to be unity."""
+
         self.set_config_options(sub_configdic)
 
         # If necessary, initialize some blank options
