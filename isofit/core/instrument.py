@@ -25,6 +25,7 @@ import numpy as np
 from scipy.interpolate import interp1d, splev, splrep
 from scipy.io import loadmat
 from scipy.signal import convolve
+from scipy.linalg import block_diag
 
 from isofit.core import units
 from isofit.core.common import (
@@ -66,12 +67,11 @@ class Instrument:
         self.prior_mean = np.array(config.statevector.get_all_prior_means())
         self.prior_sigma = np.array(config.statevector.get_all_prior_sigmas())
         self.Sa_cached = np.diagflat(np.power(self.prior_sigma, 2))
-        self.Sa_normalized = self.Sa_cached / np.mean(np.diag(self.Sa_cached))
-        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
-            self.Sa_normalized
-        )
+       #self.Sa_normalized = self.Sa_cached / np.mean(np.diag(self.Sa_cached))
+       #self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
+       #    self.Sa_normalized
+       #)
         self.statevec_names = config.statevector.get_element_names()
-        self.n_state = len(self.statevec_names)
 
         self.integrations = config.integrations
 
@@ -84,6 +84,22 @@ class Instrument:
         else:
             self.eof = None
             self.eof_idx = []
+
+        if config.rcc_prior_file is not None:
+            D = loadmat(config.rcc_prior_file)
+            self.rcc_prior_cov = D["cov"]
+            self.rcc_prior_mean = np.squeeze(D["mean"])
+            self.rcc_idx = []
+            self.prior_mean = np.append(self.prior_mean, self.rcc_prior_mean)
+            self.prior_sigma = block_diag(self.Sa_cached, self.rcc_prior_cov)
+            for i in len(self.prior_mean):
+                self.rcc_idx.append(len(statevec_names))
+                self.statevec_names.append('RCC_%03i'%i)
+        else:
+            self.rcc_prior = None
+            self.rcc_idx = []
+
+        self.n_state = len(self.statevec_names)
 
         self.dn_uncertainty_embedding = None
         if (
@@ -384,23 +400,27 @@ class Instrument:
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
 
+        rcc = np.ones_like(self.wl_init)
+        if self.rcc_prior is not None:
+            rcc = x_instrument[self.rcc_idx]
+            
         if (
             self.calibration_fixed
             and (len(self.wl_init) == len(wl_hi))
             and all((self.wl_init - wl_hi) < wl_tol)
         ):
 
-            return rdn_hi
+            return rdn_hi * rcc
 
         wl, fwhm = self.calibration(x_instrument)
 
         # If rdn_hi is a vector of length 1, return itself
         if rdn_hi.ndim == 1 and len(rdn_hi) <= 1:
-            return rdn_hi
+            return rdn_hi * rcc
 
         # If rdn_hi is a vector of length > 1, return it resampled to instrument
         elif rdn_hi.ndim == 1 and len(rdn_hi) > 1:
-            return resample_spectrum(rdn_hi, wl_hi, wl, fwhm)
+            return resample_spectrum(rdn_hi, wl_hi, wl, fwhm) * rcc
 
         # If rdn_hi is a multidim array, do the multidim resampling
         else:
@@ -415,8 +435,8 @@ class Instrument:
             else:
                 for i, r in enumerate(rdn_hi):
                     r2 = resample_spectrum(r, wl_hi, wl, fwhm)
-                    resamp.append(r2)
-            return np.array(resamp)
+                    resamp.append(r2) 
+            return np.array(resamp) * rcc
 
     def simulate_measurement(self, meas, geom):
         """Simulate a measurement by the given sensor, for a true radiance
