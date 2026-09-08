@@ -1259,6 +1259,12 @@ def get_metadata_from_obs(
     del relative_azimuth
 
     # Make time calculations
+    if np.any((time[valid] < 0) | (time[valid] > 24)):
+        raise ValueError(
+            f"Bad UTC time value(s) detected in obs input file: ({obs_file}). "
+            f"Times must be within 0-24. Min: {np.min(time[valid])}, Max: {np.max(time[valid])}"
+        )
+
     mean_time = np.mean(time[valid])
     min_time = np.min(time[valid])
     max_time = np.max(time[valid])
