@@ -219,6 +219,12 @@ def process_background_data(
         rfl_samples = subs_state[:, 0, fm.idx_surf_rfl]
         bg_rfl[:, :, :] = np.squeeze(rfl_samples[labels, :])
 
+    # For nodata regions, assume the mean of the image
+    bg_rfl[np.any(bg_rfl == nodata_value, axis=-1), :] = np.nan
+    bg_rfl[:] = np.where(
+        np.isnan(bg_rfl), np.nanmean(bg_rfl, axis=(0, 1), keepdims=True), bg_rfl
+    )
+
     # For now, this applies a uniform window average based on adjacency range.
     bg_rfl[:, :, :] = uniform_filter(
         bg_rfl, size=(kernel_diameter, kernel_diameter, 1), mode=UNIFORM_FILTER_MODE
@@ -278,6 +284,12 @@ def process_background_data(
         np.squeeze(cos_i),
         np.squeeze(svf),
         np.squeeze(slope),
+    )
+
+    # For nodata regions, assume the mean of the image
+    bgtopo[np.any(bgtopo == nodata_value, axis=-1), :] = np.nan
+    bgtopo[:] = np.where(
+        np.isnan(bgtopo), np.nanmean(bgtopo, axis=(0, 1), keepdims=True), bgtopo
     )
 
     # For now, this applies a uniform window average based on adjacency range.
