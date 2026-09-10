@@ -683,21 +683,19 @@ class IO:
             # Special case for LUTSurface with several endmembers using softmax
             if fm.is_lut_surface:
                 if fm.surface.solve_mixed_pixel:
-                    idx_endmembers = np.array(fm.full_idx)[fm.surface.idx_em_rfls]
-                    f = fm.surface.softmax(state_est[idx_endmembers])
+                    surf_em_idx = fm.surface.idx_em_rfls
+                    full_em_idx = np.array(fm.full_idx)[surf_em_idx]
+                    f = fm.surface.softmax(state_est[surf_em_idx])
 
                     if "estimated_state_file" in self.output_datasets:
-                        to_write["estimated_state_file"][idx_endmembers] = f
+                        to_write["estimated_state_file"][full_em_idx] = f
 
                     if "posterior_uncertainty_file" in self.output_datasets:
-                        # Construct the Jacobian of the softmax function
+                        # Apply delta method transformation
                         J = np.diag(f) - np.outer(f, f)
-
-                        # Apply delta method transformation and write sqrt f the diag
-                        S_frac = J @ S_hat[np.ix_(idx_endmembers, idx_endmembers)] @ J.T
-
-                        to_write["posterior_uncertainty_file"][idx_endmembers] = (
-                            np.sqrt(np.diag(S_frac))
+                        S_frac = J @ S_hat[np.ix_(surf_em_idx, surf_em_idx)] @ J.T
+                        to_write["posterior_uncertainty_file"][full_em_idx] = np.sqrt(
+                            np.diag(S_frac)
                         )
 
             ############ Now proceed to the calcs where they may be some overlap
