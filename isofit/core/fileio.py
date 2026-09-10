@@ -681,22 +681,24 @@ class IO:
                 )
 
             # Special case for LUTSurface with several endmembers using softmax
-            # Transformation is valid for state, but uncertainty needs work.
-            # TODO for now this will output fill_value for uncertainty.
             if fm.is_lut_surface:
                 if fm.surface.solve_mixed_pixel:
                     idx_endmembers = np.array(fm.full_idx)[fm.surface.idx_em_rfls]
+                    f = fm.surface.softmax(state_est[idx_endmembers])
+
                     if "estimated_state_file" in self.output_datasets:
-                        s = fill_statevector(
-                            state_est, fm.full_idx, fm.full_miss, self.full_statevec
-                        )
-                        s[idx_endmembers] = fm.surface.softmax(s[idx_endmembers])
-                        to_write["estimated_state_file"] = s
+                        to_write["estimated_state_file"][idx_endmembers] = f
 
                     if "posterior_uncertainty_file" in self.output_datasets:
-                        to_write["posterior_uncertainty_file"][
-                            idx_endmembers
-                        ] = fill_value
+                        # Construct the Jacobian of the softmax function
+                        J = np.diag(f) - np.outer(f, f)
+
+                        # Apply delta method transformation and write sqrt f the diag
+                        S_frac = J @ S_hat[np.ix_(idx_endmembers, idx_endmembers)] @ J.T
+
+                        to_write["posterior_uncertainty_file"][idx_endmembers] = (
+                            np.sqrt(np.diag(S_frac))
+                        )
 
             ############ Now proceed to the calcs where they may be some overlap
 
