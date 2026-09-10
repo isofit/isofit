@@ -684,6 +684,21 @@ def find_header(imgfile: str) -> str:
     raise IOError("No header found for file {0}".format(imgfile))
 
 
+@njit(cache=True)
+def _numba_calculate_resample_matrix(
+    wl: np.ndarray, wl2: np.ndarray, fwhm2: np.ndarray
+):
+    H = np.array(
+        [
+            spectral_response_function(wl, wi, fwhmi / 2.355)
+            for wi, fwhmi in zip(wl2, fwhm2)
+        ]
+    )
+    H[np.isnan(H)] = 0
+
+    return H
+
+
 def calculate_resample_matrix(
     wl: np.array, wl2: np.array, fwhm2: np.array, srf_file: str = None
 ) -> np.array:
@@ -807,7 +822,8 @@ def load_spectrum(spectrum_file: str) -> (np.array, np.array):
         return spectrum, None
 
 
-def spectral_response_function(response_range: np.array, mu: float, sigma: float):
+@njit(cache=True)
+def spectral_response_function(response_range: np.ndarray, mu: float, sigma: float):
     """Calculate the spectral response function.
 
     Args:

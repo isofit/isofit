@@ -26,6 +26,8 @@ from isofit.configs.sections.statevector_config import (
     StateVectorElementConfig,
 )
 
+WORKING_WAVELENGTH_CAL_VARIABLES = ["GROW_FWHM", "WL_SHIFT", "WLSPL"]
+
 
 class InstrumentStateVectorConfig(StateVectorConfig):
     """
@@ -49,6 +51,9 @@ class InstrumentStateVectorConfig(StateVectorConfig):
 
         self._WL_SHIFT_type = StateVectorElementConfig
         self.WL_SHIFT: StateVectorElementConfig = None
+
+        self._PER_WL_RCC_type = StateVectorElementConfig
+        self.PER_WL_RCC: StateVectorElementConfig = None
 
         self._WL_SPACE_type = StateVectorElementConfig
         self.WL_SPACE: StateVectorElementConfig = None
