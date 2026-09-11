@@ -1378,7 +1378,7 @@ def sensor_name_to_dt(sensor: str, fid: str):
     elif sensor == "emit":
         # parse flightline ID (EMIT assumptions)
         dt = datetime.strptime(fid[:19], "emit%Y%m%dt%H%M%S")
-        INVERSION_WINDOWS = [[380.0, 1325.0], [1435, 1770.0], [1965.0, 2500.0]]
+        inversion_window_update = [[350.0, 1325.0], [1435, 1800.0], [1965.0, 2500.0]]
     elif sensor == "enmap":
         # parse flightline ID (EnMAP assumptions)
         dt = datetime.strptime(fid[:15], "%Y%m%dt%H%M%S")
