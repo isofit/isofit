@@ -161,7 +161,7 @@ def invert_algebraic(
     rho_dif_dif = (
         fm.upsample(fm.surface.wl, geom.bg_rfl)
         if isinstance(geom.bg_rfl, np.ndarray)
-        else rho_init
+        else fm.upsample(fm.surface.wl, rho_init)
     )
 
     # Get all radiance terms
