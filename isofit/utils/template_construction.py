@@ -1354,8 +1354,8 @@ def get_metadata_from_loc(
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid
 
 
-def sensor_name_to_dt(sensor: str, fid: str):
-    inversion_window_update = None
+def get_sensor_metadata_from_fid(sensor: str, fid: str):
+    inversion_window_update = []
     if sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(fid[3:], "%Y%m%dt%H%M%S")
