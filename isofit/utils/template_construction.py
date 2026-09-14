@@ -975,7 +975,7 @@ def write_modtran_template(
                         "IEMSCT": "RT_SOLAR_AND_THERMAL",
                         "IMULT": "RT_DISORT",
                         "DISALB": False,
-                        "NSTR": 8,
+                        "NSTR": 8,  # NOTE 8 vs 16 delta(m) effect is reduced when using 2-albedo method
                         "SOLCON": 0.0,
                     },
                     "ATMOSPHERE": {
@@ -1005,10 +1005,11 @@ def write_modtran_template(
                         "GMTIME": gmtime,
                     },
                     "SURFACE": {
-                        "SURFTYPE": "REFL_LAMBER_MODEL",
                         "GNDALT": elevation_km,
                         "NSURF": 1,
-                        "SURFP": {"CSALB": "LAMB_CONST_0_PCT"},
+                        "SALBFL": "",
+                        "SURFTYPE": "REFL_CONSTANT",
+                        "SURREF": 0.0,
                     },
                     "SPECTRAL": {
                         "V1": 340.0,
@@ -1020,7 +1021,11 @@ def write_modtran_template(
                         "FLAGS": "NT A   ",
                         "BMNAME": "p1_2013",
                     },
-                    "FILEOPTIONS": {"NOPRNT": 2, "CKPRNT": True},
+                    "FILEOPTIONS": {
+                        "NOPRNT": 2,
+                        "NOFILE": "FC_TAPE6ONLY",
+                        "CSVPRNT": f"{fid}.csv",
+                    },
                 }
             }
         ]
