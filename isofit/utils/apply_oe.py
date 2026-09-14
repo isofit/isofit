@@ -457,8 +457,8 @@ def apply_oe(
 
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
-    dt, sensor_inversion_window = tmpl.get_sensor_metadata_from_fid(sensor, paths.fid)
-    if not len(sensor_inversion_window):
+    dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(sensor, paths.fid)
+    if not len(sensor_inversion_windows):
         sensor_inversion_windows = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
     if len(inversion_windows):

@@ -20,7 +20,6 @@ from isofit.configs import configs
 from isofit.core import instrument, isofit
 from isofit.core.common import envi_header
 from isofit.utils.apply_oe import (
-    INVERSION_WINDOWS,
     RTM_CLEANUP_LIST,
     SUPPORTED_SENSORS,
     UNCORRELATED_RADIOMETRIC_UNCERTAINTY,
@@ -410,16 +409,15 @@ def wavelength_cal(
 
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
-    global INVERSION_WINDOWS
-    dt, sensor_inversion_window = tmpl.sensor_name_to_dt(sensor, paths.fid)
-    if sensor_inversion_window is not None:
-        INVERSION_WINDOWS = sensor_inversion_window
+    dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(sensor, paths.fid)
+    if not len(sensor_inversion_windows):
+        sensor_inversion_windows = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
     if inversion_windows:
         assert all(
             [len(window) == 2 for window in inversion_windows]
         ), "Inversion windows must be in pairs"
-        INVERSION_WINDOWS = inversion_windows
-    logging.info(f"Using inversion windows: {INVERSION_WINDOWS}")
+        sensor_inversion_windows = inversion_windows
+    logging.info(f"Using inversion windows: {sensor_inversion_windows}")
 
     # Collapse data row-wise
     logging.info("Collapsing data row-wise...")
@@ -613,7 +611,7 @@ def wavelength_cal(
             emulator_base=emulator_base,
             uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
             prebuilt_lut_path=prebuilt_lut,
-            inversion_windows=INVERSION_WINDOWS,
+            inversion_windows=sensor_inversion_windows,
             multipart_transmittance=multipart_transmittance,
             segmentation_size=n_rows,
             multiple_restarts=False,
