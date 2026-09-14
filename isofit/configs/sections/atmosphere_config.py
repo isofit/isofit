@@ -55,6 +55,15 @@ class AtmosphereStateVectorConfig(StateVectorConfig):
         self._AERFRAC_3_type = StateVectorElementConfig
         self.AERFRAC_3: StateVectorElementConfig = None
 
+        self._AERANGSTROM_type = StateVectorElementConfig
+        self.AERANGSTROM: StateVectorElementConfig = None
+
+        self._CO2_type = StateVectorElementConfig
+        self.CO2: StateVectorElementConfig = None
+
+        self._CH4_type = StateVectorElementConfig
+        self.CH4: StateVectorElementConfig = None
+
         self._AIRT_DELTA_K_type = StateVectorElementConfig
         self.AIRT_DELTA_K: StateVectorElementConfig = None
 
@@ -256,6 +265,29 @@ class AtmosphereConfig(BaseConfigSection):
         self.emulator_batch_size = 4096
         """int: Batch size for sRTMnet predictions. Set smaller to reduce memory usage, larger for faster emulation."""
 
+        # eradiate
+        self._eradiate_absorption_database_type = str
+        self.eradiate_absorption_database = "komodo"
+        """str: eradiate-only molecular absorption database name. Also determines the
+        eradiate spectral mode: 
+        gecko: mono, .01 cm^-1 in [250,300]+[600,3125] nm, 0.1 cm^-1 in [300,600] nm
+        komodo: mono, 1 cm^-1 uniform
+        monotropa correlated-k, 100 cm^-1 bins
+        mycena correlated-k, 10 cm^-1 bins
+        panellus correlated-k, 1 cm^-1 bins
+        tuber correlated-k, 0.1 cm^-1 bins
+        """
+
+        self._eradiate_particle_properties_type = str
+        self.eradiate_particle_properties = "govaerts_2021-continental"
+        """str: eradiate-only aerosol particle-properties dataset identifier used for
+        the atmosphere's aerosol layer."""
+
+        self._eradiate_spp_type = int
+        self.eradiate_spp = 1000
+        """int: eradiate-only number of samples per pixel used for each Monte Carlo
+        radiative transfer simulation."""
+
         self._statevector_type = AtmosphereStateVectorConfig
         self.statevector: StateVectorConfig = AtmosphereStateVectorConfig({})
 
@@ -356,6 +388,15 @@ class AtmosphereConfig(BaseConfigSection):
 
             if self.irradiance_file is None and self.engine_name == "6s":
                 errors.append("6s requires irradiance_file to be specified")
+
+            if self.engine_name == "eradiate":
+                try:
+                    import eradiate
+                except ImportError:
+                    errors.append(
+                        "atmosphere->engine_name is 'eradiate' but the eradiate "
+                        "package is not installed in this environment."
+                    )
 
             if self.engine_name == "sRTMnet":
                 if self.emulator_file is None:
