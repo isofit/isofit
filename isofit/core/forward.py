@@ -296,12 +296,12 @@ class ForwardModel:
 
     def calc_meas(self, x, geom, rfl=[]):
         """Calculate the model observation at instrument wavelengths."""
-        # Unpack state vector - Copy to not change x fm-wide
-        x_surface, x_atmosphere, x_instrument = self.unpack(np.copy(x))
-
         # if rfl passed, have to explicitly use those values
         if len(rfl):
-            x_surface[self.idx_surf_rfl] = rfl
+            x[self.idx_surf_rfl] = rfl
+
+        # Unpack state vector - Copy to not change x fm-wide
+        x_surface, x_atmosphere, x_instrument = self.unpack(np.copy(x))
 
         # Call surface reflectance w.r.t. surface, upsample
         rho_dir_dir, rho_dif_dir = self.calc_rfl(x, geom)
