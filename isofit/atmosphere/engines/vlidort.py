@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import logging
 import os
 import re
@@ -77,10 +76,7 @@ class VLIDORT(BaseAtmosphere, Writer):
 
     def makeSim(self, point, **_):
         name = self.point_to_filename(point)
-        encode = name.encode("utf-8")
-        sha = hashlib.sha256(encode).hexdigest()
-
-        file = self.sims / sha
+        file = self.sims / name
         if file.exists():
             Logger.debug(
                 f"Sim data file for this point already exists, skipping. Point = {name}"
@@ -105,6 +101,7 @@ class VLIDORT(BaseAtmosphere, Writer):
         }
         cmd = CMD.format(**vals)
 
+        Logger.debug(f"Executing {cmd}")
         subprocess.run(
             cmd.split(" "),
             cwd=self.exe,
@@ -113,9 +110,7 @@ class VLIDORT(BaseAtmosphere, Writer):
 
     def readSim(self, point):
         name = self.point_to_filename(point)
-        encode = name.encode("utf-8")
-        sha = hashlib.sha256(encode).hexdigest()
-        file = self.sims / sha
+        file = self.sims / name
 
         lines = file.read_text().splitlines()
         parse = []
