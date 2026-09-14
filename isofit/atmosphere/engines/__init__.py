@@ -1,3 +1,4 @@
+from .eradiate import EradiateRT
 from .kernel_flows import KernelFlowsRT
 from .libradtran import LibRadTranRT
 from .modtran import ModtranRT
@@ -11,4 +12,5 @@ Engines = {
     "srtmnet": SimulatedModtranRT,
     "libradtran": LibRadTranRT,
     "prebuilt": None,
+    "eradiate": EradiateRT
 }
