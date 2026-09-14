@@ -9,6 +9,7 @@ import sys
 import time
 
 import numpy as np
+import psutil
 
 from isofit import ray
 from isofit.core.common import Track, combos
@@ -42,14 +43,14 @@ def streamSimulation(
     time.sleep(np.random.rand() * max_buffer_time)
 
     # Execute the simulation
-    simmer(point)
+    kwargs = simmer(point) or {}
 
     # No data will be produced, just configuration files
     if rte_configure_and_exit:
         return
 
     # Read the simulation results
-    data = reader(point)
+    data = reader(point, **kwargs)
 
     # Save the results to our LUT format
     if data:
@@ -100,8 +101,8 @@ def shardWriter(lut, shard, coord, points, simmer, reader):
     Logger.info(f"Starting shard {shard}")
 
     for point in points:
-        simmer(point)  # Execute the simulation
-        data = reader(point)  # Read the simulation results
+        kwargs = simmer(point) or {}  # Execute the simulation
+        data = reader(point, **kwargs)  # Read the simulation results
 
         # Remove non-chunk data
         chunkless = {k: v for k, v in data.items() if k not in lut.alldim}
