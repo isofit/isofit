@@ -765,7 +765,8 @@ def apply_oe(
         p50 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 50)
         p95 = np.percentile(h2o_est[h2o_est > lut_params.h2o_min], 98)
 
-        margin = lut_params.h2o_spacing
+        margin = (p95 - p05) * 0.5
+        margin = max(margin, lut_params.h2o_spacing)
         h2o_lut_min = max(lut_params.h2o_min, p05 - margin)
         h2o_lut_max = min(max_water, max(lut_params.h2o_min, p95 + margin))
         # This logic ensures range[1] - range[0] > spacing
