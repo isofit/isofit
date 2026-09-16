@@ -26,6 +26,8 @@ from isofit.configs.sections.statevector_config import (
     StateVectorElementConfig,
 )
 
+WORKING_WAVELENGTH_CAL_VARIABLES = ["GROW_FWHM", "WL_SHIFT", "WLSPL"]
+
 
 class InstrumentStateVectorConfig(StateVectorConfig):
     """

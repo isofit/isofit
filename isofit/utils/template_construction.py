@@ -21,8 +21,16 @@ from isofit.atmosphere.atmosphere import (
     modtran_aot_lowerbound_polynomials,
     modtran_water_upperbound_polynomials,
 )
+from isofit.configs.sections.instrument_config import WORKING_WAVELENGTH_CAL_VARIABLES
 from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
+from isofit.core.instrument import (
+    DefaultEOFPrior,
+    DefaultGROWFWHMPrior,
+    DefaultRCCPrior,
+    DefaultWLSHIFTPrior,
+    DefaultWLSPLPrior,
+)
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.luts.reader import inspect_lut_dimensions
@@ -1905,6 +1913,8 @@ def make_instrument_config(
     use_superpixels: bool = True,
     uncorrelated_radiometric_uncertainty: float = 0.0,
     dn_uncertainty_file: str = None,
+    cal_wavelength_variables=[],
+    cal_per_channel_rcc=False,
 ):
     config = {
         "wavelength_file": wavelength_path,
@@ -1928,13 +1938,11 @@ def make_instrument_config(
         config["statevector"] = {}
         for idx in range(eof.shape[1]):
             key = "EOF_%i" % (idx + 1)
-            config["statevector"][key] = {
-                "bounds": [-10, 10],
-                "scale": 1,
-                "init": 0,
-                "prior_sigma": 100.0,
-                "prior_mean": 0,
-            }
+            config["statevector"][key] = DefaultRCCPrior._asdict()
+
+    if len(cal_wavelength_variables):
+        # Hard coded check against list
+        assert all(item in other_list for item in my_list)
 
     if noise_path is not None:
         config["parametric_noise_file"] = noise_path

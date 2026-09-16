@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import logging
+from collections import namedtuple
 from functools import partial
 from itertools import count
 
@@ -44,6 +45,62 @@ from isofit.core.common import (
 
 # Max. wavelength difference (nm) that does not trigger expensive resampling
 wl_tol = 0.01
+
+DefaultState = namedtuple(
+    "DefaultState",
+    [
+        "bounds",
+        "scale",
+        "prior_mean",
+        "prior_sigma",
+        "init",
+    ],
+)
+
+
+DefaultEOFPrior = DefaultState(
+    bounds=[-10.0, 10.0],
+    scale=1.0,
+    prior_mean=0,
+    prior_sigma=100.0,
+    init=0,
+)
+
+
+DefaultRCCPrior = DefaultState(
+    bounds=[0.5, 1.5],
+    scale=1.0,
+    prior_mean=1.0,
+    prior_sigma=1.0,
+    init=1.0,
+)
+
+
+DefaultWLSPLPrior = DefaultState(
+    bounds=[-7.0, 7.0],
+    scale=1.0,
+    prior_mean=0,
+    prior_sigma=0,
+    init=10.0,
+)
+
+
+DefaultWLSHIFTPrior = DefaultState(
+    bounds=[-7.0, 7.0],
+    scale=1.0,
+    prior_mean=0,
+    prior_sigma=0,
+    init=100.0,
+)
+
+
+DefaultGROWFWHMPrior = DefaultState(
+    bounds=[-7.0, 7.0],
+    scale=1.0,
+    prior_mean=0,
+    prior_sigma=0,
+    init=100.0,
+)
 
 
 class PerWLRCC:
