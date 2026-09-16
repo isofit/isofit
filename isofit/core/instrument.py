@@ -23,8 +23,6 @@ import logging
 from functools import partial
 from itertools import count
 
-import jax
-import jax.numpy as jnp
 import numpy as np
 from scipy.interpolate import interp1d, splev, splrep
 from scipy.io import loadmat
