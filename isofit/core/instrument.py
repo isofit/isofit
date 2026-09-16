@@ -148,7 +148,7 @@ class NoiseModel:
         return np.diagflat(np.power(self.noise_NESR, 2))
 
 
-class Instrument:
+class Instrument(NoiseModel):
 
     fit_rcc = False
 
@@ -160,6 +160,8 @@ class Instrument:
 
         config = full_config.forward_model.instrument
         self.config = config
+
+        super().__init__(config)
 
         # If needed, skip first index column and/or convert to nanometers
         self.wl_init, self.fwhm_init = load_wavelen(config.wavelength_file)
@@ -279,8 +281,6 @@ class Instrument:
         ):
             self.initialize_DN_additive_uncertainty(config.unknowns.dn_uncertainty_file)
 
-        self.noise_model = NoiseModel(config)
-
         # We track several unretrieved free variables, that are specified
         # in a fixed order (always start with relative radiometric
         # calibration)
@@ -399,7 +399,7 @@ class Instrument:
         Returns: Sy, the measurement error covariance due to instrument noise
         """
 
-        Sy = self.noise_model.Sy(meas, geom)
+        Sy = self.Sy(meas, geom)
 
         if self.dn_uncertainty_embedding:
             # Uncertainty due to imperfect knowledge of linearity correction
@@ -513,6 +513,14 @@ class Instrument:
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
 
+        if (
+            self.calibration_fixed
+            and (len(self.wl_init) == len(wl_hi))
+            and all((self.wl_init - wl_hi) < wl_tol)
+        ):
+
+            return rdn_hi
+
         wl, fwhm = self.calibration(x_instrument)
 
         # If rdn_hi is a vector of length 1, return itself
@@ -594,6 +602,7 @@ class Instrument:
             shift = 0.0
 
         wl = offset + shift + space_orig * space
+
         return wl, fwhm
 
     def initialize_DN_additive_uncertainty(self, dn_uncertainty_file):
