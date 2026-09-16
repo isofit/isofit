@@ -25,6 +25,7 @@ import eradiate
 import joseki
 import numpy as np
 import xarray as xr
+from eradiate.attrs import AUTO
 from eradiate.experiments import AtmosphereExperiment
 from eradiate.radprops import ParticleProperties, absdb_factory
 from eradiate.rng import SeedState
@@ -35,6 +36,7 @@ from eradiate.scenes.atmosphere import (
 )
 from eradiate.scenes.bsdfs import LambertianBSDF
 from eradiate.scenes.illumination import DirectionalIllumination
+from eradiate.scenes.integrators import PiecewiseVolPathIntegrator
 from eradiate.scenes.measure import MultiDistantMeasure
 from eradiate.scenes.surface import BasicSurface
 from eradiate.spectral import BandSRF, CKDSpectralIndex, SpectralIndex
@@ -49,40 +51,19 @@ Logger = logging.getLogger(__name__)
 
 
 class EradiateRT(BaseAtmosphere, Writer):
-    """
-    Radiative transfer engine backed by eradiate, a Monte Carlo (Mitsuba
-    based) atmosphere/surface RT model.
-
-    Eradiate has no on-disk input deck or text output format: simulations
-    run fully in-memory (`eradiate.run()` returns an `xarray.Dataset`
-    directly). So makeSim isn't used, and readSim carries the load.
-
-    Eradiate's Monte Carlo integrator reports total TOA radiance per
-    run, whereas MODTRAN splits path radiance from ground-
-    reflected radiance in its channel output. To reuse `two_albedo_method`
-    we reconstruct the same inputs by:
-      - computing direct transmittances analytically (Beer-Lambert,
-        from the atmosphere's own extinction profile), since they're exact
-        and would otherwise be a noisy MC divisor in the two-albedo algebra;
-      - adding a second, BOA, nadir-viewing sensor to every run (rendered
-        alongside the main TOA-view sensor in the same pass) to directly
-        measure the Lambertian surface's leaving radiance, from which the
-        ground-reflected and path-radiance components follow algebraically.
-
-    Every quantity (the two MC-measured sensors, and the two analytic/solar
-    terms) is band-averaged per output channel with a Gaussian spectral
-    response function built from that channel's own FWHM, not sampled as a
-    single monochromatic point. The true spectrum has real structure well
-    inside a single output channel's width (e.g. narrow gas absorption
-    features); without this convolution, adjacent channels can swing by
-    several percent from real fine spectral structure no actual instrument
-    would see, rather than from noise or a physics difference. This is why
-    a single `MultiDistantMeasure` covering all wavelengths at once (cheap)
-    became one `MultiDistantMeasure` per channel (expensive -- each needs
-    several sub-wavelength evaluations to resolve its Gaussian response).
-
-    See the "eradiate atmosphere engine" plan for the full derivation.
-    """
+    # ...
+    # Eradiate's Monte Carlo integrator reports total TOA radiance per
+    # run, whereas MODTRAN splits path radiance from ground-
+    # reflected radiance in its channel output. To reuse `two_albedo_method`
+    # we reconstruct the same inputs by:
+    #   - computing direct transmittances analytically (Beer-Lambert,
+    #     from the atmosphere's own extinction profile), alongside an analytical
+    #     correlation scalar (C_ckd) to handle correlated-k gas absorption.
+    #   - adding a second, BOA, nadir-viewing sensor to every run (rendered
+    #     alongside the main TOA-view sensor in the same pass) to directly
+    #     measure the Lambertian surface's leaving radiance, from which the
+    #     ground-reflected and path-radiance components follow algebraically.
+    # ...
 
     # Surface albedos used for the two-albedo decomposition, matching
     # modtran.py convention
@@ -98,6 +79,9 @@ class EradiateRT(BaseAtmosphere, Writer):
     # srf_sigma_inner standard deviations (resolving the response's shape),
     # bracketed by an explicit zero at +/- srf_sigma_outer sigma (BandSRF
     # requires the response to reach zero at its support boundary).
+    # We need to rethink this for the 0.1 nm mono solution - this would
+    # ridiculously oversample things...just what I used for the broader
+    # band tests.
     srf_n_inner = 9
     srf_sigma_inner = 2.5
     srf_sigma_outer = 3.0
@@ -158,9 +142,27 @@ class EradiateRT(BaseAtmosphere, Writer):
             template_only: Unused.
         """
 
+    # Output terms two_albedo_method computes or passes through per
+    # sub-wavelength, SRF-averaged in readSim to get each channel's final
+    # LUT value.
+    output_terms = (
+        "rhoatm",
+        "sphalb",
+        "transm_down_dir",
+        "transm_down_dif",
+        "transm_up_dir",
+        "transm_up_dif",
+        "solar_irr",
+        "thermal_upwelling",
+        "thermal_downwelling",
+    )
+
     def readSim(self, point: np.array):
         """Runs the three albedo simulations for a LUT point and reduces
-        them to standard terms via two_albedo_method.
+        them to standard terms via two_albedo_method, once per channel's
+        sub-wavelength grid, then SRF-averages the resulting terms.
+        This only gives 6c results...obviously it could be rebuilt to
+        do 3c, but I opted to move everything in the exclusive 6c direction.
 
         Args:
             point: LUT point to process.
@@ -184,73 +186,120 @@ class EradiateRT(BaseAtmosphere, Writer):
         )
         exp.init()
 
-        # exp.ckd_quad_config carries the same quadrature rule that
-        # eradiate.run() will use below, so the analytic direct
-        # transmittance is bin-averaged consistently with the Monte Carlo
-        # radiance instead of just sampling a single g-point.
-        transm_down_dir, transm_up_dir = self.analytic_transmittances(
-            exp, wl, fwhm, coszen, cosvza
-        )
-
-        solar_irr = self.solar_irradiance(exp.illumination, wl, fwhm)
-
         # Common random numbers: re-seeding to the same, point-derived value
         # before every albedo re-run means the three Monte Carlo estimates
-        # share the same underlying photon-path realizations, differing only
-        # in the (deterministic) surface interaction. two_albedo_method then
-        # takes differences between them, which cancels that shared noise
-        # instead of compounding independent noise in quadrature.
+        # share the same underlying photon-path realizations.
         seed = tuple(int(round(p * 1e6)) for p in point)
 
-        toa = {}
-        surf = {}
+        results = {}
         for albedo in self.albedos:
             self.set_reflectance(exp, albedo)
-            results = eradiate.run(
+            results[albedo] = eradiate.run(
                 exp, spp=self.eradiate_spp, seed_state=SeedState(seed=seed)
             )
-            toa[albedo] = self.extract_band_radiance(results, measures_toa)
-            surf[albedo] = self.extract_band_radiance(results, measures_boa)
 
         rfl_1, rfl_2 = self.albedos[1], self.albedos[2]
-        L_solar = solar_irr * coszen / np.pi
 
-        # case_0: zero-albedo run. A black surface reflects nothing, so all
-        # of its TOA radiance is atmospheric path radiance. Per ISOFIT
-        # convention (rt_mode="rdn", see sRTMnet.py), rhoatm is carried in
-        # radiance units here, not normalized to a reflectance.
-        case_0 = {
-            "width": np.ones_like(wl),
-            "transm_up_dir": transm_up_dir,
-            "solar_irr": solar_irr,
-            "wl": wl,
-            "rhoatm": toa[0.0],
-            "thermal_upwelling": np.zeros_like(wl),
-            "thermal_downwelling": np.zeros_like(wl),
-        }
+        data = {key: np.empty_like(wl, dtype=float) for key in self.output_terms}
+        for i in range(len(wl)):
+            data_i = self.decompose_channel(
+                atmosphere,
+                exp,
+                results,
+                measures_toa[i],
+                measures_boa[i],
+                wl[i],
+                fwhm[i],
+                coszen,
+                cosvza,
+                rfl_1,
+                rfl_2,
+            )
+            for key in self.output_terms:
+                data[key][i] = data_i[key]
 
-        def case(rfl):
-            # grnd_rflt: total ground-reflected TOA radiance, up-leg
-            # direct-only (MODTRAN convention) = surface-leaving radiance
-            # (measured directly by the BOA sensor) attenuated by the
-            # direct upward transmittance.
-            grnd_rflt = surf[rfl] * transm_up_dir
-            # drct_rflt: single-bounce direct-direct term. The direct beam's
-            # first arrival at the ground is albedo-independent, so this is
-            # fully analytic, no separate measurement needed.
-            drct_rflt = rfl * L_solar * transm_down_dir * transm_up_dir
-            return {
-                "grnd_rflt": grnd_rflt,
-                "drct_rflt": drct_rflt,
-                "path_rdn": toa[rfl] - grnd_rflt,
-            }
-
-        data = self.two_albedo_method(
-            case_0, case(rfl_1), case(rfl_2), coszen, rfl_1, rfl_2
-        )
+        data["wl"] = wl
         data["solzen"] = vals["solzen"]
         data["coszen"] = coszen
         return data
+
+    def decompose_channel(
+        self,
+        atmosphere,
+        exp,
+        results: dict,
+        measure_toa,
+        measure_boa,
+        center: float,
+        fwhm: float,
+        coszen: float,
+        cosvza: float,
+        rfl_1: float,
+        rfl_2: float,
+    ) -> dict:
+        def read(results_dict, albedo, measure):
+            radiance = results_dict[albedo][measure.id]["radiance"].squeeze()
+            order = np.argsort(radiance.coords["w"].values)
+            w = radiance.coords["w"].values[order]
+            values = (
+                radiance.values[order]
+                * ureg(radiance.attrs.get("units", "W/m^2/sr/nm"))
+            ).m_as("uW/cm^2/sr/nm")
+            return w, values
+
+        w_sub = None
+        toa_sub, boa_sub = {}, {}
+        for albedo in self.albedos:
+            w_sub, toa_sub[albedo] = read(results, albedo, measure_toa)
+            _, boa_sub[albedo] = read(results, albedo, measure_boa)
+
+        t_down_sub = np.empty_like(w_sub)
+        t_up_sub = np.empty_like(w_sub)
+        c_ckd_sub = np.empty_like(w_sub)
+        for j, w in enumerate(w_sub):
+            t_down_sub[j], t_up_sub[j], c_ckd_sub[j] = self.wavelength_transmittances(
+                atmosphere, exp, w, coszen, cosvza
+            )
+
+        irr_sub = exp.illumination.irradiance.eval_mono(w=w_sub * ureg.nm).m_as(
+            "uW/cm^2/nm"
+        )
+
+        case_0 = {
+            "width": np.ones_like(w_sub),
+            "transm_up_dir": t_up_sub,
+            "solar_irr": irr_sub,
+            "wl": w_sub,
+            "rhoatm": toa_sub[0.0],
+            "thermal_upwelling": np.zeros_like(w_sub),
+            "thermal_downwelling": np.zeros_like(w_sub),
+        }
+
+        def subcase(rfl):
+            # 100% exact analytical direct ground-reflected radiance (zero MC noise)
+            drct_rflt = (
+                rfl * (irr_sub * coszen / np.pi) * t_down_sub * t_up_sub * c_ckd_sub
+            )
+
+            # Surface-leaving radiance scaled by direct up transmittance and analytical CKD correlation
+            grnd_rflt = boa_sub[rfl] * t_up_sub * c_ckd_sub
+
+            return {
+                "grnd_rflt": grnd_rflt,
+                "drct_rflt": drct_rflt,
+                "path_rdn": toa_sub[rfl] - grnd_rflt,
+            }
+
+        sub_data = self.two_albedo_method(
+            case_0, subcase(rfl_1), subcase(rfl_2), coszen, rfl_1, rfl_2
+        )
+
+        sigma = fwhm / 2.3548200450309493
+        response = np.exp(-0.5 * ((w_sub - center) / sigma) ** 2)
+        return {
+            key: self.srf_weighted_average(w_sub, response, sub_data[key])
+            for key in self.output_terms
+        }
 
     def resolve_point(self, point: np.array) -> dict:
         """Merges fixed engine-config geometry with this LUT point's
@@ -340,7 +389,13 @@ class EradiateRT(BaseAtmosphere, Writer):
             molecular_atmosphere=molecular, particle_layers=[aerosol]
         )
 
-    def build_experiment(self, atmosphere, vals: dict, wl: np.array, fwhm: np.array):
+    def build_experiment(
+        self,
+        atmosphere,
+        vals: dict,
+        wl: np.array,
+        fwhm: np.array,
+    ):
         """Builds an AtmosphereExperiment with one TOA (or mid-column) and
         one BOA nadir sensor per wavelength channel, each pair sharing a
         Gaussian BandSRF built from that channel's own FWHM.
@@ -463,7 +518,7 @@ class EradiateRT(BaseAtmosphere, Writer):
     @staticmethod
     def scale_h2o_column(thermoprops, h2ostr_g_cm2: float):
         """Scales the profile's water vapor mixing ratio so its column
-        matches ``h2ostr_g_cm2``, preserving the default profile's vertical
+        matches H2OSTR (g/cm2), preserving the default profile's vertical
         shape.
 
         Args:
@@ -585,28 +640,50 @@ class EradiateRT(BaseAtmosphere, Writer):
         """
         return cls.trapz(values * response, w) / cls.trapz(response, w)
 
-    def analytic_transmittances(
-        self, exp, wl: np.array, fwhm: np.array, coszen: float, cosvza: float
+    @staticmethod
+    def wavelength_transmittances(
+        atmosphere, exp, w: float, coszen: float, cosvza: float
     ):
-        """Computes direct downward/upward transmittance analytically
-        (Beer-Lambert), band-averaged per channel with the same Gaussian SRF
-        as the Monte Carlo radiance measures (see build_experiment), so it
-        stays consistent with everything two_albedo_method derives from it.
-        In CKD mode, every g-point of a bin is evaluated and combined with
-        eradiate's own quadrature weights, matching how its Monte Carlo
-        radiance aggregates a bin.
+        """Direct downward/upward transmittance (Beer-Lambert) at a single
+        wavelength, along with an analytical CKD correlation correction scalar.
+
+        In Correlated K-Distribution (CKD) mode, a spectral bin is represented
+        by an ensemble of quadrature points (g-points). Because the downward
+        and upward direct paths through the atmosphere share the exact same gas
+        absorption realization at a given g-point, they are strongly positively
+        correlated. Consequently, the product of their averages underestimates
+        the true average of their product:
+
+            <T_down> * <T_up>  <  <T_down * T_up>
+
+        Multiplying the band-averaged transmittances directly leads to severe
+        underestimation of the ground-reflected radiance inside deep absorption
+        bands, causing inverted artifacts, particularly in the diffuse transmittance
+        retrievals.
+
+        To fix this, we compute an exact analytical correlation scalar, C_ckd,
+        directly from the layer optical depths:
+
+            C_ckd = <T_down * T_up> / (<T_down> * <T_up>)
+
+        This scalar is applied to the BOA radiance product in `decompose_channel`.
+        In monochromatic mode (line-by-line),
+        there are no g-points to correlate, and C_ckd=1. This is probably the
+        'right' answer for fine-spectral resolution runs, but the C_ckd solution
+        allows fore reasonable testing with the band models.
 
         Args:
-            exp: Initialized AtmosphereExperiment.
-            wl: Channel center wavelengths (nm).
-            fwhm: Channel FWHM (nm), same length as wl.
+            atmosphere: Pre-init Atmosphere, as returned by build_atmosphere.
+                Must NOT be exp.atmosphere (see init mutation warnings).
+            exp: Initialized AtmosphereExperiment (only its CKD quadrature
+                config is used here, which isn't affected by init).
+            w: Wavelength (nm).
             coszen: Cosine of the solar zenith angle.
             cosvza: Cosine of the view zenith angle.
 
         Returns:
-            tuple: (transm_down_dir, transm_up_dir), each per wl.
+            tuple: (transm_down_dir, transm_up_dir, c_ckd) at w.
         """
-        atmosphere = exp.atmosphere
         zgrid = atmosphere.geometry.zgrid
         layer_height = zgrid.layer_height.m_as("km")
 
@@ -616,45 +693,34 @@ class EradiateRT(BaseAtmosphere, Writer):
 
         mu0 = max(coszen, 1e-6)
         muv = max(cosvza, 1e-6)
-        is_ckd = eradiate.mode().is_ckd
-        quad_config = exp.ckd_quad_config if is_ckd else None
 
-        def sub_wavelength_transmittances(w: float):
-            if is_ckd:
-                quad = quad_config.get_quad(wcenter=w * ureg.nm)
-                nodes = quad.eval_nodes([0, 1])
-                weights = quad.weights  # native [-1, 1] convention, sums to 2
+        if eradiate.mode().is_ckd:
+            quad = exp.ckd_quad_config.get_quad(wcenter=w * ureg.nm)
+            nodes = quad.eval_nodes([0, 1])
+            weights = quad.weights  # native [-1, 1] convention, sums to 2
 
-                tau_g = []
-                for g in nodes:
-                    # have to put CKDSpectralIndex into si, or tau starts failing
-                    si = CKDSpectralIndex(w=w * ureg.nm, g=float(g))
-                    tau_g.append(tau(si))
-                tau_g = np.array(tau_g)
-                t_down = 0.5 * np.dot(weights, np.exp(-tau_g / mu0))
-                t_up = 0.5 * np.dot(weights, np.exp(-tau_g / muv))
-            else:
-                # si must be bound to a name (not inlined into the tau(...)
-                # call) -- see the comment in the CKD branch above.
-                si = SpectralIndex.new(w=w * ureg.nm)
-                tau_dir = tau(si)
-                t_down = np.exp(-tau_dir / mu0)
-                t_up = np.exp(-tau_dir / muv)
-            return t_down, t_up
+            tau_g = np.array(
+                [tau(CKDSpectralIndex(w=w * ureg.nm, g=float(g))) for g in nodes]
+            )
 
-        transm_down_dir = np.empty_like(wl, dtype=float)
-        transm_up_dir = np.empty_like(wl, dtype=float)
+            t_down_g = np.exp(-tau_g / mu0)
+            t_up_g = np.exp(-tau_g / muv)
 
-        for i, (center, fw) in enumerate(zip(wl, fwhm)):
-            w_sub, response = self.srf_grid(center, fw)
-            t_down_sub = np.empty_like(w_sub)
-            t_up_sub = np.empty_like(w_sub)
-            for j, w in enumerate(w_sub):
-                t_down_sub[j], t_up_sub[j] = sub_wavelength_transmittances(w)
-            transm_down_dir[i] = self.srf_weighted_average(w_sub, response, t_down_sub)
-            transm_up_dir[i] = self.srf_weighted_average(w_sub, response, t_up_sub)
+            t_down = 0.5 * np.dot(weights, t_down_g)
+            t_up = 0.5 * np.dot(weights, t_up_g)
 
-        return transm_down_dir, transm_up_dir
+            # Exact correlated product across g-points
+            t_both_correlated = 0.5 * np.dot(weights, t_down_g * t_up_g)
+            uncorrelated = t_down * t_up
+            c_ckd = t_both_correlated / uncorrelated if uncorrelated > 1e-12 else 1.0
+        else:
+            si = SpectralIndex.new(w=w * ureg.nm)
+            tau_dir = tau(si)
+            t_down = np.exp(-tau_dir / mu0)
+            t_up = np.exp(-tau_dir / muv)
+            c_ckd = 1.0
+
+        return t_down, t_up, c_ckd
 
     @staticmethod
     def set_reflectance(exp, albedo: float):
@@ -667,45 +733,3 @@ class EradiateRT(BaseAtmosphere, Writer):
             albedo: Lambertian reflectance to set.
         """
         exp.surface.bsdf.reflectance.value = albedo * ureg.dimensionless
-
-    def solar_irradiance(self, illumination, wl: np.array, fwhm: np.array) -> np.array:
-        """Evaluates the experiment's solar irradiance spectrum, band-
-        averaged per channel with the same Gaussian SRF as the Monte Carlo
-        radiance measures, converted to ISOFIT's uW/cm^2/nm convention.
-
-        Args:
-            illumination: Experiment's DirectionalIllumination.
-            wl: Channel center wavelengths (nm).
-            fwhm: Channel FWHM (nm), same length as wl.
-
-        Returns:
-            np.array: Solar irradiance per wl (uW/cm^2/nm).
-        """
-        out = np.empty_like(wl, dtype=float)
-        for i, (center, fw) in enumerate(zip(wl, fwhm)):
-            w_sub, response = self.srf_grid(center, fw)
-            irr = illumination.irradiance.eval_mono(w=w_sub * ureg.nm).m_as(
-                "uW/cm^2/nm"
-            )
-            out[i] = self.srf_weighted_average(w_sub, response, irr)
-        return out
-
-    @staticmethod
-    def extract_band_radiance(results: dict, measures: list) -> np.array:
-        """Assembles a per-channel radiance array from a set of single-
-        channel, BandSRF-weighted measures (see build_experiment), reading
-        each one's SRF-integrated ``radiance_srf`` rather than ``radiance``.
-
-        Args:
-            results: eradiate.run() output, keyed by measure id.
-            measures: Per-channel measures to read, in output order.
-
-        Returns:
-            np.array: Radiance per measure (uW/cm^2/sr/nm).
-        """
-        values = np.empty(len(measures), dtype=float)
-        for i, measure in enumerate(measures):
-            radiance = results[measure.id]["radiance_srf"].squeeze()
-            v = radiance.values * ureg(radiance.attrs.get("units", "W/m^2/sr/nm"))
-            values[i] = v.m_as("uW/cm^2/sr/nm")
-        return values
