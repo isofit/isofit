@@ -496,7 +496,7 @@ class Instrument:
 
     def eof_offset(self, x_instrument):
         offset = np.zeros(len(self.wl_init))
-        for i in self.state_idx["EOF"]:
+        for i in self.state_idx.get("EOF", []):
             offset += self.eof[:, i] * x_instrument[i]
         return offset
 
