@@ -5824,7 +5824,8 @@
 <span class="normal">1062</span>
 <span class="normal">1063</span>
 <span class="normal">1064</span>
-<span class="normal">1065</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1065</span>
+<span class="normal">1066</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: David R Thompson and Philip G. Brodrick</span>
 <span class="c1">#</span>
@@ -6592,6 +6593,7 @@
         <span class="n">p95</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">h2o_est</span><span class="p">[</span><span class="n">h2o_est</span> <span class="o">&gt;</span> <span class="n">lut_params</span><span class="o">.</span><span class="n">h2o_min</span><span class="p">],</span> <span class="mi">98</span><span class="p">)</span>
 
         <span class="n">margin</span> <span class="o">=</span> <span class="p">(</span><span class="n">p95</span> <span class="o">-</span> <span class="n">p05</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span>
+        <span class="n">margin</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">margin</span><span class="p">,</span> <span class="n">lut_params</span><span class="o">.</span><span class="n">h2o_spacing</span><span class="p">)</span>
         <span class="n">h2o_lut_min</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">lut_params</span><span class="o">.</span><span class="n">h2o_min</span><span class="p">,</span> <span class="n">p05</span> <span class="o">-</span> <span class="n">margin</span><span class="p">)</span>
         <span class="n">h2o_lut_max</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_water</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">lut_params</span><span class="o">.</span><span class="n">h2o_min</span><span class="p">,</span> <span class="n">p95</span> <span class="o">+</span> <span class="n">margin</span><span class="p">))</span>
         <span class="c1"># This logic ensures range[1] - range[0] &gt; spacing</span>
