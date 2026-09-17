@@ -584,9 +584,9 @@ class Reader:
         keys = {key for key in ds if "wl" in ds[key].dims} - {"fwhm"}
 
         kwargs |= {
-            "wl": ds.wl,
-            "wl2": wl,
-            "fwhm2": fwhm,
+            "wl": np.asarray(ds.wl),
+            "wl2": np.asarray(wl),
+            "fwhm2": np.asarray(fwhm),
         }
 
         conv_ds = xr.apply_ufunc(
