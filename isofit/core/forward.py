@@ -349,8 +349,9 @@ class ForwardModel:
             geom=geom,
         )
 
-        return self.instrument.sample(
-            x_instrument, self.atmosphere.wl, rdn
+        return (
+            self.instrument.sample(x_instrument, self.atmosphere.wl, rdn)
+            * self.instrument.rcc_factor(x_instrument)
         ) + self.eof_offset(x_instrument)
 
     def calc_atmosphere_quantities(

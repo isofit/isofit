@@ -55,10 +55,27 @@ class StateVectorElementConfig(BaseConfigSection):
 
         self.set_config_options(sub_configdic)
 
+    def unpack(self):
+        return self.bounds, self.scale, self.init, self.prior_mean, self.prior_sigma
+
 
 class StateVectorConfig(BaseConfigSection):
     def __init__(self, sub_configdic: dict = None):
         super().__init__()
+
+    def __iter__(self):
+        elements, names = self.get_elements()
+        return iter(elements)
+
+    def __len__(self):
+        elements, names = self.get_elements()
+        return len(elements)
+
+    def get_all_names(self):
+        names = []
+        for element, name in zip(*self.get_elements()):
+            names.append(name)
+        return names
 
     def _set_statevector_config_options(self, configdic):
         # TODO: update using methods below
