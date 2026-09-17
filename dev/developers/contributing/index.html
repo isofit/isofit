@@ -1018,6 +1018,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#refreshing-the-workflows-cache-for-maintainers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refreshing the Workflows Cache (for Maintainers)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#contributors" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4991,6 +5002,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#refreshing-the-workflows-cache-for-maintainers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refreshing the Workflows Cache (for Maintainers)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#contributors" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5201,6 +5223,25 @@ This file should be occasionally updated to retrieve dependency updates.</p>
 <li>If a package needs to added or removed from the toml file, use <code>uv [add|remove] &lt;package&gt;</code>. Commit the toml and follow the above.</li>
 <li>If changing the <code>requires-python</code> field of the toml file, manually do so then follow the above to ensure all dependencies are compatible.</li>
 </ul>
+<h3 id="refreshing-the-workflows-cache-for-maintainers">Refreshing the Workflows Cache (for Maintainers)<a class="headerlink" href="#refreshing-the-workflows-cache-for-maintainers" title="Permanent link">#</a></h3>
+<p>Some workflows rely on a cache tied to the <code>dev</code> branch. When that cache becomes stale, it should be refreshed:</p>
+<ol>
+<li>
+<p>Delete the existing <code>dev</code> cache from the <a href="https://github.com/isofit/isofit/actions/caches">cache page</a>.</p>
+<p><img alt="Delete the workflows cache" src="../../images/cache_delete.png" /></p>
+</li>
+<li>
+<p>Go to the <a href="https://github.com/isofit/isofit/actions/workflows/build.yml">Build workflow</a>, click "Run workflow", and execute it on the <code>dev</code> branch.</p>
+<p><img alt="Run the workflow on the dev branch" src="../../images/cache_dispatch.png" /></p>
+</li>
+<li>
+<p>Wait for the run to finish. The workflow is designed to not trigger the tests so ignore those.</p>
+<p><img alt="Build cache successful" src="../../images/build_success.png" /></p>
+</li>
+<li>
+<p>Rerun any workflows so they pull the updated cache.</p>
+</li>
+</ol>
 <h3 id="contributors">Contributors<a class="headerlink" href="#contributors" title="Permanent link">#</a></h3>
 <p>The github maintainers, responsible for handling pull requests, are:</p>
 <table>
