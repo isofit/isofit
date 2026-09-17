@@ -1915,6 +1915,7 @@ def make_instrument_config(
     dn_uncertainty_file: str = None,
     cal_wavelength_variables=[],
     cal_per_channel_rcc=False,
+    spline_indices=[0, 19, 400, 425],
 ):
     config = {
         "wavelength_file": wavelength_path,
@@ -1935,14 +1936,36 @@ def make_instrument_config(
 
         # Add a state vector element for each column in the EOF file
         eof = np.loadtxt(eof_path)
-        config["statevector"] = {}
+        config.setdefault("statevector", {})
         for idx in range(eof.shape[1]):
             key = "EOF_%i" % (idx + 1)
             config["statevector"][key] = DefaultRCCPrior._asdict()
 
     if len(cal_wavelength_variables):
         # Hard coded check against list
-        assert all(item in other_list for item in my_list)
+        assert all(
+            item in WORKING_WAVELENGTH_CAL_VARIABLES
+            for item in cal_wavelength_variables
+        ), (
+            "Wavelength calibration parameter passed into "
+            "build_instrument_configuration not added to the "
+            "global list of validated variables"
+        )
+        config.setdefault("statevector", {})
+        for var in cal_wavelength_variables:
+            if var == "GROW_FWHM":
+                config["statevector"][var] = DefaultGROWFWHMPrior._asdict()
+            elif var == "WL_SHIFT":
+                config["statevector"][var] = DefaultWLSHIFTPrior._asdict()
+            elif var == "WLSPL":
+                for index in spline_indices:
+                    config["statevector"][
+                        f"{var}_{index}"
+                    ] = DefaultWLSPLPrior._asdict()
+
+    if cal_per_channel_rcc:
+        config.setdefault("statevector", {})
+        config["statevector"]["PER_WL_RCC"] = DefaultRCCPrior._asdict()
 
     if noise_path is not None:
         config["parametric_noise_file"] = noise_path
