@@ -294,12 +294,8 @@ class ForwardModel:
 
         return offset
 
-    def calc_meas(self, x, geom, rfl=[]):
+    def calc_meas(self, x, geom):
         """Calculate the model observation at instrument wavelengths."""
-        # if rfl passed, have to explicitly use those values
-        if len(rfl):
-            x[self.idx_surf_rfl] = rfl
-
         # Unpack state vector - Copy to not change x fm-wide
         x_surface, x_atmosphere, x_instrument = self.unpack(np.copy(x))
 
@@ -1010,6 +1006,10 @@ class ForwardModel:
         x_atmosphere = x[self.idx_atmosphere]
         x_instrument = x[self.idx_instrument]
         return x_surface, x_atmosphere, x_instrument
+
+    def replace_rfl(self, x, rfl):
+        x[self.idx_surf_rfl] = rfl
+        return x
 
     def match_statevector(self, full_statevector):
         self.full_idx, self.full_miss = match_statevector(
