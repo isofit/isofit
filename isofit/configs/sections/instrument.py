@@ -11,11 +11,14 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-from isofit.configs.sections.statevector import StateVector, StateVectorElement
+from isofit.configs.sections.statevector import (
+    StateVectorConfig,
+    StateVectorElementConfig,
+)
 from isofit.configs.utils.validators import PathExists
 
 
-class InstrumentStateVector(StateVector):
+class InstrumentStateVectorConfig(StateVectorConfig):
     """
     Instrument state vector configuration.
 
@@ -25,27 +28,27 @@ class InstrumentStateVector(StateVector):
 
     Attributes
     ----------
-    EOF_1 : StateVectorElement, optional
+    EOF_1 : StateVectorElementConfig, optional
         First Empirical Orthogonal Function for modeling systematic spectral
         radiometric errors.
-    EOF_2 : StateVectorElement, optional
+    EOF_2 : StateVectorElementConfig, optional
         Second EOF component.
-    EOF_3 : StateVectorElement, optional
+    EOF_3 : StateVectorElementConfig, optional
         Third EOF component.
-    GROW_FWHM : StateVectorElement, optional
+    GROW_FWHM : StateVectorElementConfig, optional
         Growth of Full Width Half Maximum. Models changes in spectral resolution
         across the focal plane.
-    WL_SHIFT : StateVectorElement, optional
+    WL_SHIFT : StateVectorElementConfig, optional
         Wavelength shift parameter for uniform spectral calibration offset.
-    WL_SPACE : StateVectorElement, optional
+    WL_SPACE : StateVectorElementConfig, optional
         Wavelength spacing parameter for spectral sampling interval adjustment.
 
     Examples
     --------
-    >>> from isofit.configs.sections.instrument import InstrumentStateVector
-    >>> from isofit.configs.sections.statevector import StateVectorElement
-    >>> isv = InstrumentStateVector()
-    >>> isv.WL_SHIFT = StateVectorElement(
+    >>> from isofit.configs.sections.instrument import InstrumentStateVectorConfig
+    >>> from isofit.configs.sections.statevector import StateVectorElementConfig
+    >>> isv = InstrumentStateVectorConfig()
+    >>> isv.WL_SHIFT = StateVectorElementConfig(
     ...     bounds=[-2.0, 2.0],
     ...     scale=1.0,
     ...     init=0.0
@@ -57,27 +60,27 @@ class InstrumentStateVector(StateVector):
     artifacts and provide a compact representation of systematic errors.
     """
 
-    EOF_1: Optional[StateVectorElement] = Field(
+    EOF_1: Optional[StateVectorElementConfig] = Field(
         default=None, description="First Empirical Orthogonal Function"
     )
-    EOF_2: Optional[StateVectorElement] = Field(
+    EOF_2: Optional[StateVectorElementConfig] = Field(
         default=None, description="Second Empirical Orthogonal Function"
     )
-    EOF_3: Optional[StateVectorElement] = Field(
+    EOF_3: Optional[StateVectorElementConfig] = Field(
         default=None, description="Third Empirical Orthogonal Function"
     )
-    GROW_FWHM: Optional[StateVectorElement] = Field(
+    GROW_FWHM: Optional[StateVectorElementConfig] = Field(
         default=None, description="Growth of Full Width Half Maximum"
     )
-    WL_SHIFT: Optional[StateVectorElement] = Field(
+    WL_SHIFT: Optional[StateVectorElementConfig] = Field(
         default=None, description="Wavelength shift parameter"
     )
-    WL_SPACE: Optional[StateVectorElement] = Field(
+    WL_SPACE: Optional[StateVectorElementConfig] = Field(
         default=None, description="Wavelength spacing parameter"
     )
 
 
-class InstrumentUnknowns(BaseModel):
+class InstrumentUnknownsConfig(BaseModel):
     """
     Instrument unknowns configuration.
 
@@ -105,8 +108,8 @@ class InstrumentUnknowns(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.instrument import InstrumentUnknowns
-    >>> unknowns = InstrumentUnknowns(
+    >>> from isofit.configs.sections.instrument import InstrumentUnknownsConfig
+    >>> unknowns = InstrumentUnknownsConfig(
     ...     uncorrelated_radiometric_uncertainty=0.02,
     ...     wavelength_calibration_uncertainty=0.5
     ... )
@@ -138,7 +141,7 @@ class InstrumentUnknowns(BaseModel):
     )
 
 
-class Instrument(BaseModel):
+class InstrumentConfig(BaseModel):
     """
     Instrument configuration.
 
@@ -153,12 +156,12 @@ class Instrument(BaseModel):
     integrations : int, optional
         Number of integrations comprising the measurement. Noise diminishes
         with square root of this number.
-    unknowns : InstrumentUnknowns, optional
+    unknowns : InstrumentUnknownsConfig, optional
         Instrument calibration uncertainties configuration.
     fast_resample : bool
         If True, approximate complete spectral resampling by convolution with
         uniform FWHM. Faster but less accurate. Default is True.
-    statevector : InstrumentStateVector
+    statevector : InstrumentStateVectorConfig
         Instrument state vector configuration for optimizable calibration
         parameters. Default is empty.
     SNR : float, optional
@@ -180,8 +183,8 @@ class Instrument(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.instrument import Instrument
-    >>> inst = Instrument(
+    >>> from isofit.configs.sections.instrument import InstrumentConfig
+    >>> inst = InstrumentConfig(
     ...     wavelength_file="wavelengths.txt",
     ...     SNR=200.0,
     ...     integrations=10
@@ -195,8 +198,8 @@ class Instrument(BaseModel):
 
     See Also
     --------
-    InstrumentStateVector : Instrument parameters for optimization
-    InstrumentUnknowns : Calibration uncertainties
+    InstrumentStateVectorConfig : Instrument parameters for optimization
+    InstrumentUnknownsConfig : Calibration uncertainties
     """
 
     wavelength_file: Optional[PathExists] = Field(
@@ -208,7 +211,7 @@ class Instrument(BaseModel):
         description="Number of integrations comprising the measurement. Noise diminishes with square root of this number.",
     )
 
-    unknowns: Optional[InstrumentUnknowns] = Field(
+    unknowns: Optional[InstrumentUnknownsConfig] = Field(
         default=None, description="Instrument unknowns configuration"
     )
 
@@ -217,8 +220,8 @@ class Instrument(BaseModel):
         description="Approximate complete resampling by convolution with uniform FWHM",
     )
 
-    statevector: InstrumentStateVector = Field(
-        default_factory=InstrumentStateVector,
+    statevector: InstrumentStateVectorConfig = Field(
+        default_factory=InstrumentStateVectorConfig,
         description="Instrument state vector configuration",
     )
 
@@ -245,14 +248,14 @@ class Instrument(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_noise_model(self) -> "Instrument":
+    def validate_noise_model(self) -> "InstrumentConfig":
         """
         Validate that exactly one noise model is specified.
 
         Returns
         -------
-        Instrument
-            The validated Instrument instance.
+        InstrumentConfig
+            The validated InstrumentConfig instance.
 
         Raises
         ------
