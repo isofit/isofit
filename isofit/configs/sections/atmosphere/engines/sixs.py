@@ -22,7 +22,7 @@ from isofit.data import env
 from . import standardName
 
 
-class SixS(BaseModel):
+class SixSConfig(BaseModel):
     """
     6S engine configuration.
 
@@ -61,8 +61,8 @@ class SixS(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere.engines import SixS
-    >>> sixs = SixS(
+    >>> from isofit.configs.sections.atmosphere.engines import SixSConfig
+    >>> sixs = SixSConfig(
     ...     name="6s",
     ...     base_dir="/opt/6S",
     ...     day=172,
@@ -88,8 +88,8 @@ class SixS(BaseModel):
 
     See Also
     --------
-    Modtran : Commercial RT engine with more capabilities
-    LibRadTran : Alternative open-source RT engine
+    ModtranConfig : Commercial RT engine with more capabilities
+    LibRadTranConfig : Alternative open-source RT engine
     """
 
     name: Annotated[Literal["sixs"], BeforeValidator(standardName)]

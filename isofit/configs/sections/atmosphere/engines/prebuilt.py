@@ -13,7 +13,7 @@ from pydantic import BaseModel, BeforeValidator
 from . import standardName
 
 
-class Prebuilt(BaseModel):
+class PrebuiltConfig(BaseModel):
     """
     Prebuilt LUT engine configuration.
 
@@ -28,8 +28,8 @@ class Prebuilt(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere.engines import Prebuilt
-    >>> engine = Prebuilt(name="prebuilt")
+    >>> from isofit.configs.sections.atmosphere.engines import PrebuiltConfig
+    >>> engine = PrebuiltConfig(name="prebuilt")
 
     Notes
     -----
@@ -39,9 +39,9 @@ class Prebuilt(BaseModel):
 
     See Also
     --------
-    Modtran : MODTRAN 6.0 RT engine
-    SixS : 6S RT engine
-    sRTMnet : Machine learning RT emulator
+    ModtranConfig : MODTRAN 6.0 RT engine
+    SixSConfig : 6S RT engine
+    sRTMnetConfig : Machine learning RT emulator
     """
 
     name: Annotated[Literal["prebuilt"], BeforeValidator(standardName)]

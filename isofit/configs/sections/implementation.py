@@ -11,10 +11,10 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from isofit import __version__
-from isofit.configs.sections.inversion import Inversion
+from isofit.configs.sections.inversion import InversionConfig
 
 
-class Implementation(BaseModel):
+class ImplementationConfig(BaseModel):
     """
     Implementation configuration for ISOFIT runtime.
 
@@ -29,7 +29,7 @@ class Implementation(BaseModel):
         "mcmc_inversion" uses Markov Chain Monte Carlo sampling for uncertainty
         quantification, "simulation" performs forward modeling only.
         Default is "inversion".
-    inversion : Inversion, optional
+    inversion : InversionConfig, optional
         Inversion configuration. Required for inversion and mcmc_inversion modes.
     n_cores : int, optional
         Number of CPU cores to use for parallel processing. If None, uses all
@@ -70,11 +70,11 @@ class Implementation(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections import Implementation, Inversion
-    >>> impl = Implementation(
+    >>> from isofit.configs.sections import ImplementationConfig, InversionConfig
+    >>> impl = ImplementationConfig(
     ...     mode="inversion",
     ...     n_cores=8,
-    ...     inversion=Inversion(),
+    ...     inversion=InversionConfig(),
     ...     io_buffer_size=200
     ... )
 
@@ -95,14 +95,14 @@ class Implementation(BaseModel):
 
     See Also
     --------
-    isofit.configs.sections.inversion.Inversion : Inversion configuration
+    isofit.configs.sections.inversion.InversionConfig : Inversion configuration
     """
 
     mode: Literal["inversion", "mcmc_inversion", "simulation"] = Field(
         default="inversion", description="Operating mode for ISOFIT"
     )
 
-    inversion: Optional[Inversion] = Field(
+    inversion: Optional[InversionConfig] = Field(
         default=None, description="Inversion configuration"
     )
 
@@ -155,7 +155,7 @@ class Implementation(BaseModel):
     isofit_version: str = Field(default=__version__, description="ISOFIT version used")
 
     @model_validator(mode="after")
-    def validate_implementation(self) -> "Implementation":
+    def validate_implementation(self) -> "ImplementationConfig":
         """
         Validate implementation configuration.
 
@@ -164,8 +164,8 @@ class Implementation(BaseModel):
 
         Returns
         -------
-        Implementation
-            The validated Implementation instance.
+        ImplementationConfig
+            The validated ImplementationConfig instance.
 
         Raises
         ------

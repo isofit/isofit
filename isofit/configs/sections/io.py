@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from isofit.configs.utils.validators import PathExists
 
 
-class Input(BaseModel):
+class InputConfig(BaseModel):
     """
     Input file configuration for ISOFIT.
 
@@ -52,8 +52,8 @@ class Input(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.io import Input
-    >>> input_config = Input(
+    >>> from isofit.configs.sections.io import InputConfig
+    >>> input_config = InputConfig(
     ...     measured_radiance_file="data/radiance.mat",
     ...     obs_file="data/obs.txt",
     ...     loc_file="data/location.txt"
@@ -111,7 +111,7 @@ class Input(BaseModel):
     )
 
 
-class Output(BaseModel):
+class OutputConfig(BaseModel):
     """
     Output file configuration for ISOFIT.
 
@@ -161,9 +161,9 @@ class Output(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.io import Output
+    >>> from isofit.configs.sections.io import OutputConfig
     >>> from pathlib import Path
-    >>> output_config = Output(
+    >>> output_config = OutputConfig(
     ...     dir=Path("results/"),
     ...     estimated_reflectance_file=Path("results/reflectance.dat"),
     ...     posterior_uncertainty_file=Path("results/uncertainty.dat")

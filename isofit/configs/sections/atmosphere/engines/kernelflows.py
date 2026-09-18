@@ -14,7 +14,7 @@ from isofit.configs.utils.validators import PathExists
 from . import standardName
 
 
-class KernelFlows(BaseModel):
+class KernelFlowsConfig(BaseModel):
     """
     Kernel Flows engine configuration.
 
@@ -33,8 +33,8 @@ class KernelFlows(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere.engines import KernelFlows
-    >>> kf = KernelFlows(
+    >>> from isofit.configs.sections.atmosphere.engines import KernelFlowsConfig
+    >>> kf = KernelFlowsConfig(
     ...     name="kernelflows",
     ...     emulator_file="kf_emulator.pkl",
     ...     template_file="kf_template.json"
@@ -47,8 +47,8 @@ class KernelFlows(BaseModel):
 
     See Also
     --------
-    sRTMnet : Alternative ML-based RT emulator
-    SixS : Physics-based RT engine
+    sRTMnetConfig : Alternative ML-based RT emulator
+    SixSConfig : Physics-based RT engine
     """
 
     name: Annotated[Literal["kernelflows"], BeforeValidator(standardName)]

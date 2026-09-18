@@ -9,9 +9,9 @@ from pydantic import BaseModel, Field, ValidationError
 Logger = logging.getLogger(__name__)
 
 from isofit.configs.sections import io
-from isofit.configs.sections.atmosphere import Atmosphere
-from isofit.configs.sections.forward_model import ForwardModel
-from isofit.configs.sections.implementation import Implementation
+from isofit.configs.sections.atmosphere import AtmosphereConfig
+from isofit.configs.sections.forward_model import ForwardModelConfig
+from isofit.configs.sections.implementation import ImplementationConfig
 
 
 class Config(BaseModel):
@@ -24,16 +24,16 @@ class Config(BaseModel):
 
     Attributes
     ----------
-    input : io.Input
+    input : io.InputConfig
         Input file configuration specifying measured radiance, observation files,
         location files, and other input data sources.
-    output : io.Output
+    output : io.OutputConfig
         Output file configuration specifying where to write estimated states,
         reflectance, radiance, and other products.
-    forward_model : ForwardModel
+    forward_model : ForwardModelConfig
         Forward model configuration containing surface, atmosphere, and instrument
         models used to simulate measurements.
-    implementation : Implementation
+    implementation : ImplementationConfig
         Implementation configuration specifying operating mode (inversion, MCMC,
         simulation), Ray parallelization settings, and other runtime parameters.
 
@@ -52,19 +52,19 @@ class Config(BaseModel):
     cannot be expressed as simple field constraints.
     """
 
-    input: io.Input = Field(description="Input file configuration")
+    input: io.InputConfig = Field(description="Input file configuration")
 
-    output: io.Output = Field(
-        default_factory=io.Output, description="Output file configuration"
+    output: io.OutputConfig = Field(
+        default_factory=io.OutputConfig, description="Output file configuration"
     )
 
-    forward_model: ForwardModel = Field(
-        default_factory=ForwardModel,
+    forward_model: ForwardModelConfig = Field(
+        default_factory=ForwardModelConfig,
         description="Forward model configuration (surface, atmosphere, instrument)",
     )
 
-    implementation: Implementation = Field(
-        default_factory=Implementation,
+    implementation: ImplementationConfig = Field(
+        default_factory=ImplementationConfig,
         description="Implementation configuration (mode, inversion, etc.)",
     )
 
@@ -93,7 +93,7 @@ class Config(BaseModel):
 
         Examples
         --------
-        >>> config = Config(input=Input(), output=Output())
+        >>> config = Config(input=InputConfig(), output=OutputConfig())
         >>> config.get_config_errors()  # No errors
         >>> config.implementation.mode = "simulation"
         >>> config.input.reflectance_file = None

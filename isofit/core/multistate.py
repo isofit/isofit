@@ -27,7 +27,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from spectral.io import envi
 
-from isofit.configs.sections.statevector_config import StateVectorElementConfig
+from isofit.configs.sections.statevector import StateVectorElementConfig
 from isofit.core.common import envi_header
 from isofit.core.instrument import Instrument
 from isofit.surface import Surface

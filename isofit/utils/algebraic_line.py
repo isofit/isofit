@@ -28,8 +28,7 @@ import click
 import numpy as np
 from spectral.io import envi
 
-from isofit import ray
-from isofit.configs import configs
+from isofit import configs, ray
 from isofit.core.common import envi_header, load_esd, load_spectrum
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
