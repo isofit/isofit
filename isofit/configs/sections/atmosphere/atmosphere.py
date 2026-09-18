@@ -6,9 +6,9 @@ RT engine selection, lookup table settings, and atmospheric state vector paramet
 """
 
 from pathlib import Path
-from typing import Any, List, Literal, Optional
+from typing import Any, List, Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
 
 from .engines import Engines, PrebuiltConfig
 
@@ -43,15 +43,14 @@ class AtmosphereConfig(BaseModel):
     lut_subset : dict[str, Any]
         Subset of lut_grid to use for processing. Allows using a smaller
         region of a large pre-computed LUT. Empty dict means use full grid.
+        Accepts the legacy key ``lut_names`` as an alias for backward
+        compatibility with older configs.
     rt_mode : {"rdn", "transm"}
         Atmospheric RT mode for LUT simulations. "transm" for transmittances
         (standard), "rdn" for reflected radiance. Default is "transm".
     statevector_names : list[str]
         Names of statevector elements to use with this atmospheric RT engine.
         Determines which atmospheric parameters are optimized during inversion.
-    lut_names : list[str], optional
-        Names of dimensions in the LUT. Provided for backward compatibility
-        with older configs. Prefer using lut_grid keys.
 
     Examples
     --------
@@ -109,7 +108,9 @@ class AtmosphereConfig(BaseModel):
     lut_grid: dict[str, list[float]] = Field(default_factory=dict, description="")
 
     lut_subset: dict[str, Any] = Field(
-        default_factory=dict, description="Subset of the lut_grid to use"
+        default_factory=dict,
+        validation_alias=AliasChoices("lut_subset", "lut_names"),
+        description="Subset of the lut_grid to use (legacy alias: lut_names)",
     )
 
     rt_mode: Literal["rdn", "transm"] = Field(
@@ -120,11 +121,6 @@ class AtmosphereConfig(BaseModel):
     statevector_names: List[str] = Field(
         default_factory=list,
         description="Names of the statevector elements to use with this atmospheric RT engine",
-    )
-
-    lut_names: Optional[List[str]] = Field(
-        default=None,
-        description="Names of dimensions in the LUT (for backward compatibility)",
     )
 
     # @field_validator("lut_grid")

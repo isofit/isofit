@@ -117,7 +117,7 @@ def subsetting(ds, subset):
         for key in missing:
             Logger.error(f"- {key}")
         raise AttributeError(
-            f"Subset dictionary (engine.lut_names) is missing keys that are present in the LUT dimensions {set(ds.coords)}: {missing=}"
+            f"Subset dictionary (atmosphere.lut_subset) is missing keys that are present in the LUT dimensions {set(ds.coords)}: {missing=}"
         )
 
     # Operations to perform
