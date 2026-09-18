@@ -680,7 +680,7 @@ class ForwardModel:
         # Call surface emission, upsample
         Ls_hi = self.upsample(self.surface.wl, self.calc_Ls(x_surface, geom))
 
-        rdn = self.calc_rdn(
+        rdn_hi = self.calc_rdn(
             x_atmosphere,
             rho_dir_dir=rho_dir_dir_hi,
             rho_dif_dir=rho_dif_dir_hi,
@@ -695,6 +695,9 @@ class ForwardModel:
             r=r,
             geom=geom,
         )
+        meas = self.instrument.sample(
+            x_instrument, self.atmosphere.wl, rdn_hi
+        ) + self.eof_offset(x_instrument)
 
         # Call derivative of rfl wrt surface state, upsample
         drfl_dsurface_hi = self.upsample(
@@ -706,18 +709,6 @@ class ForwardModel:
         dLs_dsurface_hi = self.upsample(
             self.surface.wl, self.surface.dLs_dsurface(x_surface, geom).T
         ).T
-
-        # To get the derivative w.r.t. atmosphere
-        drdn_datmosphere = self.drdn_datmosphere(
-            x_atmosphere,
-            geom,
-            rho_dir_dir=rho_dir_dir_hi,
-            rho_dif_dir=rho_dif_dir_hi,
-            rho_dir_dif=rho_dir_dif_hi,
-            rho_dif_dif=rho_dif_dif_hi,
-            Ls=Ls_hi,
-            rdn=rdn,
-        )
 
         # To get the derivative w.r.t. Surface
         # ToDo: Move this to ForwardModel as well?
@@ -738,11 +729,22 @@ class ForwardModel:
         dmeas_dsurface = self.instrument.sample(
             x_instrument, self.atmosphere.wl, drdn_dsurface.T
         ).T
-        dmeas_datmosphere = self.instrument.sample(
-            x_instrument, self.atmosphere.wl, drdn_datmosphere.T
-        ).T
+
+        # To get the derivative w.r.t. atmosphere
+        dmeas_datmosphere = self.dmeas_datmosphere(
+            x_atmosphere,
+            x_instrument,
+            geom,
+            rho_dir_dir=rho_dir_dir_hi,
+            rho_dif_dir=rho_dif_dir_hi,
+            rho_dir_dif=rho_dir_dif_hi,
+            rho_dif_dif=rho_dif_dif_hi,
+            Ls=Ls_hi,
+            meas=meas,
+        )
+
         dmeas_dinstrument = self.instrument.dmeas_dinstrument(
-            x_instrument, self.atmosphere.wl, rdn
+            x_instrument, self.atmosphere.wl, rdn_hi
         )
 
         # Put it all together
@@ -792,7 +794,7 @@ class ForwardModel:
         # Call surface emission, upsample
         Ls_hi = self.upsample(self.surface.wl, self.calc_Ls(x_surface, geom))
 
-        rdn = self.calc_rdn(
+        rdn_hi = self.calc_rdn(
             x_atmosphere,
             rho_dir_dir=rho_dir_dir_hi,
             rho_dif_dir=rho_dif_dir_hi,
@@ -807,24 +809,25 @@ class ForwardModel:
             r=r,
             geom=geom,
         )
+        meas = self.instrument.sample(
+            x_instrument, self.atmosphere.wl, rdn_hi
+        ) + self.eof_offset(x_instrument)
 
-        drdn_datmosphereb = self.drdn_datmosphereb(
+        dmeas_datmosphereb = self.dmeas_datmosphereb(
             x_atmosphere,
+            x_instrument,
             geom=geom,
             rho_dir_dir=rho_dir_dir_hi,
             rho_dif_dir=rho_dif_dir_hi,
             rho_dir_dif=rho_dir_dif_hi,
             rho_dif_dif=rho_dif_dif_hi,
             Ls=Ls_hi,
-            rdn=rdn,
+            meas=meas,
         )
 
         # To get derivatives w.r.t. instrument, downsample to instrument wavelengths
-        dmeas_datmosphereb = self.instrument.sample(
-            x_instrument, self.atmosphere.wl, drdn_datmosphereb.T
-        ).T
         dmeas_dinstrumentb = self.instrument.dmeas_dinstrumentb(
-            x_instrument, self.atmosphere.wl, rdn
+            x_instrument, self.atmosphere.wl, rdn_hi
         )
 
         # Put it together
@@ -833,16 +836,17 @@ class ForwardModel:
         Kb[:, self.instrument_b_inds] = dmeas_dinstrumentb
         return Kb
 
-    def drdn_datmosphere(
+    def dmeas_datmosphere(
         self,
         x_atmosphere,
+        x_instrument,
         geom,
         rho_dir_dir,
         rho_dif_dir,
         rho_dir_dif,
         rho_dif_dif,
         Ls,
-        rdn,
+        meas,
     ):
         """Derivative of estimated radiance w.r.t. atmosphere statevector elements.
         We use a numerical approach to approximate datmosphere with a constant surface
@@ -865,37 +869,42 @@ class ForwardModel:
             ) = self.calc_atmosphere_quantities(x_atmosphere_perturb, geom, rho_dif_dif)
 
             # Surface state is held constant?
-            rdne = self.calc_rdn(
-                x_atmosphere_perturb,
-                rho_dir_dir,
-                rho_dif_dir,
-                rho_dir_dif,
-                rho_dif_dif,
-                Ls,
-                L_tot,
-                L_dir_dir,
-                L_dif_dir,
-                L_dir_dif,
-                L_dif_dif,
-                r,
-                geom,
-            )
-            K_atmosphere.append((rdne - rdn) / eps)
+            mease = self.instrument.sample(
+                x_instrument,
+                self.atmosphere.wl,
+                self.calc_rdn(
+                    x_atmosphere_perturb,
+                    rho_dir_dir,
+                    rho_dif_dir,
+                    rho_dir_dif,
+                    rho_dif_dif,
+                    Ls,
+                    L_tot,
+                    L_dir_dir,
+                    L_dif_dir,
+                    L_dir_dif,
+                    L_dif_dif,
+                    r,
+                    geom,
+                ),
+            ) + self.eof_offset(x_instrument)
+            K_atmosphere.append((mease - meas) / eps)
 
         K_atmosphere = np.array(K_atmosphere).T
 
         return K_atmosphere
 
-    def drdn_datmosphereb(
+    def dmeas_datmosphereb(
         self,
         x_atmosphere,
+        x_instrument,
         geom,
         rho_dir_dir,
         rho_dif_dir,
         rho_dir_dif,
         rho_dif_dif,
         Ls,
-        rdn,
+        meas,
     ):
         """Derivative of estimated rdn w.r.t. H2O_ABSCO
 
@@ -905,7 +914,7 @@ class ForwardModel:
         (which is very unlikely though).
         """
         if len(self.atmosphere.bvec) == 0:
-            Kb_atmosphere = np.zeros((0, len(self.atmosphere.wl)))
+            Kb_atmosphere = np.zeros((0, self.n_meas))
 
         # ToDo: might require modification in case more unknowns are added
         # The following statement captures the case that H2O is not part
@@ -941,22 +950,26 @@ class ForwardModel:
                         x_atmosphere_perturb, geom, rho_dif_dif
                     )
 
-                    rdne = self.calc_rdn(
-                        x_atmosphere_perturb,
-                        rho_dir_dir,
-                        rho_dif_dir,
-                        rho_dir_dif,
-                        rho_dif_dif,
-                        Ls,
-                        L_tot,
-                        L_dir_dir,
-                        L_dif_dir,
-                        L_dir_dif,
-                        L_dif_dif,
-                        r,
-                        geom,
-                    )
-                    Kb_atmosphere.append((rdne - rdn) / eps)
+                    mease = self.instrument.sample(
+                        x_instrument,
+                        self.atmosphere.wl,
+                        self.calc_rdn(
+                            x_atmosphere_perturb,
+                            rho_dir_dir,
+                            rho_dif_dir,
+                            rho_dir_dif,
+                            rho_dif_dif,
+                            Ls,
+                            L_tot,
+                            L_dir_dir,
+                            L_dif_dir,
+                            L_dir_dif,
+                            L_dif_dif,
+                            r,
+                            geom,
+                        ),
+                    ) + self.eof_offset(x_instrument)
+                    Kb_atmosphere.append((mease - meas) / eps)
 
         Kb_atmosphere = np.array(Kb_atmosphere).T
 
