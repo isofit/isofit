@@ -83,20 +83,20 @@ def selectByName(data: dict) -> str:
     return name
 
 
-from .libradtran import LibRadTran
-from .modtran import Modtran
-from .prebuilt import Prebuilt
-from .sixs import SixS
-from .srtmnet import sRTMnet
+from .libradtran import LibRadTranConfig
+from .modtran import ModtranConfig
+from .prebuilt import PrebuiltConfig
+from .sixs import SixSConfig
+from .srtmnet import sRTMnetConfig
 
 # Add new engines using their standard name
 Engines = Annotated[
     Union[
-        Annotated[LibRadTran, Tag("libradtran")],
-        Annotated[Modtran, Tag("modtran")],
-        Annotated[Prebuilt, Tag("prebuilt")],
-        Annotated[SixS, Tag("sixs")],
-        Annotated[sRTMnet, Tag("srtmnet")],
+        Annotated[LibRadTranConfig, Tag("libradtran")],
+        Annotated[ModtranConfig, Tag("modtran")],
+        Annotated[PrebuiltConfig, Tag("prebuilt")],
+        Annotated[SixSConfig, Tag("sixs")],
+        Annotated[sRTMnetConfig, Tag("srtmnet")],
     ],
     Discriminator(selectByName),
 ]

@@ -126,7 +126,7 @@ class LeastSquaresConfig(BaseModel):
     )
 
 
-class Inversion(BaseModel):
+class InversionConfig(BaseModel):
     """
     Inversion configuration for ISOFIT.
 
@@ -161,8 +161,8 @@ class Inversion(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.inversion import Inversion, LeastSquaresConfig
-    >>> inv = Inversion(
+    >>> from isofit.configs.sections.inversion import InversionConfig, LeastSquaresConfig
+    >>> inv = InversionConfig(
     ...     windows=[[400.0, 1300.0], [1450.0, 1780.0], [1950.0, 2450.0]],
     ...     least_squares_params=LeastSquaresConfig(max_nfev=15)
     ... )

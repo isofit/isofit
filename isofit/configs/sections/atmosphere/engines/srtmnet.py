@@ -17,7 +17,7 @@ from isofit.data import env
 from . import standardName
 
 
-class sRTMnet(BaseModel):
+class sRTMnetConfig(BaseModel):
     """
     sRTMnet engine configuration.
 
@@ -45,8 +45,8 @@ class sRTMnet(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere.engines import sRTMnet
-    >>> srtm = sRTMnet(
+    >>> from isofit.configs.sections.atmosphere.engines import sRTMnetConfig
+    >>> srtm = sRTMnetConfig(
     ...     name="srtmnet",
     ...     emulator_batch_size=2048,
     ...     emulator_file="srtmnet_model.6s",
@@ -66,8 +66,8 @@ class sRTMnet(BaseModel):
 
     See Also
     --------
-    SixS : Physics-based RT code that sRTMnet emulates
-    Prebuilt : Even faster option using pre-computed LUTs
+    SixSConfig : Physics-based RT code that sRTMnet emulates
+    PrebuiltConfig : Even faster option using pre-computed LUTs
     """
 
     name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)]

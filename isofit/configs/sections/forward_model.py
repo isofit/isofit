@@ -11,13 +11,13 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-from isofit.configs.sections.atmosphere import Atmosphere
-from isofit.configs.sections.instrument import Instrument
-from isofit.configs.sections.surface import Surface
+from isofit.configs.sections.atmosphere import AtmosphereConfig
+from isofit.configs.sections.instrument import InstrumentConfig
+from isofit.configs.sections.surface import SurfaceConfig
 from isofit.configs.utils.validators import PathExists
 
 
-class ForwardModel(BaseModel):
+class ForwardModelConfig(BaseModel):
     """
     Forward model configuration.
 
@@ -27,13 +27,13 @@ class ForwardModel(BaseModel):
 
     Attributes
     ----------
-    surface : Surface, optional
+    surface : SurfaceConfig, optional
         Surface model configuration specifying reflectance model, priors,
         and surface parameters like temperature and glint.
-    atmosphere : Atmosphere, optional
+    atmosphere : AtmosphereConfig, optional
         Atmospheric radiative transfer configuration including RT engine,
         lookup table settings, and atmospheric state vector parameters.
-    instrument : Instrument, optional
+    instrument : InstrumentConfig, optional
         Instrument model configuration including spectral response, noise
         characteristics, and instrument state vector parameters.
     model_discrepancy_file : PathExists, optional
@@ -43,12 +43,16 @@ class ForwardModel(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections import ForwardModel, Surface, Instrument
-    >>> from isofit.configs.sections.atmosphere import Atmosphere
-    >>> fm = ForwardModel(
-    ...     surface=Surface(surface_file="surface.mat"),
-    ...     atmosphere=Atmosphere(),
-    ...     instrument=Instrument(wavelength_file="wavelengths.txt", SNR=100.0)
+    >>> from isofit.configs.sections import (
+    ...     ForwardModelConfig,
+    ...     SurfaceConfig,
+    ...     InstrumentConfig,
+    ... )
+    >>> from isofit.configs.sections.atmosphere import AtmosphereConfig
+    >>> fm = ForwardModelConfig(
+    ...     surface=SurfaceConfig(surface_file="surface.mat"),
+    ...     atmosphere=AtmosphereConfig(),
+    ...     instrument=InstrumentConfig(wavelength_file="wavelengths.txt", SNR=100.0)
     ... )
 
     Notes
@@ -62,20 +66,20 @@ class ForwardModel(BaseModel):
 
     See Also
     --------
-    isofit.configs.sections.surface.Surface : Surface configuration
-    isofit.configs.sections.atmosphere.Atmosphere : Atmosphere configuration
-    isofit.configs.sections.instrument.Instrument : Instrument configuration
+    isofit.configs.sections.surface.SurfaceConfig : Surface configuration
+    isofit.configs.sections.atmosphere.AtmosphereConfig : Atmosphere configuration
+    isofit.configs.sections.instrument.InstrumentConfig : Instrument configuration
     """
 
-    surface: Optional[Surface] = Field(
+    surface: Optional[SurfaceConfig] = Field(
         default=None, description="Surface configuration"
     )
 
-    atmosphere: Optional[Atmosphere] = Field(
+    atmosphere: Optional[AtmosphereConfig] = Field(
         default=None, description="Atmospheric radiative transfer configuration"
     )
 
-    instrument: Optional[Instrument] = Field(
+    instrument: Optional[InstrumentConfig] = Field(
         default=None, description="Instrument configuration"
     )
 

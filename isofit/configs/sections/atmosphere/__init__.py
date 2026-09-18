@@ -1,1 +1,1 @@
-from .atmosphere import Atmosphere
+from .atmosphere import AtmosphereConfig
