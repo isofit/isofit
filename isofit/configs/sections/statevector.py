@@ -12,7 +12,7 @@ import numpy as np
 from pydantic import BaseModel, Field
 
 
-class StateVectorElement(BaseModel):
+class StateVectorElementConfig(BaseModel):
     """
     Configuration for a single element in a state vector.
 
@@ -39,8 +39,8 @@ class StateVectorElement(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.statevector import StateVectorElement
-    >>> element = StateVectorElement(
+    >>> from isofit.configs.sections.statevector import StateVectorElementConfig
+    >>> element = StateVectorElementConfig(
     ...     bounds=[0.0, 1.0],
     ...     scale=0.5,
     ...     prior_mean=0.3,
@@ -75,25 +75,25 @@ class StateVectorElement(BaseModel):
     )
 
 
-class StateVector(BaseModel):
+class StateVectorConfig(BaseModel):
     """
     Base state vector configuration.
 
     This is an abstract base class for state vector configurations. Specific
-    state vectors (SurfaceStateVector, InstrumentStateVector, etc.) inherit
-    from this and add domain-specific state vector elements as fields.
+    state vectors (SurfaceStateVectorConfig, InstrumentStateVectorConfig, etc.)
+    inherit from this and add domain-specific state vector elements as fields.
 
     Examples
     --------
-    >>> from isofit.configs.sections.surface import SurfaceStateVector
-    >>> from isofit.configs.sections.statevector import StateVectorElement
-    >>> sv = SurfaceStateVector()
-    >>> sv.SURF_TEMP_K = StateVectorElement(bounds=[250.0, 350.0])
+    >>> from isofit.configs.sections.surface import SurfaceStateVectorConfig
+    >>> from isofit.configs.sections.statevector import StateVectorElementConfig
+    >>> sv = SurfaceStateVectorConfig()
+    >>> sv.SURF_TEMP_K = StateVectorElementConfig(bounds=[250.0, 350.0])
 
     See Also
     --------
-    isofit.configs.sections.surface.SurfaceStateVector : Surface parameters
-    isofit.configs.sections.instrument.InstrumentStateVector : Instrument parameters
+    isofit.configs.sections.surface.SurfaceStateVectorConfig : Surface parameters
+    isofit.configs.sections.instrument.InstrumentStateVectorConfig : Instrument parameters
     """
 
     pass

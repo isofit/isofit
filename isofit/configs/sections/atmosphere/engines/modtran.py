@@ -15,7 +15,7 @@ from isofit.data import env
 from . import standardName
 
 
-class Modtran(BaseModel):
+class ModtranConfig(BaseModel):
     """
     MODTRAN 6.0 engine configuration.
 
@@ -44,8 +44,8 @@ class Modtran(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere.engines import Modtran
-    >>> modtran = Modtran(
+    >>> from isofit.configs.sections.atmosphere.engines import ModtranConfig
+    >>> modtran = ModtranConfig(
     ...     name="modtran",
     ...     base_dir="/opt/modtran6.0",
     ...     aerosol_template_file="aerosol_template.txt",
@@ -66,8 +66,8 @@ class Modtran(BaseModel):
 
     See Also
     --------
-    SixS : Alternative open-source RT engine
-    LibRadTran : Alternative open-source RT engine
+    SixSConfig : Alternative open-source RT engine
+    LibRadTranConfig : Alternative open-source RT engine
     """
 
     name: Annotated[Literal["modtran"], BeforeValidator(standardName)]

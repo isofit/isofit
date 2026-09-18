@@ -17,7 +17,7 @@ from isofit.data import env
 from . import standardName
 
 
-class LibRadTran(BaseModel):
+class LibRadTranConfig(BaseModel):
     """
     LibRadTran engine configuration.
 
@@ -55,8 +55,8 @@ class LibRadTran(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere.engines import LibRadTran
-    >>> librad = LibRadTran(
+    >>> from isofit.configs.sections.atmosphere.engines import LibRadTranConfig
+    >>> librad = LibRadTranConfig(
     ...     name="libradtran",
     ...     base_dir="/opt/libRadtran",
     ...     reptran_band_model="medium",
@@ -78,8 +78,8 @@ class LibRadTran(BaseModel):
 
     See Also
     --------
-    Modtran : Commercial RT engine alternative
-    SixS : Simpler open-source RT engine
+    ModtranConfig : Commercial RT engine alternative
+    SixSConfig : Simpler open-source RT engine
     """
 
     name: Annotated[Literal["libradtran"], BeforeValidator(standardName)]

@@ -11,11 +11,14 @@ from typing import Dict, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from isofit.configs.sections.statevector import StateVector, StateVectorElement
+from isofit.configs.sections.statevector import (
+    StateVectorConfig,
+    StateVectorElementConfig,
+)
 from isofit.configs.utils.validators import PathExists
 
 
-class SurfaceStateVector(StateVector):
+class SurfaceStateVectorConfig(StateVectorConfig):
     """
     Surface state vector configuration.
 
@@ -25,22 +28,22 @@ class SurfaceStateVector(StateVector):
 
     Attributes
     ----------
-    SURF_TEMP_K : StateVectorElement, optional
+    SURF_TEMP_K : StateVectorElementConfig, optional
         Surface temperature in Kelvin. Used for thermal emission modeling
         in thermal infrared (TIR) retrievals.
-    SKY_GLINT : StateVectorElement, optional
+    SKY_GLINT : StateVectorElementConfig, optional
         Sky glint parameter for modeling specular reflection of sky radiance
         from water surfaces.
-    SUN_GLINT : StateVectorElement, optional
+    SUN_GLINT : StateVectorElementConfig, optional
         Sun glint parameter for modeling specular reflection of direct solar
         radiance from water surfaces.
 
     Examples
     --------
-    >>> from isofit.configs.sections.surface import SurfaceStateVector
-    >>> from isofit.configs.sections.statevector import StateVectorElement
-    >>> ssv = SurfaceStateVector()
-    >>> ssv.SURF_TEMP_K = StateVectorElement(
+    >>> from isofit.configs.sections.surface import SurfaceStateVectorConfig
+    >>> from isofit.configs.sections.statevector import StateVectorElementConfig
+    >>> ssv = SurfaceStateVectorConfig()
+    >>> ssv.SURF_TEMP_K = StateVectorElementConfig(
     ...     bounds=[250.0, 350.0],
     ...     scale=50.0,
     ...     init=300.0
@@ -52,18 +55,18 @@ class SurfaceStateVector(StateVector):
     where specular reflection from the water surface is significant.
     """
 
-    SURF_TEMP_K: Optional[StateVectorElement] = Field(
+    SURF_TEMP_K: Optional[StateVectorElementConfig] = Field(
         default=None, description="Surface temperature in Kelvin"
     )
-    SKY_GLINT: Optional[StateVectorElement] = Field(
+    SKY_GLINT: Optional[StateVectorElementConfig] = Field(
         default=None, description="Sky glint parameter"
     )
-    SUN_GLINT: Optional[StateVectorElement] = Field(
+    SUN_GLINT: Optional[StateVectorElementConfig] = Field(
         default=None, description="Sun glint parameter"
     )
 
 
-class Surface(BaseModel):
+class SurfaceConfig(BaseModel):
     """
     Surface configuration.
 
@@ -100,7 +103,7 @@ class Surface(BaseModel):
     selection_metric : {"Euclidean", "SGA", "NormSGA"}
         Metric for surface model selection in multi-surface mode. "SGA"
         (Spectral Gradient Angle) is recommended. Default is "SGA".
-    statevector : SurfaceStateVector
+    statevector : SurfaceStateVectorConfig
         Surface state vector configuration for temperature and glint parameters.
     emissivity_for_surface_T_init : float
         Initial emissivity value for surface temperature estimation. Value
@@ -117,8 +120,8 @@ class Surface(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.surface import Surface
-    >>> surf = Surface(
+    >>> from isofit.configs.sections.surface import SurfaceConfig
+    >>> surf = SurfaceConfig(
     ...     surface_file="surface_priors.mat",
     ...     surface_category="multicomponent_surface",
     ...     terrain_style="flat"
@@ -126,7 +129,7 @@ class Surface(BaseModel):
 
     Multi-surface configuration example:
 
-    >>> multi_surf = Surface(
+    >>> multi_surf = SurfaceConfig(
     ...     multi_surface_flag=True,
     ...     surface_class_file="classification.img",
     ...     Surfaces={
@@ -155,7 +158,7 @@ class Surface(BaseModel):
 
     See Also
     --------
-    SurfaceStateVector : Surface parameters for optimization
+    SurfaceStateVectorConfig : Surface parameters for optimization
     """
 
     multi_surface_flag: bool = Field(
@@ -204,8 +207,8 @@ class Surface(BaseModel):
         default="SGA", description="Metric for surface selection"
     )
 
-    statevector: SurfaceStateVector = Field(
-        default_factory=SurfaceStateVector,
+    statevector: SurfaceStateVectorConfig = Field(
+        default_factory=SurfaceStateVectorConfig,
         description="Surface state vector configuration",
     )
 

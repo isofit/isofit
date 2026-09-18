@@ -10,10 +10,10 @@ from typing import Any, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from .engines import Engines, Prebuilt
+from .engines import Engines, PrebuiltConfig
 
 
-class Atmosphere(BaseModel):
+class AtmosphereConfig(BaseModel):
     """
     Atmosphere configuration.
 
@@ -55,10 +55,10 @@ class Atmosphere(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere import Atmosphere
-    >>> from isofit.configs.sections.atmosphere.engines import Modtran
-    >>> atm = Atmosphere(
-    ...     engine=Modtran(
+    >>> from isofit.configs.sections.atmosphere import AtmosphereConfig
+    >>> from isofit.configs.sections.atmosphere.engines import ModtranConfig
+    >>> atm = AtmosphereConfig(
+    ...     engine=ModtranConfig(
     ...         aerosol_template_file="aerosol.txt",
     ...         template_file="template.json"
     ...     ),
@@ -86,7 +86,7 @@ class Atmosphere(BaseModel):
     """
 
     engine: Engines = Field(
-        default_factory=lambda: Prebuilt(name="prebuilt"),
+        default_factory=lambda: PrebuiltConfig(name="prebuilt"),
         description="Radiative transfer engine; defaults to a prebuilt LUT",
     )
 
@@ -150,7 +150,7 @@ class Atmosphere(BaseModel):
     #     return {key: sorted(grid[key]) for key in sorted(grid)}
     #
     # @model_validator(mode="after")
-    # def _validate_lut_subset(self) -> "Atmosphere":
+    # def _validate_lut_subset(self) -> "AtmosphereConfig":
     #     """
     #     lut_subset (formerly lut_names) must be a subset of the lut_grid keys.
     #     Sorted alphabetically by key to match lut_grid ordering.
