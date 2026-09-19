@@ -71,14 +71,47 @@ docs = [
 plots = [
   "isoplots",
 ]
+# Torch build selectors for the optional GPU backend. Mutually exclusive under
+# uv (see [tool.uv] conflicts); under plain pip they are no-ops that request the
+# same "torch" the core dependencies already do.
+cpu = [
+  "torch",
+]
+cuda = [
+  "torch",
+]
+
+# Enabled by default via [tool.uv] default-groups, so a bare `uv sync` keeps
+# resolving torch from the CPU wheel index exactly as it did before the cuda
+# extra existed. CUDA users turn it off: `uv sync --extra cuda --no-group cpu`.
+[dependency-groups]
+cpu = [
+  "torch",
+]
+
+[tool.uv]
+default-groups = ["cpu"]
+conflicts = [
+  [{extra="cpu"}, {extra="cuda"}],
+  [{group="cpu"}, {extra="cuda"}],
+]
 
 [tool.uv.sources]
-torch = [{index="pytorch-cpu"}]
+torch = [
+  {index="pytorch-cu128", extra="cuda"},
+  {index="pytorch-cpu", extra="cpu"},
+  {index="pytorch-cpu", group="cpu"},
+]
 isoplots = [{git="https://github.com/isofit/isofit-plots.git"}]
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
 explicit = true
 
 [project.urls]

@@ -722,6 +722,9 @@ def build_config(
     max_slope: float = 20.0,
     per_pixel_heuristic_prior: bool = False,
     use_background_rfl: bool = False,
+    backend: str = "numpy",
+    torch_device: str = "auto",
+    torch_batch_size: str = "auto",
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -866,6 +869,9 @@ def build_config(
             n_cores=n_cores,
             debug=debug,
             per_pixel_heuristic_prior=per_pixel_heuristic_prior,
+            backend=backend,
+            torch_device=torch_device,
+            torch_batch_size=torch_batch_size,
         ),
         "input": input_config,
         "output": output_config,
@@ -1952,9 +1958,12 @@ def make_implementation_config(
     n_cores: int = -1,
     debug: bool = False,
     per_pixel_heuristic_prior: bool = False,
+    backend: str = "numpy",
+    torch_device: str = "auto",
+    torch_batch_size: str = "auto",
 ):
 
-    return {
+    config = {
         "ray_temp_dir": ray_temp_dir,
         "ray_address": ray_ip_head,
         "inversion": {"windows": inversion_windows},
@@ -1963,6 +1972,15 @@ def make_implementation_config(
         "debug_mode": debug,
         "isofit_version": __version__,
     }
+
+    # Only emit the torch keys when the torch backend is actually selected, so
+    # configs generated for the default path stay byte-identical to before.
+    if backend != "numpy":
+        config["backend"] = backend
+        config["torch_device"] = torch_device
+        config["torch_batch_size"] = torch_batch_size
+
+    return config
 
 
 def make_input_config(

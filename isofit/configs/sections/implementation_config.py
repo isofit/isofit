@@ -24,6 +24,10 @@ from isofit import __version__
 from isofit.configs.base_config import BaseConfigSection
 from isofit.configs.sections.inversion_config import InversionConfig
 
+# Imported for the device-string pattern only; isofit.core.backend defers its
+# torch import, so this stays cheap and safe to import at config time.
+from isofit.core.backend import DEVICE_RE
+
 
 class ImplementationConfig(BaseConfigSection):
     def __init__(self, sub_configdic: dict = None):
@@ -95,6 +99,58 @@ class ImplementationConfig(BaseConfigSection):
         """bool: A flag to run the code in debug mode, which circumvents ray.
         """
 
+        self._backend_type = str
+        self.backend = "numpy"
+        """str: Numerical backend used for retrievals. Options are:
+        'numpy' (default) -> the standard per-pixel scipy/numpy code path,
+        'torch' -> an opt-in batched backend that inverts many pixels at once,
+        optionally on a GPU. The default is unchanged from historical ISOFIT
+        behavior; the torch backend is selected only when explicitly requested.
+        """
+
+        self._torch_device_type = str
+        self.torch_device = "auto"
+        """str: Device for the torch backend. Options are 'auto', 'cpu', 'mps',
+        'cuda', or 'cuda:N'. 'auto' prefers cuda, then mps, then cpu. An
+        explicitly requested device that is unavailable raises an error rather
+        than silently falling back to cpu. Ignored when backend is 'numpy'.
+        """
+
+        self._torch_batch_size_type = str
+        self.torch_batch_size = "auto"
+        """str: Number of spectra inverted per batched torch call, as an integer
+        string or 'auto'. 'auto' sizes the batch from available device memory.
+        Larger batches improve GPU utilization at the cost of memory. Ignored
+        when backend is 'numpy'.
+        """
+
+        self._torch_analytic_derivatives_type = bool
+        self.torch_analytic_derivatives = False
+        """bool: Build the H2O_ABSCO Kb column analytically (forward-mode AD)
+        instead of by finite difference. The analytic column is MORE accurate --
+        it has no O(eps) truncation error -- so it deliberately breaks bit
+        parity with the CPU path, hence opt-in. It also removes the catastrophic
+        cancellation that makes float32 finite differencing unusable, so it is
+        the intended companion to torch_dtype='float32'.
+        Ignored when backend is 'numpy'.
+        """
+
+        self._torch_dtype_type = str
+        self.torch_dtype = "auto"
+        """str: Floating point precision for the torch backend. Options are
+        'auto', 'float32', or 'float64'. 'auto' selects float64 on cuda/cpu and
+        float32 on mps (which does not implement float64). float64 is required
+        for production fidelity; float32 is a development/performance mode.
+        Ignored when backend is 'numpy'.
+        """
+
+        self._torch_num_gpu_workers_type = int
+        self.torch_num_gpu_workers = None
+        """int: Number of GPU worker actors for the torch backend. Defaults to
+        the number of visible CUDA devices (one actor per GPU). Note that
+        n_cores does not control GPU worker count.
+        """
+
         self._isofit_version_type = str
         self.isofit_version = __version__
         """str: ISOFIT version used."""
@@ -128,6 +184,96 @@ class ImplementationConfig(BaseConfigSection):
             errors.append(
                 "If either ip_head or redis_password are specified, both must be"
                 " specified"
+            )
+
+        errors_b, warnings_b = self._check_backend_validity()
+        errors += errors_b
+        warnings += warnings_b
+
+        return errors, warnings
+
+    def _check_backend_validity(self) -> (List[str], List[str]):
+        """Validate the numerical backend options.
+
+        Device availability is deliberately NOT checked here: config objects are
+        constructed inside Ray workers, so probing hardware at validation time
+        would be both wrong and expensive. Availability is enforced at runtime by
+        isofit.core.backend.resolve_device.
+        """
+        errors = list()
+        warnings = list()
+
+        valid_backends = ["numpy", "torch"]
+        if self.backend not in valid_backends:
+            errors.append(
+                f"Invalid backend: {self.backend}.  Valid options are:"
+                f" {valid_backends}"
+            )
+
+        if not DEVICE_RE.match(str(self.torch_device)):
+            errors.append(
+                f"Invalid torch_device: {self.torch_device}.  Valid options are:"
+                " 'auto', 'cpu', 'mps', 'cuda', or 'cuda:N'"
+            )
+
+        valid_dtypes = ["auto", "float32", "float64"]
+        if self.torch_dtype not in valid_dtypes:
+            errors.append(
+                f"Invalid torch_dtype: {self.torch_dtype}.  Valid options are:"
+                f" {valid_dtypes}"
+            )
+
+        # MPS has no float64 implementation at all, so this combination can never
+        # be satisfied - catch it at config time rather than deep in a worker.
+        if self.torch_device == "mps" and self.torch_dtype == "float64":
+            errors.append(
+                "torch_dtype 'float64' is not supported on torch_device 'mps'."
+                "  Use 'float32' or 'auto', or run on cuda/cpu for float64"
+            )
+
+        if str(self.torch_batch_size) != "auto":
+            try:
+                if int(self.torch_batch_size) <= 0:
+                    errors.append(
+                        f"torch_batch_size must be positive or 'auto', got:"
+                        f" {self.torch_batch_size}"
+                    )
+            except (TypeError, ValueError):
+                errors.append(
+                    f"Invalid torch_batch_size: {self.torch_batch_size}.  Must be"
+                    " a positive integer or 'auto'"
+                )
+
+        if self.torch_num_gpu_workers is not None and self.torch_num_gpu_workers <= 0:
+            errors.append(
+                "torch_num_gpu_workers must be positive, got:"
+                f" {self.torch_num_gpu_workers}"
+            )
+
+        if self.backend == "numpy":
+            set_torch_opts = [
+                name
+                for name, default in (
+                    ("torch_device", "auto"),
+                    ("torch_batch_size", "auto"),
+                    ("torch_dtype", "auto"),
+                    ("torch_analytic_derivatives", False),
+                    ("torch_num_gpu_workers", None),
+                )
+                if getattr(self, name) != default
+            ]
+            if set_torch_opts:
+                warnings.append(
+                    f"The following options are ignored because backend is"
+                    f" 'numpy': {set_torch_opts}.  Set backend to 'torch' to use"
+                    " them"
+                )
+
+        if self.backend == "torch" and self.n_cores is not None:
+            warnings.append(
+                "n_cores does not control the number of GPU workers for the torch"
+                " backend; use torch_num_gpu_workers.  n_cores still governs CPU"
+                " stages such as segmentation and atmospheric interpolation"
             )
 
         return errors, warnings

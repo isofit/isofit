@@ -1,0 +1,52 @@
+# CUDA variant of the top-level Dockerfile, for the optional torch backend.
+# Built and run by hand -- this file is deliberately not wired into CI.
+#
+#   $ docker build -f recipe/Dockerfile.cuda -t isofit:cuda .
+#   $ docker run -it --rm --gpus all --shm-size=16gb isofit:cuda bash
+#
+# The `--gpus all` flag is required. Without it the container sees no device, and
+# an explicit `torch_device: cuda` will raise rather than quietly fall back to a
+# slower CPU run. It also requires the NVIDIA Container Toolkit on the host.
+#
+# The image installs torch from the cu128 wheel index, so the host driver has to
+# be recent enough for CUDA 12.8.
+FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+USER root
+RUN apt-get update &&\
+    apt-get install -y --no-install-suggests --no-install-recommends \
+      ca-certificates \
+      g++ \
+      gfortran \
+      make \
+      libgsl-dev \
+      libnetcdf-dev &&\
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /root
+
+# Copy and install the ISOFIT environment
+# `--no-group cpu` drops the default CPU torch pin so that the `cuda` extra can
+# resolve torch from the cu128 index; the two are declared as conflicting in
+# pyproject.toml, and uv refuses to enable both
+COPY . ISOFIT/
+RUN cd ISOFIT &&\
+    uv sync --extra cuda --no-group cpu --extra docker --extra test &&\
+    uv run isofit -b .. download all &&\
+    uv run isofit build &&\
+    echo "source /root/ISOFIT/.venv/bin/activate" >> ~/.bashrc &&\
+    echo "alias launch=\"jupyter-lab --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''\"" >> ~/.bashrc
+
+# Jupyter needs this to access the terminal
+ENV SHELL="/bin/bash"
+
+# Ray Dashboard port
+EXPOSE 8265
+
+# Start the Jupyterlab server
+EXPOSE 8888
+
+CMD ["ISOFIT/.venv/bin/jupyter-lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root", "--ServerApp.token=''", "--ServerApp.password=''"]

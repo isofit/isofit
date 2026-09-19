@@ -32,6 +32,7 @@ from spectral.io import envi
 
 from isofit import ray
 from isofit.configs import configs
+from isofit.core.backend import resolve_backend_options
 from isofit.core.common import envi_header, eps, load_esd, load_spectrum, load_wavelen
 from isofit.core.fileio import initialize_output, write_bil_chunk
 from isofit.core.forward import ForwardModel
@@ -48,6 +49,26 @@ from isofit.inversion.inverse_simple import (
     invert_simple,
 )
 from isofit.utils.atm_interpolation import atm_interpolation
+
+
+def _cuda_is_available() -> bool:
+    """True when a CUDA device is visible. Imports torch lazily."""
+    try:
+        import torch
+
+        return torch.cuda.is_available()
+    except ImportError:
+        return False
+
+
+def _cuda_device_count() -> int:
+    """Number of visible CUDA devices, at least 1."""
+    try:
+        import torch
+
+        return max(1, torch.cuda.device_count())
+    except ImportError:
+        return 1
 
 
 def retrieve_winidx(config):
@@ -82,9 +103,21 @@ def analytical_line(
     logfile: str = None,
     initializer: str = "algebraic",
     segmentation_size: int = 40,
+    backend: str = None,
+    torch_device: str = None,
+    torch_batch_size: str = None,
 ) -> None:
     """
     TODO: Description
+
+    Args (backend selection):
+        backend: Numerical backend, "numpy" or "torch". None (default) reads the
+            value from the ISOFIT config, so a config-file setting is honored;
+            passing a value here overrides it.
+        torch_device: Device for the torch backend ("auto", "cpu", "mps", "cuda",
+            "cuda:N"). None reads from the config.
+        torch_batch_size: Spectra per batched torch call, or "auto". None reads
+            from the config.
     """
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
@@ -95,6 +128,19 @@ def analytical_line(
 
     if n_cores == -1:
         n_cores = multiprocessing.cpu_count()
+
+    # The Click options for these are declared `type=int` (scalars), but
+    # atm_interpolation() treats both as sequences -- it calls len(nneighbors),
+    # indexes nneighbors[0], and indexes gaussian_smoothing_sigma[n]. The Python
+    # signature defaults are lists ([20], [2]), so the function API works, and
+    # apply_oe passes lists too. Only the standalone `isofit analytical_line`
+    # CLI hits the mismatch, where it fails with
+    # "TypeError: object of type 'int' has no len()".
+    # Normalize here so both entry points behave identically.
+    if isinstance(n_atm_neighbors, int):
+        n_atm_neighbors = [n_atm_neighbors]
+    if isinstance(smoothing_sigma, int):
+        smoothing_sigma = [smoothing_sigma]
 
     # Config handling
     if isofit_config is None:
@@ -312,7 +358,47 @@ def analytical_line(
             skyview_factor_file,
             bgrfl_file,
         ]
-        workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
+        # Backend selection. The CPU path is untouched; the torch path swaps in
+        # a worker that batches pixels onto a device. Dispatch happens here, at
+        # worker construction, rather than inside the ray shim so the two
+        # concerns (how tasks are scheduled vs. what math they run) stay
+        # independent -- ISOFIT_DEBUG=1 plus backend='torch' is a valid and
+        # useful combination.
+        opts = resolve_backend_options(
+            config, backend=backend, device=torch_device, batch_size=torch_batch_size
+        )
+        if opts["backend"] == "torch":
+            from isofit.utils.analytical_line_torch import TorchWorker
+
+            remote_opts = {"num_cpus": 1}
+            if str(opts["torch_device"]).startswith("cuda") or (
+                opts["torch_device"] == "auto" and _cuda_is_available()
+            ):
+                # One actor per GPU. Handing every CPU core its own CUDA context
+                # would thrash the device and exhaust VRAM.
+                remote_opts["num_gpus"] = 1
+                n_workers = opts["torch_num_gpu_workers"] or _cuda_device_count()
+
+            logging.info(
+                f"Using torch backend on {opts['torch_device']} with "
+                f"{n_workers} worker(s), batch size {opts['torch_batch_size']}"
+            )
+            workers = ray.util.ActorPool(
+                [
+                    TorchWorker.options(**remote_opts).remote(
+                        *wargs,
+                        opts["torch_device"],
+                        opts["torch_batch_size"],
+                        opts["torch_dtype"],
+                        opts["torch_analytic_derivatives"],
+                    )
+                    for _ in range(n_workers)
+                ]
+            )
+        else:
+            workers = ray.util.ActorPool(
+                [Worker.remote(*wargs) for _ in range(n_workers)]
+            )
 
         line_breaks = np.linspace(
             0,
@@ -699,6 +785,22 @@ class Worker(object):
 @click.option("--atm_file", help="TODO", type=str, default=None)
 @click.option("--loglevel", help="TODO", type=str, default="INFO")
 @click.option("--logfile", help="TODO", type=str, default=None)
+@click.option(
+    "--backend",
+    type=click.Choice(["numpy", "torch"]),
+    default=None,
+    help="Numerical backend. Defaults to the value in the ISOFIT config.",
+)
+@click.option(
+    "--torch_device",
+    default=None,
+    help="Device for the torch backend: auto, cpu, mps, cuda, or cuda:N.",
+)
+@click.option(
+    "--torch_batch_size",
+    default=None,
+    help="Spectra per batched torch call, or 'auto'.",
+)
 def cli(**kwargs):
     """Execute the analytical line algorithm"""
 
