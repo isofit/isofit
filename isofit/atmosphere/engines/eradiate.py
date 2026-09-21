@@ -86,6 +86,9 @@ class EradiateRT(BaseAtmosphere, Writer):
     srf_sigma_inner = 2.5
     srf_sigma_outer = 3.0
 
+    # when true, clip terms between 0 and 1
+    clip_01 = True
+
     def __init__(self, full_config, wl=[], fwhm=[], **kwargs):
         """Inits the engine and loads the base atmosphere/aerosol datasets.
 
@@ -293,6 +296,23 @@ class EradiateRT(BaseAtmosphere, Writer):
         sub_data = self.two_albedo_method(
             case_0, subcase(rfl_1), subcase(rfl_2), coszen, rfl_1, rfl_2
         )
+
+        # Prevent exploding values
+        valid_signal = (t_down_sub * t_up_sub) > 1e-8
+        for key in ["transm_up_dif", "transm_down_dif", "sphalb"]:
+            sub_data[key] = np.where(valid_signal, sub_data[key], 0.0)
+
+        # Optional 0-1 clip.
+        if self.clip_01:
+            for key in [
+                "sphalb",
+                "transm_up_dir",
+                "transm_up_dif",
+                "transm_down_dir",
+                "transm_down_dif",
+            ]:
+                if key in sub_data:
+                    sub_data[key] = np.clip(sub_data[key], 0.0, 1.0)
 
         sigma = fwhm / 2.3548200450309493
         response = np.exp(-0.5 * ((w_sub - center) / sigma) ** 2)
