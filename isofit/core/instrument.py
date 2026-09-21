@@ -72,7 +72,7 @@ DefaultRCCPrior = DefaultState(
     bounds=[0.01, 10.0],
     scale=1.0,
     prior_mean=1.0,
-    prior_sigma=100.0,
+    prior_sigma=10.0,
     init=1.0,
 )
 

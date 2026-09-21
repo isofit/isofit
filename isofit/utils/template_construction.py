@@ -1518,6 +1518,7 @@ def make_atmosphere_config(
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
     unknowns: dict = {},
+    **kwargs,
 ):
     avc = np.sum(
         [
@@ -1820,6 +1821,7 @@ def make_surface_config(
     max_slope: float = 20.0,
     surface_refractive_index_path: str = None,
     use_background_rfl=False,
+    **kwargs,
 ):
     # Initialize config dict
     surface_config_dict = {
@@ -1916,6 +1918,8 @@ def make_instrument_config(
     cal_wavelength_variables=[],
     cal_per_channel_rcc=False,
     spline_indices=[0, 19, 400, 425],
+    snr=500,
+    **kwargs,
 ):
     config = {
         "wavelength_file": wavelength_path,
@@ -1971,7 +1975,7 @@ def make_instrument_config(
         config["parametric_noise_file"] = noise_path
 
     else:
-        config["SNR"] = 500
+        config["SNR"] = snr
 
     return config
 
@@ -1983,6 +1987,7 @@ def make_implementation_config(
     n_cores: int = -1,
     debug: bool = False,
     per_pixel_heuristic_prior: bool = False,
+    **kwargs,
 ):
 
     return {
@@ -2003,6 +2008,7 @@ def make_input_config(
     svf_input_path: str = None,
     rdn_factors_path: str = None,
     bgrfl_path: str = None,
+    **kwargs,
 ):
     input_config = {}
     input_config["measured_radiance_file"] = rdn_input_path
@@ -2022,6 +2028,7 @@ def make_output_config(
     state_output_path: str,
     posterior_output_path: str = None,
     rfl_output_path: str = None,
+    **kwargs,
 ):
     output_config = {}
     output_config["estimated_state_file"] = state_output_path
