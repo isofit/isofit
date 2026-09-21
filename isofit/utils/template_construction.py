@@ -1917,6 +1917,7 @@ def make_instrument_config(
     dn_uncertainty_file: str = None,
     cal_wavelength_variables=[],
     cal_per_channel_rcc=False,
+    rcc_prior_file=None,
     spline_indices=[0, 19, 400, 425],
     snr=500,
     **kwargs,
@@ -1971,9 +1972,11 @@ def make_instrument_config(
         config.setdefault("statevector", {})
         config["statevector"]["PER_WL_RCC"] = DefaultRCCPrior._asdict()
 
+    if rcc_prior_file:
+        config["rcc_prior_file"] = rcc_prior_file
+
     if noise_path is not None:
         config["parametric_noise_file"] = noise_path
-
     else:
         config["SNR"] = snr
 

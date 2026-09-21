@@ -309,19 +309,10 @@ class Instrument(NoiseModel):
 
             # Overwrite
             for i in idx:
-                self.bounds[i] = _bounds
+                self.bounds[i] = _bounds[i]
                 self.scale[i] = _scale
-                self.init[i] = _init
-                self.prior_mean[i] = _prior_mean
-
-            sa[np.ix_(idx, idx)] = _prior_cov
-
-            # Overwrite
-            for i in idx:
-                self.bounds[i] = _bounds
-                self.scale[i] = _scale
-                self.init[i] = _init
-                self.prior_mean[i] = _prior_mean
+                self.init[i] = _init[i]
+                self.prior_mean[i] = _prior_mean[i]
 
             sa[np.ix_(idx, idx)] = _prior_cov
 
