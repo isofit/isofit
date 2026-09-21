@@ -212,7 +212,7 @@ def wavelength_cal(
     ray_temp_dir="/tmp/ray",
     emulator_base=None,
     prebuilt_lut=None,
-    inversion_windows=None,
+    inversion_windows=[],
     wl_state_type="shift",
     spline_indices=[],
     force_with_geo=False,
@@ -410,7 +410,7 @@ def wavelength_cal(
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
     dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(sensor, paths.fid)
-    if not len(sensor_inversion_windows):
+    if not inversion_windows:
         sensor_inversion_windows = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
     if inversion_windows:
         assert all(
