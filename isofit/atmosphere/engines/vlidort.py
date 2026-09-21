@@ -5,7 +5,7 @@ import os
 import re
 import shutil
 import subprocess
-import tempfile
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -68,6 +68,15 @@ class VLIDORT(BaseAtmosphere, Writer):
 
         self.exe = Path(self.config.engine_base_dir) / "MASTERS"
 
+        if self.configure_and_exit:
+            points = combos(self.lut_grid.values())
+            cmds = [self.make_cmd(p) for p in points]
+
+            file = self.sims / "jobs.txt"
+            file.write_text("\n".join(cmds))
+            Logger.info(f"Wrote configuration to {file}")
+            sys.exit(0)
+
         return  # TODO: Finish implementing the pre-run
 
         PRE = """\
@@ -75,31 +84,7 @@ class VLIDORT(BaseAtmosphere, Writer):
         """
 
     def makeSim(self, point, **_):
-        name = self.point_to_filename(point)
-        file = self.sims / name
-        if file.exists():
-            Logger.debug(
-                f"Sim data file for this point already exists, skipping. Point = {name}"
-            )
-            return
-
-        dims = dict(zip(self.lut_names, point))
-        vals = {
-            "exe": "emit_radiance.exe",
-            "sza": dims["solar_zenith"],
-            "vza": dims["observer_zenith"],
-            "rza": dims["relative_azimuth"],
-            "pwv": dims["H2OSTR"],
-            "aod": dims["AOT550"],
-            "vel": 58.0,  # Required to be 58.0 per Vijay
-            "sel": dims["surface_elevation_km"],
-            "sel": 0.0,
-            "wgs": self.wl_spacing,
-            "co2": dims["CO2"],
-            "ch4": 0.0,  # REVIEW
-            "out": file,
-        }
-        cmd = CMD.format(**vals)
+        cmd = self.make_cmd(point)
 
         Logger.debug(f"Executing {cmd}")
         subprocess.run(
@@ -134,3 +119,31 @@ class VLIDORT(BaseAtmosphere, Writer):
         data = dict(zip(cols, data.T))
 
         return data
+
+    def make_cmd(self, point):
+        name = self.point_to_filename(point)
+        file = self.sims / name
+        if file.exists():
+            Logger.debug(
+                f"Sim data file for this point already exists, skipping. Point = {name}"
+            )
+            return
+
+        dims = dict(zip(self.lut_names, point))
+        vals = {
+            "exe": "emit_radiance.exe",
+            "sza": dims["solar_zenith"],
+            "vza": dims["observer_zenith"],
+            "rza": dims["relative_azimuth"],
+            "pwv": dims["H2OSTR"],
+            "aod": dims["AOT550"],
+            "vel": 58.0,  # Required to be 58.0 per Vijay
+            "sel": dims["surface_elevation_km"],
+            "sel": 0.0,
+            "wgs": self.wl_spacing,
+            "co2": dims["CO2"],
+            "ch4": 0.0,  # REVIEW
+            "out": file,
+        }
+
+        return CMD.format(**vals)
