@@ -5390,7 +5390,11 @@
 <span class="normal">584</span>
 <span class="normal">585</span>
 <span class="normal">586</span>
-<span class="normal">587</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5550,7 +5554,11 @@
 <span class="sd">    """</span>
     <span class="n">_</span><span class="p">,</span> <span class="n">rho_init</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
 
-    <span class="n">rho_dif_dif</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">rho_init</span>
+    <span class="n">rho_dif_dif</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">fm</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">bg_rfl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">fm</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rho_init</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="c1"># Get all radiance terms</span>
     <span class="p">(</span>
