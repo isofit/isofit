@@ -12,6 +12,7 @@ import numpy as np
 from ray.util.queue import Queue
 
 from isofit.atmosphere import BaseAtmosphere
+from isofit.core.common import combos
 from isofit.data import env
 from isofit.luts.writer import Writer
 
@@ -70,7 +71,7 @@ class VLIDORT(BaseAtmosphere, Writer):
 
         if self.configure_and_exit:
             points = combos(self.lut_grid.values())
-            cmds = [self.make_cmd(p) for p in points]
+            cmds = [self.make_cmd(p)[0] for p in points]
 
             file = self.sims / "jobs.txt"
             file.write_text("\n".join(cmds))
@@ -84,7 +85,13 @@ class VLIDORT(BaseAtmosphere, Writer):
         """
 
     def makeSim(self, point, **_):
-        cmd = self.make_cmd(point)
+        cmd, file = self.make_cmd(point)
+
+        if file.exists():
+            Logger.debug(
+                f"Sim data file for this point already exists, skipping. Point = {name}"
+            )
+            return
 
         Logger.debug(f"Executing {cmd}")
         subprocess.run(
@@ -123,11 +130,6 @@ class VLIDORT(BaseAtmosphere, Writer):
     def make_cmd(self, point):
         name = self.point_to_filename(point)
         file = self.sims / name
-        if file.exists():
-            Logger.debug(
-                f"Sim data file for this point already exists, skipping. Point = {name}"
-            )
-            return
 
         dims = dict(zip(self.lut_names, point))
         vals = {
@@ -139,11 +141,10 @@ class VLIDORT(BaseAtmosphere, Writer):
             "aod": dims["AOT550"],
             "vel": 58.0,  # Required to be 58.0 per Vijay
             "sel": dims["surface_elevation_km"],
-            "sel": 0.0,
             "wgs": self.wl_spacing,
             "co2": dims["CO2"],
             "ch4": 0.0,  # REVIEW
             "out": file,
         }
 
-        return CMD.format(**vals)
+        return CMD.format(**vals), file

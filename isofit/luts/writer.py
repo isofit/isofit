@@ -172,11 +172,6 @@ class Writer:
         Executes an engine object to process simulations using the preSim, makeSim, and
         postSim functions
         """
-        # Tag the LUT with its build day-of-year so a prebuilt LUT reused on a
-        # different scene date can be Earth-Sun-distance corrected downstream
-        if getattr(self, "dayofyear", None) is not None:
-            self.lut.setAttr("dayofyear", int(self.dayofyear))
-
         Logger.info(f"Running any pre-sim functions")
         if pre := self.preSim():
             Logger.info("Saving pre-sim data to index zero of all dimensions except wl")
@@ -204,6 +199,11 @@ class Writer:
 
             point = {key: 0 for key in self.lut_names}
             self.lut.writePoint(point, data=post)
+
+        # Tag the LUT with its build day-of-year so a prebuilt LUT reused on a
+        # different scene date can be Earth-Sun-distance corrected downstream
+        if getattr(self, "dayofyear", None) is not None:
+            self.lut.setAttr("dayofyear", int(self.dayofyear))
 
         self.lut.finalize()
 
