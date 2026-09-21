@@ -652,7 +652,7 @@ class IO:
 
             if "path_radiance_file" in self.output_datasets:
                 path_est = fm.calc_meas(
-                    fm.replace_rfl(state_est.copy(), np.zeros(self.meas_wl.shape)), geom
+                    fm.replace_rfl(state_est, np.zeros(self.meas_wl.shape)), geom
                 )
 
                 to_write["path_radiance_file"] = np.column_stack(
@@ -769,7 +769,7 @@ class IO:
                 factors = np.ones(len(self.meas_wl))
                 if "reference_reflectance_file" in self.input_datasets:
                     meas_est = fm.calc_meas(
-                        fm.replace_rfl(state_est.copy(), reference_reflectance), geom
+                        fm.replace_rfl(state_est, reference_reflectance), geom
                     )
                     factors = meas_est / meas
                 else:

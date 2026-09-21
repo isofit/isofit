@@ -1008,6 +1008,7 @@ class ForwardModel:
         return x_surface, x_atmosphere, x_instrument
 
     def replace_rfl(self, x, rfl):
+        x = x.copy()
         x[self.idx_surf_rfl] = rfl
         return x
 
