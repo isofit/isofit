@@ -5027,6 +5027,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.replace_rfl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        replace_rfl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.core.forward.ForwardModel.match_statevector" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6101,7 +6112,8 @@
 <span class="normal">1014</span>
 <span class="normal">1015</span>
 <span class="normal">1016</span>
-<span class="normal">1017</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1017</span>
+<span class="normal">1018</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6397,14 +6409,10 @@
 
         <span class="k">return</span> <span class="n">offset</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">calc_meas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rfl</span><span class="o">=</span><span class="p">[]):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.calc_meas"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.calc_meas" title="Go to docs">[docs]</a></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_meas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.calc_meas"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.calc_meas" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">"""Calculate the model observation at instrument wavelengths."""</span>
         <span class="c1"># Unpack state vector - Copy to not change x fm-wide</span>
         <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-
-        <span class="c1"># if rfl passed, have to explicitly use those values</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rfl</span><span class="p">):</span>
-            <span class="n">x_surface</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_surf_rfl</span><span class="p">]</span> <span class="o">=</span> <span class="n">rfl</span>
 
         <span class="c1"># Call surface reflectance w.r.t. surface, upsample</span>
         <span class="n">rho_dir_dir</span><span class="p">,</span> <span class="n">rho_dif_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rfl</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
@@ -7113,6 +7121,11 @@
         <span class="n">x_atmosphere</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">]</span>
         <span class="n">x_instrument</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_instrument</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">x_instrument</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">replace_rfl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">rfl</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.replace_rfl"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.replace_rfl" title="Go to docs">[docs]</a></div>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_surf_rfl</span><span class="p">]</span> <span class="o">=</span> <span class="n">rfl</span>
+        <span class="k">return</span> <span class="n">x</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">match_statevector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_statevector</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.match_statevector"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.match_statevector" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="o">.</span><span class="n">full_idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_miss</span> <span class="o">=</span> <span class="n">match_statevector</span><span class="p">(</span>

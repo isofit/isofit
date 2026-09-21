@@ -5844,7 +5844,9 @@
 <span class="normal">899</span>
 <span class="normal">900</span>
 <span class="normal">901</span>
-<span class="normal">902</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">902</span>
+<span class="normal">903</span>
+<span class="normal">904</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6497,10 +6499,10 @@
                 <span class="p">)</span>
 
             <span class="k">if</span> <span class="s2">"path_radiance_file"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_datasets</span><span class="p">:</span>
-                <span class="c1"># Note: for glint models, this will return atm + glint</span>
                 <span class="n">path_est</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">calc_meas</span><span class="p">(</span>
-                    <span class="n">state_est</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rfl</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meas_wl</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                    <span class="n">fm</span><span class="o">.</span><span class="n">replace_rfl</span><span class="p">(</span><span class="n">state_est</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meas_wl</span><span class="o">.</span><span class="n">shape</span><span class="p">)),</span> <span class="n">geom</span>
                 <span class="p">)</span>
+
                 <span class="n">to_write</span><span class="p">[</span><span class="s2">"path_radiance_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">(</span>
                     <span class="p">(</span><span class="n">fm</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">wl_init</span><span class="p">,</span> <span class="n">path_est</span><span class="p">)</span>
                 <span class="p">)</span>
@@ -6614,7 +6616,9 @@
             <span class="k">if</span> <span class="s2">"radiometry_correction_file"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_datasets</span><span class="p">:</span>
                 <span class="n">factors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meas_wl</span><span class="p">))</span>
                 <span class="k">if</span> <span class="s2">"reference_reflectance_file"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_datasets</span><span class="p">:</span>
-                    <span class="n">meas_est</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">calc_meas</span><span class="p">(</span><span class="n">state_est</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rfl</span><span class="o">=</span><span class="n">reference_reflectance</span><span class="p">)</span>
+                    <span class="n">meas_est</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">calc_meas</span><span class="p">(</span>
+                        <span class="n">fm</span><span class="o">.</span><span class="n">replace_rfl</span><span class="p">(</span><span class="n">state_est</span><span class="p">,</span> <span class="n">reference_reflectance</span><span class="p">),</span> <span class="n">geom</span>
+                    <span class="p">)</span>
                     <span class="n">factors</span> <span class="o">=</span> <span class="n">meas_est</span> <span class="o">/</span> <span class="n">meas</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No reflectance reference"</span><span class="p">)</span>
