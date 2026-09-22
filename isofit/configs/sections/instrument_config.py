@@ -26,6 +26,8 @@ from isofit.configs.sections.statevector_config import (
     StateVectorElementConfig,
 )
 
+WORKING_WAVELENGTH_CAL_VARIABLES = ["GROW_FWHM", "WL_SHIFT", "WLSPL"]
+
 
 class InstrumentStateVectorConfig(StateVectorConfig):
     """
@@ -49,6 +51,9 @@ class InstrumentStateVectorConfig(StateVectorConfig):
 
         self._WL_SHIFT_type = StateVectorElementConfig
         self.WL_SHIFT: StateVectorElementConfig = None
+
+        self._PER_WL_RCC_type = StateVectorElementConfig
+        self.PER_WL_RCC: StateVectorElementConfig = None
 
         self._WL_SPACE_type = StateVectorElementConfig
         self.WL_SPACE: StateVectorElementConfig = None
@@ -153,6 +158,14 @@ class InstrumentConfig(BaseConfigSection):
         self._eof_path_type = str
         self.eof_path = None
         """str: Path to an Empirial Orthogonal Function (EOF) file with one row per instrument channel."""
+
+        self._rcc_prior_file_type = str
+        self.rcc_prior_file = None
+        """str: Indicates a .mat file containing a mean vector "mean" 
+        and a covariance matrix "cov" represetnting  a prior over 
+        Radiometric Calibration Coefficients (RCCs) that scale the 
+        measured spectrum.  There is one RCC element for each measured 
+        channel. If not specified, these values are assumed to be unity."""
 
         self.set_config_options(sub_configdic)
 

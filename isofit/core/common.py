@@ -807,7 +807,7 @@ def load_spectrum(spectrum_file: str) -> (np.array, np.array):
         return spectrum, None
 
 
-def spectral_response_function(response_range: np.array, mu: float, sigma: float):
+def spectral_response_function(response_range: np.ndarray, mu: float, sigma: float):
     """Calculate the spectral response function.
 
     Args:
