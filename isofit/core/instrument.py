@@ -90,8 +90,8 @@ DefaultWLSHIFTPrior = DefaultState(
     bounds=[-7.0, 7.0],
     scale=1.0,
     prior_mean=0,
-    prior_sigma=0,
-    init=100.0,
+    prior_sigma=10,
+    init=0.0,
 )
 
 
@@ -99,8 +99,8 @@ DefaultGROWFWHMPrior = DefaultState(
     bounds=[-7.0, 7.0],
     scale=1.0,
     prior_mean=0,
-    prior_sigma=0,
-    init=100.0,
+    prior_sigma=10,
+    init=0.0,
 )
 
 
@@ -470,6 +470,9 @@ class Instrument(NoiseModel):
     def dmeas_deof(self, x_instrument):
         return self.eof
 
+    def dmeas_drcc(self, rdn):
+        return np.diag(rdn)
+
     def dmeas_dinstrument(self, x_instrument, wl_hi, rdn_hi):
         """Jacobian of measurement with respect to the instrument
         free parameter state vector. We use finite differences for now."""
@@ -478,35 +481,26 @@ class Instrument(NoiseModel):
         if self.n_state == 0:
             return dmeas_dinstrument
 
-        wl2, fwhm2 = self.calibration(x_instrument)
+        meas = self.sample(x_instrument, wl_hi, rdn_hi)
 
-        H_init = calculate_resample_matrix(wl_hi, wl2, fwhm2)
-
-        x_instrument_resample = x_instrument.reshape(-1, 1)
-        meas = (
-            np.dot(H_init, rdn_hi).ravel() * self.rcc_factor(x_instrument)
-        ) + self.eof_offset(x_instrument)
-
-        x_instrument_perturb = np.full(
-            (self.n_state, self.n_state), x_instrument.copy()
-        ) + np.diag([eps for i in range(self.n_state)])
-
-        meas_perturb = []
         for name, idx in self.state_idx.items():
-            x_instrument_perturb_state = x_instrument_perturb[idx, :]
-            for _x in x_instrument_perturb_state:
-                if name in ["GROW_FWHM", "WL_SHIFT", "WLSPL"]:
-                    wl2, fwhm2 = self.calibration(_x)
-                    H = calculate_resample_matrix(wl_hi, wl2, fwhm2)
-                else:
-                    H = H_init
-                meas_perturb.append(
-                    (np.dot(H, rdn_hi).ravel() * self.rcc_factor(_x))
-                    + self.eof_offset(_x)
+            # Handle analytcal partials first
+            if name == "PER_WL_RCC":
+                dmeas_dinstrument[:, idx] = self.dmeas_drcc(meas)
+            elif name == "EOF":
+                dmeas_dinstrument[:, idx] = self.dmeas_deof(x_instrument)
+            # For others use numerical
+            else:
+                meas_perturb = []
+                idx = np.asarray(idx)
+                x_perturb = np.tile(x_instrument, (len(idx), 1))
+                x_perturb[np.arange(len(idx)), idx] += eps
+
+                meas_perturb = np.array(
+                    [self.sample(x, wl_hi, rdn_hi) for x in x_perturb]
                 )
 
-        meas_perturb = np.array(meas_perturb)
-        dmeas_dinstrument = ((meas_perturb - meas[None, :]) / eps).T
+                dmeas_dinstrument[:, idx] = ((meas_perturb - meas) / eps).T
 
         return dmeas_dinstrument
 
