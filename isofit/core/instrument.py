@@ -32,7 +32,6 @@ from scipy.signal import convolve
 
 from isofit.core import units
 from isofit.core.common import (
-    calculate_resample_matrix,
     emissive_radiance,
     eps,
     load_wavelen,
@@ -81,8 +80,8 @@ DefaultWLSPLPrior = DefaultState(
     bounds=[-7.0, 7.0],
     scale=1.0,
     prior_mean=0,
-    prior_sigma=0,
-    init=10.0,
+    prior_sigma=10,
+    init=0,
 )
 
 
@@ -357,14 +356,14 @@ class Instrument(NoiseModel):
         # and the wavelengths of atmospheric radiative transfer modeling and instrument
         # are the same, then we can bypass computationally expensive sampling
         # operations later.
-        self.calibration_fixed = True
+        self.wavelengths_fixed = True
         if (
             config.statevector.GROW_FWHM is not None
             or config.statevector.WL_SHIFT is not None
-            or config.statevector.PER_WL_RCC is not None
             or config.statevector.WL_SPACE is not None
+            or "WLSPL" in list(self.state_idx.keys())
         ):
-            self.calibration_fixed = False
+            self.wavelengths_fixed = False
 
     @staticmethod
     def load_prior_file(path):
@@ -556,11 +555,7 @@ class Instrument(NoiseModel):
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
 
-        if (
-            self.calibration_fixed
-            and (len(self.wl_init) == len(wl_hi))
-            and all((self.wl_init - wl_hi) < wl_tol)
-        ):
+        if self.wavelengths_fixed and (len(self.wl_init) == len(wl_hi)):
 
             return rdn_hi
 

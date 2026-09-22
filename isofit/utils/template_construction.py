@@ -1518,6 +1518,7 @@ def make_atmosphere_config(
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
     unknowns: dict = {},
+    wavelength_file: str = None,
     **kwargs,
 ):
     avc = np.sum(
@@ -1807,6 +1808,10 @@ def make_atmosphere_config(
     atmosphere_config["engine"]["statevector_names"] = list(
         atmosphere_config["statevector"].keys()
     )
+
+    # Add atmosphere-specific wavelength file if passed
+    if wavelength_file:
+        atmosphere_config["engine"]["wavelength_file"] = wavelength_file
 
     return atmosphere_config
 
