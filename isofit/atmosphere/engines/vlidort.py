@@ -143,7 +143,7 @@ class VLIDORT(BaseAtmosphere, Writer):
             "sel": round(dims["surface_elevation_km"]), # REVIEW: Temporarily must be an int, eventually remove the rounding once VLIDORT fixes it
             "wgs": self.wl_spacing,
             "co2": dims["CO2"],
-            "ch4": 1900,  # REVIEW
+            "ch4": 1.9,  # REVIEW: 1.9 ppm is roughly the global average
             "out": file,
         }
 
