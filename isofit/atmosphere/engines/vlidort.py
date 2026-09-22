@@ -140,10 +140,10 @@ class VLIDORT(BaseAtmosphere, Writer):
             "pwv": dims["H2OSTR"],
             "aod": dims["AOT550"],
             "vel": 58.0,  # Required to be 58.0 per Vijay
-            "sel": dims["surface_elevation_km"],
+            "sel": round(dims["surface_elevation_km"]), # REVIEW: Temporarily must be an int, eventually remove the rounding once VLIDORT fixes it
             "wgs": self.wl_spacing,
             "co2": dims["CO2"],
-            "ch4": 0.0,  # REVIEW
+            "ch4": 1900,  # REVIEW
             "out": file,
         }
 
