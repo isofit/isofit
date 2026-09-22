@@ -99,7 +99,7 @@ def test_sample_fastpath_same_wavelengths():
     n = 8
     wl = np.linspace(400, 2500, n)
     inst = _mock_inst(n_chan=n)
-    inst.calibration_fixed = True
+    inst.wavelengths_fixed = True
     rdn_hi = np.random.default_rng(0).uniform(0, 1, n)
 
     Instrument.calibration(inst, np.array([]))
@@ -112,7 +112,7 @@ def test_sample_fastpath_skipped_when_lengths_differ():
     """When wl_hi has a different length, the fast path is bypassed and calibration() is called."""
     n = 8
     inst = _mock_inst(n_chan=n)
-    inst.calibration_fixed = True
+    inst.wavelengths_fixed = True
     # wl_hi has length n+1 → different from wl_init (length n), triggers resampling
     wl_hi = np.linspace(400, 2500, n + 1)
     rdn_hi = np.ones(n + 1)
