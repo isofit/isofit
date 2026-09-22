@@ -32,7 +32,6 @@ from scipy.signal import convolve
 
 from isofit.core import units
 from isofit.core.common import (
-    calculate_resample_matrix,
     emissive_radiance,
     eps,
     load_wavelen,
@@ -81,8 +80,8 @@ DefaultWLSPLPrior = DefaultState(
     bounds=[-7.0, 7.0],
     scale=1.0,
     prior_mean=0,
-    prior_sigma=0,
-    init=10.0,
+    prior_sigma=10,
+    init=0,
 )
 
 
@@ -90,8 +89,8 @@ DefaultWLSHIFTPrior = DefaultState(
     bounds=[-7.0, 7.0],
     scale=1.0,
     prior_mean=0,
-    prior_sigma=0,
-    init=100.0,
+    prior_sigma=10,
+    init=0.0,
 )
 
 
@@ -99,8 +98,8 @@ DefaultGROWFWHMPrior = DefaultState(
     bounds=[-7.0, 7.0],
     scale=1.0,
     prior_mean=0,
-    prior_sigma=0,
-    init=100.0,
+    prior_sigma=10,
+    init=0.0,
 )
 
 
@@ -108,9 +107,46 @@ class PerWLRCC:
     """Specialized function calls for statevector elements for
     per-wavelength RCCs"""
 
+    # Hard coded for now, likely instrument-specific
+    loose_distance = 500
+    tight_distance = 20
+
+    def Sa(self, base_prior_var, wl, dist_scale=2):
+        dense_loose = self.rbf_kernel(
+            wl, self.loose_distance, base_prior_var * dist_scale
+        )
+        dense_tight = self.rbf_kernel(wl, self.tight_distance, base_prior_var)
+        diagonal = np.diag(np.full(len(wl), base_prior_var))
+
+        return dense_loose + dense_tight + diagonal
+
     @staticmethod
-    def Sa(_prior_sigma, wl):
-        return np.diagflat(np.power(np.full(len(wl), _prior_sigma), 2))
+    def rbf_kernel(x, length_scale, _prior_var):
+        n_points = len(x)
+        diffs = np.abs(x[:, None] - x[None, :])
+        K = _prior_var * np.exp(-(diffs**2) / (2 * (length_scale**2)))
+        return K
+
+
+class WLSPL:
+    """Specialized function calls for statevector elements for
+    per-wavelength RCCs"""
+
+    # Hard coded for now, likely instrument-specific
+    distance = 50.0
+    loose_sigma = 1.0
+    tight_sigma = 1.0
+
+    def Sa(self, base_prior_var, wl, idx, statevec_names):
+        x = []
+        for i, v in enumerate(idx):
+            chan = int(statevec_names[v].split("_")[1])
+            x.append(wl[chan])
+        x = np.array(x)
+        d = x[:, None] - x[None, :]
+        rbf = np.exp(-0.5 * (d / self.distance) ** 2)
+
+        return self.tight_sigma**2 + self.loose_sigma**2 * rbf + (1e-6 * np.eye(len(x)))
 
 
 class NoiseModel:
@@ -291,7 +327,11 @@ class Instrument(NoiseModel):
         sa = np.zeros((self.n_state, self.n_state))
         for name, idx in self.state_idx.items():
             if name == "PER_WL_RCC":
-                k = PerWLRCC.Sa(self.prior_sigma[idx], self.wl_init)
+                k = PerWLRCC().Sa(self.prior_sigma[idx], self.wl_init)
+            elif name == "WLSPL":
+                k = WLSPL().Sa(
+                    self.prior_sigma[idx], self.wl_init, idx, self.statevec_names
+                )
             else:
                 k = np.diagflat(np.power(self.prior_sigma[idx], 2))
 
@@ -369,14 +409,14 @@ class Instrument(NoiseModel):
         # and the wavelengths of atmospheric radiative transfer modeling and instrument
         # are the same, then we can bypass computationally expensive sampling
         # operations later.
-        self.calibration_fixed = True
+        self.wavelengths_fixed = True
         if (
             config.statevector.GROW_FWHM is not None
             or config.statevector.WL_SHIFT is not None
-            or config.statevector.PER_WL_RCC is not None
             or config.statevector.WL_SPACE is not None
+            or "WLSPL" in list(self.state_idx.keys())
         ):
-            self.calibration_fixed = False
+            self.wavelengths_fixed = False
 
     @staticmethod
     def load_prior_file(path):
@@ -480,6 +520,9 @@ class Instrument(NoiseModel):
     def dmeas_deof(self, x_instrument):
         return self.eof
 
+    def dmeas_drcc(self, rdn):
+        return np.diag(rdn)
+
     def dmeas_dinstrument(self, x_instrument, wl_hi, rdn_hi):
         """Jacobian of measurement with respect to the instrument
         free parameter state vector. We use finite differences for now."""
@@ -488,35 +531,26 @@ class Instrument(NoiseModel):
         if self.n_state == 0:
             return dmeas_dinstrument
 
-        wl2, fwhm2 = self.calibration(x_instrument)
+        meas = self.sample(x_instrument, wl_hi, rdn_hi)
 
-        H_init = calculate_resample_matrix(wl_hi, wl2, fwhm2)
-
-        x_instrument_resample = x_instrument.reshape(-1, 1)
-        meas = (
-            np.dot(H_init, rdn_hi).ravel() * self.rcc_factor(x_instrument)
-        ) + self.eof_offset(x_instrument)
-
-        x_instrument_perturb = np.full(
-            (self.n_state, self.n_state), x_instrument.copy()
-        ) + np.diag([eps for i in range(self.n_state)])
-
-        meas_perturb = []
         for name, idx in self.state_idx.items():
-            x_instrument_perturb_state = x_instrument_perturb[idx, :]
-            for _x in x_instrument_perturb_state:
-                if name in ["GROW_FWHM", "WL_SHIFT", "WLSPL"]:
-                    wl2, fwhm2 = self.calibration(_x)
-                    H = calculate_resample_matrix(wl_hi, wl2, fwhm2)
-                else:
-                    H = H_init
-                meas_perturb.append(
-                    (np.dot(H, rdn_hi).ravel() * self.rcc_factor(_x))
-                    + self.eof_offset(_x)
+            # Handle analytcal partials first
+            if name == "PER_WL_RCC":
+                dmeas_dinstrument[:, idx] = self.dmeas_drcc(meas)
+            elif name == "EOF":
+                dmeas_dinstrument[:, idx] = self.dmeas_deof(x_instrument)
+            # For others use numerical
+            else:
+                meas_perturb = []
+                idx = np.asarray(idx)
+                x_perturb = np.tile(x_instrument, (len(idx), 1))
+                x_perturb[np.arange(len(idx)), idx] += eps
+
+                meas_perturb = np.array(
+                    [self.sample(x, wl_hi, rdn_hi) for x in x_perturb]
                 )
 
-        meas_perturb = np.array(meas_perturb)
-        dmeas_dinstrument = ((meas_perturb - meas[None, :]) / eps).T
+                dmeas_dinstrument[:, idx] = ((meas_perturb - meas) / eps).T
 
         return dmeas_dinstrument
 
@@ -572,11 +606,7 @@ class Instrument(NoiseModel):
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
 
-        if (
-            self.calibration_fixed
-            and (len(self.wl_init) == len(wl_hi))
-            and all((self.wl_init - wl_hi) < wl_tol)
-        ):
+        if self.wavelengths_fixed and (len(self.wl_init) == len(wl_hi)):
 
             return rdn_hi
 
