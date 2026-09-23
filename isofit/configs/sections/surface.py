@@ -9,13 +9,12 @@ parameters for temperature and glint effects.
 from pathlib import Path
 from typing import Dict, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator
-
 from isofit.configs.sections.statevector import (
     StateVectorConfig,
     StateVectorElementConfig,
 )
 from isofit.configs.utils.validators import PathExists
+from pydantic import BaseModel, Field, field_validator
 
 
 class SurfaceStateVectorConfig(StateVectorConfig):
@@ -229,6 +228,34 @@ class SurfaceConfig(BaseModel):
     refractive_index_path: str = Field(
         default="", description="Path to refractive index data"
     )
+
+    def update_from_subconfig(self, subconfig_dict: dict):
+        """
+        Overwrite fields from a per-class multi-surface sub-config.
+
+        In multi-surface mode each surface class carries its own settings; this
+        copies them onto the active ``SurfaceConfig``. Structural fields that
+        describe the multi-surface machinery itself (or the state vector) are
+        never overwritten, and unknown keys are ignored.
+
+        Parameters
+        ----------
+        subconfig_dict : dict
+            Mapping of field names to values for the selected surface class.
+        """
+        keys_to_ignore = {
+            "multi_surface_flag",
+            "Surfaces",
+            "surface_class_file",
+            "base_surface_class_file",
+            "statevector",
+        }
+
+        for key, value in subconfig_dict.items():
+            if key in keys_to_ignore:
+                continue
+            if key in type(self).model_fields:
+                setattr(self, key, value)
 
     @field_validator("Surfaces")
     @classmethod

@@ -5,7 +5,6 @@ This module defines inversion settings including retrieval windows, optimization
 parameters, MCMC configuration, and least-squares solver options.
 """
 
-from collections import OrderedDict
 from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
@@ -124,6 +123,23 @@ class LeastSquaresConfig(BaseModel):
     tr_solver: Optional[Literal["exact", "lsmr"]] = Field(
         default="lsmr", description="Method for solving trust-region subproblems"
     )
+
+    def get_config_options_as_dict(self):
+        """
+        Return the solver options as a plain ``dict`` keyed by field name.
+
+        Tuples are converted to lists to match the historical behaviour of the
+        old ``BaseConfigSection`` accessor. ``inversion/inverse.py`` feeds the
+        result straight into ``scipy.optimize.least_squares`` as keyword
+        arguments.
+        """
+        options = {}
+        for name in type(self).model_fields:
+            value = getattr(self, name)
+            if isinstance(value, tuple):
+                value = list(value)
+            options[name] = value
+        return options
 
 
 class InversionConfig(BaseModel):

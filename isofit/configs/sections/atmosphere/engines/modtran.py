@@ -7,10 +7,9 @@ wavelengths. This module configures MODTRAN 6.0 for ISOFIT atmospheric correctio
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, BeforeValidator, Field, model_validator
-
 from isofit.configs.utils.validators import PathExists
 from isofit.data import env
+from pydantic import BaseModel, BeforeValidator, Field, model_validator
 
 from . import standardName
 
