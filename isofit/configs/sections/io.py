@@ -7,14 +7,14 @@ This module defines Pydantic models for specifying input data files
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import ClassVar, Optional
 
+from isofit.configs.utils.accessors import ElementAccessorMixin
+from isofit.configs.utils.validators import PathExists
 from pydantic import BaseModel, Field
 
-from isofit.configs.utils.validators import PathExists
 
-
-class InputConfig(BaseModel):
+class InputConfig(BaseModel, ElementAccessorMixin):
     """
     Input file configuration for ISOFIT.
 
@@ -240,3 +240,91 @@ class OutputConfig(BaseModel):
     mcmc_samples_file: Optional[Path] = Field(
         default=None, description="Output file for MCMC samples"
     )
+
+    # Header metadata (band-name key, ztitle, zrange) for each writable output
+    # product, mirroring the old ``_<field>_header`` attributes. Only the fields
+    # listed here are treated as output files by ``get_output_files``.
+    _output_file_headers: ClassVar[dict[str, tuple[str, str, str]]] = {
+        "estimated_state_file": (
+            "statevector",
+            "{State Parameter, Value}",
+            "{}",
+        ),
+        "estimated_reflectance_file": (
+            "wavelength",
+            "{Wavelength (nm), Lambertian Reflectance}",
+            "{0.0,1.0}",
+        ),
+        "estimated_emission_file": (
+            "wavelength",
+            "{Wavelength (nm), Emitted Radiance (uW nm-1 cm-2 sr-1)}",
+            "{}",
+        ),
+        "modeled_radiance_file": (
+            "wavelength",
+            "{Wavelength (nm), Modeled Radiance (uW nm-1 cm-2 sr-1)}",
+            "{}",
+        ),
+        "apparent_reflectance_file": (
+            "wavelength",
+            "{Wavelength (nm), Apparent Surface Reflectance}",
+            "{}",
+        ),
+        "path_radiance_file": (
+            "wavelength",
+            "{Wavelength (nm), Path Radiance (uW nm-1 cm-2 sr-1)}",
+            "{}",
+        ),
+        "simulated_measurement_file": (
+            "wavelength",
+            "{Wavelength (nm), Simulated Radiance (uW nm-1 cm-2 sr-1)}",
+            "{}",
+        ),
+        "algebraic_inverse_file": (
+            "wavelength",
+            "{Wavelength (nm), Apparent Surface Reflectance}",
+            "{}",
+        ),
+        "atmospheric_coefficients_file": (
+            "atm_coeffs",
+            "{Wavelength (nm), Atmospheric Optical Parameters}",
+            "{}",
+        ),
+        "radiometry_correction_file": (
+            "wavelength",
+            "{Wavelength (nm), Radiometric Correction Factors}",
+            "{}",
+        ),
+        "spectral_calibration_file": ("wavelength", "{}", "{}"),
+        "posterior_uncertainty_file": (
+            "statevector",
+            "{State Parameter, Value}",
+            "{}",
+        ),
+    }
+
+    def get_all_output_file_names(self):
+        """Return the names of all fields that represent writable outputs."""
+        return list(self._output_file_headers)
+
+    def get_output_files(self):
+        """
+        Return ``(elements, headers, names)`` for every output that is set.
+
+        Only fields with an associated header (see ``_output_file_headers``)
+        are considered, and those whose value is ``None`` are dropped. The
+        surviving entries are sorted alphabetically by field name to match the
+        historical ordering that ``fileio`` relies on.
+        """
+        pairs = []
+        for name, header in self._output_file_headers.items():
+            element = getattr(self, name)
+            if element is not None:
+                pairs.append((element, header, name))
+
+        pairs.sort(key=lambda pair: pair[2])
+
+        elements = [element for element, _, _ in pairs]
+        headers = [header for _, header, _ in pairs]
+        names = [name for _, _, name in pairs]
+        return elements, headers, names
