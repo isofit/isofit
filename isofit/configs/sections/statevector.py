@@ -9,6 +9,8 @@ parameters that ISOFIT optimizes during inversion.
 from typing import Optional
 
 import numpy as np
+
+from isofit.configs.utils.accessors import ElementAccessorMixin
 from pydantic import BaseModel, Field
 
 
@@ -75,7 +77,7 @@ class StateVectorElementConfig(BaseModel):
     )
 
 
-class StateVectorConfig(BaseModel):
+class StateVectorConfig(BaseModel, ElementAccessorMixin):
     """
     Base state vector configuration.
 
@@ -83,12 +85,19 @@ class StateVectorConfig(BaseModel):
     state vectors (SurfaceStateVectorConfig, InstrumentStateVectorConfig, etc.)
     inherit from this and add domain-specific state vector elements as fields.
 
+    Each subclass declares its state vector elements as optional
+    ``StateVectorElementConfig`` fields. The accessor methods below iterate over
+    the elements that are actually set, so instrument/surface/atmosphere models
+    can pull out bounds, scales, priors and initial values by name.
+
     Examples
     --------
     >>> from isofit.configs.sections.surface import SurfaceStateVectorConfig
     >>> from isofit.configs.sections.statevector import StateVectorElementConfig
     >>> sv = SurfaceStateVectorConfig()
     >>> sv.SURF_TEMP_K = StateVectorElementConfig(bounds=[250.0, 350.0])
+    >>> sv.get_all_bounds()
+    [[250.0, 350.0]]
 
     See Also
     --------
@@ -96,4 +105,22 @@ class StateVectorConfig(BaseModel):
     isofit.configs.sections.instrument.InstrumentStateVectorConfig : Instrument parameters
     """
 
-    pass
+    def get_all_bounds(self):
+        """Return the ``bounds`` of every set element, ordered by name."""
+        return [element.bounds for element, _ in zip(*self.get_elements())]
+
+    def get_all_scales(self):
+        """Return the ``scale`` of every set element, ordered by name."""
+        return [element.scale for element, _ in zip(*self.get_elements())]
+
+    def get_all_inits(self):
+        """Return the ``init`` value of every set element, ordered by name."""
+        return [element.init for element, _ in zip(*self.get_elements())]
+
+    def get_all_prior_means(self):
+        """Return the ``prior_mean`` of every set element, ordered by name."""
+        return [element.prior_mean for element, _ in zip(*self.get_elements())]
+
+    def get_all_prior_sigmas(self):
+        """Return the ``prior_sigma`` of every set element, ordered by name."""
+        return [element.prior_sigma for element, _ in zip(*self.get_elements())]
