@@ -9,9 +9,10 @@ This module defines Pydantic models for specifying input data files
 from pathlib import Path
 from typing import ClassVar, Optional
 
+from pydantic import BaseModel, Field
+
 from isofit.configs.utils.accessors import ElementAccessorMixin
 from isofit.configs.utils.validators import PathExists
-from pydantic import BaseModel, Field
 
 
 class InputConfig(BaseModel, ElementAccessorMixin):

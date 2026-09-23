@@ -7,8 +7,9 @@ atmospheric correction capabilities.
 
 from typing import Annotated, Literal
 
-from isofit.configs.utils.validators import PathExists
 from pydantic import BaseModel, BeforeValidator, Field
+
+from isofit.configs.utils.validators import PathExists
 
 from . import standardName
 
