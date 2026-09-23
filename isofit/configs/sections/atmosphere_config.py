@@ -153,6 +153,12 @@ class AtmosphereConfig(BaseConfigSection):
         """str: Use True to specify triple-run diffuse & direct transmittance
            estimation.  Only implemented for MODTRAN."""
 
+        self._use_tp7_type = bool
+        self.use_tp7 = False
+        """str: Override to True to use TP7 outputs. 
+        The default is to create CHN outputs.  
+        Only implemented for MODTRAN."""
+
         # MODTRAN simulator
         self._emulator_file_type = str
         self.emulator_file = None
