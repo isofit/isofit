@@ -9,9 +9,10 @@ ISOFIT atmospheric correction.
 from pathlib import Path
 from typing import Annotated, Literal
 
+from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
+
 from isofit.configs.utils.validators import PathExists
 from isofit.data import env
-from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
 
 from . import standardName
 

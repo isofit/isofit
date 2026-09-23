@@ -7,8 +7,6 @@ This module configures 6S for ISOFIT atmospheric correction.
 
 from typing import Annotated, Literal
 
-from isofit.configs.utils.validators import PathExists
-from isofit.data import env
 from pydantic import (
     BaseModel,
     BeforeValidator,
@@ -17,6 +15,9 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+
+from isofit.configs.utils.validators import PathExists
+from isofit.data import env
 
 from . import standardName
 

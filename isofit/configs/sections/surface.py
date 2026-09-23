@@ -9,12 +9,13 @@ parameters for temperature and glint effects.
 from pathlib import Path
 from typing import Dict, Literal, Optional
 
+from pydantic import BaseModel, Field, field_validator
+
 from isofit.configs.sections.statevector import (
     StateVectorConfig,
     StateVectorElementConfig,
 )
 from isofit.configs.utils.validators import PathExists
-from pydantic import BaseModel, Field, field_validator
 
 
 class SurfaceStateVectorConfig(StateVectorConfig):
