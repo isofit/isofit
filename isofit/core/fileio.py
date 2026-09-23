@@ -629,7 +629,7 @@ class IO:
             geom = input_data.geom
             reference_reflectance = input_data.reference_reflectance
 
-            if self.config.implementation.mode == "inversion_mcmc":
+            if self.config.implementation.mode == "mcmc_inversion":
                 state_est = states.mean(axis=0)
             else:
                 state_est = states[-1, :]
