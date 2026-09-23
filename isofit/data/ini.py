@@ -288,7 +288,12 @@ class Ini:
                 Logger.exception(f"Failed to dump ini to file: {self.ini}")
 
     def path(
-        self, dir: str, *path: List[str], key: str = None, template: bool = False
+        self,
+        dir: str,
+        *path: List[str],
+        key: str = None,
+        template: bool = False,
+        rpe: bool = True,
     ) -> Path:
         """
         Retrieves a path under one of the env directories and validates the path exists.
@@ -305,6 +310,9 @@ class Ini:
         template : bool, default=False
             Returns the path as a template string. The path will still be validated,
             but the return will be "{env.[dir]}/*path", to be used with Ini.replace
+        rpe : bool, default=True
+            Allows raise_path_errors to raise. Set to False to temporarily disable
+            raise_path_errors
 
         Returns
         -------
@@ -335,7 +343,7 @@ class Ini:
         if key and self[key]:
             path /= self[key]
 
-        if not template and not path.exists():
+        if rpe and not template and not path.exists():
             error = f"The following path does not exist, please verify your installation environment: {path}"
             Logger.error(error)
             if self.raise_path_errors and self.raise_path_errors.lower() in (

@@ -249,7 +249,7 @@ class BaseAtmosphere(Reader):
         self.alldim = {}
         super().__init__(
             build_interpolators=build_interpolators,
-            lut_subset=self.config.lut_names,
+            lut_subset=self.config.lut_subset,
             **kwargs,
         )
 

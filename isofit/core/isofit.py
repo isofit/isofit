@@ -35,8 +35,7 @@ import click
 import numpy as np
 import scipy
 
-from isofit import checkNumThreads, ray
-from isofit.configs import configs
+from isofit import checkNumThreads, configs, ray
 from isofit.core.fileio import IO, SpectrumFile
 from isofit.core.forward import ForwardModel
 from isofit.core.multistate import (

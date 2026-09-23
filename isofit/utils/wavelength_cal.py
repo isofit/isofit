@@ -16,7 +16,7 @@ import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
-from isofit.configs import configs
+from isofit import configs
 from isofit.core import instrument, isofit
 from isofit.core.common import envi_header
 from isofit.utils.apply_oe import (
@@ -669,7 +669,7 @@ def get_wavelength_adjustment(
     logging.info("Getting wavelength adjustment...")
 
     # Load the instrument object
-    config = configs.load_config(config_file)
+    config = configs.create_new_config(config_file)
     instrument = instrument.Instrument(config)
 
     # Load the statevector - we could do this by loading the forward
