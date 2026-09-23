@@ -9,9 +9,9 @@ parameters that ISOFIT optimizes during inversion.
 from typing import Optional
 
 import numpy as np
+from pydantic import BaseModel, Field
 
 from isofit.configs.utils.accessors import ElementAccessorMixin
-from pydantic import BaseModel, Field
 
 
 class StateVectorElementConfig(BaseModel):
