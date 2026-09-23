@@ -162,7 +162,7 @@ class InversionConfig(BaseModel):
     mcmc : McmcConfig
         MCMC parameters used when implementation.mode is "mcmc_inversion".
         Default uses McmcConfig defaults.
-    integration_grid : OrderedDict
+    integration_grid : dict
         Grid of inversion points for mode='grid' (advanced usage).
         Default is empty.
     priors_in_initial_guess : bool
@@ -210,8 +210,8 @@ class InversionConfig(BaseModel):
         description="MCMC parameters (only used if mode = mcmc)",
     )
 
-    integration_grid: OrderedDict = Field(
-        default_factory=OrderedDict,
+    integration_grid: dict = Field(
+        default_factory=dict,
         description="Grid of inversion points for mode='grid'",
     )
 
