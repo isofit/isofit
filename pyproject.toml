@@ -34,7 +34,7 @@ dependencies = [
   "h5py <= 3.14.0",
   "netCDF4 < 1.7.4",
   "numba",
-  "numpy >= 1.20",
+  "numpy >= 2.0",
   "torch",
   "pyyaml >= 5.3.2",
   "ray >= 1.2.0",
