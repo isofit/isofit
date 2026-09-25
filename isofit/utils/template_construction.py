@@ -112,7 +112,8 @@ class Pathnames:
         self.output_directory = abspath(join(self.working_directory, "output/"))
 
         # define all output names
-        rdn_fname = self.fid + "_rdn"
+        # NA- sensor fids keep the full basename, which may already end in _rdn
+        rdn_fname = self.fid if self.fid.endswith("_rdn") else self.fid + "_rdn"
         self.rfl_working_path = abspath(
             join(self.output_directory, rdn_fname.replace("_rdn", "_rfl"))
         )
