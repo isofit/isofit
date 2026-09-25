@@ -949,6 +949,7 @@ def apply_oe(
                 paths.loc_working_path,
                 paths.obs_working_path,
                 working_directory,
+                segmentation_file=paths.lbl_working_path,
                 output_rfl_file=paths.rfl_working_path,
                 output_unc_file=paths.uncert_working_path,
                 skyview_factor_file=paths.svf_working_path,
