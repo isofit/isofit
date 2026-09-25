@@ -21,13 +21,16 @@ from __future__ import annotations
 import logging
 import multiprocessing
 import os
+import shutil
 import time
 from collections import OrderedDict
 from copy import deepcopy
 from glob import glob
+from pathlib import Path
 
 import click
 import numpy as np
+import xarray as xr
 from spectral.io import envi
 
 from isofit import ray
@@ -47,6 +50,7 @@ from isofit.inversion.inverse_simple import (
     invert_analytical,
     invert_simple,
 )
+from isofit.luts.stores import create
 from isofit.utils.atm_interpolation import atm_interpolation
 
 
@@ -75,6 +79,7 @@ def analytical_line(
     smoothing_sigma: list = [2],
     output_rfl_file: str = None,
     output_unc_file: str = None,
+    output_dof_file: str = None,
     atm_file: str = None,
     skyview_factor_file: str = None,
     bgrfl_file: str = None,
@@ -146,7 +151,7 @@ def analytical_line(
         full_statevector,
         full_idx_surface,
         full_idx_surf_rfl,
-        _,
+        full_idx_surf_nonrfl,
         full_idx_atmosphere,
         full_idx_instrument,
     ) = construct_full_state(config)
@@ -226,7 +231,30 @@ def analytical_line(
         ),
     )
 
+    dof_output = None
+    if output_dof_file:
+        output_metadata = {
+            "data type": 4,
+            "file type": "ENVI Standard",
+            "byte order": 0,
+            "no data value": -9999,
+            "band names": full_statevector,
+            "lines": rdns[0],
+            "samples": rdns[1],
+            "bands": len(full_statevector),
+            "interleave": "bil",
+            "description": "Diagonal of averaging kernel matrix",
+        }
+
+        dof_output = initialize_output(
+            output_metadata,
+            output_dof_file,
+            (rdns[0], len(full_statevector), rdns[1]),
+        )
+
     # If there are more idx in surface than rfl, there are non_rfl surface states
+    non_rfl_output = None
+    non_rfl_unc_output = None
     if len(full_idx_surface) > len(full_idx_surf_rfl):
         n_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
         output_metadata["band names"] = [
@@ -251,9 +279,6 @@ def analytical_line(
                 f"L2A Analytical per-pixel non_rfl surface retrieval uncertainty  (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
             ),
         )
-    else:
-        non_rfl_output = None
-        non_rfl_unc_output = None
 
     # Ray initialization
     ray_dict = {
@@ -294,7 +319,9 @@ def analytical_line(
             full_statevector,
             full_idx_surface,
             full_idx_surf_rfl,
+            full_idx_surf_nonrfl,
             full_idx_atmosphere,
+            full_idx_instrument,
             rdn_file,
             loc_file,
             obs_file,
@@ -303,6 +330,7 @@ def analytical_line(
             lbl_file,
             rfl_output,
             unc_output,
+            dof_output,
             non_rfl_output,
             non_rfl_unc_output,
             num_iter,
@@ -312,6 +340,7 @@ def analytical_line(
             skyview_factor_file,
             bgrfl_file,
         ]
+
         workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
         line_breaks = np.linspace(
@@ -357,7 +386,9 @@ class Worker(object):
         full_statevector: list,
         full_idx_surface: np.array,
         full_idx_surf_rfl: np.array,
+        full_idx_surf_nonrfl: np.array,
         full_idx_atmosphere: np.array,
+        full_idx_instrument: np.array,
         rdn_file: str,
         loc_file: str,
         obs_file: str,
@@ -366,6 +397,7 @@ class Worker(object):
         lbl_file: str,
         rfl_output: str,
         unc_output: str,
+        dof_output: str,
         non_rfl_output: str,
         non_rfl_unc_output: str,
         num_iter: int,
@@ -406,6 +438,7 @@ class Worker(object):
         self.full_idx_surface = full_idx_surface
         self.full_idx_surf_rfl = full_idx_surf_rfl
         self.full_idx_atmosphere = full_idx_atmosphere
+        self.full_idx_instrument = full_idx_instrument
         self.n_rfl_bands = len(full_idx_surf_rfl)
         self.n_non_rfl_bands = len(full_idx_surface) - len(full_idx_surf_rfl)
 
@@ -429,7 +462,7 @@ class Worker(object):
         else:
             self.svf = []
 
-        # Open background rfl file
+        # Open background rfl faemit20220818t145545_o23010_s001le
         if bgrfl_file:
             self.bg_rfl = envi.open(envi_header(bgrfl_file)).open_memmap(
                 interleave="bip"
@@ -444,6 +477,7 @@ class Worker(object):
         # output paths
         self.rfl_outpath = rfl_output
         self.unc_outpath = unc_output
+        self.dof_outpath = dof_output
         self.non_rfl_outpath = non_rfl_output
         self.non_rfl_unc_outpath = non_rfl_unc_output
 
@@ -494,6 +528,15 @@ class Worker(object):
             .open_memmap(interleave="bip", writable=False)[start_line:stop_line, ...]
             .copy()
         )
+
+        if self.dof_outpath:
+            output_dof = (
+                envi.open(envi_header(self.dof_outpath))
+                .open_memmap(interleave="bip", writable=False)[
+                    start_line:stop_line, ...
+                ]
+                .copy()
+            )
 
         if self.non_rfl_unc_outpath:
             output_non_rfl = (
@@ -613,7 +656,7 @@ class Worker(object):
             if self.per_pixel_heuristic_prior:
                 self.fm.update_heuristic_prior_means(x0, geom)
 
-            states, unc = invert_analytical(
+            states, unc, A = invert_analytical(
                 self.fm,
                 self.winidx,
                 meas,
@@ -630,9 +673,21 @@ class Worker(object):
             output_rfl[r - start_line, c, :] = full_state_est[self.full_idx_surf_rfl]
 
             full_unc_est = fill_statevector(
-                unc, self.fm.full_idx, self.fm.full_miss, self.full_statevector
+                unc,
+                self.fm.full_idx,
+                self.fm.full_miss,
+                self.full_statevector,
             )
             output_rfl_unc[r - start_line, c, :] = full_unc_est[self.full_idx_surf_rfl]
+
+            # Save averaging kernel
+            if self.dof_outpath:
+                output_dof[r - start_line, c, :] = fill_statevector(
+                    np.diag(A),
+                    self.fm.full_idx,
+                    self.fm.full_miss,
+                    self.full_statevector,
+                )
 
             full_state_est[len(self.full_idx_surf_rfl) : self.n_non_rfl_bands]
             # Save the non_rfl portion
@@ -666,6 +721,14 @@ class Worker(object):
             start_line,
             (self.n_lines, self.n_rfl_bands, self.n_samples),
         )
+
+        if self.dof_outpath:
+            write_bil_chunk(
+                np.swapaxes(output_dof, 1, 2),
+                self.dof_outpath,
+                start_line,
+                (self.n_lines, len(self.full_statevector), self.n_samples),
+            )
 
         if self.non_rfl_outpath:
             write_bil_chunk(

@@ -317,9 +317,16 @@ def match_statevector(full_statevec: list, fm_statevec: list):
 def fill_statevector(state_est, idx, miss, full_statevector, null_value=-9999.0):
     """
     Map a fm output onto a full statevector
+
+    Args:
+        state_est: [np.ndarray(len(full_statevector))] Vector to match length against statevec.
+        idx: [np.ndarray(int)] Index to fill data
+        miss: [np.ndarray(int)] Index to fill no data
+        full_statevector: [list(string)] Image-wide statevector
+        null_value: [float]: No data fill value
     """
-    output = np.empty((len(full_statevector)))
+    output = np.empty(len(full_statevector))
     output[idx] = state_est
     output[miss] = null_value
 
-    return output
+    return output.squeeze()
