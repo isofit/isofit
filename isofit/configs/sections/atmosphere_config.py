@@ -64,6 +64,9 @@ class AtmosphereStateVectorConfig(StateVectorConfig):
         self._CH4_type = StateVectorElementConfig
         self.CH4: StateVectorElementConfig = None
 
+        self._O3_type = StateVectorElementConfig
+        self.O3: StateVectorElementConfig = None
+
         self._AIRT_DELTA_K_type = StateVectorElementConfig
         self.AIRT_DELTA_K: StateVectorElementConfig = None
 
