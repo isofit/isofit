@@ -383,6 +383,8 @@ class EradiateRT(BaseAtmosphere, Writer):
             thermoprops = self.set_uniform_mixing_ratio(
                 thermoprops, "x_CH4", vals["CH4"]
             )
+        if "O3" in vals:
+            thermoprops = self.set_uniform_mixing_ratio(thermoprops, "x_O3", vals["O3"])
 
         molecular = MolecularAtmosphere(
             thermoprops=thermoprops,
