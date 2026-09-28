@@ -30,8 +30,8 @@ from isofit.utils import (
     reducers,
     segment,
 )
-from isofit.utils.skyview import skyview
 from isofit.utils.adjacency import background_reflectance
+from isofit.utils.skyview import skyview
 
 EPS = 1e-6
 CHUNKSIZE = 256
@@ -65,7 +65,6 @@ RTM_CLEANUP_LIST = [
     "*.inp",
     "*.sh",
 ]
-INVERSION_WINDOWS = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
 
 def apply_oe(
@@ -104,7 +103,7 @@ def apply_oe(
     pressure_elevation=False,
     prebuilt_lut=None,
     no_min_lut_spacing=False,
-    inversion_windows=None,
+    inversion_windows=[],
     config_only=False,
     interpolate_bad_rdn=False,
     interpolate_inplace=False,
@@ -230,7 +229,7 @@ def apply_oe(
         ISOFIT-compatible RTE NetCDF
     no_min_lut_spacing : bool, default=False
         Don't allow the LUTConfig to remove a LUT dimension because of minimal spacing.
-    inversion_windows : list[float], default=None
+    inversion_windows : list[float], default=[]
         Override the default inversion windows.  Will supercede any sensor specific
         defaults that are in place.
         Must be in 2-item tuples
@@ -458,17 +457,16 @@ def apply_oe(
 
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
-    global INVERSION_WINDOWS
-    dt, sensor_inversion_window = tmpl.sensor_name_to_dt(sensor, paths.fid)
-    if sensor_inversion_window is not None:
-        INVERSION_WINDOWS = sensor_inversion_window
+    dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(sensor, paths.fid)
+    if not sensor_inversion_windows:
+        sensor_inversion_windows = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
-    if inversion_windows:
+    if len(inversion_windows):
         assert all(
             [len(window) == 2 for window in inversion_windows]
         ), "Inversion windows must be in pairs"
-        INVERSION_WINDOWS = inversion_windows
-    logging.info(f"Using inversion windows: {INVERSION_WINDOWS}")
+        sensor_inversion_windows = inversion_windows
+    logging.info(f"Using inversion windows: {sensor_inversion_windows}")
 
     dayofyear = dt.timetuple().tm_yday
 
@@ -683,7 +681,7 @@ def apply_oe(
         "emulator_base": emulator_base,
         "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
         "prebuilt_lut_path": prebuilt_lut,
-        "inversion_windows": INVERSION_WINDOWS,
+        "inversion_windows": sensor_inversion_windows,
         "multipart_transmittance": multipart_transmittance,
         "segmentation_size": segmentation_size,
         "terrain_style": terrain_style,
