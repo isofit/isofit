@@ -4890,10 +4890,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.utils.template_construction.sensor_name_to_dt" class="md-nav__link">
+  <a href="#isofit.utils.template_construction.get_sensor_metadata_from_fid" class="md-nav__link">
     <span class="md-ellipsis">
       
-        sensor_name_to_dt
+        get_sensor_metadata_from_fid
       
     </span>
   </a>
@@ -8400,8 +8400,8 @@
     <span class="k">return</span> <span class="n">mean_latitude</span><span class="p">,</span> <span class="n">mean_longitude</span><span class="p">,</span> <span class="n">mean_elevation_km</span><span class="p">,</span> <span class="n">elevation_lut_grid</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">sensor_name_to_dt</span><span class="p">(</span><span class="n">sensor</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.template_construction.sensor_name_to_dt"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.sensor_name_to_dt" title="Go to docs">[docs]</a></div>
-    <span class="n">inversion_window_update</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_sensor_metadata_from_fid</span><span class="p">(</span><span class="n">sensor</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.template_construction.get_sensor_metadata_from_fid"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.get_sensor_metadata_from_fid" title="Go to docs">[docs]</a></div>
+    <span class="n">inversion_window_update</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="n">sensor</span> <span class="o">==</span> <span class="s2">"ang"</span><span class="p">:</span>
         <span class="c1"># parse flightline ID (AVIRIS-NG assumptions)</span>
         <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">fid</span><span class="p">[</span><span class="mi">3</span><span class="p">:],</span> <span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">t%H%M%S"</span><span class="p">)</span>

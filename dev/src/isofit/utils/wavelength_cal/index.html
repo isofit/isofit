@@ -5596,9 +5596,7 @@
 <span class="normal">790</span>
 <span class="normal">791</span>
 <span class="normal">792</span>
-<span class="normal">793</span>
-<span class="normal">794</span>
-<span class="normal">795</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">793</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick</span>
 <span class="c1">#</span>
@@ -5620,7 +5618,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">instrument</span><span class="p">,</span> <span class="n">isofit</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.utils.apply_oe</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">INVERSION_WINDOWS</span><span class="p">,</span>
     <span class="n">RTM_CLEANUP_LIST</span><span class="p">,</span>
     <span class="n">SUPPORTED_SENSORS</span><span class="p">,</span>
     <span class="n">UNCORRELATED_RADIOMETRIC_UNCERTAINTY</span><span class="p">,</span>
@@ -5813,7 +5810,7 @@
     <span class="n">ray_temp_dir</span><span class="o">=</span><span class="s2">"/tmp/ray"</span><span class="p">,</span>
     <span class="n">emulator_base</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">prebuilt_lut</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">inversion_windows</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">inversion_windows</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">wl_state_type</span><span class="o">=</span><span class="s2">"shift"</span><span class="p">,</span>
     <span class="n">spline_indices</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">force_with_geo</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -6010,16 +6007,15 @@
 
     <span class="c1"># Based on the sensor type, get appropriate year/month/day info from initial condition.</span>
     <span class="c1"># We'll adjust for line length and UTC day overrun later</span>
-    <span class="k">global</span> <span class="n">INVERSION_WINDOWS</span>
-    <span class="n">dt</span><span class="p">,</span> <span class="n">sensor_inversion_window</span> <span class="o">=</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">sensor_name_to_dt</span><span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">paths</span><span class="o">.</span><span class="n">fid</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">sensor_inversion_window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">INVERSION_WINDOWS</span> <span class="o">=</span> <span class="n">sensor_inversion_window</span>
+    <span class="n">dt</span><span class="p">,</span> <span class="n">sensor_inversion_windows</span> <span class="o">=</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">get_sensor_metadata_from_fid</span><span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">paths</span><span class="o">.</span><span class="n">fid</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">inversion_windows</span><span class="p">:</span>
+        <span class="n">sensor_inversion_windows</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">350.0</span><span class="p">,</span> <span class="mf">1360.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1410</span><span class="p">,</span> <span class="mf">1800.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1970.0</span><span class="p">,</span> <span class="mf">2500.0</span><span class="p">]]</span>
     <span class="k">if</span> <span class="n">inversion_windows</span><span class="p">:</span>
         <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span>
             <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">window</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">inversion_windows</span><span class="p">]</span>
         <span class="p">),</span> <span class="s2">"Inversion windows must be in pairs"</span>
-        <span class="n">INVERSION_WINDOWS</span> <span class="o">=</span> <span class="n">inversion_windows</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using inversion windows: </span><span class="si">{</span><span class="n">INVERSION_WINDOWS</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">sensor_inversion_windows</span> <span class="o">=</span> <span class="n">inversion_windows</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using inversion windows: </span><span class="si">{</span><span class="n">sensor_inversion_windows</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Collapse data row-wise</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Collapsing data row-wise..."</span><span class="p">)</span>
@@ -6213,7 +6209,7 @@
             <span class="n">emulator_base</span><span class="o">=</span><span class="n">emulator_base</span><span class="p">,</span>
             <span class="n">uncorrelated_radiometric_uncertainty</span><span class="o">=</span><span class="n">uncorrelated_radiometric_uncertainty</span><span class="p">,</span>
             <span class="n">prebuilt_lut_path</span><span class="o">=</span><span class="n">prebuilt_lut</span><span class="p">,</span>
-            <span class="n">inversion_windows</span><span class="o">=</span><span class="n">INVERSION_WINDOWS</span><span class="p">,</span>
+            <span class="n">inversion_windows</span><span class="o">=</span><span class="n">sensor_inversion_windows</span><span class="p">,</span>
             <span class="n">multipart_transmittance</span><span class="o">=</span><span class="n">multipart_transmittance</span><span class="p">,</span>
             <span class="n">segmentation_size</span><span class="o">=</span><span class="n">n_rows</span><span class="p">,</span>
             <span class="n">multiple_restarts</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
