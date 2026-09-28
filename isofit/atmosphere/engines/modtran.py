@@ -902,7 +902,7 @@ class ModtranRT(BaseAtmosphere, Writer):
                     # We don't need a .chn file if we're writing a tp7!
                     # Delete it. And set the DV and FWHM parameters to something
                     # arbitrarily high
-                    if self.use_tp7:
+                    if self.config.use_tp7:
                         if "FILTNM" in case_param["MODTRANINPUT"]["SPECTRAL"]:
                             del case_param["MODTRANINPUT"]["SPECTRAL"]["FILTNM"]
 
