@@ -99,7 +99,7 @@ class ImplementationConfig(BaseModel):
     """
 
     mode: Literal["inversion", "mcmc_inversion", "simulation"] = Field(
-        default="simulation", description="Operating mode for ISOFIT"
+        default="inversion", description="Operating mode for ISOFIT"
     )
 
     inversion: Optional[InversionConfig] = Field(
