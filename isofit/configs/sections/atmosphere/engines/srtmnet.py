@@ -7,7 +7,7 @@ high accuracy.
 """
 
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
 
@@ -72,7 +72,7 @@ class sRTMnetConfig(BaseModel):
 
     name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)]
 
-    base_dir: PathExists = Field(
+    base_dir: Optional[PathExists] = Field(
         default=None,
         description="Base path to engine directory",
     )
@@ -84,14 +84,19 @@ class sRTMnetConfig(BaseModel):
         examples=[512, 1024, 2048, 4096, 8192],
     )
 
-    emulator_file: PathExists = Field(
+    emulator_file: Optional[PathExists] = Field(
         default=None,
         description="",
     )
 
-    emulator_aux_file: PathExists = Field(
+    emulator_aux_file: Optional[PathExists] = Field(
         default=None,
         description="",
+    )
+
+    template_file: Optional[PathExists] = Field(
+        default=None,
+        description="MODTRAN template file used to build the 6S surrogate simulations",
     )
 
     @model_validator(mode="before")

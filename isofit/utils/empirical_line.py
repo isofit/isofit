@@ -487,7 +487,7 @@ def empirical_line(
     output_metadata["interleave"] = "bil"
     output_metadata["wavelength_unts"] = "Nanometers"
     isofit_version = iconfig.implementation.isofit_version
-    engine_name = iconfig.forward_model.atmosphere.engine_name
+    engine_name = iconfig.forward_model.atmosphere.engine.name
     output_metadata["description"] = (
         f"L2A empirical line per-pixel surface retrieval (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
     )

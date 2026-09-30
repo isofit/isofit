@@ -11,7 +11,7 @@ from typing import Optional
 import numpy as np
 from pydantic import BaseModel, Field
 
-from isofit.configs.utils.accessors import ElementAccessorMixin
+from isofit.configs.utils.accessors import ElementAccessorMixin, StateVectorValueMixin
 
 
 class StateVectorElementConfig(BaseModel):
@@ -77,7 +77,7 @@ class StateVectorElementConfig(BaseModel):
     )
 
 
-class StateVectorConfig(BaseModel, ElementAccessorMixin):
+class StateVectorConfig(BaseModel, ElementAccessorMixin, StateVectorValueMixin):
     """
     Base state vector configuration.
 
@@ -104,23 +104,3 @@ class StateVectorConfig(BaseModel, ElementAccessorMixin):
     isofit.configs.sections.surface.SurfaceStateVectorConfig : Surface parameters
     isofit.configs.sections.instrument.InstrumentStateVectorConfig : Instrument parameters
     """
-
-    def get_all_bounds(self):
-        """Return the ``bounds`` of every set element, ordered by name."""
-        return [element.bounds for element, _ in zip(*self.get_elements())]
-
-    def get_all_scales(self):
-        """Return the ``scale`` of every set element, ordered by name."""
-        return [element.scale for element, _ in zip(*self.get_elements())]
-
-    def get_all_inits(self):
-        """Return the ``init`` value of every set element, ordered by name."""
-        return [element.init for element, _ in zip(*self.get_elements())]
-
-    def get_all_prior_means(self):
-        """Return the ``prior_mean`` of every set element, ordered by name."""
-        return [element.prior_mean for element, _ in zip(*self.get_elements())]
-
-    def get_all_prior_sigmas(self):
-        """Return the ``prior_sigma`` of every set element, ordered by name."""
-        return [element.prior_sigma for element, _ in zip(*self.get_elements())]

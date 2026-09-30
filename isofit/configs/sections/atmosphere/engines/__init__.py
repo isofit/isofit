@@ -83,6 +83,7 @@ def selectByName(data: dict) -> str:
     return name
 
 
+from .kernelflows import KernelFlowsConfig
 from .libradtran import LibRadTranConfig
 from .modtran import ModtranConfig
 from .prebuilt import PrebuiltConfig
@@ -92,6 +93,7 @@ from .srtmnet import sRTMnetConfig
 # Add new engines using their standard name
 Engines = Annotated[
     Union[
+        Annotated[KernelFlowsConfig, Tag("kernelflows")],
         Annotated[LibRadTranConfig, Tag("libradtran")],
         Annotated[ModtranConfig, Tag("modtran")],
         Annotated[PrebuiltConfig, Tag("prebuilt")],

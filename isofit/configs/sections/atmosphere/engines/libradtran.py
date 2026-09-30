@@ -7,7 +7,7 @@ ISOFIT atmospheric correction.
 """
 
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
 
@@ -84,7 +84,7 @@ class LibRadTranConfig(BaseModel):
 
     name: Annotated[Literal["libradtran"], BeforeValidator(standardName)]
 
-    base_dir: PathExists = Field(
+    base_dir: Optional[PathExists] = Field(
         default=None,
         description="Base path to engine directory",
     )
@@ -115,12 +115,24 @@ class LibRadTranConfig(BaseModel):
         description="Path to an optical depth file that overwrites default profile"
     )
 
-    ssa_file: Path = Field(
-        description="Path to a single scattering albedo file that overwrites default profile"
+    ssa_file: Optional[Path] = Field(
+        default=None,
+        description="Path to a single scattering albedo file that overwrites default profile",
     )
 
-    ssa_file: Path = Field(
-        description="Path to a phase function moments file that overwrites default profile"
+    ssa_scale: Optional[float] = Field(
+        default=None,
+        description="Scaling factor applied to the single scattering albedo",
+    )
+
+    moments_file: Optional[Path] = Field(
+        default=None,
+        description="Path to a phase function moments file that overwrites default profile",
+    )
+
+    template_file: Optional[PathExists] = Field(
+        default=None,
+        description="Template file used as the base configuration for libRadtran",
     )
 
     @model_validator(mode="before")

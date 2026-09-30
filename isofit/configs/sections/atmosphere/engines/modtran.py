@@ -5,7 +5,7 @@ MODTRAN is a widely-used atmospheric RT code for visible through thermal infrare
 wavelengths. This module configures MODTRAN 6.0 for ISOFIT atmospheric correction.
 """
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, BeforeValidator, Field, model_validator
 
@@ -72,7 +72,7 @@ class ModtranConfig(BaseModel):
 
     name: Annotated[Literal["modtran"], BeforeValidator(standardName)]
 
-    base_dir: PathExists = Field(
+    base_dir: Optional[PathExists] = Field(
         default=None,
         description="Base path to engine directory",
     )
@@ -82,16 +82,19 @@ class ModtranConfig(BaseModel):
         description="Apply triple-run diffuse & direct transmittance estimation",
     )
 
-    aerosol_template_file: PathExists = Field(
+    aerosol_template_file: Optional[PathExists] = Field(
+        default=None,
         description="Aerosol template file",
     )
 
-    aerosol_model_file: PathExists = Field(
+    aerosol_model_file: Optional[PathExists] = Field(
+        default=None,
         description="Aerosol model file",
     )
 
-    template_file: PathExists = Field(
-        description="",
+    template_file: Optional[PathExists] = Field(
+        default=None,
+        description="MODTRAN input template file",
     )
 
     @model_validator(mode="before")

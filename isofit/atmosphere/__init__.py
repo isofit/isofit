@@ -8,7 +8,7 @@ Logger = logging.getLogger(__name__)
 
 class Atmosphere:
     def __new__(self, full_config):
-        engine_name = full_config.forward_model.atmosphere.engine_name
+        engine_name = full_config.forward_model.atmosphere.engine.name
         engine = Engines.get(engine_name)
 
         # Always default to base atmosphere
