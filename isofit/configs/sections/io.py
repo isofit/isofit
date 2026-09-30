@@ -9,7 +9,7 @@ This module defines Pydantic models for specifying input data files
 from pathlib import Path
 from typing import ClassVar, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from isofit.configs.utils.accessors import ElementAccessorMixin
 from isofit.configs.utils.validators import PathExists
@@ -66,6 +66,11 @@ class InputConfig(BaseModel, ElementAccessorMixin):
     using the PathExists type. Paths can be absolute or relative to the
     configuration file directory (expansion happens in the loader).
     """
+
+    # Aliased fields (rdn/obs/loc) must also be settable by their full field
+    # names, which is how the generated configs (e.g. apply_oe) write them.
+    # Pydantic v2 restricts population to the alias unless this is enabled.
+    model_config = ConfigDict(populate_by_name=True)
 
     measured_radiance_file: Optional[PathExists] = Field(
         default=None,
