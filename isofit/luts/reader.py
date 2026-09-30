@@ -469,7 +469,7 @@ class Reader:
             Logger.info("No LUT provided, attempting to build it")
 
             if not hasattr(self, "write"):
-                raise NotImplemented(
+                raise NotImplementedError(
                     "This object did not inherit the LUT Writer class and therefore cannot write a LUT, please use a defined engine instead"
                 )
 

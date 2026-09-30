@@ -91,8 +91,10 @@ def patch(box: Box, full: Box, _seen: Optional[set] = None) -> Box:
     box.Box
         The same ``box``, updated with the merged sections.
     """
-    sects = box.pop("^^")
+    if isinstance(box, dict):
+        box = Box(box)
 
+    sects = box.pop("^^", [])
     if isinstance(sects, str):
         sects = [sects]
 
