@@ -157,10 +157,7 @@ class BaseAtmosphere(Reader):
         #     )
 
         # TODO: overwrite_interpolator not hooked up. Check if we even want this override
-        self.interpolator_style = (
-            self.config.interpolator_style
-            or full_config.forward_model.instrument.get("interpolator_style")
-        )
+        self.interpolator_style = self.config.interpolator_style
 
         self.multipart_transmittance = (
             full_config.forward_model.atmosphere.multipart_transmittance
