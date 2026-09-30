@@ -186,6 +186,7 @@ class Inversion:
             max_hash_size=self.max_table_size,
         )
         G = S_hat.dot(K.T).dot(Seps_inv)
+        A = G @ K
 
         # N. Cressie [ASA 2018] suggests an alternate definition of S_hat for
         # more statistically-consistent posterior confidence estimation
@@ -196,7 +197,7 @@ class Inversion:
                 hashtable=self.hashtable,
                 max_hash_size=self.max_table_size,
             )
-        return S_hat, K, G
+        return S_hat, K, G, A
 
     def calc_Seps(self, x, meas, geom):
         """Calculate (zero-mean) measurement distribution in radiance terms.
