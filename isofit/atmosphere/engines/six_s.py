@@ -101,8 +101,8 @@ class SixSRT(BaseAtmosphere, Writer):
         self.wl = wl
         self.fwhm = fwhm
 
-        self.engine_base_dir = self.config.engine_base_dir
-        self.exe = get_exe(self.config.engine_base_dir)
+        self.engine_base_dir = self.config.engine.base_dir
+        self.exe = get_exe(self.config.engine.base_dir)
         Logger.debug(f"Using 6S executable: {self.exe}")
 
         self.co2_mode = False
@@ -220,10 +220,10 @@ class SixSRT(BaseAtmosphere, Writer):
             "AOT550": 0.01,
             "H2OSTR": 0,
             "O3": 0.30,
-            "day": self.config.day,
-            "month": self.config.month,
-            "elev": abs(max(self.config.elev, 0)),
-            "alt": min(self.config.alt, 99),
+            "day": self.config.engine.day,
+            "month": self.config.engine.month,
+            "elev": abs(max(self.config.engine.elev, 0)),
+            "alt": min(self.config.engine.alt, 99),
             "atm_file": None,
             "abscf_data_directory": None,
             "wlinf": units.nm_to_micron(wlinf),
@@ -234,10 +234,10 @@ class SixSRT(BaseAtmosphere, Writer):
 
         # Assume geometry values are provided by the config
         vals.update(
-            solzen=self.config.solzen,
-            viewzen=self.config.viewzen,
-            solaz=self.config.solaz,
-            viewaz=self.config.viewaz,
+            solzen=self.config.engine.solzen,
+            viewzen=self.config.engine.viewzen,
+            solaz=self.config.engine.solaz,
+            viewaz=self.config.engine.viewaz,
         )
 
         # Add the point with its names
@@ -305,7 +305,7 @@ class SixSRT(BaseAtmosphere, Writer):
         """
         self.esd = load_esd()
 
-        dt = datetime(2000, self.config.month, self.config.day)
+        dt = datetime(2000, self.config.engine.month, self.config.engine.day)
         self.day_of_year = dt.timetuple().tm_yday
         self.irr_factor = self.esd[self.day_of_year - 1, 1]
 

@@ -5,7 +5,8 @@
 This module configures 6S for ISOFIT atmospheric correction.
 """
 
-from typing import Annotated, Literal
+from pathlib import Path
+from typing import Annotated, Literal, Optional
 
 from pydantic import (
     BaseModel,
@@ -94,51 +95,87 @@ class SixSConfig(BaseModel):
 
     name: Annotated[Literal["sixs"], BeforeValidator(standardName)]
 
-    base_dir: PathExists = Field(
+    base_dir: Optional[PathExists] = Field(
         default=None,
         description="Base path to engine directory",
     )
 
-    day: int = Field(ge=1, le=366, description="Day Parameter", examples=[1, 365])
+    # The solar/observer geometry parameters below are populated dynamically by
+    # ``build_sixs_config`` (from a MODTRAN template) when 6S is run as the
+    # sRTMnet surrogate, so they default to None rather than being required.
+    day: Optional[int] = Field(
+        default=None, ge=1, le=366, description="Day Parameter", examples=[1, 365]
+    )
 
-    month: int = Field(ge=1, le=12, description="Month parameter", examples=[1, 12])
+    month: Optional[int] = Field(
+        default=None, ge=1, le=12, description="Month parameter", examples=[1, 12]
+    )
 
-    elev: PositiveFloat = Field(
+    elev: Optional[float] = Field(
+        default=None,
         description="Elevation parameter",
     )
 
-    alt: PositiveFloat = Field(
+    alt: Optional[float] = Field(
+        default=None,
         description="Altitude parameter",
     )
 
-    solzen: float = Field(
+    solzen: Optional[float] = Field(
+        default=None,
         ge=0,
         le=180,
         description="Solar zenith parameter",
     )
 
-    solaz: float = Field(
+    solaz: Optional[float] = Field(
+        default=None,
         description="Solar azimuth parameter",
     )
 
-    viewzen: float = Field(
+    viewzen: Optional[float] = Field(
+        default=None,
         description="View zenith parameter",
     )
 
-    viewaz: float = Field(
+    viewaz: Optional[float] = Field(
+        default=None,
         description="View azimuth parameter",
     )
 
-    obs: PathExists = Field(
+    wlinf: Optional[float] = Field(
+        default=None,
+        description="Shortest wavelength (microns) to run the simulation for",
+    )
+
+    wlsup: Optional[float] = Field(
+        default=None,
+        description="Longest wavelength (microns) to run the simulation for",
+    )
+
+    template_file: Optional[PathExists] = Field(
+        default=None,
+        description="MODTRAN template file used to populate 6S geometry",
+    )
+
+    aerosol_model_file: Optional[PathExists] = Field(
+        default=None,
+        description="Aerosol model file",
+    )
+
+    aerosol_template_file: Optional[PathExists] = Field(
+        default=None,
+        description="Aerosol template file",
+    )
+
+    obs: Optional[PathExists] = Field(
+        default=None,
         description="6S observation file",
     )
 
-    earth_sun_distance_file: PathExists = Field(
+    earth_sun_distance_file: Optional[PathExists] = Field(
+        default=None,
         description="Earth-Sun distance file",
-    )
-
-    irradiance_file: PathExists = Field(
-        description="Irradiance file",
     )
 
     @model_validator(mode="before")

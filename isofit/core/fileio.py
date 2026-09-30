@@ -374,7 +374,7 @@ class IO:
         self.n_rows = 1
         self.n_cols = 1
         self.bbl = "{" + ",".join([str(1) for n in range(len(self.meas_wl))]) + "}"
-        self.engine_name = config.forward_model.atmosphere.engine_name
+        self.engine_name = config.forward_model.atmosphere.engine.name
 
         # Use the pre-defined full statevec
         if len(full_statevec):
@@ -818,7 +818,7 @@ class IO:
         )
         wl_names = [("Channel %i" % i) for i in range(len(wl_init))]
         bbl = "{" + ",".join([str(1) for n in range(len(wl_init))]) + "}"
-        engine_name = config.forward_model.atmosphere.engine_name
+        engine_name = config.forward_model.atmosphere.engine.name
 
         for element, element_header, element_name in zip(
             *config.output.get_output_files()

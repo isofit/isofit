@@ -11,6 +11,7 @@ from typing import Any, List, Literal
 from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
 
 from .engines import Engines, PrebuiltConfig
+from .statevector import AtmosphereStateVectorConfig, AtmosphereUnknownsConfig
 
 
 class AtmosphereConfig(BaseModel):
@@ -123,46 +124,37 @@ class AtmosphereConfig(BaseModel):
         description="Names of the statevector elements to use with this atmospheric RT engine",
     )
 
-    # @field_validator("lut_grid")
-    # @classmethod
-    # def _validate_lut_grid(
-    #     cls, grid: dict[str, list[float]] | None
-    # ) -> dict[str, list[float]] | None:
-    #     """
-    #     Each grid point must have at least 2 unique values. Values are sorted
-    #     ascending and the grid is sorted alphabetically by key.
-    #     """
-    #     if grid is None:
-    #         return grid
-    #
-    #     for key, values in grid.items():
-    #         if len(values) < 2:
-    #             raise ValueError(
-    #                 f"lut_grid item {key!r} has fewer than the required 2 elements"
-    #             )
-    #         if len(set(values)) < len(values):
-    #             raise ValueError(f"Detected duplicate values in lut_grid item {key!r}")
-    #
-    #     return {key: sorted(grid[key]) for key in sorted(grid)}
-    #
-    # @model_validator(mode="after")
-    # def _validate_lut_subset(self) -> "AtmosphereConfig":
-    #     """
-    #     lut_subset (formerly lut_names) must be a subset of the lut_grid keys.
-    #     Sorted alphabetically by key to match lut_grid ordering.
-    #     """
-    #     if self.lut_subset is None:
-    #         return self
-    #
-    #     if self.lut_grid is None:
-    #         raise ValueError("lut_subset was provided but lut_grid is not set")
-    #
-    #     extra = set(self.lut_subset) - set(self.lut_grid)
-    #     if extra:
-    #         raise ValueError(
-    #             f"lut_subset keys must be a subset of lut_grid keys; "
-    #             f"unknown keys: {sorted(extra)}"
-    #         )
-    #
-    #     self.lut_subset = {key: self.lut_subset[key] for key in sorted(self.lut_subset)}
-    #     return self
+    statevector: AtmosphereStateVectorConfig = Field(
+        default_factory=AtmosphereStateVectorConfig,
+        description="Atmospheric state vector elements",
+    )
+
+    unknowns: AtmosphereUnknownsConfig = Field(
+        default_factory=AtmosphereUnknownsConfig,
+        description="Radiative-transfer unknowns (unmodeled-variable uncertainties)",
+    )
+
+    configure_and_exit: bool = Field(
+        default=False,
+        description="Build/configure the RT engine and exit without running simulations",
+    )
+
+    interpolator_style: str | None = Field(
+        default=None,
+        description="LUT interpolation style; falls back to the instrument setting if unset",
+    )
+
+    wavelength_range: List[float] | None = Field(
+        default=None,
+        description="Optional [min, max] wavelength range to subset the LUT to after load",
+    )
+
+    multipart_transmittance: bool = Field(
+        default=False,
+        description="Apply triple-run diffuse & direct transmittance estimation",
+    )
+
+    irradiance_file: Path | None = Field(
+        default=None,
+        description="Solar irradiance file (used for RT and PACE-OCI SRF handling)",
+    )

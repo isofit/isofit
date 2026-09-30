@@ -277,8 +277,8 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
     # Experimental: added statevector elements
     for key, value in isurface.get("rt_statevector_elements", {}).items():
         # Add the statevector params
-        config.forward_model.atmosphere.statevector.surface_elevation_km = (
-            StateVectorElementConfig(value)
+        config.forward_model.atmosphere.statevector.root["surface_elevation_km"] = (
+            StateVectorElementConfig(**value)
         )
 
         # Add the statevector names
