@@ -62,3 +62,33 @@ class ElementAccessorMixin:
             return elements[names.index(name)]
         except ValueError:
             return []
+
+
+class StateVectorValueMixin:
+    """
+    Per-attribute accessors for a state vector's ``StateVectorElementConfig``s.
+
+    These helpers depend only on ``get_elements`` (which a host class must
+    provide), so they work for both fixed-field state vectors and the
+    dynamic, LUT-driven atmospheric state vector.
+    """
+
+    def get_all_bounds(self):
+        """Return the ``bounds`` of every set element, ordered by name."""
+        return [element.bounds for element, _ in zip(*self.get_elements())]
+
+    def get_all_scales(self):
+        """Return the ``scale`` of every set element, ordered by name."""
+        return [element.scale for element, _ in zip(*self.get_elements())]
+
+    def get_all_inits(self):
+        """Return the ``init`` value of every set element, ordered by name."""
+        return [element.init for element, _ in zip(*self.get_elements())]
+
+    def get_all_prior_means(self):
+        """Return the ``prior_mean`` of every set element, ordered by name."""
+        return [element.prior_mean for element, _ in zip(*self.get_elements())]
+
+    def get_all_prior_sigmas(self):
+        """Return the ``prior_sigma`` of every set element, ordered by name."""
+        return [element.prior_sigma for element, _ in zip(*self.get_elements())]
