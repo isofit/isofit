@@ -196,7 +196,7 @@ class InversionConfig(BaseModel):
     """
 
     windows: Optional[List[List[float]]] = Field(
-        default=None,
+        default_factory=list,
         description="Inversion retrieval windows to operate over (list of [min, max] wavelength ranges)",
     )
 
