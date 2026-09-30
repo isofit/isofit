@@ -378,10 +378,11 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         self.lut.setAttr("sRTMnet", str(self.config.engine.emulator_file))
 
         # Get the component mode up front
-        if self.config.engine.emulator_file.endswith(".h5"):
+        emulator_suffix = Path(self.config.engine.emulator_file).suffix
+        if emulator_suffix == ".h5":
             self.component_mode = "3c"
 
-        elif self.config.engine.emulator_file.endswith(".6c"):
+        elif emulator_suffix == ".6c":
             self.component_mode = "6c"
 
         else:
