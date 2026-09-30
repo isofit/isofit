@@ -5,7 +5,7 @@ Kernel Flows is a machine learning-based RT emulator providing fast
 atmospheric correction capabilities.
 """
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, BeforeValidator, Field
 
@@ -53,11 +53,12 @@ class KernelFlowsConfig(BaseModel):
 
     name: Annotated[Literal["kernelflows"], BeforeValidator(standardName)]
 
-    emulator_file: PathExists = Field(
+    emulator_file: Optional[PathExists] = Field(
         default=None,
         description="Path to the Kernel Flows emulator model file",
     )
 
-    template_file: PathExists = Field(
+    template_file: Optional[PathExists] = Field(
+        default=None,
         description="Path to Kernel Flows template configuration file",
     )
