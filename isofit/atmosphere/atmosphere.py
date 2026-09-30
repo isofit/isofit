@@ -139,7 +139,7 @@ class BaseAtmosphere(Reader):
         # Configure and exit flag
         self.configure_and_exit = self.config.configure_and_exit
 
-        self.engine_base_dir = self.config.engine_base_dir
+        self.engine_base_dir = getattr(self.config.engine, "base_dir", None)
         self.sim_path = self.config.sim_path
         self.multipart_transmittance = self.config.multipart_transmittance
 
@@ -157,10 +157,7 @@ class BaseAtmosphere(Reader):
         #     )
 
         # TODO: overwrite_interpolator not hooked up. Check if we even want this override
-        self.interpolator_style = (
-            self.config.interpolator_style
-            or full_config.forward_model.instrument.get("interpolator_style")
-        )
+        self.interpolator_style = self.config.interpolator_style
 
         self.multipart_transmittance = (
             full_config.forward_model.atmosphere.multipart_transmittance
@@ -218,10 +215,9 @@ class BaseAtmosphere(Reader):
         # Used both to tag a LUT at build time and to reconcile a
         # prebuilt LUT's build date against the current scene date.
         self.dayofyear = None
-        if self.config.template_file:
-            modtran_input = json_load_ascii(self.config.template_file)["MODTRAN"][0][
-                "MODTRANINPUT"
-            ]
+        template_file = getattr(self.config.engine, "template_file", None)
+        if template_file:
+            modtran_input = json_load_ascii(template_file)["MODTRAN"][0]["MODTRANINPUT"]
             self.atmosphere_type = modtran_input["ATMOSPHERE"].get(
                 "M1", "ATM_MIDLAT_SUMMER"
             )
@@ -249,7 +245,7 @@ class BaseAtmosphere(Reader):
         self.alldim = {}
         super().__init__(
             build_interpolators=build_interpolators,
-            lut_subset=self.config.lut_names,
+            lut_subset=self.config.lut_subset,
             **kwargs,
         )
 
@@ -294,9 +290,10 @@ class BaseAtmosphere(Reader):
 
         # Special treatment for PACE OCI
         srf_file = None
-        irr_file = Path(self.config.irradiance_file)
-        if irr_file.stem == "tsis_f0_0p1":
-            srf_file = irr_file.parent / "pace_oci_rsr.nc"
+        if self.config.irradiance_file is not None:
+            irr_file = Path(self.config.irradiance_file)
+            if irr_file.stem == "tsis_f0_0p1":
+                srf_file = irr_file.parent / "pace_oci_rsr.nc"
 
         if (
             not len(self.wl) == len(self.lut.wl)

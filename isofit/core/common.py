@@ -888,6 +888,9 @@ def envi_header(inputpath):
         str: the header file associated with the input reference.
 
     """
+    # Config paths now arrive as pathlib.Path objects; coerce to str so the
+    # extension/concatenation logic below works regardless of input type.
+    inputpath = str(inputpath)
     if (
         os.path.splitext(inputpath)[-1] == ".img"
         or os.path.splitext(inputpath)[-1] == ".dat"

@@ -375,13 +375,14 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         simulations itself
         """
         # Track the sRTMnet file used in the LUT attributes
-        self.lut.setAttr("sRTMnet", str(self.config.emulator_file))
+        self.lut.setAttr("sRTMnet", str(self.config.engine.emulator_file))
 
         # Get the component mode up front
-        if self.config.emulator_file.endswith(".h5"):
+        emulator_suffix = Path(self.config.engine.emulator_file).suffix
+        if emulator_suffix == ".h5":
             self.component_mode = "3c"
 
-        elif self.config.emulator_file.endswith(".6c"):
+        elif emulator_suffix == ".6c":
             self.component_mode = "6c"
 
         else:
@@ -392,7 +393,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
         # Pack the emulator Aux the same regardless of input file type.
         # Enforce types
         if self.component_mode == "3c":
-            aux = dict(np.load(self.config.emulator_aux_file, allow_pickle=True))
+            aux = dict(np.load(self.config.engine.emulator_aux_file, allow_pickle=True))
             aux_dict = {}
             for key, value in self.aux_quantities.items():
                 if len(aux.get(key, [])):
@@ -402,7 +403,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         else:
             aux = {}
-            with h5py.File(self.config.emulator_file, "r") as model:
+            with h5py.File(self.config.engine.emulator_file, "r") as model:
                 for key, value in self.aux_quantities.items():
                     if value == dict:
                         aux[key] = {
@@ -584,14 +585,14 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             response_offset = self.aux.get("response_offset", 0.0)
 
             emulator = SRTMnetModel(
-                input_file=self.config.emulator_file,
+                input_file=self.config.engine.emulator_file,
                 key="3c",
                 n_cores=self.n_cores,
             )
             lp = emulator.predict(
                 [data.values],  # surrogate data (6S)
                 [resample.values],  #  stacked 3c data interpolated to emulator wl
-                batch_size=self.config.emulator_batch_size,
+                batch_size=self.config.engine.emulator_batch_size,
                 response_scaler=[response_scaler],
                 response_offset=[response_offset],
                 resample_dict=resample_dict,
@@ -608,7 +609,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
             add_vector = None
             if len(feature_point_names) > 0 and feature_point_names[0] != "None":
                 # Populate the 6S parameter values from a modtran template file
-                with open(self.config.template_file, "r") as file:
+                with open(self.config.engine.template_file, "r") as file:
                     data = yaml.safe_load(file)["MODTRAN"][0]["MODTRANINPUT"]
 
                 add_vector = np.zeros((self.points.shape[0], len(feature_point_names)))
@@ -646,7 +647,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
                 Logger.debug(f"Loading emulator {key}")
 
                 emulator = SRTMnetModel(
-                    input_file=self.config.emulator_file,
+                    input_file=self.config.engine.emulator_file,
                     key=key,
                     n_cores=self.n_cores,
                 )
@@ -660,7 +661,7 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
                     [
                         resample[x].values for x in mapping[key]
                     ],  #  6S data interpolated to emulator wl
-                    batch_size=self.config.emulator_batch_size,
+                    batch_size=self.config.engine.emulator_batch_size,
                     response_scaler=response_scaler,
                     response_offset=response_offset,
                     resample_dict=resample_dict,
@@ -738,17 +739,21 @@ def build_sixs_config(config):
     """
     Builds a configuration object for a 6S simulation using a MODTRAN template
     """
+    from isofit.configs.sections.atmosphere.engines import SixSConfig
+
     # First create a copy of the starting config
     full_config = deepcopy(config)
     config = full_config.forward_model.atmosphere
 
-    if not os.path.exists(config.template_file):
+    # The incoming engine (sRTMnet) carries the MODTRAN template used to seed 6S
+    template_file = config.engine.template_file
+    if not os.path.exists(template_file):
         raise FileNotFoundError(
-            f"MODTRAN template file does not exist: {config.template_file}"
+            f"MODTRAN template file does not exist: {template_file}"
         )
 
     # Populate the 6S parameter values from a modtran template file
-    with open(config.template_file, "r") as file:
+    with open(template_file, "r") as file:
         data = yaml.safe_load(file)["MODTRAN"][0]["MODTRANINPUT"]
 
     # Do a quickk conversion to put things in solar azimuth/zenith terms for 6s
@@ -769,21 +774,25 @@ def build_sixs_config(config):
     )
     solar_zenith = data["GEOMETRY"]["PARM2"]
 
-    # Tweak parameter values for sRTMnet
-    config.aerosol_model_file = None
-    config.aerosol_template_file = None
-    config.day = dt.day
-    config.month = dt.month
-    config.elev = data["SURFACE"]["GNDALT"]
-    config.alt = data["GEOMETRY"]["H1ALT"]
-    config.solzen = solar_zenith
-    config.solaz = solar_azimuth
-    # the MODTRAN config provides the view zenith in MODTRAN convention,
-    # so substract from 180 here as 6s follows the ANG OBS file convention
-    config.viewzen = 180 - data["GEOMETRY"]["OBSZEN"]
-    config.viewaz = observer_azimuth
-    config.wlinf = 0.35
-    config.wlsup = 2.5
+    # Swap the engine out for a 6S engine populated from the MODTRAN template
+    config.engine = SixSConfig(
+        name="sixs",
+        aerosol_model_file=None,
+        aerosol_template_file=None,
+        template_file=template_file,
+        day=dt.day,
+        month=dt.month,
+        elev=data["SURFACE"]["GNDALT"],
+        alt=data["GEOMETRY"]["H1ALT"],
+        solzen=solar_zenith,
+        solaz=solar_azimuth,
+        # the MODTRAN config provides the view zenith in MODTRAN convention,
+        # so substract from 180 here as 6s follows the ANG OBS file convention
+        viewzen=180 - data["GEOMETRY"]["OBSZEN"],
+        viewaz=observer_azimuth,
+        wlinf=0.35,
+        wlsup=2.5,
+    )
 
     # Save 6S to a different lut file, prepend 6S to the sRTMnet lut_path
     # REVIEW: Should this write to sim_path instead? I think so

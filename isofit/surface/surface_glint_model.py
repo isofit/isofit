@@ -70,33 +70,38 @@ class GlintModelSurface(MultiComponentSurface):
         #     * np.array(self.scale[self.sun_glint_ind])
         # ) ** 2
 
-        # New syntax pulling from populated config object
+        # New syntax pulling from populated config object. The glint state
+        # vector elements are optional in the config, so fall back to the
+        # module-level defaults when they are not provided.
+        sky_glint = config.statevector.SKY_GLINT or DefaultSkyGlintPrior
+        sun_glint = config.statevector.SUN_GLINT or DefaultSunGlintPrior
+
         self.init.extend(
             [
-                config.statevector.SKY_GLINT.get("init"),
-                config.statevector.SUN_GLINT.get("init"),
+                sky_glint.init,
+                sun_glint.init,
             ]
         )
 
         self.scale.extend(
             [
-                config.statevector.SKY_GLINT.get("scale"),
-                config.statevector.SUN_GLINT.get("scale"),
+                sky_glint.scale,
+                sun_glint.scale,
             ]
         )
 
         self.bounds.extend(
             [
-                config.statevector.SKY_GLINT.get("bounds"),
-                config.statevector.SUN_GLINT.get("bounds"),
+                sky_glint.bounds,
+                sun_glint.bounds,
             ]
         )
 
-        self.sky_glint_mean = config.statevector.SKY_GLINT.get("prior_mean")
-        self.sky_glint_sigma = (config.statevector.SKY_GLINT.get("prior_sigma")) ** 2
+        self.sky_glint_mean = sky_glint.prior_mean
+        self.sky_glint_sigma = (sky_glint.prior_sigma) ** 2
 
-        self.sun_glint_mean = config.statevector.SUN_GLINT.get("prior_mean")
-        self.sun_glint_sigma = (config.statevector.SUN_GLINT.get("prior_sigma")) ** 2
+        self.sun_glint_mean = sun_glint.prior_mean
+        self.sun_glint_sigma = (sun_glint.prior_sigma) ** 2
 
         # Compute and and cache normalized Sa inversions for glint case
         Cov = np.array([[self.sky_glint_sigma, 0], [0, self.sun_glint_sigma]])

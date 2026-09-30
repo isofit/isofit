@@ -226,23 +226,23 @@ class ModtranRT(BaseAtmosphere, Writer):
 
         self.filtpath = os.path.join(
             self.sim_path,
-            f"wavelengths_{self.config.engine_name}_{self.wl[0]}_{self.wl[-1]}.flt",
+            f"wavelengths_{self.config.engine.name}_{self.wl[0]}_{self.wl[-1]}.flt",
         )
-        self.template = json_load_ascii(self.config.template_file)["MODTRAN"]
+        self.template = json_load_ascii(self.config.engine.template_file)["MODTRAN"]
 
         # Regenerate MODTRAN input wavelength file
         if not os.path.exists(self.filtpath):
             self.wl2flt(self.wl, self.fwhm, self.filtpath)
 
         # Insert aerosol templates, if specified
-        if self.config.aerosol_model_file is not None:
+        if self.config.engine.aerosol_model_file is not None:
             self.template[0]["MODTRANINPUT"]["AEROSOLS"] = json_load_ascii(
-                self.config.aerosol_template_file
+                self.config.engine.aerosol_template_file
             )
 
         # Insert aerosol data, if specified
-        if self.config.aerosol_model_file is not None:
-            aer_data = np.loadtxt(self.config.aerosol_model_file)
+        if self.config.engine.aerosol_model_file is not None:
+            aer_data = np.loadtxt(self.config.engine.aerosol_model_file)
             self.aer_wl = aer_data[:, 0]
             aer_data = np.transpose(aer_data[:, 1:])
             self.naer = int(len(aer_data) / 3)

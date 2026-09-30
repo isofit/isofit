@@ -909,7 +909,7 @@ def get_aerosol_initial_value(range_min: float, range_max: float) -> float:
 
 
 def get_lut_subset(vals):
-    """Populate lut_names for the appropriate style of subsetting
+    """Populate lut_subset for the appropriate style of subsetting
 
     Args:
         vals: the values to use for subsetting (list, array, or dict)
@@ -1539,19 +1539,22 @@ def make_atmosphere_config(
     if emulator_base is None:
         engine_name = "modtran"
     elif emulator_base.endswith(".jld2"):
-        engine_name = "KernelFlowsGP"
+        engine_name = "kernelflows"
     else:
-        engine_name = "sRTMnet"
+        engine_name = "srtmnet"
 
+    # Engine-level fields are nested under "engine" (a discriminated union keyed
+    # on "name"); atmosphere-level fields (sim_path, lut_path, multipart, ...)
+    # live at the top level of the atmosphere config.
     atmosphere_config = {
         "engine": {
-            "engine_name": engine_name,
-            "multipart_transmittance": multipart_transmittance,
-            "sim_path": lut_dir,
-            "lut_path": lut_path,
+            "name": engine_name,
             "aerosol_template_file": aerosol_tpl_path,
             "template_file": modtran_template_path,
         },
+        "sim_path": lut_dir,
+        "lut_path": lut_path,
+        "multipart_transmittance": multipart_transmittance,
         "statevector": {},
         "lut_grid": {},
         # Previously configured an H2O_ABSCO, but a value effectively turns off
@@ -1566,8 +1569,12 @@ def make_atmosphere_config(
     if emulator_base is not None:
         atmosphere_rte["emulator_file"] = abspath(emulator_base)
         atmosphere_rte["earth_sun_distance_file"] = earth_sun_distance_path
-        atmosphere_rte["irradiance_file"] = irradiance_file
-        atmosphere_rte["engine_base_dir"] = sixs_path
+        atmosphere_config["irradiance_file"] = irradiance_file
+        # NB: do not set the emulator engine's ``base_dir`` to ``sixs_path`` --
+        # that is the 6S install dir, and each engine's ``base_dir`` validator
+        # rewrites the matching ISOFIT env path (env.changePath), which would
+        # corrupt the sRTMnet path to point at the 6S directory. The 6S
+        # surrogate resolves its own install dir via ``build_sixs_config``.
         if multipart_transmittance:
             atmosphere_rte["emulator_aux_file"] = abspath(emulator_base)
         else:
@@ -1575,10 +1582,10 @@ def make_atmosphere_config(
                 os.path.splitext(emulator_base)[0] + "_aux.npz"
             )
     else:
-        atmosphere_rte["engine_base_dir"] = modtran_path
+        atmosphere_rte["base_dir"] = modtran_path
     atmosphere_config["engine"].update(atmosphere_rte)
 
-    if aerosol_model_file is None:
+    if aerosol_model_file is not None:
         atmosphere_config["engine"]["aerosol_model_file"] = aerosol_model_file
 
     # First, build the general lut grid
@@ -1611,7 +1618,7 @@ def make_atmosphere_config(
         # Should only modify H2OSTR and surface_elevation_km
         bounds_check(lut_grid, emulator_base, modify=True)
 
-    lut_names = {}
+    lut_subset = {}
     if prebuilt_lut_path is not None:
         prebuilt_dimensions = inspect_lut_dimensions(prebuilt_lut_path)
 
@@ -1674,7 +1681,7 @@ def make_atmosphere_config(
                     f"Variable '{dim_name}' is present in prebuilt LUT but not "
                     f"in heuristic. Will interpolate to {interp_value:.4f} ({source})"
                 )
-                lut_names[dim_name] = {"interp": interp_value}
+                lut_subset[dim_name] = {"interp": interp_value}
 
             # Dimension in both LUT and heuristic === subset
             else:
@@ -1682,7 +1689,7 @@ def make_atmosphere_config(
 
                 # Skip if already formatted as a dict
                 if isinstance(heuristic_val, dict):
-                    lut_names[dim_name] = (
+                    lut_subset[dim_name] = (
                         heuristic_val.copy()
                     )  # Copy to avoid shared references
                     continue
@@ -1740,7 +1747,7 @@ def make_atmosphere_config(
                     gte_val = float(subset_points[0])
                     lte_val = float(subset_points[-1])
 
-                    lut_names[dim_name] = {
+                    lut_subset[dim_name] = {
                         "gte": gte_val,
                         "lte": lte_val,
                         "encompass": True,
@@ -1755,19 +1762,17 @@ def make_atmosphere_config(
                         interp_value = get_aerosol_initial_value(vmin, vmax)
                     else:
                         interp_value = (vmin + vmax) / 2.0
-                    lut_names[dim_name] = {"interp": interp_value}
+                    lut_subset[dim_name] = {"interp": interp_value}
 
     atmosphere_config["lut_grid"].update(lut_grid)
 
-    # Set up lut_names for subsetting
+    # Set up lut_subset for subsetting
     if prebuilt_lut_path is not None:
-        # lut_names was already built during reconciliation above
-        atmosphere_config["engine"]["lut_names"] = lut_names
+        # lut_subset was already built during reconciliation above
+        atmosphere_config["lut_subset"] = lut_subset
     else:
-        # For new LUTs being built, lut_names should be None (use all points)
-        atmosphere_config["engine"]["lut_names"] = {
-            key: None for key in lut_grid.keys()
-        }
+        # For new LUTs being built, lut_subset should be None (use all points)
+        atmosphere_config["lut_subset"] = {key: None for key in lut_grid.keys()}
 
     # Now do statevector
     statekeys = ["H2OSTR"]
@@ -1801,7 +1806,7 @@ def make_atmosphere_config(
         atmosphere_config["statevector"].update(aerosol_state_vector)
 
     # Atmosphere RT engine should know about our whole LUT grid and all of our statevectors, so copy them in
-    atmosphere_config["engine"]["statevector_names"] = list(
+    atmosphere_config["statevector_names"] = list(
         atmosphere_config["statevector"].keys()
     )
 

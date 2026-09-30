@@ -411,7 +411,14 @@ class Instrument:
                 for i, r in enumerate(rdn_hi):
                     ssrf = spectral_response_function(np.arange(-10, 11), 0, fwhm[0])
                     blur = convolve(r, ssrf, mode="same")
-                    resamp.append(interp1d(wl_hi, blur)(wl))
+                    # bounds_error=False/extrapolate so a wavelength calibration
+                    # (WL_SHIFT / WL_SPACE) that nudges the instrument grid a
+                    # fraction of a nm past the RT grid edge doesn't raise.
+                    resamp.append(
+                        interp1d(
+                            wl_hi, blur, bounds_error=False, fill_value="extrapolate"
+                        )(wl)
+                    )
             else:
                 for i, r in enumerate(rdn_hi):
                     r2 = resample_spectrum(r, wl_hi, wl, fwhm)

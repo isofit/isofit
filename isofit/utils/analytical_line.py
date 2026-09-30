@@ -30,8 +30,7 @@ import click
 import numpy as np
 from spectral.io import envi
 
-from isofit import ray
-from isofit.configs import configs
+from isofit import configs, ray
 from isofit.core.common import envi_header, eps, load_esd, load_spectrum, load_wavelen
 from isofit.core.fileio import initialize_output, write_bil_chunk
 from isofit.core.forward import ForwardModel
@@ -198,7 +197,7 @@ def analytical_line(
     ]
     bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
     num_bands = len(full_idx_surf_rfl)
-    engine_name = config.forward_model.atmosphere.engine_name
+    engine_name = config.forward_model.atmosphere.engine.name
     isofit_version = config.implementation.isofit_version
     rfl_output = initialize_output(
         output_metadata,
