@@ -1269,6 +1269,12 @@ def get_metadata_from_obs(
     del relative_azimuth
 
     # Make time calculations
+    if np.any((time[valid] < 0) | (time[valid] >= 24)):
+        raise ValueError(
+            f"Bad UTC time value(s) detected in obs input file: ({obs_file}). "
+            f"Times must be within [0-24). Min: {np.min(time[valid])}, Max: {np.max(time[valid])}"
+        )
+
     mean_time = np.mean(time[valid])
     min_time = np.min(time[valid])
     max_time = np.max(time[valid])
@@ -1364,8 +1370,8 @@ def get_metadata_from_loc(
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid
 
 
-def sensor_name_to_dt(sensor: str, fid: str):
-    inversion_window_update = None
+def get_sensor_metadata_from_fid(sensor: str, fid: str):
+    inversion_window_update = []
     if sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(fid[3:], "%Y%m%dt%H%M%S")
