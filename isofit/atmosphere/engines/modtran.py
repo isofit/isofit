@@ -125,7 +125,7 @@ class ModtranRT(BaseAtmosphere, Writer):
             'transm_down_dif'    : tokens[21] + tokens[22],  # total transmittance (down * up, direct + diffuse)
             'sphalb'             : tokens[23],  # atmospheric spherical albedo
             'transm_up_dir'      : tokens[24],  # upward direct transmittance
-            'albedo'             : np.round(1-tokens[25], 3)
+            'albedo'             : np.round(1-tokens[25], 3) # 1-emissivity (rounded to allow for easy matching) 
         }
         # fmt: on
 
