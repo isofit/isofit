@@ -28,7 +28,7 @@ jobs:
   cache:
     runs-on: ubuntu-latest
     outputs:
-      cache_key: ${{ steps.cache_key.outputs.cache_key }}
+      cache_key: extras
     steps:
       - name: Cache Extras
         id: cache-extras
