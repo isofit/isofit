@@ -730,6 +730,13 @@ def build_config(
     n_cores: int = -1,
     surface_category="multicomponent_surface",
     emulator_base: str = None,
+    eradiate: bool = False,
+    mean_to_sun_zenith: float = None,
+    mean_to_sun_azimuth: float = None,
+    mean_to_sensor_zenith: float = None,
+    mean_to_sensor_azimuth: float = None,
+    mean_elevation_km: float = None,
+    mean_altitude_km: float = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
     multiple_restarts: bool = False,
     segmentation_size=400,
@@ -767,6 +774,7 @@ def build_config(
         n_cores:                              the number of cores to use during processing
         surface_category:                     type of surface to use
         emulator_base:                        the basename of the emulator, if used
+        eradiate:                             if true, use the eradiate RT engine instead of MODTRAN/an emulator
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
         multiple_restarts:                    if true, use multiple restarts
         segmentation_size:                    image segmentation size if empirical line is used
@@ -864,6 +872,13 @@ def build_config(
                 co2_lut_grid=co2_lut_grid,
                 elevation_lut_grid=elevation_lut_grid,
                 emulator_base=emulator_base,
+                eradiate=eradiate,
+                mean_to_sun_zenith=mean_to_sun_zenith,
+                mean_to_sun_azimuth=mean_to_sun_azimuth,
+                mean_to_sensor_zenith=mean_to_sensor_zenith,
+                mean_to_sensor_azimuth=mean_to_sensor_azimuth,
+                mean_elevation_km=mean_elevation_km,
+                mean_altitude_km=mean_altitude_km,
                 multipart_transmittance=multipart_transmittance,
                 prebuilt_lut_path=prebuilt_lut_path,
                 presolve=presolve,
@@ -1581,6 +1596,13 @@ def make_atmosphere_config(
     co2_lut_grid: np.array = None,
     elevation_lut_grid: np.array = None,
     emulator_base: str = None,
+    eradiate: bool = False,
+    mean_to_sun_zenith: float = None,
+    mean_to_sun_azimuth: float = None,
+    mean_to_sensor_zenith: float = None,
+    mean_to_sensor_azimuth: float = None,
+    mean_elevation_km: float = None,
+    mean_altitude_km: float = None,
     multipart_transmittance: bool = False,
     prebuilt_lut_path: str = None,
     presolve: bool = False,
@@ -1616,7 +1638,9 @@ def make_atmosphere_config(
         else abspath(prebuilt_lut_path)
     )
 
-    if emulator_base is None:
+    if eradiate:
+        engine_name = "eradiate"
+    elif emulator_base is None:
         engine_name = "modtran"
     elif emulator_base.endswith(".jld2"):
         engine_name = "kernelflows"
@@ -1648,6 +1672,24 @@ def make_atmosphere_config(
     # modtran/sixs engine schemas; srtmnet and kernelflows reject unknown keys.
     if engine_name in ("modtran", "sixs"):
         atmosphere_config["engine"]["aerosol_template_file"] = aerosol_tpl_path
+
+    if eradiate:
+        atmosphere_config["engine"]["eradiate_absorption_database"] = "panellus"
+        atmosphere_config["engine"][
+            "eradiate_particle_properties"
+        ] = "govaerts_2021-continental"
+        atmosphere_config["engine"]["eradiate_spp"] = 500
+        # EradiateRT.resolve_point reads geometry as plain solzen/solaz/
+        # viewzen/viewaz/elev/alt fields (see BaseAtmosphere.__init__ ->
+        # AtmosphereConfig), not by parsing the MODTRAN-style template file
+        # the other engines use -- populate them directly from the scene's
+        # mean observation geometry.
+        atmosphere_config["engine"]["solzen"] = mean_to_sun_zenith
+        atmosphere_config["engine"]["solaz"] = mean_to_sun_azimuth
+        atmosphere_config["engine"]["viewzen"] = mean_to_sensor_zenith
+        atmosphere_config["engine"]["viewaz"] = mean_to_sensor_azimuth
+        atmosphere_config["engine"]["elev"] = mean_elevation_km
+        atmosphere_config["engine"]["alt"] = mean_altitude_km
 
     atmosphere_rte = {}
     if emulator_base is not None:

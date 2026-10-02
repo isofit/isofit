@@ -97,6 +97,7 @@ def apply_oe(
     analytical_line=False,
     ray_temp_dir="/tmp/ray",
     emulator_base=None,
+    eradiate=False,
     segmentation_size=40,
     num_neighbors=[],
     atm_sigma=[2],
@@ -214,6 +215,9 @@ def apply_oe(
         sRTMnet to use the emulator instead of MODTRAN. An additional file with the
         same basename and the extention _aux.npz must accompany
         e.g. /path/to/emulator.h5 /path/to/emulator_aux.npz
+    eradiate : bool, default=False
+        Use the eradiate RT engine instead of MODTRAN/an emulator. Mutually
+        exclusive with emulator_base.
     segmentation_size : int, default=40
         If empirical_line is enabled, sets the size of segments to construct
     num_neighbors : list[int], default=[]
@@ -288,6 +292,9 @@ def apply_oe(
     """
     use_superpixels = empirical_line or analytical_line or use_background_rfl
     use_multisurface = True if classify_multisurface or surface_class_file else False
+
+    if eradiate and emulator_base is not None:
+        raise ValueError("eradiate and emulator_base are mutually exclusive")
 
     # Determine if we run in multipart-transmittance (4c) mode
     if emulator_base is not None:
@@ -702,6 +709,17 @@ def apply_oe(
         "use_superpixels": use_superpixels,
         "surface_category": surface_category,
         "emulator_base": emulator_base,
+        "eradiate": eradiate,
+        # eradiate reads geometry as plain solzen/solaz/viewzen/viewaz/elev/alt
+        # config fields (see EradiateRT.resolve_point) rather than parsing them
+        # out of the MODTRAN-style template file the other engines use, so
+        # thread the same mean scene geometry through for it specifically.
+        "mean_to_sun_zenith": mean_to_sun_zenith,
+        "mean_to_sun_azimuth": mean_to_sun_azimuth,
+        "mean_to_sensor_zenith": mean_to_sensor_zenith,
+        "mean_to_sensor_azimuth": mean_to_sensor_azimuth,
+        "mean_elevation_km": mean_elevation_km,
+        "mean_altitude_km": mean_altitude_km,
         "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
         "prebuilt_lut_path": prebuilt_lut,
         "inversion_windows": sensor_inversion_windows,
@@ -1037,6 +1055,7 @@ def apply_oe(
 @click.option("--analytical_line", is_flag=True, default=False)
 @click.option("--ray_temp_dir", default="/tmp/ray")
 @click.option("--emulator_base")
+@click.option("--eradiate", is_flag=True, default=False)
 @click.option("--segmentation_size", default=40)
 @click.option("--num_neighbors", "-nn", type=int, multiple=True)
 @click.option("--atm_sigma", "-as", type=float, multiple=True, default=[2])
