@@ -260,7 +260,7 @@ def process_background_data(
         coszen = np.cos(np.radians(mean_to_sun_zenith))
         cos_i, slope = np.full((rows, cols, 1), coszen), np.full((rows, cols, 1), 0.0)
 
-    bands = ["cos_i_bg", "skyview_factor_bg", "slope"]
+    bands = ["cos_i_bg", "skyview_factor_bg", "slope_bg"]
     topo_output = initialize_output(
         output_metadata={
             "data type": 4,
