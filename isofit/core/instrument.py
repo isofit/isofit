@@ -20,10 +20,14 @@
 from __future__ import annotations
 
 import logging
+from collections import namedtuple
+from functools import partial
+from itertools import count
 
 import numpy as np
 from scipy.interpolate import interp1d, splev, splrep
 from scipy.io import loadmat
+from scipy.linalg import block_diag
 from scipy.signal import convolve
 
 from isofit.core import units
@@ -42,10 +46,169 @@ from isofit.core.common import (
 wl_tol = 0.01
 
 
-### Classes ###
+DefaultState = namedtuple(
+    "DefaultState",
+    [
+        "bounds",
+        "scale",
+        "prior_mean",
+        "prior_sigma",
+        "init",
+    ],
+)
 
 
-class Instrument:
+DefaultEOFPrior = DefaultState(
+    bounds=[-10.0, 10.0],
+    scale=1.0,
+    prior_mean=0,
+    prior_sigma=100.0,
+    init=0,
+)
+
+
+DefaultRCCPrior = DefaultState(
+    bounds=[0.01, 10.0],
+    scale=1.0,
+    prior_mean=1.0,
+    prior_sigma=10.0,
+    init=1.0,
+)
+
+
+DefaultWLSPLPrior = DefaultState(
+    bounds=[-7.0, 7.0],
+    scale=1.0,
+    prior_mean=0,
+    prior_sigma=10,
+    init=0,
+)
+
+
+DefaultWLSHIFTPrior = DefaultState(
+    bounds=[-7.0, 7.0],
+    scale=1.0,
+    prior_mean=0,
+    prior_sigma=10,
+    init=0.0,
+)
+
+
+DefaultGROWFWHMPrior = DefaultState(
+    bounds=[-7.0, 7.0],
+    scale=1.0,
+    prior_mean=0,
+    prior_sigma=10,
+    init=0.0,
+)
+
+
+class PerWLRCC:
+    """Specialized function calls for statevector elements for
+    per-wavelength RCCs"""
+
+    @staticmethod
+    def Sa(_prior_sigma, wl):
+        return np.diagflat(np.power(np.full(len(wl), _prior_sigma), 2))
+
+
+class NoiseModel:
+    def __init__(self, config):
+        self.wl, _ = load_wavelen(config.wavelength_file)
+        self.n_chan = len(self.wl)
+        self.integrations = config.integrations
+
+        if config.SNR is not None:
+            self.model_type = "SNR"
+            self.snr = config.SNR
+            self.Sy = self.Sy_SNR
+
+        elif config.parametric_noise_file is not None:
+            self.initialize_parametric_noise_file(config.parametric_noise_file)
+            self.Sy = self.Sy_parametric
+
+        elif config.pushbroom_noise_file is not None:
+            self.initialize_pushbroom_noise_file(config.pushbroom_noise_file)
+            self.Sy = self.Sy_pushbroom
+
+        elif config.nedt_noise_file is not None:
+            self.initialize_nedt_noise_file(config.nedt_noise_file)
+            self.Sy = self.Sy_NEDT
+
+        else:
+            raise IndexError("Please define the instrument noise.")
+
+    def initialize_nedt_noise_file(self, nedt_noise_file):
+        self.model_type = "NEDT"
+        self.noise_file = nedt_noise_file
+        self.noise_data = np.loadtxt(self.noise_file, delimiter=",", skiprows=8)
+        noise_data_w_nm = units.micron_to_nm(self.noise_data[:, 0])
+        noise_data_NEDT = self.noise_data[:, 1]
+        nedt = interp1d(noise_data_w_nm, noise_data_NEDT)(self.wl)
+
+        T, emis = 300.0, 0.95  # From Glynn Hulley, 2/18/2020
+        _, drdn_dT = emissive_radiance(emis, T, self.wl)
+        self.noise_NESR = nedt * drdn_dT
+
+    def initialize_pushbroom_noise_file(self, pushbroom_noise_file):
+        self.model_type = "pushbroom"
+        self.noise_file = pushbroom_noise_file
+        D = loadmat(self.noise_file)
+        self.ncols = D["columns"][0, 0]
+        assert self.n_chan == np.sqrt(D["bands"][0, 0])
+
+        cshape = (self.ncols, self.n_chan, self.n_chan)
+        self.covs = D["covariances"].reshape(cshape)
+
+    def initialize_parametric_noise_file(self, parametric_noise_file):
+        self.model_type = "parametric"
+        self.noise_file = parametric_noise_file
+
+        coeffs = np.loadtxt(self.noise_file, delimiter=" ", comments="#")
+        p_a, p_b, p_c = [
+            interp1d(coeffs[:, 0], coeffs[:, col], fill_value="extrapolate")
+            for col in (1, 2, 3)
+        ]
+        self.noise = np.array([[p_a(w), p_b(w), p_c(w)] for w in self.wl])
+
+    def Sy_SNR(self, meas, geom):
+        nedl = (1.0 / self.snr) * meas
+        minimum_noise = np.sqrt(1e-7)
+        bad = nedl < minimum_noise
+        if np.any(bad):
+            logging.debug(
+                "SNR noise model found noise <= 0 - adjusting to slightly positive"
+                " to avoid /0."
+            )
+        nedl[bad] = minimum_noise
+
+        return np.diagflat(np.power(nedl, 2))
+
+    def Sy_parametric(self, meas, geom):
+        noise_plus_meas = self.noise[:, 1] + meas
+        if np.any(noise_plus_meas <= 0):
+            noise_plus_meas[noise_plus_meas <= 0] = 1e-5
+            logging.debug(
+                "Parametric noise model found noise <= 0 - adjusting to slightly"
+                " positive to avoid /0."
+            )
+        nedl = np.abs(self.noise[:, 0] * np.sqrt(noise_plus_meas) + self.noise[:, 2])
+        nedl = nedl / np.sqrt(self.integrations)
+
+        return np.diagflat(np.power(nedl, 2))
+
+    def Sy_pushbroom(self, meas, geom):
+        C = np.squeeze(self.covs.mean(axis=0))
+        return C / np.sqrt(self.integrations)
+
+    def Sy_NEDT(self, meas, geom):
+        return np.diagflat(np.power(self.noise_NESR, 2))
+
+
+class Instrument(NoiseModel):
+
+    fit_rcc = False
+
     def __init__(self, full_config: Config):
         """A model of the spectrometer instrument, including spectral
         response and noise covariance matrices. Noise is typically calculated
@@ -53,6 +216,9 @@ class Instrument:
         function of the radiance level."""
 
         config = full_config.forward_model.instrument
+        self.config = config
+
+        super().__init__(config)
 
         # If needed, skip first index column and/or convert to nanometers
         self.wl_init, self.fwhm_init = load_wavelen(config.wavelength_file)
@@ -60,116 +226,108 @@ class Instrument:
 
         self.fast_resample = config.fast_resample
 
-        self.bounds = config.statevector.get_all_bounds()
-        self.scale = config.statevector.get_all_scales()
-        self.init = config.statevector.get_all_inits()
-        self.prior_mean = np.array(config.statevector.get_all_prior_means())
-        self.prior_sigma = np.array(config.statevector.get_all_prior_sigmas())
-        self.Sa_cached = np.diagflat(np.power(self.prior_sigma, 2))
-        self.Sa_normalized = self.Sa_cached / np.mean(np.diag(self.Sa_cached))
-        self.Sa_inv_normalized, self.Sa_inv_sqrt_normalized = svd_inv_sqrt(
-            self.Sa_normalized
-        )
-        self.statevec_names = config.statevector.get_element_names()
-        self.n_state = len(self.statevec_names)
+        # Construct statevector
+        counter = count()
 
+        self.statevec_names = []
+        self.bounds = []
+        self.scale = []
+        self.init = []
+        self.prior_mean = []
+        self.prior_sigma = []
+        self.state_idx = {}
+        cat_name = None
+
+        self.config_state_names = config.statevector.get_all_names()
+        for name, element_config in zip(self.config_state_names, config.statevector):
+            (_bounds, _scale, _init, _prior_mean, _prior_sigma) = (
+                element_config.unpack()
+            )
+            if "WLSPL" in name:
+                cat_name = name
+                name = "WLSPL"
+
+            elif "EOF" in name:
+                cat_name = name
+                name = "EOF"
+
+            if not self.state_idx.get(name):
+                self.state_idx[name] = []
+
+            if name == "PER_WL_RCC":
+                self.fit_rcc = True
+
+            if name in ("PER_WL_RCC"):
+                entries = [f"{name}_{wl:.3f}nm" for wl in self.wl_init]
+
+            elif name == "WLSPL" or name == "EOF":
+                entries = [cat_name]
+
+            else:
+                entries = [name]
+
+            for entry_name in entries:
+                idx = next(counter)
+                self.statevec_names.append(entry_name)
+                self.bounds.append(_bounds)
+                self.scale.append(_scale)
+                self.init.append(_init)
+                self.prior_mean.append(_prior_mean)
+                self.prior_sigma.append(_prior_sigma)
+                self.state_idx[name].append(idx)
+
+        self.prior_mean = np.array(self.prior_mean)
+        self.prior_sigma = np.array(self.prior_sigma)
+
+        self.n_state = len(self.statevec_names)
         self.integrations = config.integrations
 
+        self.eof = np.array([])
         if config.eof_path is not None:
             self.eof = np.loadtxt(config.eof_path)
-            self.eof_idx = []
-            for i, name in enumerate(sorted(self.statevec_names)):
-                if "EOF" in name:
-                    self.eof_idx.append(i)
-        else:
-            self.eof = None
-            self.eof_idx = []
+
+        # Build Sa
+        sa = np.zeros((self.n_state, self.n_state))
+        for name, idx in self.state_idx.items():
+            if name == "PER_WL_RCC":
+                k = PerWLRCC.Sa(self.prior_sigma[idx], self.wl_init)
+            else:
+                k = np.diagflat(np.power(self.prior_sigma[idx], 2))
+
+            sa[np.ix_(idx, idx)] = k
+
+        if config.rcc_prior_file is not None:
+            (_bounds, _scale, _init, _prior_mean, _prior_cov) = self.load_prior_file(
+                config.rcc_prior_file
+            )
+            idx = self.state_idx["PER_WL_RCC"]
+            assert len(_prior_mean) == len(idx), (
+                "Number of channels in RCC prior file does not match matched "
+                "instrument wavelength indices."
+            )
+
+            # Overwrite
+            for i in idx:
+                self.bounds[i] = _bounds[i]
+                self.scale[i] = _scale
+                self.init[i] = _init[i]
+                self.prior_mean[i] = _prior_mean[i]
+
+            sa[np.ix_(idx, idx)] = _prior_cov
+
+        (
+            self.Sa_cached,
+            self.Sa_normalized,
+            self.Sa_inv_normalized,
+            self.Sa_inv_sqrt_normalized,
+        ) = self.norm_Sa(sa)
 
         self.dn_uncertainty_embedding = None
         if (
             config.unknowns is not None
             and config.unknowns.dn_uncertainty_file is not None
         ):
-            dn_uncertainty_mat = loadmat(config.unknowns.dn_uncertainty_file)
-
-            # Check validity of linearity file for dn-based noise
-            keys = [
-                "input_dn",
-                "dn_ratio",
-                "rcc",
-                "rcc_wl",
-            ]
-            bad = [
-                1 if np.any(~np.isfinite(dn_uncertainty_mat[key])) else 0
-                for key in keys
-            ]
-            if np.sum(bad):
-                er = f"""
-                    Invalid value found in dn_uncertainty_mat keys: {[keys[i] for i in bad if i]}.
-                    Check file at: {config.unknowns.dn_uncertainty_file}
-                """
-                logging.error(er)
-                raise ValueError(er)
-
-            input_dn = dn_uncertainty_mat["input_dn"].squeeze()
-            dn_ratio = dn_uncertainty_mat["dn_ratio"].squeeze()
-            rcc_in = dn_uncertainty_mat["rcc"].squeeze()
-            rcc_wl = dn_uncertainty_mat["rcc_wl"].squeeze()
-
-            rcc_interp = interp1d(rcc_wl, rcc_in, fill_value="extrapolate")
-            self.dn_uncertainty_rcc = rcc_interp(self.wl_init)
-            self.dn_uncertainty_interp = interp1d(
-                input_dn, dn_ratio, fill_value="extrapolate"
-            )
-            self.dn_uncertainty_inflation = dn_uncertainty_mat.get(
-                "inflation", [1.0]
-            ).squeeze()
-            self.dn_uncertainty_embedding = dn_uncertainty_mat.get(
-                "embedding_location", "Sy"
-            )
-
-        if config.SNR is not None:
-            self.model_type = "SNR"
-            self.snr = config.SNR
-
-        elif config.parametric_noise_file is not None:
-            self.model_type = "parametric"
-            self.noise_file = config.parametric_noise_file
-
-            coeffs = np.loadtxt(self.noise_file, delimiter=" ", comments="#")
-            p_a, p_b, p_c = [
-                interp1d(coeffs[:, 0], coeffs[:, col], fill_value="extrapolate")
-                for col in (1, 2, 3)
-            ]
-            self.noise = np.array([[p_a(w), p_b(w), p_c(w)] for w in self.wl_init])
-
-        elif config.pushbroom_noise_file is not None:
-            self.model_type = "pushbroom"
-            self.noise_file = config.pushbroom_noise_file
-            D = loadmat(self.noise_file)
-            self.ncols = D["columns"][0, 0]
-            if self.n_chan != np.sqrt(D["bands"][0, 0]):
-                logging.error("Noise model mismatches wavelength # bands")
-                raise ValueError("Noise model mismatches wavelength # bands")
-            cshape = (self.ncols, self.n_chan, self.n_chan)
-            self.covs = D["covariances"].reshape(cshape)
-            self.integrations = config.integrations
-
-        elif config.nedt_noise_file is not None:
-            self.model_type = "NEDT"
-            self.noise_file = config.nedt_noise_file
-            self.noise_data = np.loadtxt(self.noise_file, delimiter=",", skiprows=8)
-            noise_data_w_nm = units.micron_to_nm(self.noise_data[:, 0])
-            noise_data_NEDT = self.noise_data[:, 1]
-            nedt = interp1d(noise_data_w_nm, noise_data_NEDT)(self.wl_init)
-
-            T, emis = 300.0, 0.95  # From Glynn Hulley, 2/18/2020
-            _, drdn_dT = emissive_radiance(emis, T, self.wl_init)
-            self.noise_NESR = nedt * drdn_dT
-
-        else:
-            raise IndexError("Please define the instrument noise.")
-        # This should never be reached, as an error is designated in the config read
+            self.initialize_DN_additive_uncertainty(config.unknowns.dn_uncertainty_file)
 
         # We track several unretrieved free variables, that are specified
         # in a fixed order (always start with relative radiometric
@@ -198,18 +356,37 @@ class Instrument:
         # and the wavelengths of atmospheric radiative transfer modeling and instrument
         # are the same, then we can bypass computationally expensive sampling
         # operations later.
-        self.calibration_fixed = True
+        self.wavelengths_fixed = True
         if (
             config.statevector.GROW_FWHM is not None
             or config.statevector.WL_SHIFT is not None
             or config.statevector.WL_SPACE is not None
+            or "WLSPL" in list(self.state_idx.keys())
         ):
-            self.calibration_fixed = False
+            self.wavelengths_fixed = False
+
+    @staticmethod
+    def load_prior_file(path):
+        D = loadmat(path)
+        prior_cov = D["cov"]
+        prior_mean = np.squeeze(D["mean"])
+        bounds = np.squeeze(D["bounds"])
+        scale = float(D.get("scale", 1))
+        init = prior_mean
+
+        return bounds, scale, init, prior_mean, prior_cov
 
     def xa(self):
         """Mean of prior distribution, calculated at state x."""
 
         return self.init.copy()
+
+    @staticmethod
+    def norm_Sa(sa):
+        sa_norm = sa / np.mean(np.diag(sa))
+        sa_inv_normalized, sa_inv_sqrt_normalized = svd_inv_sqrt(sa_norm)
+
+        return sa, sa_norm, sa_inv_normalized, sa_inv_sqrt_normalized
 
     def Sa(self):
         """Covariance of prior distribution (diagonal)."""
@@ -270,39 +447,7 @@ class Instrument:
         Returns: Sy, the measurement error covariance due to instrument noise
         """
 
-        Sy = None
-        if self.model_type == "SNR":
-            nedl = (1.0 / self.snr) * meas
-            minimum_noise = np.sqrt(1e-7)
-            bad = nedl < minimum_noise
-            if np.any(bad):
-                logging.debug(
-                    "SNR noise model found noise <= 0 - adjusting to slightly positive"
-                    " to avoid /0."
-                )
-            nedl[bad] = minimum_noise
-            Sy = np.diagflat(np.power(nedl, 2))
-
-        elif self.model_type == "parametric":
-            noise_plus_meas = self.noise[:, 1] + meas
-            if np.any(noise_plus_meas <= 0):
-                noise_plus_meas[noise_plus_meas <= 0] = 1e-5
-                logging.debug(
-                    "Parametric noise model found noise <= 0 - adjusting to slightly"
-                    " positive to avoid /0."
-                )
-            nedl = np.abs(
-                self.noise[:, 0] * np.sqrt(noise_plus_meas) + self.noise[:, 2]
-            )
-            nedl = nedl / np.sqrt(self.integrations)
-            Sy = np.diagflat(np.power(nedl, 2))
-
-        elif self.model_type == "pushbroom":
-            C = np.squeeze(self.covs.mean(axis=0))
-            Sy = C / np.sqrt(self.integrations)
-
-        elif self.model_type == "NEDT":
-            Sy = np.diagflat(np.power(self.noise_NESR, 2))
+        Sy = self.Sy(meas, geom)
 
         if self.dn_uncertainty_embedding:
             # Uncertainty due to imperfect knowledge of linearity correction
@@ -321,6 +466,12 @@ class Instrument:
 
         return Sy
 
+    def dmeas_deof(self, x_instrument):
+        return self.eof
+
+    def dmeas_drcc(self, rdn):
+        return np.diag(rdn)
+
     def dmeas_dinstrument(self, x_instrument, wl_hi, rdn_hi):
         """Jacobian of measurement with respect to the instrument
         free parameter state vector. We use finite differences for now."""
@@ -329,15 +480,26 @@ class Instrument:
         if self.n_state == 0:
             return dmeas_dinstrument
 
-        meas = self.sample(x_instrument, wl_hi, rdn_hi) + self.eof_offset(x_instrument)
-        for ind in range(self.n_state):
-            x_instrument_perturb = x_instrument.copy()
-            x_instrument_perturb[ind] = x_instrument_perturb[ind] + eps
-            meas_perturb = self.sample(
-                x_instrument_perturb, wl_hi, rdn_hi
-            ) + self.eof_offset(x_instrument_perturb)
+        meas = self.sample(x_instrument, wl_hi, rdn_hi)
 
-            dmeas_dinstrument[:, ind] = (meas_perturb - meas) / eps
+        for name, idx in self.state_idx.items():
+            # Handle analytcal partials first
+            if name == "PER_WL_RCC":
+                dmeas_dinstrument[:, idx] = self.dmeas_drcc(meas)
+            elif name == "EOF":
+                dmeas_dinstrument[:, idx] = self.dmeas_deof(x_instrument)
+            # For others use numerical
+            else:
+                meas_perturb = []
+                idx = np.asarray(idx)
+                x_perturb = np.tile(x_instrument, (len(idx), 1))
+                x_perturb[np.arange(len(idx)), idx] += eps
+
+                meas_perturb = np.array(
+                    [self.sample(x, wl_hi, rdn_hi) for x in x_perturb]
+                )
+
+                dmeas_dinstrument[:, idx] = ((meas_perturb - meas) / eps).T
 
         return dmeas_dinstrument
 
@@ -376,19 +538,24 @@ class Instrument:
 
     def eof_offset(self, x_instrument):
         offset = np.zeros(len(self.wl_init))
-        if len(self.eof_idx):
-            for i in self.eof_idx:
-                offset += self.eof[:, i] * x_instrument[i]
+        for i in self.state_idx.get("EOF", []):
+            offset += self.eof[:, i] * x_instrument[i]
         return offset
+
+    def rcc_factor(self, x_instrument):
+        """Apply rcc scaling from statevector or
+        TODO: rdn_factors file
+        """
+        rcc = np.ones_like(self.wl_init)
+        if self.fit_rcc:
+            rcc = x_instrument[self.state_idx["PER_WL_RCC"]]
+
+        return rcc
 
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""
 
-        if (
-            self.calibration_fixed
-            and (len(self.wl_init) == len(wl_hi))
-            and all((self.wl_init - wl_hi) < wl_tol)
-        ):
+        if self.wavelengths_fixed and (len(self.wl_init) == len(wl_hi)):
 
             return rdn_hi
 
@@ -434,7 +601,7 @@ class Instrument:
         wl, fwhm = self.wl_init, self.fwhm_init
         space_orig = wl - wl[0]
         offset = wl[0]
-        if "GROW_FWHM" in self.statevec_names:
+        if "GROW_FWHM" in self.config_state_names:
             ind = self.statevec_names.index("GROW_FWHM")
             fwhm = fwhm + x_instrument[ind]
         elif any([v.startswith("FWHMSPL") for v in self.statevec_names]):
@@ -449,23 +616,23 @@ class Instrument:
             xnew = np.arange(len(wl))
             fwhm = fwhm + splev(xnew, sp)
 
-        if "WL_SPACE" in self.statevec_names:
+        if "WL_SPACE" in self.config_state_names:
             ind = self.statevec_names.index("WL_SPACE")
             space = x_instrument[ind]
         else:
             space = 1.0
 
-        if "WL_SHIFT" in self.statevec_names:
+        if "WL_SHIFT" in self.config_state_names:
             ind = self.statevec_names.index("WL_SHIFT")
             shift = x_instrument[ind]
-        elif any([v.startswith("WLSPL") for v in self.statevec_names]):
+
+        elif any([v.startswith("WLSPL") for v in self.config_state_names]):
             # cubic spline perturbation
             channels, vals = [], []
-            for i, v in enumerate(self.statevec_names):
-                if v.startswith("WLSPL"):
-                    chan = int(v.split("_")[1])
-                    channels.append(chan)
-                    vals.append(x_instrument[i])
+            for i, v in enumerate(self.state_idx["WLSPL"]):
+                chan = int(self.statevec_names[v].split("_")[1])
+                channels.append(chan)
+                vals.append(x_instrument[v])
             sp = splrep(channels, vals, s=0)
             xnew = np.arange(len(wl))
             shift = splev(xnew, sp)
@@ -473,7 +640,46 @@ class Instrument:
             shift = 0.0
 
         wl = offset + shift + space_orig * space
+
         return wl, fwhm
+
+    def initialize_DN_additive_uncertainty(self, dn_uncertainty_file):
+        dn_uncertainty_mat = loadmat(dn_uncertainty_file)
+
+        # Check validity of linearity file for dn-based noise
+        keys = [
+            "input_dn",
+            "dn_ratio",
+            "rcc",
+            "rcc_wl",
+        ]
+        bad = [
+            1 if np.any(~np.isfinite(dn_uncertainty_mat[key])) else 0 for key in keys
+        ]
+        if np.sum(bad):
+            er = f"""
+                Invalid value found in dn_uncertainty_mat keys: {[keys[i] for i in bad if i]}.
+                Check file at: {config.unknowns.dn_uncertainty_file}
+            """
+            logging.error(er)
+            raise ValueError(er)
+
+        input_dn = dn_uncertainty_mat["input_dn"].squeeze()
+        dn_ratio = dn_uncertainty_mat["dn_ratio"].squeeze()
+        rcc_in = dn_uncertainty_mat["rcc"].squeeze()
+        rcc_wl = dn_uncertainty_mat["rcc_wl"].squeeze()
+
+        rcc_interp = interp1d(rcc_wl, rcc_in, fill_value="extrapolate")
+        self.dn_uncertainty_rcc = rcc_interp(self.wl_init)
+        self.dn_uncertainty_interp = interp1d(
+            input_dn, dn_ratio, fill_value="extrapolate"
+        )
+        self.dn_uncertainty_inflation = dn_uncertainty_mat.get(
+            "inflation", [1.0]
+        ).squeeze()
+        self.dn_uncertainty_embedding = dn_uncertainty_mat.get(
+            "embedding_location", "Sy"
+        )
 
     @staticmethod
     def DN_additive_uncertainty(meas, rcc, interp, inflation):
