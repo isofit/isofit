@@ -80,7 +80,7 @@ def heuristic_atmosphere(
 
     # Update aerosol init based on elevation
     xa_aerosol, _ = aeronet_aod_prior(
-        elevation_m=units.km_to_m(geom.surface_elevation_km)
+        elevation_km=geom.surface_elevation_km,
     )
     x_new[fm.atmosphere.aerosol_i] = xa_aerosol
 

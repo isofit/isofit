@@ -365,7 +365,7 @@ class BaseAtmosphere(Reader):
         xa[self.h2o_i] = x_atmosphere[self.h2o_i]
 
         xa_aerosol, _ = aeronet_aod_prior(
-            elevation_m=units.km_to_m(geom.surface_elevation_km)
+            elevation_km=geom.surface_elevation_km,
         )
         xa[self.aerosol_i] = xa_aerosol
 
@@ -375,7 +375,7 @@ class BaseAtmosphere(Reader):
         Sa_atmosphere = self.Sa_cached.copy()
 
         _, sigma_aerosol = aeronet_aod_prior(
-            elevation_m=units.km_to_m(geom.surface_elevation_km)
+            elevation_km=geom.surface_elevation_km,
         )
         Sa_atmosphere[self.aerosol_i] = sigma_aerosol**2
 
@@ -732,13 +732,19 @@ def modtran_aot_lowerbound_polynomials() -> dict:
 
 
 def aeronet_aod_prior(
-    elevation_m: float, aod_min: float = 0.01, aod_max: float = 1.0
+    elevation_km: float, aod_min: float = 0.01, aod_max: float = 1.0
 ) -> tuple:
     """
     Daily average aeronet modeled/converted AOD @ 550 nm, accessed on 2 October 2026 (via 440-870_Angstrom_Exponent).
     Data were binned by elevation every 200 m, then were modeled using empirically derived relation.
     The output is a prior mean and standard deviation for AOD-550 with respect to elevation.
     """
+    try:
+        elevation_m = units.km_to_m(elevation_km)
+    # allow for test data with elevation as None
+    except (TypeError, ValueError):
+        elevation_m = 0.0
+
     # Define bounds and params of polynomial
     elevation_m = min(max(elevation_m, 0.0), 6000.0)
     p_mean = np.array(
