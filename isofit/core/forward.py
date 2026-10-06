@@ -691,9 +691,7 @@ class ForwardModel:
             r=r,
             geom=geom,
         )
-        meas = self.instrument.sample(
-            x_instrument, self.atmosphere.wl, rdn_hi
-        ) + self.eof_offset(x_instrument)
+        meas = self.instrument.sample(x_instrument, self.atmosphere.wl, rdn_hi)
 
         # Call derivative of rfl wrt surface state, upsample
         drfl_dsurface_hi = self.upsample(
@@ -805,9 +803,7 @@ class ForwardModel:
             r=r,
             geom=geom,
         )
-        meas = self.instrument.sample(
-            x_instrument, self.atmosphere.wl, rdn_hi
-        ) + self.eof_offset(x_instrument)
+        meas = self.instrument.sample(x_instrument, self.atmosphere.wl, rdn_hi)
 
         dmeas_datmosphereb = self.dmeas_datmosphereb(
             x_atmosphere,
@@ -883,7 +879,7 @@ class ForwardModel:
                     r,
                     geom,
                 ),
-            ) + self.eof_offset(x_instrument)
+            )
             K_atmosphere.append((mease - meas) / eps)
 
         K_atmosphere = np.array(K_atmosphere).T
@@ -964,7 +960,7 @@ class ForwardModel:
                             r,
                             geom,
                         ),
-                    ) + self.eof_offset(x_instrument)
+                    )
                     Kb_atmosphere.append((mease - meas) / eps)
 
         Kb_atmosphere = np.array(Kb_atmosphere).T
