@@ -27,6 +27,7 @@ from scipy.optimize import least_squares, minimize
 from scipy.optimize import minimize_scalar as min1d
 
 from isofit.core import units
+from isofit.atmosphere.atmosphere import aeronet_aod_prior
 from isofit.core.common import emissive_radiance, eps
 from isofit.core.forward import ForwardModel
 from isofit.data import env
@@ -76,6 +77,12 @@ def heuristic_atmosphere(
         return x_atmosphere
 
     x_new = x_atmosphere.copy()
+
+    # Update aerosol init based on elevation
+    xa_aerosol, _ = aeronet_aod_prior(
+        elevation_m=units.km_to_m(geom.surface_elevation_km)
+    )
+    x_new[fm.atmosphere.aerosol_i] = xa_aerosol
 
     # Band ratio retrieval of H2O.  Depending on the radiative transfer
     # model we are using, this state parameter could go by several names.

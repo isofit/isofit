@@ -167,8 +167,10 @@ class ForwardModel:
 
         if full_config.implementation.per_pixel_heuristic_prior:
             self.xa = self.xa_heuristic
+            self.Sa = self.Sa_heuristic
         else:
             self.xa = self.xa_static
+            self.Sa = self.Sa_static
 
     @staticmethod
     def clip_bounds(x, bounds, inds_free=slice(None), eps=1e-5):
@@ -239,7 +241,52 @@ class ForwardModel:
         xa_instrument = self.instrument.xa()
         return np.concatenate((xa_surface, xa_atmosphere, xa_instrument), axis=0)
 
-    def Sa(self, x, geom):
+    def Sa_heuristic(self, x, geom):
+        """Calculate the prior covariance of the state vector (the
+        concatenation of state vectors for the surface and the atmosphere).
+        NOTE: the surface prior depends on the current state; this
+        is so we can calculate the local prior.
+        Allowing for Sa to update with heuristic where applicable.
+        """
+
+        # Update
+        x_surface = x[self.idx_surface]
+        Sa_surface, Sa_surf_inv_norm, Sa_surf_inv_sqrt_norm = self.surface.Sa(
+            x_surface, geom
+        )
+
+        Sa_atmosphere = self.atmosphere.Sa()
+        Sa_atmosphere, Sa_atm_inv_norm, Sa_atm_inv_sqrt_norm = (
+            self.atmosphere.update_heuristic_prior_sa(geom)
+        )
+
+        Sa_instrument = self.instrument.Sa()
+
+        Sa_state = block_diag(
+            Sa_surface[:, :], Sa_atmosphere[:, :], Sa_instrument[:, :]
+        )
+
+        # per block variance scaling for normalization
+        scale_surface = np.sqrt(np.mean(np.diag(Sa_surface[:, :])))
+        scale_atmosphere = np.sqrt(np.mean(np.diag(Sa_atmosphere[:, :])))
+        scale_instrument = np.sqrt(np.mean(np.diag(Sa_instrument[:, :])))
+
+        # Compute the Sa inv and Sa inv sqrt for measurement
+        Sa_inv_state = block_diag(
+            Sa_surf_inv_norm / scale_surface**2,
+            Sa_atm_inv_norm / scale_atmosphere**2,
+            self.instrument.Sa_inv_normalized / scale_instrument**2,
+        )
+
+        Sa_inv_sqrt_state = block_diag(
+            Sa_surf_inv_sqrt_norm / scale_surface,
+            Sa_atm_inv_sqrt_norm / scale_atmosphere,
+            self.instrument.Sa_inv_sqrt_normalized / scale_instrument,
+        )
+
+        return Sa_state, Sa_inv_state, Sa_inv_sqrt_state
+
+    def Sa_static(self, x, geom):
         """Calculate the prior covariance of the state vector (the
         concatenation of state vectors for the surface and the atmosphere).
 
