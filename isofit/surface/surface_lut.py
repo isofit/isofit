@@ -358,6 +358,36 @@ class LUTSurface(Surface):
 
         return t_total_up
 
+    # TODO
+    # The cos_i as a free parameter is not yet implemented into dev-branch.
+    # Leaving this method here for reference when we return to it.
+    # def dcosi_dsurface(
+    #    self,
+    #    x_surface,
+    #    geom,
+    #    rho_dir_dir,
+    #    rho_dif_dir,
+    #    r,
+    #    L_dir_dir,
+    #    L_dif_dir,
+    # ):
+    #    """Partial derivative of TOA radiance with respect to cosi."""
+
+    # cosi = max(x_surface[self.cos_i_idx], 1e-6)
+    # b = 1.0
+    # t_down_dir = r["transm_down_dir"]
+
+    # Hay's model
+    # A = (b * t_down_dir) / geom.coszen
+    # B = (1.0 - b * t_down_dir) * geom.skyview_factor
+    # denominator = (A * cosi) + B
+
+    # Direct and diffuse components
+    # d_rdn_dir = (L_dir_dir / cosi) * rho_dir_dir
+    # d_rdn_dif = (L_dif_dir * (A / denominator)) * rho_dif_dir
+
+    # return d_rdn_dir + d_rdn_dif
+
     def drdn_dsurface(
         self,
         rho_dif_dir,
