@@ -595,10 +595,11 @@ def wavelength_cal(
         # add aerosol elements from climatology
         aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
             tmpl.load_climatology(
-                paths.aerosol_climatology,
-                mean_latitude,
-                mean_longitude,
-                dt,
+                config_path=paths.aerosol_climatology,
+                latitude=mean_latitude,
+                longitude=mean_longitude,
+                elevation_km=mean_elevation_km,
+                acquisition_datetime=dt,
                 lut_params=lut_params,
             )
         )
@@ -628,6 +629,7 @@ def wavelength_cal(
             ),
             to_sun_zenith_lut_grid=[mean_to_sun_zenith],
             relative_azimuth_lut_grid=[mean_relative_azimuth],
+            elevation_km=mean_elevation_km,
         )
 
         add_wavelength_elements(
