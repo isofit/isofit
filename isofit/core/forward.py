@@ -249,13 +249,11 @@ class ForwardModel:
         Allowing for Sa to update with heuristic where applicable.
         """
 
-        # Update
         x_surface = x[self.idx_surface]
         Sa_surface, Sa_surf_inv_norm, Sa_surf_inv_sqrt_norm = self.surface.Sa(
             x_surface, geom
         )
 
-        Sa_atmosphere = self.atmosphere.Sa()
         Sa_atmosphere, Sa_atm_inv_norm, Sa_atm_inv_sqrt_norm = (
             self.atmosphere.update_heuristic_prior_sa(geom)
         )
