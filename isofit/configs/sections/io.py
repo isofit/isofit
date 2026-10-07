@@ -73,47 +73,44 @@ class InputConfig(BaseModel, ElementAccessorMixin):
     model_config = ConfigDict(populate_by_name=True)
 
     measured_radiance_file: Optional[PathExists] = Field(
-        default=None,
         alias="rdn",
         description="Input radiance file (.mat, .txt, or ENVI format) for inverse-modeling",
     )
 
     reference_reflectance_file: Optional[PathExists] = Field(
-        default=None,
+        alias="rrf",
         description="Input reference reflectance file for radiometric calibration",
     )
 
     reflectance_file: Optional[PathExists] = Field(
-        default=None,
+        alias="rfl",
         description="Input reflectance file for forward-modeling (reflectance -> radiance)",
     )
 
     obs_file: Optional[PathExists] = Field(
-        default=None,
         alias="obs",
         description="Observation file with viewing/illumination geometry",
     )
 
     glt_file: Optional[PathExists] = Field(
-        default=None, description="GLT file with spatial offset information"
+        alias="glt", description="GLT file with spatial offset information"
     )
 
     loc_file: Optional[PathExists] = Field(
-        default=None,
         alias="loc",
         description="Location file with lat, lon, and elevation",
     )
 
     background_reflectance_file: Optional[PathExists] = Field(
-        default=None, description="Background reflectance file for spatial inference"
+        alias="brf", description="Background reflectance file for spatial inference"
     )
 
     radiometry_correction_file: Optional[PathExists] = Field(
-        default=None, description="Radiometric correction file for systematic errors"
+        alias="rcf", description="Radiometric correction file for systematic errors"
     )
 
     skyview_factor_file: Optional[PathExists] = Field(
-        default=None, description="Skyview factor file to modulate diffuse radiance"
+        alias="sff", description="Skyview factor file to modulate diffuse radiance"
     )
 
 
@@ -182,69 +179,66 @@ class OutputConfig(BaseModel):
     time for large datasets.
     """
 
-    dir: Path = Field(
-        default=Path("./isofit-output/"), description="Output directory for ISOFIT"
-    )
+    dir: Path = Field(description="Output directory for ISOFIT")
 
     reset: bool = Field(
-        default=False,
         description="Delete output directory before starting if it exists",
     )
 
     estimated_state_file: Optional[Path] = Field(
-        default=None, description="Output file for estimated state vector"
+        description="Output file for estimated state vector"
     )
 
     estimated_reflectance_file: Optional[Path] = Field(
-        default=None, description="Output file for estimated Lambertian reflectance"
+        description="Output file for estimated Lambertian reflectance"
     )
 
     estimated_emission_file: Optional[Path] = Field(
-        default=None, description="Output file for estimated emitted radiance"
+        description="Output file for estimated emitted radiance"
     )
 
     modeled_radiance_file: Optional[Path] = Field(
-        default=None, description="Output file for modeled radiance"
+        description="Output file for modeled radiance"
     )
 
     apparent_reflectance_file: Optional[Path] = Field(
-        default=None, description="Output file for apparent surface reflectance"
+        description="Output file for apparent surface reflectance"
     )
 
     path_radiance_file: Optional[Path] = Field(
-        default=None, description="Output file for path radiance"
+        description="Output file for path radiance"
     )
 
     simulated_measurement_file: Optional[Path] = Field(
-        default=None, description="Output file for simulated radiance"
+        description="Output file for simulated radiance"
     )
 
     algebraic_inverse_file: Optional[Path] = Field(
-        default=None, description="Output file for algebraic inverse"
+        description="Output file for algebraic inverse"
     )
 
     atmospheric_coefficients_file: Optional[Path] = Field(
-        default=None, description="Output file for atmospheric optical parameters"
+        description="Output file for atmospheric optical parameters"
     )
 
     radiometry_correction_file: Optional[Path] = Field(
-        default=None, description="Output file for radiometric correction factors"
+        description="Output file for radiometric correction factors"
     )
 
     spectral_calibration_file: Optional[Path] = Field(
-        default=None, description="Output file for spectral calibration"
+        description="Output file for spectral calibration"
     )
 
     posterior_uncertainty_file: Optional[Path] = Field(
-        default=None, description="Output file for posterior uncertainty"
+        description="Output file for posterior uncertainty"
     )
 
     plot_surface_components: bool = Field(
-        default=False, description="Generate plots of surface components"
+        description="Generate plots of surface components"
     )
 
     mcmc_samples_file: Optional[Path] = Field(
-        default=None, description="Output file for MCMC samples"
+        description="Output file for MCMC samples"
     )
 
     # Header metadata (band-name key, ztitle, zrange) for each writable output

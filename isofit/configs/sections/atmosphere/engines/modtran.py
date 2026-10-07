@@ -73,27 +73,22 @@ class ModtranConfig(BaseModel):
     name: Annotated[Literal["modtran"], BeforeValidator(standardName)]
 
     base_dir: Optional[PathExists] = Field(
-        default=None,
         description="Base path to engine directory",
     )
 
     multipart_transmittance: bool = Field(
-        default=False,
         description="Apply triple-run diffuse & direct transmittance estimation",
     )
 
     aerosol_template_file: Optional[PathExists] = Field(
-        default=None,
         description="Aerosol template file",
     )
 
     aerosol_model_file: Optional[PathExists] = Field(
-        default=None,
         description="Aerosol model file",
     )
 
     template_file: Optional[PathExists] = Field(
-        default=None,
         description="MODTRAN input template file",
     )
 

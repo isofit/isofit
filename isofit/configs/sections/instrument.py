@@ -61,22 +61,22 @@ class InstrumentStateVectorConfig(StateVectorConfig):
     """
 
     EOF_1: Optional[StateVectorElementConfig] = Field(
-        default=None, description="First Empirical Orthogonal Function"
+        description="First Empirical Orthogonal Function"
     )
     EOF_2: Optional[StateVectorElementConfig] = Field(
-        default=None, description="Second Empirical Orthogonal Function"
+        description="Second Empirical Orthogonal Function"
     )
     EOF_3: Optional[StateVectorElementConfig] = Field(
-        default=None, description="Third Empirical Orthogonal Function"
+        description="Third Empirical Orthogonal Function"
     )
     GROW_FWHM: Optional[StateVectorElementConfig] = Field(
-        default=None, description="Growth of Full Width Half Maximum"
+        description="Growth of Full Width Half Maximum"
     )
     WL_SHIFT: Optional[StateVectorElementConfig] = Field(
-        default=None, description="Wavelength shift parameter"
+        description="Wavelength shift parameter"
     )
     WL_SPACE: Optional[StateVectorElementConfig] = Field(
-        default=None, description="Wavelength spacing parameter"
+        description="Wavelength spacing parameter"
     )
 
 
@@ -121,23 +121,23 @@ class InstrumentUnknownsConfig(BaseModel):
     """
 
     channelized_radiometric_uncertainty_file: Optional[PathExists] = Field(
-        default=None, description="Path to channelized radiometric uncertainty file"
+        description="Path to channelized radiometric uncertainty file"
     )
 
     uncorrelated_radiometric_uncertainty: Optional[float] = Field(
-        default=None, description="Uncorrelated radiometric uncertainty value"
+        description="Uncorrelated radiometric uncertainty value"
     )
 
     wavelength_calibration_uncertainty: Optional[float] = Field(
-        default=None, description="Wavelength calibration uncertainty"
+        description="Wavelength calibration uncertainty"
     )
 
     stray_srf_uncertainty: Optional[float] = Field(
-        default=None, description="Stray spectral response function uncertainty"
+        description="Stray spectral response function uncertainty"
     )
 
     dn_uncertainty_file: Optional[PathExists] = Field(
-        default=None, description="Path to digital number uncertainty file"
+        description="Path to digital number uncertainty file"
     )
 
 
@@ -202,49 +202,40 @@ class InstrumentConfig(BaseModel):
     InstrumentUnknownsConfig : Calibration uncertainties
     """
 
-    wavelength_file: Optional[PathExists] = Field(
-        default=None, description="Path to wavelength file"
-    )
+    wavelength_file: Optional[PathExists] = Field(description="Path to wavelength file")
 
     integrations: Optional[int] = Field(
-        default=None,
         description="Number of integrations comprising the measurement. Noise diminishes with square root of this number.",
     )
 
     unknowns: Optional[InstrumentUnknownsConfig] = Field(
-        default=None, description="Instrument unknowns configuration"
+        description="Instrument unknowns configuration"
     )
 
     fast_resample: bool = Field(
-        default=True,
         description="Approximate complete resampling by convolution with uniform FWHM",
     )
 
     statevector: InstrumentStateVectorConfig = Field(
-        default_factory=InstrumentStateVectorConfig,
         description="Instrument state vector configuration",
     )
 
     SNR: Optional[float] = Field(
-        default=None,
         description="Uniform signal-independent SNR applied to all wavelengths",
     )
 
     parametric_noise_file: Optional[PathExists] = Field(
-        default=None,
         description="Path to parametric noise file (signal and wavelength-dependent noise function)",
     )
 
     pushbroom_noise_file: Optional[PathExists] = Field(
-        default=None, description="Path to pushbroom noise model file (ENVI format)"
+        description="Path to pushbroom noise model file (ENVI format)"
     )
 
-    nedt_noise_file: Optional[PathExists] = Field(
-        default=None, description="Path to NEDT noise file"
-    )
+    nedt_noise_file: Optional[PathExists] = Field(description="Path to NEDT noise file")
 
     eof_path: Optional[PathExists] = Field(
-        default=None, description="Path to Empirical Orthogonal Function (EOF) file"
+        description="Path to Empirical Orthogonal Function (EOF) file"
     )
 
     @model_validator(mode="after")

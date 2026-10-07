@@ -10,7 +10,7 @@ from typing import Any, List, Literal
 
 from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
 
-from .engines import Engines, PrebuiltConfig
+from .engines import Engines
 from .statevector import AtmosphereStateVectorConfig, AtmosphereUnknownsConfig
 
 
@@ -84,75 +84,61 @@ class AtmosphereConfig(BaseModel):
     """
 
     engine: Engines = Field(
-        default_factory=lambda: PrebuiltConfig(name="prebuilt"),
         description="Radiative transfer engine; defaults to a prebuilt LUT",
     )
 
     wavelength_file: Path | None = Field(
-        default=None,
         description="Optional path to wavelength file for high-res atmospheric calculations",
         examples=[""],
     )
 
     lut_path: Path = Field(
-        default=None,
         description="Path to the look up table directory",
     )
 
     sim_path: Path = Field(
-        default=None,
         description="Path to the look up table directory",
     )
 
-    lut_grid: dict[str, list[float]] = Field(default_factory=dict, description="")
+    lut_grid: dict[str, list[float]] = Field(description="")
 
     lut_subset: dict[str, Any] = Field(
-        default_factory=dict,
         validation_alias=AliasChoices("lut_subset", "lut_names"),
         description="Subset of the lut_grid to use (legacy alias: lut_names)",
     )
 
     rt_mode: Literal["rdn", "transm"] = Field(
-        default="transm",
         description="Atmospheric radiative transfer mode of LUT simulations: `transm` for transmittances, `rdn` for reflected radiance",
     )
 
     statevector_names: List[str] = Field(
-        default_factory=list,
         description="Names of the statevector elements to use with this atmospheric RT engine",
     )
 
     statevector: AtmosphereStateVectorConfig = Field(
-        default_factory=AtmosphereStateVectorConfig,
         description="Atmospheric state vector elements",
     )
 
     unknowns: AtmosphereUnknownsConfig = Field(
-        default_factory=AtmosphereUnknownsConfig,
         description="Radiative-transfer unknowns (unmodeled-variable uncertainties)",
     )
 
     configure_and_exit: bool = Field(
-        default=False,
         description="Build/configure the RT engine and exit without running simulations",
     )
 
     interpolator_style: str | None = Field(
-        default=None,
         description="LUT interpolation style; falls back to the instrument setting if unset",
     )
 
     wavelength_range: List[float] | None = Field(
-        default=None,
         description="Optional [min, max] wavelength range to subset the LUT to after load",
     )
 
     multipart_transmittance: bool = Field(
-        default=False,
         description="Apply triple-run diffuse & direct transmittance estimation",
     )
 
     irradiance_file: Path | None = Field(
-        default=None,
         description="Solar irradiance file (used for RT and PACE-OCI SRF handling)",
     )
