@@ -1,0 +1,56 @@
+# Use case: forward-model simulation (reflectance -> radiance).
+#
+# Runs the forward model in the forward direction: given a surface reflectance,
+# simulate the at-sensor radiance an instrument would observe. No retrieval is
+# performed. Useful for building synthetic datasets and sensitivity studies.
+#
+# Simulation mode requires input.reflectance_file to be set (enforced by
+# Config.get_config_errors) and does not use an inversion block.
+#
+# Inherits defaults + the sRTMnet engine profile from default.yml. Load with:
+#   interpolate.load("simulation.yml")
+
+^^: default.yml:srtmnet
+
+input:
+  reflectance_file: null        # SET: surface reflectance to forward-model (required)
+  obs_file: null                # SET: observation geometry
+  loc_file: null                # SET: lat/lon/elevation
+
+output:
+  dir: ./isofit-output/
+  simulated_measurement_file: ${output.dir}/simulated_measurement
+  modeled_radiance_file: ${output.dir}/modeled_radiance
+
+forward_model:
+  surface:
+    surface_category: multicomponent_surface
+    surface_file: null          # SET: surface model (.mat)
+
+  instrument:
+    wavelength_file: null        # SET: instrument wavelengths
+    SNR: 500
+    integrations: 1
+
+  atmosphere:
+    lut_grid:
+      H2OSTR: [0.2, 1.0, 2.0, 3.0, 4.0, 5.0]
+      AOT550: [0.001, 0.25, 0.5, 0.75, 1.0]
+    statevector:
+      H2OSTR:
+        bounds: [0.2, 5.0]
+        scale: 1
+        init: 2.6
+        prior_mean: 2.6
+        prior_sigma: 100.0
+      AOT550:
+        bounds: [0.001, 1.0]
+        scale: 1
+        init: 0.1
+        prior_mean: 0.1
+        prior_sigma: 0.1
+
+implementation:
+  mode: simulation
+  # No inversion block is needed in simulation mode.
+  inversion: null
