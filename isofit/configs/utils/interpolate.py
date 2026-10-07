@@ -10,13 +10,53 @@ through Click contexts.
 import ast
 import logging
 import re
+from pathlib import Path
 from typing import Any, Optional, Union
 
 import click
+import yaml
 from box import Box, BoxList
 
 Logger = logging.getLogger(__name__)
 Interp = re.compile(r"\${([^}]+)}")
+
+# Supported config file extensions, mapped to the Box loader for that format.
+Loaders = {
+    ".yml": Box.from_yaml,
+    ".yaml": Box.from_yaml,
+    ".json": Box.from_json,
+}
+
+
+def read(config: Union[str, Path]) -> Box:
+    """
+    Load a config file into a Box, dispatching on its extension.
+
+    Both YAML (``.yml`` / ``.yaml``) and JSON (``.json``) are supported.
+
+    Parameters
+    ----------
+    config : str or pathlib.Path
+        File path to the config to read.
+
+    Returns
+    -------
+    box.Box
+        The loaded configuration.
+
+    Raises
+    ------
+    ValueError
+        If the file's extension is not a supported config format.
+    """
+    suffix = Path(config).suffix.lower()
+    if suffix not in Loaders:
+        supported = ", ".join(sorted(Loaders))
+        raise ValueError(
+            f"Unsupported config file extension {suffix!r} for {str(config)!r}; "
+            f"expected one of: {supported}"
+        )
+    return Loaders[suffix](filename=str(config), default_box=True)
 
 
 def load(
@@ -26,12 +66,12 @@ def load(
     interp: bool = True,
 ) -> Box:
     """
-    Loads a config from a yaml file
+    Loads a config from a yaml or json file
 
     Parameters
     ----------
     config : str
-        File path to the config.yml
+        File path to the config (.yml, .yaml, or .json)
     section : str
         Returns only this subsection of the config
     ctx : obj, default=None
@@ -44,13 +84,14 @@ def load(
     config : Box
         Loaded configuration using Box
     """
-    box = full = Box.from_yaml(filename=config, default_box=True)
+    box = full = read(config)
 
     if section:
         box = full[section]
 
     if "^^" in box:
-        box = patch(box, full)
+        path = Path(config).resolve()
+        box = patch(box, full, base_dir=path.parent, cache={path: full})
 
     if ctx:
         box = override(box, ctx)
@@ -61,30 +102,49 @@ def load(
     return box
 
 
-def patch(box: Box, full: Box, _seen: Optional[set] = None) -> Box:
+def patch(
+    box: Box,
+    full: Box,
+    _seen: Optional[set] = None,
+    base_dir: Optional[Path] = None,
+    cache: Optional[dict] = None,
+) -> Box:
     """
     Merge one or more referenced sections into ``box`` in place.
 
     Consumes the ``^^`` key from ``box``, whose value names either a single section
-    (str) or several sections (BoxList) elsewhere in ``full``. The named sections are
-    treated as inherited defaults: they are applied lowest-priority first, in the
-    order listed, and ``box``'s own keys always win on conflict. Referenced sections
-    are resolved recursively, so a section that itself declares ``^^`` has its own
-    ancestors folded in first.
+    (str) or several sections (BoxList). Each name is treated as an inherited
+    default; they are applied lowest-priority first, in the order listed, and
+    ``box``'s own keys always win on conflict. Referenced sections are resolved
+    recursively, so a section that itself declares ``^^`` has its own ancestors
+    folded in first.
 
     For example ``A: {^^: [B, C]}`` with ``B: {^^: D}`` yields the precedence
     ``D < B < C < A`` (``A``'s own keys highest, ``D`` lowest).
+
+    References may point either at a section in the same file (``^^: default``) or
+    at a section in another file using ``file:section`` syntax (``^^:
+    bases/default.yml:srtmnet``). The referenced file may be YAML or JSON. The
+    file portion is resolved relative to ``base_dir`` (the directory of the file
+    being loaded); a bare ``file`` with no ``:section`` inherits that file's
+    top-level mapping.
 
     Parameters
     ----------
     box : box.Box
         The config subsection to patch; mutated in place. Its ``^^`` key is removed.
     full : box.Box
-        The full config used to resolve the referenced section names.
+        The full config used to resolve same-file section names.
     _seen : set, optional
-        Internal set of section names currently being resolved on this recursion
-        chain, used to detect circular ``^^`` references. Should not be passed by
-        callers.
+        Internal set of (file, section) keys currently being resolved on this
+        recursion chain, used to detect circular ``^^`` references. Should not be
+        passed by callers.
+    base_dir : pathlib.Path, optional
+        Directory used to resolve the file portion of cross-file references.
+        Defaults to the current working directory.
+    cache : dict, optional
+        Internal mapping of resolved file path to its loaded Box, so each
+        referenced file is read from disk only once per ``patch`` tree.
 
     Returns
     -------
@@ -94,6 +154,12 @@ def patch(box: Box, full: Box, _seen: Optional[set] = None) -> Box:
     if isinstance(box, dict):
         box = Box(box)
 
+    if base_dir is None:
+        base_dir = Path.cwd()
+    if cache is None:
+        cache = {}
+    _seen = _seen or set()
+
     sects = box.pop("^^", [])
     if isinstance(sects, str):
         sects = [sects]
@@ -102,15 +168,25 @@ def patch(box: Box, full: Box, _seen: Optional[set] = None) -> Box:
     # box's own keys win by merging them in last.
     merged = Box(default_box=True)
     for sect in sects:
-        if sect not in full:
-            raise KeyError(f"^^ references an unknown section: {sect!r}")
+        # Resolve the reference to (its full config, the subsection Box, the
+        # base_dir for *its* own ^^ refs, and a hashable identity for cycle
+        # detection). Cross-file refs carry a supported file extension, either
+        # bare (`path.yml`) or with a `:section` suffix (`path.yml:section`).
+        if any(ext in sect for ext in Loaders):
+            ref_full, ref, ref_dir, ident = resolve_file(sect, base_dir, cache)
+        else:
+            if sect not in full:
+                raise KeyError(f"^^ references an unknown section: {sect!r}")
+            ref_full = full
+            ref = Box(full[sect], default_box=True)
+            ref_dir = base_dir
+            ident = (None, sect)
 
-        if _seen and sect in _seen:
+        if ident in _seen:
             raise ValueError(f"Circular ^^ reference detected for section: {sect!r}")
 
-        ref = Box(full[sect], default_box=True)
         if "^^" in ref:
-            ref = patch(ref, full, (_seen or set()) | {sect})
+            ref = patch(ref, ref_full, _seen | {ident}, base_dir=ref_dir, cache=cache)
 
         merged.merge_update(ref)
 
@@ -120,6 +196,73 @@ def patch(box: Box, full: Box, _seen: Optional[set] = None) -> Box:
     box.merge_update(merged)
 
     return box
+
+
+def resolve_file(sect: str, base_dir: Path, cache: dict) -> tuple:
+    """
+    Resolve a cross-file ``^^`` reference of the form ``path[:section]``.
+
+    The path is taken relative to ``base_dir`` (the directory of the file that
+    declared the reference) and loaded at most once per ``patch`` tree via
+    ``cache``. With no ``:section`` suffix the referenced file's top-level
+    mapping is inherited; otherwise the named section within it is used.
+
+    The split is made on the colon that immediately follows a supported file
+    extension (``.yml`` / ``.yaml`` / ``.json``), so colons elsewhere in the
+    path are left untouched.
+
+    Parameters
+    ----------
+    sect : str
+        The raw reference string, e.g. ``bases/default.yml:srtmnet`` or
+        ``../common.json``.
+    base_dir : pathlib.Path
+        Directory used to resolve ``path`` relative references.
+    cache : dict
+        Mapping of resolved file path to loaded Box, mutated in place.
+
+    Returns
+    -------
+    tuple
+        ``(ref_full, ref, ref_dir, ident)`` where ``ref_full`` is the referenced
+        file's full config (for resolving that file's own same-file ``^^`` refs),
+        ``ref`` is the selected subsection Box, ``ref_dir`` is the directory of
+        the referenced file (base for its cross-file refs), and ``ident`` is a
+        hashable ``(path, section)`` identity for cycle detection.
+    """
+    # Split on the colon directly after the file extension; a bare path (no
+    # trailing `:section`) inherits the referenced file's top-level mapping.
+    for ext in Loaders:
+        marker = sect.find(ext + ":")
+        if marker != -1:
+            split = marker + len(ext)
+            path, name = sect[:split], sect[split + 1 :]
+            break
+    else:
+        path, name = sect, None
+    name = name or None
+
+    abspath = (base_dir / path).resolve()
+    if abspath not in cache:
+        if not abspath.exists():
+            raise FileNotFoundError(
+                f"^^ references a file that does not exist: {str(abspath)!r} (from {sect!r})"
+            )
+        cache[abspath] = read(abspath)
+
+    ref_full = cache[abspath]
+
+    if name is None:
+        ref = Box(ref_full, default_box=True)
+    else:
+        if name not in ref_full:
+            raise KeyError(
+                f"^^ references an unknown section {name!r} in file {str(abspath)!r}"
+            )
+        ref = Box(ref_full[name], default_box=True)
+
+    ref_dir = abspath.parent
+    return ref_full, ref, ref_dir, (abspath, name)
 
 
 def override(box: Box, ctx: Union[click.Context, list[str]]) -> Box:
@@ -312,3 +455,81 @@ def interpolate(
             box[key] = interp(val, rel, full)
 
     return box
+
+
+@click.group(name="config", invoke_without_command=True, no_args_is_help=True)
+def cli():
+    """
+    Utility functions for configuration files
+    """
+    pass
+
+
+CS = dict(
+    ignore_unknown_options=True,
+    allow_extra_args=True,
+)
+Config = click.argument("config")
+Section = click.option(
+    "-s", "--section", help="Subsection of the yaml to load rather than the whole file"
+)
+NoFlow = click.option(
+    "--noflow",
+    is_flag=True,
+    help="Disables the YAML flow style which condenses lists to [a, b] notation",
+)
+
+
+def _format_yaml(box, noflow):
+    if noflow:
+        return yaml.dump(
+            box.to_dict(), default_flow_style=None, sort_keys=False, width=120
+        )
+    return box.to_yaml()
+
+
+@cli.command(context_settings=CS)
+@click.pass_context
+@Config
+@Section
+@NoFlow
+def preview(ctx: click.Context, noflow=False, **kwargs: Any) -> None:
+    """
+    Preview the final, interpolated configuration.
+
+    Loads and processes the configuration file (with interpolation and
+    overrides) and displays it in YAML format without executing any
+    pipeline stages. Useful for debugging config issues.
+    """
+    box = load(ctx=ctx, **kwargs)
+    yml = _format_yaml(box, noflow)
+    print(yml)
+
+
+@cli.command(context_settings=CS)
+@click.pass_context
+@Config
+@Section
+@NoFlow
+@click.option(
+    "-o",
+    "--output",
+    required=True,
+    type=click.Path(writable=True, path_type=Path),
+    help="File to write the new configuration to",
+)
+def copy(ctx: click.Context, output, noflow=False, **kwargs: Any) -> None:
+    """
+    Copies an existing configuration to a new file
+    """
+    box = load(ctx=ctx, **kwargs)
+
+    if output.suffix in (".yml", ".yaml"):
+        data = _format_yaml(box, noflow)
+    elif output.suffix == ".json":
+        data = box.to_json(indent=4)
+    else:
+        raise TypeError("Unsupported file extension, expected either .yaml or .json")
+
+    output.write_text(data)
+    print(f"Wrote to {output}")

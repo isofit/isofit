@@ -270,6 +270,7 @@ class CLI(click.Group):
         "classify_multicomponent": "isofit.utils.multicomponent_classification",
         "surface_model": "isofit.utils.surface_model",
         "plot": "isoplots",
+        "config": "isofit.configs.utils.interpolate",
     },
 )
 @click.pass_context
