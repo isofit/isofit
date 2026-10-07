@@ -10,18 +10,19 @@
 # mode and MCMC sampler settings. Load with:
 #   interpolate.load("mcmc.yml")
 
-^^: vswir.yml
+mcmc:
+  ^^: vswir.yml:vswir
 
-output:
-  mcmc_samples_file: ${output.dir}/mcmc_samples
+  output:
+    mcmc_samples_file: ${output.dir}/mcmc_samples
 
-implementation:
-  mode: mcmc_inversion
-  inversion:
-    mcmc:
-      iterations: 10000
-      burnin: 2000
-      regularizer: 0.001
-      proposal_scaling: 0.01
-      verbose: true
-      restart_every: 2000
+  implementation:
+    mode: mcmc_inversion
+    inversion:
+      mcmc:
+        iterations: 10000
+        burnin: 2000
+        regularizer: 0.001
+        proposal_scaling: 0.01
+        verbose: true
+        restart_every: 2000
