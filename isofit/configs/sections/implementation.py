@@ -99,58 +99,48 @@ class ImplementationConfig(BaseModel):
     """
 
     mode: Literal["inversion", "mcmc_inversion", "simulation"] = Field(
-        default="inversion", description="Operating mode for ISOFIT"
+        description="Operating mode for ISOFIT"
     )
 
-    inversion: Optional[InversionConfig] = Field(
-        default=None, description="Inversion configuration"
-    )
+    inversion: Optional[InversionConfig] = Field(description="Inversion configuration")
 
-    n_cores: Optional[int] = Field(default=None, description="Number of cores to use")
+    n_cores: Optional[int] = Field(description="Number of cores to use")
 
     task_inflation_factor: int = Field(
-        default=10, description="Submit task_inflation_factor*n_cores number of tasks"
+        description="Submit task_inflation_factor*n_cores number of tasks"
     )
 
     ip_head: Optional[str] = Field(
-        default=None, description="Ray parameter: IP-head for multi-node runs"
+        description="Ray parameter: IP-head for multi-node runs"
     )
 
     redis_password: Optional[str] = Field(
-        default=None, description="Ray parameter: Redis-password for multi-node runs"
+        description="Ray parameter: Redis-password for multi-node runs"
     )
 
-    ray_include_dashboard: bool = Field(
-        default=False, description="Ray parameter: Include dashboard"
-    )
+    ray_include_dashboard: bool = Field(description="Ray parameter: Include dashboard")
 
     ray_temp_dir: str = Field(
-        default="/tmp/ray",
         description="Ray temporary directory (useful for multiuser systems)",
     )
 
     ray_ignore_reinit_error: bool = Field(
-        default=True,
         description="Tell ray to ignore re-initialization (convenient for multiple ISOFIT instances)",
     )
 
     io_buffer_size: int = Field(
-        default=100,
         description="Size of chunks to read/process/write (in number of spectra)",
     )
 
     max_hash_table_size: int = Field(
-        default=50, description="Maximum size of inversion hash tables"
+        description="Maximum size of inversion hash tables"
     )
 
     per_pixel_heuristic_prior: bool = Field(
-        default=False,
         description="Use per-pixel heuristic prior (True) or image-wide universal value (False)",
     )
 
-    debug_mode: bool = Field(
-        default=False, description="Run in debug mode (circumvents ray)"
-    )
+    debug_mode: bool = Field(description="Run in debug mode (circumvents ray)")
 
     isofit_version: str = Field(default=__version__, description="ISOFIT version used")
 

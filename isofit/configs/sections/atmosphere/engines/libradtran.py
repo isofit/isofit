@@ -85,12 +85,10 @@ class LibRadTranConfig(BaseModel):
     name: Annotated[Literal["libradtran"], BeforeValidator(standardName)]
 
     base_dir: Optional[PathExists] = Field(
-        default=None,
         description="Base path to engine directory",
     )
 
     reptran_band_model: Literal["coarse", "medium", "fine"] = Field(
-        default="coarse",
         description="REPTRAN band model. Options: coarse (15cm-1), medium (5 cm-1), fine (1 cm-1)",
         examples=["coarse", "medium", "fine"],
     )
@@ -116,22 +114,18 @@ class LibRadTranConfig(BaseModel):
     )
 
     ssa_file: Optional[Path] = Field(
-        default=None,
         description="Path to a single scattering albedo file that overwrites default profile",
     )
 
     ssa_scale: Optional[float] = Field(
-        default=None,
         description="Scaling factor applied to the single scattering albedo",
     )
 
     moments_file: Optional[Path] = Field(
-        default=None,
         description="Path to a phase function moments file that overwrites default profile",
     )
 
     template_file: Optional[PathExists] = Field(
-        default=None,
         description="Template file used as the base configuration for libRadtran",
     )
 

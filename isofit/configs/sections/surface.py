@@ -56,13 +56,13 @@ class SurfaceStateVectorConfig(StateVectorConfig):
     """
 
     SURF_TEMP_K: Optional[StateVectorElementConfig] = Field(
-        default=None, description="Surface temperature in Kelvin"
+        description="Surface temperature in Kelvin"
     )
     SKY_GLINT: Optional[StateVectorElementConfig] = Field(
-        default=None, description="Sky glint parameter"
+        description="Sky glint parameter"
     )
     SUN_GLINT: Optional[StateVectorElementConfig] = Field(
-        default=None, description="Sun glint parameter"
+        description="Sun glint parameter"
     )
 
 
@@ -161,16 +161,12 @@ class SurfaceConfig(BaseModel):
     SurfaceStateVectorConfig : Surface parameters for optimization
     """
 
-    multi_surface_flag: bool = Field(
-        default=False, description="Enable multi-surface mode"
-    )
+    multi_surface_flag: bool = Field(description="Enable multi-surface mode")
 
-    use_background_rfl: bool = Field(
-        default=False, description="Use background reflectance"
-    )
+    use_background_rfl: bool = Field(description="Use background reflectance")
 
     surface_file: Optional[PathExists] = Field(
-        default=None, description="Path to surface model file (.mat format)"
+        description="Path to surface model file (.mat format)"
     )
 
     surface_category: Optional[
@@ -181,54 +177,47 @@ class SurfaceConfig(BaseModel):
             "thermal_surface",
             "lut_surface",
         ]
-    ] = Field(default=None, description="Type of surface model to use")
+    ] = Field(description="Type of surface model to use")
 
     surface_class_file: Optional[PathExists] = Field(
-        default=None, description="Path to surface classification file"
+        description="Path to surface classification file"
     )
 
     base_surface_class_file: Optional[PathExists] = Field(
-        default=None, description="Path to base surface classification file"
+        description="Path to base surface classification file"
     )
 
     Surfaces: Dict[str, Dict] = Field(
-        default_factory=dict, description="Multi-surface configuration dictionary"
+        description="Multi-surface configuration dictionary"
     )
 
-    wavelength_file: Optional[PathExists] = Field(
-        default=None, description="Path to wavelength file"
-    )
+    wavelength_file: Optional[PathExists] = Field(description="Path to wavelength file")
 
     select_on_init: bool = Field(
-        default=True, description="Force use of initialization state and never change"
+        description="Force use of initialization state and never change"
     )
 
     selection_metric: Literal["Euclidean", "SGA", "NormSGA"] = Field(
-        default="SGA", description="Metric for surface selection"
+        description="Metric for surface selection"
     )
 
     statevector: SurfaceStateVectorConfig = Field(
-        default_factory=SurfaceStateVectorConfig,
         description="Surface state vector configuration",
     )
 
     emissivity_for_surface_T_init: float = Field(
-        default=0.98,
         description="Initial emissivity value for surface temperature (recommended by Glynn Hulley)",
     )
 
     terrain_style: Literal["flat", "dem", "solved"] = Field(
-        default="flat", description="Style of terrain to use in the forward model"
+        description="Style of terrain to use in the forward model"
     )
 
     max_slope: float = Field(
-        default=90.0,
         description="Max slope value for LUT calculations (only relevant for 'dem' terrain_style)",
     )
 
-    refractive_index_path: str = Field(
-        default="", description="Path to refractive index data"
-    )
+    refractive_index_path: str = Field(description="Path to refractive index data")
 
     def update_from_subconfig(self, subconfig_dict: dict):
         """

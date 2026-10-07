@@ -54,11 +54,9 @@ class KernelFlowsConfig(BaseModel):
     name: Annotated[Literal["kernelflows"], BeforeValidator(standardName)]
 
     emulator_file: Optional[PathExists] = Field(
-        default=None,
         description="Path to the Kernel Flows emulator model file",
     )
 
     template_file: Optional[PathExists] = Field(
-        default=None,
         description="Path to Kernel Flows template configuration file",
     )

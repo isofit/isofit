@@ -54,17 +54,13 @@ class Config(BaseModel):
 
     input: io.InputConfig = Field(description="Input file configuration")
 
-    output: io.OutputConfig = Field(
-        default_factory=io.OutputConfig, description="Output file configuration"
-    )
+    output: io.OutputConfig = Field(description="Output file configuration")
 
     forward_model: ForwardModelConfig = Field(
-        default_factory=ForwardModelConfig,
         description="Forward model configuration (surface, atmosphere, instrument)",
     )
 
     implementation: ImplementationConfig = Field(
-        default_factory=ImplementationConfig,
         description="Implementation configuration (mode, inversion, etc.)",
     )
 
