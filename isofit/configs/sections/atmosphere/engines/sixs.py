@@ -11,6 +11,7 @@ from typing import Annotated, Literal, Optional
 from pydantic import (
     BaseModel,
     BeforeValidator,
+    ConfigDict,
     Field,
     PositiveFloat,
     field_validator,
@@ -92,6 +93,8 @@ class SixSConfig(BaseModel):
     ModtranConfig : Commercial RT engine with more capabilities
     LibRadTranConfig : Alternative open-source RT engine
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["sixs"], BeforeValidator(standardName)]
 
