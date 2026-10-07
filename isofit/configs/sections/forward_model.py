@@ -108,20 +108,17 @@ class ForwardModelConfig(BaseModel):
     isofit.configs.sections.instrument.InstrumentConfig : Instrument configuration
     """
 
-    surface: Optional[SurfaceConfig] = Field(
-        default=None, description="Surface configuration"
-    )
+    surface: Optional[SurfaceConfig] = Field(description="Surface configuration")
 
     atmosphere: Optional[AtmosphereConfig] = Field(
-        default=None, description="Atmospheric radiative transfer configuration"
+        description="Atmospheric radiative transfer configuration"
     )
 
     instrument: Optional[InstrumentConfig] = Field(
-        default=None, description="Instrument configuration"
+        description="Instrument configuration"
     )
 
     model_discrepancy_file: Optional[PathExists] = Field(
-        default=None,
         description="Path to numpy-format covariance matrix for model discrepancy",
     )
 

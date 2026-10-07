@@ -73,29 +73,24 @@ class sRTMnetConfig(BaseModel):
     name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)]
 
     base_dir: Optional[PathExists] = Field(
-        default=None,
         description="Base path to engine directory",
     )
 
     emulator_batch_size: int = Field(
-        default=4096,
         ge=1,
         description="Batch size for sRTMnet predictions. Set smaller to reduce memory usage, larger for faster emulation.",
         examples=[512, 1024, 2048, 4096, 8192],
     )
 
     emulator_file: Optional[PathExists] = Field(
-        default=None,
         description="",
     )
 
     emulator_aux_file: Optional[PathExists] = Field(
-        default=None,
         description="",
     )
 
     template_file: Optional[PathExists] = Field(
-        default=None,
         description="MODTRAN template file used to build the 6S surrogate simulations",
     )
 
