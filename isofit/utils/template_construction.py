@@ -1073,14 +1073,14 @@ def load_climatology(
         )
 
         if aerosol_lut is not None:
-            init_value, _ = aeronet_aod_prior(
+            init_value, prior_sigma = aeronet_aod_prior(
                 elevation_km=elevation_km, aod_min=alr[0], aod_max=alr[1]
             )
             aerosol_state_vector["AERFRAC_{}".format(_a)] = {
                 "bounds": [float(alr[0]), float(alr[1])],
                 "scale": 1,
                 "init": float(init_value),
-                "prior_sigma": 0.1,
+                "prior_sigma": float(prior_sigma),
                 "prior_mean": float(init_value),
             }
 
@@ -1096,14 +1096,14 @@ def load_climatology(
     if aot_550_lut is not None:
         aerosol_lut_grid["AOT550"] = aot_550_lut.tolist()
         alr = [aerosol_lut_grid["AOT550"][0], aerosol_lut_grid["AOT550"][-1]]
-        init_value, _ = aeronet_aod_prior(
+        init_value, prior_sigma = aeronet_aod_prior(
             elevation_km=elevation_km, aod_min=alr[0], aod_max=alr[1]
         )
         aerosol_state_vector["AOT550"] = {
             "bounds": [float(alr[0]), float(alr[1])],
             "scale": 1,
             "init": float(init_value),
-            "prior_sigma": 0.1,
+            "prior_sigma": float(prior_sigma),
             "prior_mean": float(init_value),
         }
 
