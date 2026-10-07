@@ -9,7 +9,14 @@ high accuracy.
 from pathlib import Path
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from isofit.configs.utils.validators import PathExists
 from isofit.data import env
@@ -69,6 +76,8 @@ class sRTMnetConfig(BaseModel):
     SixSConfig : Physics-based RT code that sRTMnet emulates
     PrebuiltConfig : Even faster option using pre-computed LUTs
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)]
 
