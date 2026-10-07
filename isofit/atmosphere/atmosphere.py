@@ -377,7 +377,7 @@ class BaseAtmosphere(Reader):
         _, sigma_aerosol = aeronet_aod_prior(
             elevation_km=geom.surface_elevation_km,
         )
-        Sa_atmosphere[self.aerosol_i] = sigma_aerosol**2
+        Sa_atmosphere[self.aerosol_i, self.aerosol_i] = sigma_aerosol**2
 
         Sa_atm_norm = Sa_atmosphere / np.mean(np.diag(Sa_atmosphere))
         Sa_inv_norm, Sa_inv_sqrt_norm = svd_inv_sqrt(Sa_atm_norm)
