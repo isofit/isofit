@@ -1,0 +1,73 @@
+# Use case: aquatic / water-surface retrieval with glint modeling.
+#
+# Retrieval over water, where specular reflection of sky and sun off the surface
+# ("glint") is significant. Uses the glint_model_surface, which adds SKY_GLINT
+# and SUN_GLINT elements to the surface state vector so the glint contribution is
+# estimated jointly with the water-leaving reflectance.
+#
+# Inherits defaults + the sRTMnet engine profile from default.yml. Load with:
+#   interpolate.load("aquatic_glint.yml")
+
+^^: default.yml:srtmnet
+
+input:
+  measured_radiance_file: null  # SET: at-sensor radiance over water
+  obs_file: null                # SET: observation geometry
+  loc_file: null                # SET: lat/lon/elevation
+
+output:
+  dir: ./isofit-output/
+  estimated_state_file: ${output.dir}/estimated_state
+  estimated_reflectance_file: ${output.dir}/estimated_reflectance
+  posterior_uncertainty_file: ${output.dir}/posterior_uncertainty
+
+forward_model:
+  surface:
+    surface_category: glint_model_surface
+    surface_file: null          # SET: ocean/water surface model (.mat)
+    terrain_style: flat
+    statevector:
+      # Glint priors (DefaultSkyGlintPrior / DefaultSunGlintPrior in
+      # surface_glint_model). SKY_GLINT ~ 1/pi, SUN_GLINT small.
+      SKY_GLINT:
+        bounds: [0.0, 10.0]
+        scale: 1.0
+        init: 0.3183098861837907   # 1 / pi
+        prior_mean: 0.3183098861837907
+        prior_sigma: 100.0
+      SUN_GLINT:
+        bounds: [0.0, 10.0]
+        scale: 1.0
+        init: 0.02
+        prior_mean: 0.02
+        prior_sigma: 100.0
+
+  instrument:
+    wavelength_file: null        # SET: instrument wavelengths
+    SNR: 500
+    integrations: 1
+    unknowns:
+      uncorrelated_radiometric_uncertainty: 0.01
+
+  atmosphere:
+    lut_grid:
+      H2OSTR: [0.2, 1.0, 2.0, 3.0, 4.0, 5.0]
+      AOT550: [0.001, 0.25, 0.5, 0.75, 1.0]
+    statevector:
+      H2OSTR:
+        bounds: [0.2, 5.0]
+        scale: 1
+        init: 2.6
+        prior_mean: 2.6
+        prior_sigma: 100.0
+      AOT550:
+        bounds: [0.001, 1.0]
+        scale: 1
+        init: 0.1
+        prior_mean: 0.1
+        prior_sigma: 0.1
+
+implementation:
+  mode: inversion
+  inversion:
+    windows: [[380.0, 1325.0], [1435.0, 1770.0], [1965.0, 2500.0]]
