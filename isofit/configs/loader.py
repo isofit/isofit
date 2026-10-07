@@ -13,12 +13,15 @@ from pathlib import Path
 from typing import Union
 
 import yaml
+from box import Box
 from pydantic import ValidationError
 
 from isofit.configs.config import Config
+from isofit.configs.utils import interpolate
 from isofit.core import common
 
 Logger = logging.getLogger(__name__)
+ConfigsDir = Path(__file__).resolve().parents[2] / "configs"
 
 
 def create_new_config(config_file: Union[str, Path]) -> Config:
@@ -129,3 +132,121 @@ def load_config_dict(config_dict: dict, base_dir: str | None = None) -> Config:
         config_dict = common.expand_all_paths(config_dict, base_dir)
 
     return Config.model_validate(config_dict)
+
+
+def _base_config_index() -> dict[str, Path]:
+    """
+    Map each base-config name to the file that defines it.
+
+    Every base config shipped with ISOFIT is a top-level section of one of the
+    ``*.yml`` files in :data:`ConfigsDir`. A single file may define several
+    sections (``default.yml`` holds ``default`` plus the per-engine profiles),
+    and a section name need not match its filename (``aquatic_glint.yml`` defines
+    the ``glint`` section).
+
+    Returns
+    -------
+    dict[str, pathlib.Path]
+        Mapping of section name to the config file that defines it. If the same
+        section name appears in more than one file, the alphabetically-first file
+        wins (deterministic).
+    """
+    index: dict[str, Path] = {}
+    for path in sorted(ConfigsDir.glob("*.yml")):
+        for section in interpolate.read(path).keys():
+            index.setdefault(section, path)
+    return index
+
+
+def available_base_configs() -> list[str]:
+    """
+    List the names accepted by :func:`load_base_config`.
+
+    Returns
+    -------
+    list of str
+        Sorted names of every base config shipped with ISOFIT: the sections of
+        ``default.yml`` (``default``, ``modtran``, ``sixs``, ...) and of the
+        use-case files (``vswir``, ``thermal``, ``glint``, ...).
+    """
+    return sorted(_base_config_index())
+
+
+def load_base_config(name: str, overrides: dict | None = None) -> Box:
+    """
+    Load one of the base configurations shipped with ISOFIT by name.
+
+    Base configs live in the repository-level ``configs/`` directory
+    (:data:`ConfigsDir`). Each is a named top-level section of one of the
+    ``*.yml`` files there:
+
+    - the defaults and per-engine profiles in ``default.yml`` (``"default"``,
+      ``"prebuilt"``, ``"modtran"``, ``"sixs"``, ``"srtmnet"``, ``"libradtran"``,
+      ``"kernelflows"``); and
+    - the use cases (``"vswir"``, ``"thermal"``, ``"simulation"``, ``"glint"``,
+      ``"mcmc"``).
+
+    The config is fully resolved: ``^^`` cross-file inheritance is folded in and
+    ``${...}`` references are interpolated (see
+    :mod:`isofit.configs.utils.interpolate`).
+
+    These configs are templates: they intentionally leave scene-specific inputs
+    (radiance/obs/loc files, instrument noise, ...) unset, so the returned config
+    is not guaranteed to pass :meth:`Config.get_config_errors`. Supply those
+    values with ``overrides`` (or by mutating the returned Box) before validating
+    or running.
+
+    Parameters
+    ----------
+    name : str
+        Base config to load, e.g. ``"default"``, ``"sixs"``, or ``"vswir"``.
+    overrides : dict, optional
+        Mapping of dotted keys to values, applied after inheritance is resolved
+        but before interpolation, so overridden values are visible to ``${...}``
+        references. Keys use Box dot-notation for nested fields
+        (``{"implementation.n_cores": 4}``) and values are used as-is, so pass
+        already-typed Python objects (``"forward_model.instrument.SNR": 500``,
+        not ``"500"``).
+
+    Returns
+    -------
+    box.Box
+        The resolved, interpolated configuration.
+
+    Raises
+    ------
+    ValueError
+        If ``name`` is not a known base config. The error lists the valid names.
+
+    Examples
+    --------
+    >>> from isofit.configs import load_base_config, load_config_dict
+    >>> cfg = load_base_config("vswir")
+    >>> cfg.forward_model.atmosphere.engine.name
+    'srtmnet'
+    >>> # Overlay scene inputs via overrides, then validate/build a Config
+    >>> cfg = load_base_config(
+    ...     "vswir",
+    ...     overrides={
+    ...         "input.measured_radiance_file": "radiance.hdr",
+    ...         "implementation.n_cores": 4,
+    ...     },
+    ... )
+    >>> config = load_config_dict(cfg.to_dict())
+
+    See Also
+    --------
+    available_base_configs : List the valid names.
+    load_config_dict : Validate a (possibly overlaid) config dict into a Config.
+    """
+    index = _base_config_index()
+    if name not in index:
+        valid = ", ".join(sorted(index))
+        raise ValueError(
+            f"Unknown base config {name!r}. Available base configs: {valid}"
+        )
+
+    path = index[name]
+    Logger.info(f"Loading base config section {name!r} from {path}")
+
+    return interpolate.load(str(path), section=name, ctx=overrides)

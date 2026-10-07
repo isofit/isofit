@@ -96,3 +96,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 path = "isofit/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+# The base configuration files live in the repo-root ``configs/`` directory,
+# outside the importable ``isofit`` package. ``load_base_config`` resolves them
+# relative to the source tree, so they must be shipped alongside the package.
+packages = ["isofit"]
+force-include = { "configs" = "configs" }
