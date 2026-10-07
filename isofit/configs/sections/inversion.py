@@ -44,21 +44,17 @@ class McmcConfig(BaseModel):
     >>> mcmc = McmcConfig(iterations=20000, burnin=500, proposal_scaling=0.005)
     """
 
-    iterations: int = Field(
-        default=10000, description="Number of MCMC iterations to run"
-    )
+    iterations: int = Field(description="Number of MCMC iterations to run")
 
-    burnin: int = Field(default=200, description="Number of burn-in iterations")
+    burnin: int = Field(description="Number of burn-in iterations")
 
-    regularizer: float = Field(default=1e-3, description="Regularization parameter")
+    regularizer: float = Field(description="Regularization parameter")
 
-    proposal_scaling: float = Field(
-        default=0.01, description="Scaling factor for MCMC proposals"
-    )
+    proposal_scaling: float = Field(description="Scaling factor for MCMC proposals")
 
-    verbose: bool = Field(default=True, description="Enable verbose output")
+    verbose: bool = Field(description="Enable verbose output")
 
-    restart_every: int = Field(default=2000, description="Restart interval for MCMC")
+    restart_every: int = Field(description="Restart interval for MCMC")
 
 
 class LeastSquaresConfig(BaseModel):
@@ -100,28 +96,26 @@ class LeastSquaresConfig(BaseModel):
     scipy.optimize.least_squares : Underlying solver documentation
     """
 
-    method: str = Field(default="trf", description="Optimization method to use")
+    method: str = Field(description="Optimization method to use")
 
     max_nfev: int = Field(
-        default=20,
         description="Maximum number of function evaluations before termination",
     )
 
     xtol: Optional[float] = Field(
-        default=None,
         description="Tolerance for termination by change of independent variables",
     )
 
     ftol: float = Field(
-        default=0.01, description="Tolerance for termination by change of cost function"
+        description="Tolerance for termination by change of cost function"
     )
 
     gtol: Optional[float] = Field(
-        default=None, description="Tolerance for termination by norm of gradient"
+        description="Tolerance for termination by norm of gradient"
     )
 
     tr_solver: Optional[Literal["exact", "lsmr"]] = Field(
-        default="lsmr", description="Method for solving trust-region subproblems"
+        description="Method for solving trust-region subproblems"
     )
 
     def get_config_options_as_dict(self):
@@ -196,37 +190,30 @@ class InversionConfig(BaseModel):
     """
 
     windows: Optional[List[List[float]]] = Field(
-        default_factory=list,
         description="Inversion retrieval windows to operate over (list of [min, max] wavelength ranges)",
     )
 
     cressie_map_confidence: bool = Field(
-        default=False,
         description="Use N. Cressie's alternate S_hat definition for more statistically-consistent posterior confidence",
     )
 
     mcmc: McmcConfig = Field(
-        default_factory=McmcConfig,
         description="MCMC parameters (only used if mode = mcmc)",
     )
 
     integration_grid: dict = Field(
-        default_factory=dict,
         description="Grid of inversion points for mode='grid'",
     )
 
     priors_in_initial_guess: bool = Field(
-        default=True,
         description="Use surface priors outside inversion windows during initial guess",
     )
 
     inversion_grid_as_preseed: bool = Field(
-        default=False,
         description="Treat inversion grid as seeds for optimization (True) or fixed points (False)",
     )
 
     least_squares_params: LeastSquaresConfig = Field(
-        default_factory=LeastSquaresConfig,
         description="Least squares parameters for core inversion solve",
     )
 

@@ -96,85 +96,71 @@ class SixSConfig(BaseModel):
     name: Annotated[Literal["sixs"], BeforeValidator(standardName)]
 
     base_dir: Optional[PathExists] = Field(
-        default=None,
         description="Base path to engine directory",
     )
 
     # The solar/observer geometry parameters below are populated dynamically by
     # ``build_sixs_config`` (from a MODTRAN template) when 6S is run as the
-    # sRTMnet surrogate, so they default to None rather than being required.
+    # sRTMnet surrogate, so they are nullable rather than carrying real values.
     day: Optional[int] = Field(
-        default=None, ge=1, le=366, description="Day Parameter", examples=[1, 365]
+        ge=1, le=366, description="Day Parameter", examples=[1, 365]
     )
 
     month: Optional[int] = Field(
-        default=None, ge=1, le=12, description="Month parameter", examples=[1, 12]
+        ge=1, le=12, description="Month parameter", examples=[1, 12]
     )
 
     elev: Optional[float] = Field(
-        default=None,
         description="Elevation parameter",
     )
 
     alt: Optional[float] = Field(
-        default=None,
         description="Altitude parameter",
     )
 
     solzen: Optional[float] = Field(
-        default=None,
         ge=0,
         le=180,
         description="Solar zenith parameter",
     )
 
     solaz: Optional[float] = Field(
-        default=None,
         description="Solar azimuth parameter",
     )
 
     viewzen: Optional[float] = Field(
-        default=None,
         description="View zenith parameter",
     )
 
     viewaz: Optional[float] = Field(
-        default=None,
         description="View azimuth parameter",
     )
 
     wlinf: Optional[float] = Field(
-        default=None,
         description="Shortest wavelength (microns) to run the simulation for",
     )
 
     wlsup: Optional[float] = Field(
-        default=None,
         description="Longest wavelength (microns) to run the simulation for",
     )
 
     template_file: Optional[PathExists] = Field(
-        default=None,
         description="MODTRAN template file used to populate 6S geometry",
     )
 
     aerosol_model_file: Optional[PathExists] = Field(
-        default=None,
         description="Aerosol model file",
     )
 
     aerosol_template_file: Optional[PathExists] = Field(
-        default=None,
         description="Aerosol template file",
     )
 
     obs: Optional[PathExists] = Field(
-        default=None,
         description="6S observation file",
     )
 
     earth_sun_distance_file: Optional[PathExists] = Field(
-        default=None,
         description="Earth-Sun distance file",
     )
 
