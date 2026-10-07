@@ -79,33 +79,26 @@ def heuristic_atmosphere(
     x_new = x_atmosphere.copy()
 
     # Update aerosol init based on elevation
-    xa_aerosol, _ = aeronet_aod_prior(
-        elevation_km=geom.surface_elevation_km,
-    )
-    x_new[fm.atmosphere.aerosol_i] = xa_aerosol
+    if fm.atmosphere.aerosol_i is not None:
+        xa_aerosol, _ = aeronet_aod_prior(
+            elevation_km=geom.surface_elevation_km,
+        )
+        x_new[fm.atmosphere.aerosol_i] = xa_aerosol
 
-    # Band ratio retrieval of H2O.  Depending on the radiative transfer
-    # model we are using, this state parameter could go by several names.
-    for h2oname in ["H2OSTR", "h2o"]:
-        if h2oname not in fm.atmosphere.statevec_names:
-            continue
+    # Band ratio retrieval of H2O
+    if fm.atmosphere.h2o_i is not None:
 
-        # ignore unused names
-        if h2oname not in fm.atmosphere.lut_names:
-            continue
-
-        # find the index in the lookup table associated with water vapor
-        ind_sv = fm.atmosphere.statevec_names.index(h2oname)
         h2os, areas = [], []
 
         # We iterate through every possible grid point in the lookup table,
         # calculating the band ratio that we would see if this were the
         # atmospheric H2O content.  It assumes that defaults for all other
         # atmospheric parameters (such as aerosol, if it is there).
-        for h2o in fm.atmosphere.lut_grid[h2oname]:
+        for h2o in fm.atmosphere.lut_grid[fm.atmosphere.h2o_name]:
+
             # Get Atmospheric terms at high spectral resolution
-            x_atmosphere_guess = x_atmosphere.copy()
-            x_atmosphere_guess[ind_sv] = h2o
+            x_atmosphere_guess = x_new.copy()
+            x_atmosphere_guess[fm.atmosphere.h2o_i] = h2o
 
             # pass in all zeros, as this is ONLY used for Ls, which we will
             # assume is not present
@@ -133,7 +126,8 @@ def heuristic_atmosphere(
         p = interp1d(h2os, areas)
         bounds = (h2os[0] + 0.001, h2os[-1] - 0.001)
         best = min1d(lambda h: abs(p(h)), bounds=bounds, method="bounded")
-        x_new[ind_sv] = best.x
+
+        x_new[fm.atmosphere.h2o_i] = best.x
 
     return x_new
 

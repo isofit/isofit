@@ -135,6 +135,7 @@ class BaseAtmosphere(Reader):
         self.h2o_i = [
             i for i, v in enumerate(self.statevec_names) if v in possible_h2o_names
         ]
+        self.h2o_name = self.statevec_names[self.h2o_i[0]] if self.h2o_i else None
 
         possible_aerosol_names = ["AOT", "AERFRAC"]
         self.aerosol_i = [
