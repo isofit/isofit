@@ -8,7 +8,7 @@ standard atmospheric conditions.
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, BeforeValidator
+from pydantic import BaseModel, BeforeValidator, ConfigDict
 
 from . import standardName
 
@@ -43,5 +43,7 @@ class PrebuiltConfig(BaseModel):
     SixSConfig : 6S RT engine
     sRTMnetConfig : Machine learning RT emulator
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["prebuilt"], BeforeValidator(standardName)]

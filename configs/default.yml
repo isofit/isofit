@@ -86,7 +86,12 @@ default:
     instrument:
       wavelength_file: null
       integrations: null
-      unknowns: null
+      unknowns:
+        channelized_radiometric_uncertainty_file: null
+        uncorrelated_radiometric_uncertainty: null
+        wavelength_calibration_uncertainty: null
+        stray_srf_uncertainty: null
+        dn_uncertainty_file: null
       fast_resample: true
       SNR: null
       parametric_noise_file: null

@@ -7,7 +7,7 @@ atmospheric correction capabilities.
 
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, BeforeValidator, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
 from isofit.configs.utils.validators import PathExists
 
@@ -50,6 +50,8 @@ class KernelFlowsConfig(BaseModel):
     sRTMnetConfig : Alternative ML-based RT emulator
     SixSConfig : Physics-based RT engine
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["kernelflows"], BeforeValidator(standardName)]
 

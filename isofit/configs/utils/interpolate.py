@@ -27,6 +27,12 @@ Loaders = {
     ".json": Box.from_json,
 }
 
+# Shared Box construction kwargs. `default_box_none_transform=False` keeps keys
+# whose value is an explicit ``null`` instead of silently dropping them, which is
+# required so the config defaults (many of which are ``null`` in the YAMLs) still
+# reach the Pydantic models rather than appearing as missing/required fields.
+BOX_KW = dict(default_box=True, default_box_none_transform=False)
+
 
 def read(config: Union[str, Path]) -> Box:
     """
@@ -56,7 +62,7 @@ def read(config: Union[str, Path]) -> Box:
             f"Unsupported config file extension {suffix!r} for {str(config)!r}; "
             f"expected one of: {supported}"
         )
-    return Loaders[suffix](filename=str(config), default_box=True)
+    return Loaders[suffix](filename=str(config), **BOX_KW)
 
 
 def load(
@@ -152,7 +158,7 @@ def patch(
         The same ``box``, updated with the merged sections.
     """
     if isinstance(box, dict):
-        box = Box(box)
+        box = Box(box, **BOX_KW)
 
     if base_dir is None:
         base_dir = Path.cwd()
@@ -166,7 +172,7 @@ def patch(
 
     # Accumulate referenced sections lowest-priority first (list order), then let
     # box's own keys win by merging them in last.
-    merged = Box(default_box=True)
+    merged = Box(**BOX_KW)
     for sect in sects:
         # Resolve the reference to (its full config, the subsection Box, the
         # base_dir for *its* own ^^ refs, and a hashable identity for cycle
@@ -178,7 +184,7 @@ def patch(
             if sect not in full:
                 raise KeyError(f"^^ references an unknown section: {sect!r}")
             ref_full = full
-            ref = Box(full[sect], default_box=True)
+            ref = Box(full[sect], **BOX_KW)
             ref_dir = base_dir
             ident = (None, sect)
 
@@ -253,13 +259,13 @@ def resolve_file(sect: str, base_dir: Path, cache: dict) -> tuple:
     ref_full = cache[abspath]
 
     if name is None:
-        ref = Box(ref_full, default_box=True)
+        ref = Box(ref_full, **BOX_KW)
     else:
         if name not in ref_full:
             raise KeyError(
                 f"^^ references an unknown section {name!r} in file {str(abspath)!r}"
             )
-        ref = Box(ref_full[name], default_box=True)
+        ref = Box(ref_full[name], **BOX_KW)
 
     ref_dir = abspath.parent
     return ref_full, ref, ref_dir, (abspath, name)
@@ -297,7 +303,7 @@ def override(box: Box, ctx: Union[click.Context, list[str]]) -> Box:
     # sections. merge_update is deliberately avoided: it silently drops None values
     # when merging into an existing section, so `--key None` would be a no-op.
     if isinstance(box, dict):
-        box = Box(box, default_box=True, box_dots=True)
+        box = Box(box, box_dots=True, **BOX_KW)
 
     i = 0
     while i < len(args):
@@ -434,10 +440,10 @@ def interpolate(
         The same ``box``, with all ``${...}`` references interpolated.
     """
     if isinstance(box, dict):
-        box = Box(box, default_box=True)
+        box = Box(box, **BOX_KW)
 
     if full is None:
-        full = Box(box, box_dots=True, default_box=True)
+        full = Box(box, box_dots=True, **BOX_KW)
 
     if rel is None:
         rel = full
@@ -445,7 +451,7 @@ def interpolate(
     if isinstance(box, BoxList):
         items = enumerate(box)
     else:
-        rel = Box(box, box_dots=True, default_box=True)
+        rel = Box(box, box_dots=True, **BOX_KW)
         items = box.items()
 
     for key, val in items:
