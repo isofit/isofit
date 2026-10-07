@@ -462,7 +462,7 @@ def cli():
     """
     Utility functions for configuration files
     """
-    pass
+    logging.basicConfig(level=logging.DEBUG)
 
 
 CS = dict(
@@ -493,7 +493,8 @@ def _format_yaml(box, noflow):
 @Config
 @Section
 @NoFlow
-def preview(ctx: click.Context, noflow=False, **kwargs: Any) -> None:
+@click.option("-v", "--validate", is_flag=True, help="Validate the config")
+def preview(ctx: click.Context, noflow=False, validate=False, **kwargs: Any) -> None:
     """
     Preview the final, interpolated configuration.
 
@@ -503,7 +504,16 @@ def preview(ctx: click.Context, noflow=False, **kwargs: Any) -> None:
     """
     box = load(ctx=ctx, **kwargs)
     yml = _format_yaml(box, noflow)
-    print(yml)
+    Logger.info(yml)
+
+    if validate:
+        Logger.info(
+            "Validating the config. If there are no errors, nothing will be printed."
+        )
+
+        from isofit.configs import load_config_dict
+
+        load_config_dict(box.to_dict())
 
 
 @cli.command(context_settings=CS)
@@ -532,4 +542,23 @@ def copy(ctx: click.Context, output, noflow=False, **kwargs: Any) -> None:
         raise TypeError("Unsupported file extension, expected either .yaml or .json")
 
     output.write_text(data)
-    print(f"Wrote to {output}")
+    Logger.info(f"Wrote to {output}")
+
+
+@cli.command(context_settings=CS)
+@click.pass_context
+@Config
+@Section
+def validate(ctx: click.Context, **kwargs: Any) -> None:
+    """
+    Validates a configuration
+    """
+    box = load(ctx=ctx, **kwargs)
+
+    Logger.info(
+        "Validating the config. If there are no errors, nothing will be printed."
+    )
+
+    from isofit.configs import load_config_dict
+
+    load_config_dict(box.to_dict())
