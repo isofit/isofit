@@ -32,11 +32,9 @@ class AtmosphereConfig(BaseModel):
         calculations. If None, uses instrument wavelengths.
     lut_path : Path
         Path to the lookup table storage directory. Supports .zarr format
-        for efficient multidimensional array storage. Default uses interpolated
-        string "${output.dir}/lut/lut.zarr".
+        for efficient multidimensional array storage.
     sim_path : Path
-        Path to RT simulation output directory. Default uses interpolated
-        string "${output.dir}/lut/sims".
+        Path to RT simulation output directory.
     lut_grid : dict[str, list[float]]
         Lookup table grid specification. Keys are atmospheric parameter names
         (e.g., "H2OSTR", "AOT550"), values are lists of sample points for
@@ -97,12 +95,12 @@ class AtmosphereConfig(BaseModel):
     )
 
     lut_path: Path = Field(
-        default="${output.dir}/lut/lut.zarr",
+        default=None,
         description="Path to the look up table directory",
     )
 
     sim_path: Path = Field(
-        default="${output.dir}/lut/sims",
+        default=None,
         description="Path to the look up table directory",
     )
 
