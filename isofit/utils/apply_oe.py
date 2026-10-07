@@ -97,6 +97,7 @@ def apply_oe(
     analytical_line=False,
     ray_temp_dir="/tmp/ray",
     emulator_base=None,
+    vlidort_path=None,
     segmentation_size=40,
     num_neighbors=[],
     atm_sigma=[2],
@@ -213,6 +214,11 @@ def apply_oe(
         sRTMnet to use the emulator instead of MODTRAN. An additional file with the
         same basename and the extention _aux.npz must accompany
         e.g. /path/to/emulator.h5 /path/to/emulator_aux.npz
+    vlidort_path : str, default=None
+        Enables the VLIDORT atmospheric RT engine and sets its engine base
+        directory (the directory containing MASTERS/emit_radiance.exe). VLIDORT
+        is a physics-based engine and does not use an emulator, so this option
+        is mutually exclusive with emulator_base.
     segmentation_size : int, default=40
         If empirical_line is enabled, sets the size of segments to construct
     num_neighbors : list[int], default=[]
@@ -277,8 +283,20 @@ def apply_oe(
     use_superpixels = empirical_line or analytical_line or use_background_rfl
     use_multisurface = True if classify_multisurface or surface_class_file else False
 
+    # VLIDORT is a physics-based engine that does not use an emulator, so the
+    # two options are mutually exclusive.
+    if vlidort_path is not None and emulator_base is not None:
+        raise ValueError(
+            "--vlidort_path and --emulator_base are mutually exclusive. VLIDORT "
+            "does not use an emulator."
+        )
+
     # Determine if we run in multipart-transmittance (4c) mode
-    if emulator_base is not None:
+    if vlidort_path is not None:
+        # VLIDORT produces multipart transmittance outputs.
+        multipart_transmittance = True
+
+    elif emulator_base is not None:
         if emulator_base.endswith(".jld2"):
             multipart_transmittance = False
 
@@ -679,6 +697,7 @@ def apply_oe(
         "use_superpixels": use_superpixels,
         "surface_category": surface_category,
         "emulator_base": emulator_base,
+        "vlidort_path": vlidort_path,
         "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
         "prebuilt_lut_path": prebuilt_lut,
         "inversion_windows": sensor_inversion_windows,
@@ -1010,6 +1029,16 @@ def apply_oe(
 @click.option("--analytical_line", is_flag=True, default=False)
 @click.option("--ray_temp_dir", default="/tmp/ray")
 @click.option("--emulator_base")
+@click.option(
+    "--vlidort_path",
+    type=str,
+    default=None,
+    help=(
+        "Enable the VLIDORT atmospheric RT engine and set its engine base "
+        "directory (the directory containing MASTERS/emit_radiance.exe). "
+        "Mutually exclusive with --emulator_base."
+    ),
+)
 @click.option("--segmentation_size", default=40)
 @click.option("--num_neighbors", "-nn", type=int, multiple=True)
 @click.option("--atm_sigma", "-as", type=float, multiple=True, default=[2])
