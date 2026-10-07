@@ -9,60 +9,61 @@
 # the solar+thermal spectral range). Load with:
 #   interpolate.load("thermal.yml")
 
-^^: default.yml:modtran
+thermal:
+  ^^: default.yml:modtran
 
-input:
-  measured_radiance_file: null  # SET: at-sensor TIR radiance
-  obs_file: null                # SET: observation geometry
-  loc_file: null                # SET: lat/lon/elevation
+  input:
+    measured_radiance_file: null  # SET: at-sensor TIR radiance
+    obs_file: null                # SET: observation geometry
+    loc_file: null                # SET: lat/lon/elevation
 
-output:
-  dir: ./isofit-output/
-  estimated_state_file: ${output.dir}/estimated_state
-  estimated_reflectance_file: ${output.dir}/estimated_reflectance
-  estimated_emission_file: ${output.dir}/estimated_emission
-  posterior_uncertainty_file: ${output.dir}/posterior_uncertainty
+  output:
+    dir: ./isofit-output/
+    estimated_state_file: ${output.dir}/estimated_state
+    estimated_reflectance_file: ${output.dir}/estimated_reflectance
+    estimated_emission_file: ${output.dir}/estimated_emission
+    posterior_uncertainty_file: ${output.dir}/posterior_uncertainty
 
-forward_model:
-  surface:
-    surface_category: thermal_surface
-    surface_file: null          # SET: surface model (.mat)
-    emissivity_for_surface_T_init: 0.98
-    statevector:
-      # Surface temperature in Kelvin (DefaultSurfTempKPrior in surface_thermal).
-      SURF_TEMP_K:
-        bounds: [250.0, 400.0]
-        scale: 100.0
-        init: 300.0
-        prior_mean: 300.0
-        prior_sigma: 1.0
+  forward_model:
+    surface:
+      surface_category: thermal_surface
+      surface_file: null          # SET: surface model (.mat)
+      emissivity_for_surface_T_init: 0.98
+      statevector:
+        # Surface temperature in Kelvin (DefaultSurfTempKPrior in surface_thermal).
+        SURF_TEMP_K:
+          bounds: [250.0, 400.0]
+          scale: 100.0
+          init: 300.0
+          prior_mean: 300.0
+          prior_sigma: 1.0
 
-  instrument:
-    wavelength_file: null        # SET: instrument wavelengths
-    # Thermal sensors are characterized by NEDT rather than SNR.
-    nedt_noise_file: null        # SET: NEDT noise model file
-    integrations: 1
+    instrument:
+      wavelength_file: null        # SET: instrument wavelengths
+      # Thermal sensors are characterized by NEDT rather than SNR.
+      nedt_noise_file: null        # SET: NEDT noise model file
+      integrations: 1
 
-  atmosphere:
-    lut_grid:
-      H2OSTR: [0.2, 1.0, 2.0, 3.0, 4.0, 5.0]
-      AOT550: [0.001, 0.25, 0.5, 0.75, 1.0]
-    statevector:
-      H2OSTR:
-        bounds: [0.2, 5.0]
-        scale: 1
-        init: 2.6
-        prior_mean: 2.6
-        prior_sigma: 100.0
-      AOT550:
-        bounds: [0.001, 1.0]
-        scale: 1
-        init: 0.1
-        prior_mean: 0.1
-        prior_sigma: 0.1
+    atmosphere:
+      lut_grid:
+        H2OSTR: [0.2, 1.0, 2.0, 3.0, 4.0, 5.0]
+        AOT550: [0.001, 0.25, 0.5, 0.75, 1.0]
+      statevector:
+        H2OSTR:
+          bounds: [0.2, 5.0]
+          scale: 1
+          init: 2.6
+          prior_mean: 2.6
+          prior_sigma: 100.0
+        AOT550:
+          bounds: [0.001, 1.0]
+          scale: 1
+          init: 0.1
+          prior_mean: 0.1
+          prior_sigma: 0.1
 
-implementation:
-  mode: inversion
-  inversion:
-    # Solar-reflective windows plus the thermal-infrared region (7.5-12 um).
-    windows: [[380.0, 1325.0], [1435.0, 1770.0], [1965.0, 2500.0], [7500.0, 12000.0]]
+  implementation:
+    mode: inversion
+    inversion:
+      # Solar-reflective windows plus the thermal-infrared region (7.5-12 um).
+      windows: [[380.0, 1325.0], [1435.0, 1770.0], [1965.0, 2500.0], [7500.0, 12000.0]]
