@@ -9,7 +9,14 @@ ISOFIT atmospheric correction.
 from pathlib import Path
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from isofit.configs.utils.validators import PathExists
 from isofit.data import env
@@ -82,6 +89,8 @@ class LibRadTranConfig(BaseModel):
     SixSConfig : Simpler open-source RT engine
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     name: Annotated[Literal["libradtran"], BeforeValidator(standardName)]
 
     base_dir: Optional[PathExists] = Field(
@@ -93,23 +102,23 @@ class LibRadTranConfig(BaseModel):
         examples=["coarse", "medium", "fine"],
     )
 
-    kb_alpha_1: float = Field(
+    kb_alpha_1: Optional[float] = Field(
         description="King-Byrne Angstrom parameter (alpha 1). Setting to None uses default aerosol profile."
     )
 
-    kb_alpha_2: float = Field(
+    kb_alpha_2: Optional[float] = Field(
         description="King-Byrne Angstrom parameter (alpha 2). Setting to None uses default aerosol profile."
     )
 
-    gg_set: float = Field(
-        description="Constant asymmetry parameter to represent aerosols"
+    gg_set: Optional[float] = Field(
+        description="Constant asymmetry parameter to represent aerosols. Setting to None uses the profile default."
     )
 
-    gg_file: Path = Field(
+    gg_file: Optional[Path] = Field(
         description="Path to an asymmetry depth file that overwrites default profile"
     )
 
-    tau_file: Path = Field(
+    tau_file: Optional[Path] = Field(
         description="Path to an optical depth file that overwrites default profile"
     )
 

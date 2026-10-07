@@ -7,7 +7,7 @@ wavelengths. This module configures MODTRAN 6.0 for ISOFIT atmospheric correctio
 
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, BeforeValidator, Field, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, model_validator
 
 from isofit.configs.utils.validators import PathExists
 from isofit.data import env
@@ -69,6 +69,8 @@ class ModtranConfig(BaseModel):
     SixSConfig : Alternative open-source RT engine
     LibRadTranConfig : Alternative open-source RT engine
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["modtran"], BeforeValidator(standardName)]
 
