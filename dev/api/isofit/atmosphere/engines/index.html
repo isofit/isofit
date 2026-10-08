@@ -1429,6 +1429,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.atmosphere.engines.ModtranRT.samples_per_nm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        samples_per_nm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.atmosphere.engines.ModtranRT.calc_band_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_band_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.atmosphere.engines.ModtranRT.parseTokens" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1455,6 +1477,17 @@
     <span class="md-ellipsis">
       
         load_chn
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.atmosphere.engines.ModtranRT.load_tp7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_tp7
       
     </span>
   </a>
@@ -5408,6 +5441,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#isofit.atmosphere.engines.ModtranRT.samples_per_nm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        samples_per_nm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.atmosphere.engines.ModtranRT.calc_band_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_band_model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.atmosphere.engines.ModtranRT.parseTokens" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5434,6 +5489,17 @@
     <span class="md-ellipsis">
       
         load_chn
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.atmosphere.engines.ModtranRT.load_tp7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_tp7
       
     </span>
   </a>
@@ -6290,7 +6356,7 @@ Point to process</p>
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span><span class="mkapi-object-kind">class</span>
-<span class="mkapi-object-name"><a href="./#isofit.atmosphere.engines.ModtranRT" title="isofit.atmosphere.engines.ModtranRT">ModtranRT</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">full_config</span><span class="mkapi-colon">: </span><span class="mkapi-ann">Config</span><span class="mkapi-comma">, </span><span class="mkapi-arg">lut_path</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-equal"> = </span><span class="mkapi-default">''</span><span class="mkapi-comma">, </span><span class="mkapi-arg">wl</span><span class="mkapi-colon">: </span><span class="mkapi-ann"><span class="mkapi-tooltip" title="numpy">np</span>.<span class="mkapi-tooltip" title="numpy._core.array">array</span></span><span class="mkapi-equal"> = </span><span class="mkapi-default">[]</span><span class="mkapi-comma">, </span><span class="mkapi-arg">fwhm</span><span class="mkapi-colon">: </span><span class="mkapi-ann"><span class="mkapi-tooltip" title="numpy">np</span>.<span class="mkapi-tooltip" title="numpy._core.array">array</span></span><span class="mkapi-equal"> = </span><span class="mkapi-default">[]</span><span class="mkapi-comma">, </span><span class="mkapi-arg">n_cores</span><span class="mkapi-colon">: </span><span class="mkapi-ann">int</span><span class="mkapi-equal"> = </span><span class="mkapi-default">None</span><span class="mkapi-comma">, </span><span class="mkapi-arg">build_interpolators</span><span class="mkapi-colon">: </span><span class="mkapi-ann">bool</span><span class="mkapi-equal"> = </span><span class="mkapi-default">True</span><span class="mkapi-comma">, </span><span class="mkapi-arg">lut_postprocess</span><span class="mkapi-colon">: </span><span class="mkapi-ann">bool</span><span class="mkapi-equal"> = </span><span class="mkapi-default">True</span><span class="mkapi-comma">, </span><span class="mkapi-star">**</span><span class="mkapi-arg">kwargs</span><span class="mkapi-paren">)</span></span>
+<span class="mkapi-object-name"><a href="./#isofit.atmosphere.engines.ModtranRT" title="isofit.atmosphere.engines.ModtranRT">ModtranRT</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">engine_config</span><span class="mkapi-comma">, </span><span class="mkapi-arg">min_samples_per_nm</span><span class="mkapi-equal">=</span><span class="mkapi-default">10</span><span class="mkapi-comma">, </span><span class="mkapi-arg">max_samples_per_nm</span><span class="mkapi-equal">=</span><span class="mkapi-default">100</span><span class="mkapi-comma">, </span><span class="mkapi-star">**</span><span class="mkapi-arg">kwargs</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p class="mkapi-bases">Bases :
@@ -6306,6 +6372,12 @@ Point to process</p>
 <div class="mkapi-section-content">
 <ul class="mkapi-item-list">
 <li>
+<p><span class="mkapi-item-name"><a href="./#isofit.atmosphere.engines.ModtranRT.samples_per_nm" title="isofit.atmosphere.engines.ModtranRT.samples_per_nm">samples_per_nm</a></span></p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.atmosphere.engines.ModtranRT.calc_band_model" title="isofit.atmosphere.engines.ModtranRT.calc_band_model">calc_band_model</a></span></p>
+</li>
+<li>
 <p><span class="mkapi-item-name"><a href="./#isofit.atmosphere.engines.ModtranRT.parseTokens" title="isofit.atmosphere.engines.ModtranRT.parseTokens">parseTokens</a></span>
  <span class="mkapi-dash">&mdash;</span>
 Processes tokens returned by parseLine()</p>
@@ -6319,6 +6391,12 @@ Parses a single line of a .chn file into a list of token values</p>
 <p><span class="mkapi-item-name"><a href="./#isofit.atmosphere.engines.ModtranRT.load_chn" title="isofit.atmosphere.engines.ModtranRT.load_chn">load_chn</a></span>
  <span class="mkapi-dash">&mdash;</span>
 Parses a MODTRAN channel file and extracts relevant data</p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.atmosphere.engines.ModtranRT.load_tp7" title="isofit.atmosphere.engines.ModtranRT.load_tp7">load_tp7</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Read a MODTRAN TP7 file and return the data as a dictionary, one entry
+for each case in the file.  Don't do anything but read the data; all the data.</p>
 </li>
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.atmosphere.engines.ModtranRT.load_tp6" title="isofit.atmosphere.engines.ModtranRT.load_tp6">load_tp6</a></span>
@@ -6354,6 +6432,52 @@ Write a MODTRAN 6.0 input file.</p>
  <span class="mkapi-dash">&mdash;</span>
 Helper function to generate Gaussian distributions around the
 center wavelengths.</p>
+</li>
+</ul>
+</div>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.atmosphere.engines.ModtranRT.samples_per_nm">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+<span class="mkapi-definition-link"><a href="modtran/#isofit.atmosphere.engines.modtran.ModtranRT.samples_per_nm" title="Go to definition"><i class="fa-solid fa-square-arrow-up-right"></i></a></span>
+<a href="../../../../src/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.samples_per_nm" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">staticmethod</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.atmosphere.engines.ModtranRT" title="isofit.atmosphere.engines.ModtranRT">ModtranRT</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.atmosphere.engines.ModtranRT.samples_per_nm" title="isofit.atmosphere.engines.ModtranRT.samples_per_nm">samples_per_nm</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">wl</span><span class="mkapi-comma">, </span><span class="mkapi-arg">fq_resolution</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document"></div>
+<p class="mkapi-object mkapi-page-source" id="isofit.atmosphere.engines.ModtranRT.calc_band_model">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+<span class="mkapi-definition-link"><a href="modtran/#isofit.atmosphere.engines.modtran.ModtranRT.calc_band_model" title="Go to definition"><i class="fa-solid fa-square-arrow-up-right"></i></a></span>
+<a href="../../../../src/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.calc_band_model" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">staticmethod</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.atmosphere.engines.ModtranRT" title="isofit.atmosphere.engines.ModtranRT">ModtranRT</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.atmosphere.engines.ModtranRT.calc_band_model" title="isofit.atmosphere.engines.ModtranRT.calc_band_model">calc_band_model</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">samples_per_nm</span><span class="mkapi-colon">: </span><span class="mkapi-ann">int</span><span class="mkapi-comma">, </span><span class="mkapi-arg">wavelength</span><span class="mkapi-colon">: </span><span class="mkapi-ann">float</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document">
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle raises">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Raises</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type">ValueError</span></p>
 </li>
 </ul>
 </div>
@@ -6475,7 +6599,7 @@ List of floats parsed from the line</p>
 </span>
 </span><span class="mkapi-object-kind">method</span>
 <span class="mkapi-object-parent">
-<a href="./#isofit.atmosphere.engines.ModtranRT" title="isofit.atmosphere.engines.ModtranRT">ModtranRT</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.atmosphere.engines.ModtranRT.load_chn" title="isofit.atmosphere.engines.ModtranRT.load_chn">load_chn</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">file</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-comma">, </span><span class="mkapi-arg">coszen</span><span class="mkapi-colon">: </span><span class="mkapi-ann">float</span><span class="mkapi-comma">, </span><span class="mkapi-arg">header</span><span class="mkapi-colon">: </span><span class="mkapi-ann">int</span><span class="mkapi-equal"> = </span><span class="mkapi-default">5</span><span class="mkapi-paren">)</span><span class="mkapi-arrow"> → </span><span class="mkapi-return">dict</span></span>
+<a href="./#isofit.atmosphere.engines.ModtranRT" title="isofit.atmosphere.engines.ModtranRT">ModtranRT</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.atmosphere.engines.ModtranRT.load_chn" title="isofit.atmosphere.engines.ModtranRT.load_chn">load_chn</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">file</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-comma">, </span><span class="mkapi-arg">coszen</span><span class="mkapi-colon">: </span><span class="mkapi-ann">float</span><span class="mkapi-comma">, </span><span class="mkapi-arg">header</span><span class="mkapi-colon">: </span><span class="mkapi-ann">int</span><span class="mkapi-equal"> = </span><span class="mkapi-default">4</span><span class="mkapi-paren">)</span><span class="mkapi-arrow"> → </span><span class="mkapi-return">dict</span></span>
 </p>
 <div class="mkapi-document">
 <p>Parses a MODTRAN channel file and extracts relevant data</p>
@@ -6520,6 +6644,87 @@ Number of lines to skip for the header</p>
 <p><span class="mkapi-item-name">chn</span> : 
 <span class="mkapi-item-type">dict</span> <span class="mkapi-dash">&mdash;</span>
 Channel data</p>
+</li>
+</ul>
+</div>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.atmosphere.engines.ModtranRT.load_tp7">
+<span class="mkapi-object-link">
+<span class="mkapi-parent-toggle" title="Toggle class names">
+<i class="fa-solid fa-square-plus"></i>
+</span>
+<span class="mkapi-definition-link"><a href="modtran/#isofit.atmosphere.engines.modtran.ModtranRT.load_tp7" title="Go to definition"><i class="fa-solid fa-square-arrow-up-right"></i></a></span>
+<a href="../../../../src/isofit/atmosphere/engines/modtran/#isofit.atmosphere.engines.modtran.ModtranRT.load_tp7" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span><span class="mkapi-object-kind">method</span>
+<span class="mkapi-object-parent">
+<a href="./#isofit.atmosphere.engines.ModtranRT" title="isofit.atmosphere.engines.ModtranRT">ModtranRT</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.atmosphere.engines.ModtranRT.load_tp7" title="isofit.atmosphere.engines.ModtranRT.load_tp7">load_tp7</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">file_path</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-comma">, </span><span class="mkapi-arg">num_albedos</span><span class="mkapi-colon">: </span><span class="mkapi-ann">int</span><span class="mkapi-comma">, </span><span class="mkapi-arg">num_models</span><span class="mkapi-colon">: </span><span class="mkapi-ann">int</span><span class="mkapi-comma">, </span><span class="mkapi-arg">coszen</span><span class="mkapi-colon">: </span><span class="mkapi-ann">float</span><span class="mkapi-paren">)</span></span>
+</p>
+<div class="mkapi-document">
+<p>Read a MODTRAN TP7 file and return the data as a dictionary, one entry
+for each case in the file.  Don't do anything but read the data; all the data.</p>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle parameters">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Parameters</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-name">file_path</span> : 
+<span class="mkapi-item-type">str</span> <span class="mkapi-dash">&mdash;</span>
+Path to the MODTRAN TP7 file</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">num_albedos</span> : 
+<span class="mkapi-item-type">int</span> <span class="mkapi-dash">&mdash;</span>
+Number of unique albedos</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">num_models</span> : 
+<span class="mkapi-item-type">int</span> <span class="mkapi-dash">&mdash;</span>
+Number of models per albedo</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">coszen</span> : 
+<span class="mkapi-item-type">float</span> <span class="mkapi-dash">&mdash;</span>
+cosine of the solar zenith angle (TOA)</p>
+</li>
+</ul>
+</div>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle returns">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Returns</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type">dict</span> <span class="mkapi-dash">&mdash;</span>
+Cases dictionary reordered by model then albedo.</p>
+</li>
+</ul>
+</div>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle raises">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Raises</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type">ValueError</span></p>
 </li>
 </ul>
 </div>
@@ -6590,6 +6795,21 @@ tp6 file path</p>
 </p>
 <div class="mkapi-document">
 <p>Post-initialized, pre-simulation setup</p>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle raises">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Raises</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type">ValueError</span></p>
+</li>
+</ul>
+</div>
 </div>
 <p class="mkapi-object mkapi-page-source" id="isofit.atmosphere.engines.ModtranRT.readSim">
 <span class="mkapi-object-link">

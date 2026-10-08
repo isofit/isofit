@@ -4751,6 +4751,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.core.units.modtran_rdn_in_nm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        modtran_rdn_in_nm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.core.units.nm_to_wavenumber" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5418,7 +5429,35 @@
 <span class="normal">392</span>
 <span class="normal">393</span>
 <span class="normal">394</span>
-<span class="normal">395</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5513,6 +5552,34 @@
 <span class="sd">    """</span>
     <span class="n">nm</span> <span class="o">=</span> <span class="mf">1e7</span> <span class="o">/</span> <span class="p">(</span><span class="n">wavenumber</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">nm</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">modtran_rdn_in_nm</span><span class="p">(</span><span class="n">rdn</span><span class="p">,</span> <span class="n">wvn</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.modtran_rdn_in_nm"><a href="../../../../api/isofit/core/units/#isofit.core.units.modtran_rdn_in_nm" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Convert irradiance wavenumber to wavelength. Steps:</span>
+
+<span class="sd">        1. Wavelength (λ) and wavenumber (v) are related by λ = 1/v.</span>
+<span class="sd">            To get λ in nanometers, use λ_nm = 10^7 / v.</span>
+<span class="sd">        2. Differential relation: dλ = -1/v^2 dv. In nanometers: dλ_nm = -10^7 / v^2 dv.</span>
+<span class="sd">        3. Conversion Formula: I_λ = I_v * |dv/dλ_nm|.</span>
+<span class="sd">            Since dλ_nm/dv = -10^7 / v^2, the conversion factor is |dv/dλ_nm| = v^2 / 10^7.</span>
+<span class="sd">        4. Apply conversion for each wavenumber (v) to obtain irradiance in W cm^-2 / nm.</span>
+<span class="sd">            I_λ_nm = I_v_cm^-1 * (v^2 / 10^7)</span>
+<span class="sd">        Note: This formula considers the squared relationship between v and λ and unit conversion from cm to nm.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rdn : float</span>
+<span class="sd">        Irradiance in W cm^-2 / cm^-1.</span>
+<span class="sd">    wvn : float</span>
+<span class="sd">        Wavenumber in cm^-1.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Irradiance in W cm^-2 / nm.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">rdn</span> <span class="o">*</span> <span class="p">(</span><span class="n">wvn</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">10</span><span class="o">**</span><span class="mi">7</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">nm_to_wavenumber</span><span class="p">(</span><span class="n">nm</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.units.nm_to_wavenumber"><a href="../../../../api/isofit/core/units/#isofit.core.units.nm_to_wavenumber" title="Go to docs">[docs]</a></div>

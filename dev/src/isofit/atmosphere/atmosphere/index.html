@@ -5658,7 +5658,20 @@
 <span class="normal">703</span>
 <span class="normal">704</span>
 <span class="normal">705</span>
-<span class="normal">706</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">706</span>
+<span class="normal">707</span>
+<span class="normal">708</span>
+<span class="normal">709</span>
+<span class="normal">710</span>
+<span class="normal">711</span>
+<span class="normal">712</span>
+<span class="normal">713</span>
+<span class="normal">714</span>
+<span class="normal">715</span>
+<span class="normal">716</span>
+<span class="normal">717</span>
+<span class="normal">718</span>
+<span class="normal">719</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6129,6 +6142,7 @@
 <span class="sd">        rfl_2: float, defaults=0.5</span>
 <span class="sd">            surface reflectance for case 2 of the MODTRAN output</span>
 
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        data: dict</span>
@@ -6171,47 +6185,59 @@
         <span class="c1"># This includes direct + diffuse down, but only direct up transmittance</span>
         <span class="n">L_toa_1</span> <span class="o">=</span> <span class="n">case_1</span><span class="p">[</span><span class="s2">"grnd_rflt"</span><span class="p">]</span>
 
-        <span class="c1"># Transforming back to at-surface radiance</span>
-        <span class="c1"># Since L_toa_dir_1 and L_toa_1 only contain direct upward transmittance,</span>
-        <span class="c1"># we can safely divide by transm_up_dir without needing transm_up_dif</span>
-        <span class="c1"># Direct at-surface radiance for case 1 (only direct down transmittance)</span>
-        <span class="n">L_down_dir_1</span> <span class="o">=</span> <span class="n">L_toa_dir_1</span> <span class="o">/</span> <span class="n">rfl_1</span> <span class="o">/</span> <span class="n">transm_up_dir</span>
-        <span class="c1"># Total at-surface radiance for case 1 (direct + diffuse down transmittance)</span>
-        <span class="n">L_down_1</span> <span class="o">=</span> <span class="n">L_toa_1</span> <span class="o">/</span> <span class="n">rfl_1</span> <span class="o">/</span> <span class="n">transm_up_dir</span>
+        <span class="c1"># MODTRAN-TP7 files especially flood this with divide by zero errors but can mostly be ignored</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
 
-        <span class="c1"># Total at-surface radiance for case 2 (direct + diffuse down transmittance)</span>
-        <span class="n">L_down_2</span> <span class="o">=</span> <span class="n">case_2</span><span class="p">[</span><span class="s2">"grnd_rflt"</span><span class="p">]</span> <span class="o">/</span> <span class="n">rfl_2</span> <span class="o">/</span> <span class="n">transm_up_dir</span>
+            <span class="c1"># Transforming back to at-surface radiance</span>
+            <span class="c1"># Since L_toa_dir_1 and L_toa_1 only contain direct upward transmittance,</span>
+            <span class="c1"># we can safely divide by transm_up_dir without needing transm_up_dif</span>
+            <span class="c1"># Direct at-surface radiance for case 1 (only direct down transmittance)</span>
+            <span class="n">L_down_dir_1</span> <span class="o">=</span> <span class="n">L_toa_dir_1</span> <span class="o">/</span> <span class="n">rfl_1</span> <span class="o">/</span> <span class="n">transm_up_dir</span>
+            <span class="c1"># Total at-surface radiance for case 1 (direct + diffuse down transmittance)</span>
+            <span class="n">L_down_1</span> <span class="o">=</span> <span class="n">L_toa_1</span> <span class="o">/</span> <span class="n">rfl_1</span> <span class="o">/</span> <span class="n">transm_up_dir</span>
 
-        <span class="c1"># Atmospheric path radiance for case 1</span>
-        <span class="n">L_path_1</span> <span class="o">=</span> <span class="n">case_1</span><span class="p">[</span><span class="s2">"path_rdn"</span><span class="p">]</span>
-        <span class="c1"># Atmospheric path radiance for case 2</span>
-        <span class="n">L_path_2</span> <span class="o">=</span> <span class="n">case_2</span><span class="p">[</span><span class="s2">"path_rdn"</span><span class="p">]</span>
+            <span class="c1"># Total at-surface radiance for case 2 (direct + diffuse down transmittance)</span>
+            <span class="n">L_down_2</span> <span class="o">=</span> <span class="n">case_2</span><span class="p">[</span><span class="s2">"grnd_rflt"</span><span class="p">]</span> <span class="o">/</span> <span class="n">rfl_2</span> <span class="o">/</span> <span class="n">transm_up_dir</span>
 
-        <span class="c1"># Total reflected radiance at surface (before upward atmospheric transmission) for case 1</span>
-        <span class="n">L_surf_1</span> <span class="o">=</span> <span class="n">rfl_1</span> <span class="o">*</span> <span class="n">L_down_1</span>
-        <span class="c1"># Total reflected radiance at surface (before upward atmospheric transmission) for case 2</span>
-        <span class="n">L_surf_2</span> <span class="o">=</span> <span class="n">rfl_2</span> <span class="o">*</span> <span class="n">L_down_2</span>
-        <span class="c1"># Atmospheric path radiance for non-reflective surface (case 0)</span>
-        <span class="n">L_path_0</span> <span class="o">=</span> <span class="p">((</span><span class="n">L_surf_2</span> <span class="o">*</span> <span class="n">L_path_1</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">L_surf_1</span> <span class="o">*</span> <span class="n">L_path_2</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span>
-            <span class="n">L_surf_2</span> <span class="o">-</span> <span class="n">L_surf_1</span>
-        <span class="p">)</span>
+            <span class="c1"># Atmospheric path radiance for case 1</span>
+            <span class="n">L_path_1</span> <span class="o">=</span> <span class="n">case_1</span><span class="p">[</span><span class="s2">"path_rdn"</span><span class="p">]</span>
+            <span class="c1"># Atmospheric path radiance for case 2</span>
+            <span class="n">L_path_2</span> <span class="o">=</span> <span class="n">case_2</span><span class="p">[</span><span class="s2">"path_rdn"</span><span class="p">]</span>
 
-        <span class="c1"># Diffuse upward transmittance</span>
-        <span class="n">transm_up_dif</span> <span class="o">=</span> <span class="p">(</span><span class="n">L_path_1</span> <span class="o">-</span> <span class="n">L_path_0</span><span class="p">)</span> <span class="o">/</span> <span class="n">L_surf_1</span>
+            <span class="c1"># Total reflected radiance at surface (before upward atmospheric transmission) for case 1</span>
+            <span class="n">L_surf_1</span> <span class="o">=</span> <span class="n">rfl_1</span> <span class="o">*</span> <span class="n">L_down_1</span>
+            <span class="c1"># Total reflected radiance at surface (before upward atmospheric transmission) for case 2</span>
+            <span class="n">L_surf_2</span> <span class="o">=</span> <span class="n">rfl_2</span> <span class="o">*</span> <span class="n">L_down_2</span>
+            <span class="c1"># Atmospheric path radiance for non-reflective surface (case 0)</span>
+            <span class="n">L_path_0</span> <span class="o">=</span> <span class="p">((</span><span class="n">L_surf_2</span> <span class="o">*</span> <span class="n">L_path_1</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">L_surf_1</span> <span class="o">*</span> <span class="n">L_path_2</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span>
+                <span class="n">L_surf_2</span> <span class="o">-</span> <span class="n">L_surf_1</span>
+            <span class="p">)</span>
 
-        <span class="c1"># Spherical albedo</span>
-        <span class="n">salb</span> <span class="o">=</span> <span class="p">(</span><span class="n">L_down_1</span> <span class="o">-</span> <span class="n">L_down_2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">L_surf_1</span> <span class="o">-</span> <span class="n">L_surf_2</span><span class="p">)</span>
+            <span class="c1"># Diffuse upward transmittance</span>
+            <span class="n">transm_up_dif</span> <span class="o">=</span> <span class="p">(</span><span class="n">L_path_1</span> <span class="o">-</span> <span class="n">L_path_0</span><span class="p">)</span> <span class="o">/</span> <span class="n">L_surf_1</span>
 
-        <span class="c1"># Total at-surface radiance for non-reflective surface (case 0)</span>
-        <span class="c1"># Only add contribution from atmospheric spherical albedo</span>
-        <span class="n">L_down_0</span> <span class="o">=</span> <span class="n">L_down_1</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">rfl_1</span> <span class="o">*</span> <span class="n">salb</span><span class="p">)</span>
-        <span class="c1"># Diffuse at-surface radiance for non-reflective surface (case 0)</span>
-        <span class="n">L_down_dif_0</span> <span class="o">=</span> <span class="n">L_down_0</span> <span class="o">-</span> <span class="n">L_down_dir_1</span>
+            <span class="c1"># Spherical albedo</span>
+            <span class="n">salb_num</span> <span class="o">=</span> <span class="n">L_down_1</span> <span class="o">-</span> <span class="n">L_down_2</span>
+            <span class="n">salb_denom</span> <span class="o">=</span> <span class="n">L_surf_1</span> <span class="o">-</span> <span class="n">L_surf_2</span>
+            <span class="n">salb</span> <span class="o">=</span> <span class="n">salb_num</span> <span class="o">/</span> <span class="n">salb_denom</span>
 
-        <span class="c1"># Direct downward transmittance</span>
-        <span class="n">transm_down_dir</span> <span class="o">=</span> <span class="n">L_down_dir_1</span> <span class="o">/</span> <span class="n">widths</span> <span class="o">/</span> <span class="n">L_solar</span>
-        <span class="c1"># Diffuse downward transmittance</span>
-        <span class="n">transm_down_dif</span> <span class="o">=</span> <span class="n">L_down_dif_0</span> <span class="o">/</span> <span class="n">widths</span> <span class="o">/</span> <span class="n">L_solar</span>
+            <span class="c1"># Compute rhoatm always so both tp7 and chn match</span>
+            <span class="n">case_0</span><span class="p">[</span><span class="s2">"rhoatm"</span><span class="p">]</span> <span class="o">=</span> <span class="n">L_path_0</span> <span class="o">/</span> <span class="n">L_solar</span> <span class="o">/</span> <span class="n">widths</span>
+
+            <span class="c1"># Total at-surface radiance for non-reflective surface (case 0)</span>
+            <span class="c1"># Only add contribution from atmospheric spherical albedo</span>
+            <span class="n">L_down_0</span> <span class="o">=</span> <span class="n">L_down_1</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">rfl_1</span> <span class="o">*</span> <span class="n">salb</span><span class="p">)</span>
+            <span class="c1"># Diffuse at-surface radiance for non-reflective surface (case 0)</span>
+            <span class="n">L_down_dif_0</span> <span class="o">=</span> <span class="n">L_down_0</span> <span class="o">-</span> <span class="n">L_down_dir_1</span>
+
+            <span class="c1"># Direct downward transmittance</span>
+            <span class="n">transm_down_dir</span> <span class="o">=</span> <span class="n">L_down_dir_1</span> <span class="o">/</span> <span class="n">widths</span> <span class="o">/</span> <span class="n">L_solar</span>
+            <span class="c1"># Diffuse downward transmittance</span>
+            <span class="n">transm_down_dif</span> <span class="o">=</span> <span class="n">L_down_dif_0</span> <span class="o">/</span> <span class="n">widths</span> <span class="o">/</span> <span class="n">L_solar</span>
+
+            <span class="c1"># Clean up transm_up_dif and sphalb cases for very small downward transmittance</span>
+            <span class="n">transm_up_dif</span><span class="p">[(</span><span class="n">transm_down_dir</span> <span class="o">+</span> <span class="n">transm_down_dif</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.001</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">salb</span><span class="p">[(</span><span class="n">transm_down_dir</span> <span class="o">+</span> <span class="n">transm_down_dif</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.001</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="c1"># Return some keys from the first part plus the new calculated keys</span>
         <span class="n">pass_forward</span> <span class="o">=</span> <span class="p">[</span>

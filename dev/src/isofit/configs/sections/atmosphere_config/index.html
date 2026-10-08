@@ -5210,7 +5210,13 @@
 <span class="normal">437</span>
 <span class="normal">438</span>
 <span class="normal">439</span>
-<span class="normal">440</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5364,6 +5370,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="w">        </span><span class="sd">"""str: Use True to specify triple-run diffuse &amp; direct transmittance</span>
 <span class="sd">           estimation.  Only implemented for MODTRAN."""</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_tp7_type</span> <span class="o">=</span> <span class="nb">bool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_tp7</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">        </span><span class="sd">"""str: Override to True to use TP7 outputs. </span>
+<span class="sd">        The default is to create CHN outputs.  </span>
+<span class="sd">        Only implemented for MODTRAN."""</span>
 
         <span class="c1"># MODTRAN simulator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_emulator_file_type</span> <span class="o">=</span> <span class="nb">str</span>

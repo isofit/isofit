@@ -7038,7 +7038,12 @@
 <span class="normal">2005</span>
 <span class="normal">2006</span>
 <span class="normal">2007</span>
-<span class="normal">2008</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">2008</span>
+<span class="normal">2009</span>
+<span class="normal">2010</span>
+<span class="normal">2011</span>
+<span class="normal">2012</span>
+<span class="normal">2013</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick and Niklas Bohn</span>
 <span class="c1">#</span>
@@ -8015,7 +8020,7 @@
                         <span class="s2">"IEMSCT"</span><span class="p">:</span> <span class="s2">"RT_SOLAR_AND_THERMAL"</span><span class="p">,</span>
                         <span class="s2">"IMULT"</span><span class="p">:</span> <span class="s2">"RT_DISORT"</span><span class="p">,</span>
                         <span class="s2">"DISALB"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                        <span class="s2">"NSTR"</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                        <span class="s2">"NSTR"</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>  <span class="c1"># NOTE 8 vs 16 delta(m) effect is reduced when using 2-albedo method</span>
                         <span class="s2">"SOLCON"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
                     <span class="p">},</span>
                     <span class="s2">"ATMOSPHERE"</span><span class="p">:</span> <span class="p">{</span>
@@ -8045,10 +8050,11 @@
                         <span class="s2">"GMTIME"</span><span class="p">:</span> <span class="n">gmtime</span><span class="p">,</span>
                     <span class="p">},</span>
                     <span class="s2">"SURFACE"</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">"SURFTYPE"</span><span class="p">:</span> <span class="s2">"REFL_LAMBER_MODEL"</span><span class="p">,</span>
                         <span class="s2">"GNDALT"</span><span class="p">:</span> <span class="n">elevation_km</span><span class="p">,</span>
                         <span class="s2">"NSURF"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                        <span class="s2">"SURFP"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"CSALB"</span><span class="p">:</span> <span class="s2">"LAMB_CONST_0_PCT"</span><span class="p">},</span>
+                        <span class="s2">"SALBFL"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span>
+                        <span class="s2">"SURFTYPE"</span><span class="p">:</span> <span class="s2">"REFL_CONSTANT"</span><span class="p">,</span>
+                        <span class="s2">"SURREF"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
                     <span class="p">},</span>
                     <span class="s2">"SPECTRAL"</span><span class="p">:</span> <span class="p">{</span>
                         <span class="s2">"V1"</span><span class="p">:</span> <span class="mf">340.0</span><span class="p">,</span>
@@ -8060,7 +8066,11 @@
                         <span class="s2">"FLAGS"</span><span class="p">:</span> <span class="s2">"NT A   "</span><span class="p">,</span>
                         <span class="s2">"BMNAME"</span><span class="p">:</span> <span class="s2">"p1_2013"</span><span class="p">,</span>
                     <span class="p">},</span>
-                    <span class="s2">"FILEOPTIONS"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"NOPRNT"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"CKPRNT"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                    <span class="s2">"FILEOPTIONS"</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">"NOPRNT"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                        <span class="s2">"NOFILE"</span><span class="p">:</span> <span class="s2">"FC_TAPE6ONLY"</span><span class="p">,</span>
+                        <span class="s2">"CSVPRNT"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">fid</span><span class="si">}</span><span class="s2">.csv"</span><span class="p">,</span>
+                    <span class="p">},</span>
                 <span class="p">}</span>
             <span class="p">}</span>
         <span class="p">]</span>
