@@ -23,6 +23,16 @@ import re
 import numpy as np
 
 
+def avagadro():
+    # 1/mol
+    return 6.02214076e23
+
+
+def h2o_molar_mass():
+    # g / mol
+    return 18.01528
+
+
 def E_to_L(E, coszen):
     """Convert irradiance to radiance.
 
