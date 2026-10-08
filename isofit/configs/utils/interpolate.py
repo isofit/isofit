@@ -517,6 +517,44 @@ def interpolate(
     return box
 
 
+def load_cli(
+    ctx: Optional[click.Context],
+    config: str,
+    section: Optional[str] = None,
+) -> Box:
+    """
+    Resolve a CLI ``config`` argument that may be a base-config name or a path.
+
+    The CLI commands accept either the name of a base config shipped with ISOFIT
+    (e.g. ``vswir``, ``sixs`` — see
+    :func:`isofit.configs.loader.available_base_configs`) or a path to a config
+    file. An explicit, existing file path always wins; otherwise the argument is
+    treated as a base-config name. In both cases CLI ``--dotted.key value``
+    overrides carried on ``ctx`` are applied.
+
+    Parameters
+    ----------
+    ctx : click.Context or None
+        Click context whose extra args carry ``--dotted.key value`` overrides.
+    config : str
+        A base-config name or a path to a ``.yml`` / ``.yaml`` / ``.json`` file.
+    section : str, optional
+        Subsection to load; only used when ``config`` is a file path (a
+        base-config name already identifies its section).
+
+    Returns
+    -------
+    box.Box
+        The resolved, interpolated configuration.
+    """
+    from isofit.configs.loader import available_base_configs, load_base_config
+
+    if not Path(config).is_file() and config in available_base_configs():
+        return load_base_config(config, overrides=parse_overrides(ctx))
+
+    return load(config, section=section, ctx=ctx)
+
+
 @click.group(name="config", invoke_without_command=True, no_args_is_help=True)
 def cli():
     """
@@ -529,7 +567,9 @@ CS = dict(
     ignore_unknown_options=True,
     allow_extra_args=True,
 )
-Config = click.argument("config")
+Config = click.argument(
+    "config"
+)  # NOTE: `config` is either the name of a base config shipped with ISOFIT (e.g. vswir`, `sixs`) or a path to a config file; see `load_cli`
 Section = click.option(
     "-s", "--section", help="Subsection of the yaml to load rather than the whole file"
 )
@@ -562,7 +602,7 @@ def preview(ctx: click.Context, noflow=False, validate=False, **kwargs: Any) -> 
     overrides) and displays it in YAML format without executing any
     pipeline stages. Useful for debugging config issues.
     """
-    box = load(ctx=ctx, **kwargs)
+    box = load_cli(ctx, **kwargs)
     yml = _format_yaml(box, noflow)
     Logger.info(yml)
 
@@ -592,7 +632,7 @@ def copy(ctx: click.Context, output, noflow=False, **kwargs: Any) -> None:
     """
     Copies an existing configuration to a new file
     """
-    box = load(ctx=ctx, **kwargs)
+    box = load_cli(ctx, **kwargs)
 
     if output.suffix in (".yml", ".yaml"):
         data = _format_yaml(box, noflow)
@@ -613,7 +653,7 @@ def validate(ctx: click.Context, **kwargs: Any) -> None:
     """
     Validates a configuration
     """
-    box = load(ctx=ctx, **kwargs)
+    box = load_cli(ctx, **kwargs)
 
     Logger.info(
         "Validating the config. If there are no errors, nothing will be printed."
