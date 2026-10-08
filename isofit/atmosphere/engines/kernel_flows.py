@@ -175,8 +175,10 @@ class KernelFlowsRT(BaseAtmosphere, Writer):
     ]
 
     def __init__(self, full_config: AtmosphereConfig, **kwargs):
+        self.config = full_config.forward_model.atmosphere
+
         # read VSWIREmulator struct from jld2 file into a dictionary
-        self.f = self.h5_to_dict(h5py.File(self.config.emulator_file, "r"))
+        self.f = self.h5_to_dict(h5py.File(self.config.engine.emulator_file, "r"))
 
         self.emulator_wl = self.f["wls"]
         self.emulator_internal_idx = self.f["inputdims"].astype(int)
@@ -186,7 +188,7 @@ class KernelFlowsRT(BaseAtmosphere, Writer):
         self.points_bound_min = self.f["xmin"]
         self.points_bound_max = self.f["xmax"]
 
-        with open(self.config.template_file, "r") as tpl_f:
+        with open(self.config.engine.template_file, "r") as tpl_f:
             template = yaml.safe_load(tpl_f)
         try:
             # global KEYMAPPING
@@ -280,7 +282,7 @@ class KernelFlowsRT(BaseAtmosphere, Writer):
 
     def preSim(self):
         # Track the KernelFlows directory used in the LUT attributes
-        self.lut.setAttr("KernelFlows", str(self.config.emulator_file))
+        self.lut.setAttr("KernelFlows", str(self.config.engine.emulator_file))
 
         logging.info("KF Presim")
         self.srf_matrix = np.array(

@@ -1,0 +1,228 @@
+# ISOFIT base configuration defaults.
+#
+# `default` holds the complete set of defaults for every config section, mirroring
+# the Pydantic models in isofit/configs/sections. Each engine below inherits those
+# defaults via the `^^: default` directive (see configs/utils/interpolate.py) and
+# only overrides the radiative-transfer engine (and any engine-specific defaults).
+#
+# This file is meant to be loaded with configs/utils/interpolate.load, e.g.
+#   load("default.yml", section="modtran")
+# which folds `default` in underneath the engine section and resolves the
+# `${...}` references below.
+
+default:
+  input:
+    measured_radiance_file: null
+    reference_reflectance_file: null
+    reflectance_file: null
+    obs_file: null
+    glt_file: null
+    loc_file: null
+    background_reflectance_file: null
+    radiometry_correction_file: null
+    skyview_factor_file: null
+
+  output:
+    dir: ./isofit-output/
+    reset: false
+    estimated_state_file: null
+    estimated_reflectance_file: null
+    estimated_emission_file: null
+    modeled_radiance_file: null
+    apparent_reflectance_file: null
+    path_radiance_file: null
+    simulated_measurement_file: null
+    algebraic_inverse_file: null
+    atmospheric_coefficients_file: null
+    radiometry_correction_file: null
+    spectral_calibration_file: null
+    posterior_uncertainty_file: null
+    plot_surface_components: false
+    mcmc_samples_file: null
+
+  forward_model:
+    model_discrepancy_file: null
+
+    surface:
+      multi_surface_flag: false
+      use_background_rfl: false
+      surface_file: null
+      surface_category: null
+      surface_class_file: null
+      base_surface_class_file: null
+      Surfaces: {}
+      wavelength_file: null
+      select_on_init: true
+      selection_metric: SGA
+      emissivity_for_surface_T_init: 0.98
+      terrain_style: flat
+      max_slope: 90.0
+      refractive_index_path: ""
+      statevector:
+        SURF_TEMP_K: null
+        SKY_GLINT: null
+        SUN_GLINT: null
+
+    atmosphere:
+      # Defaults to a prebuilt LUT so no RT code is required; the engine
+      # sections below swap this out for a physics-based / emulated engine.
+      engine:
+        name: prebuilt
+      wavelength_file: null
+      lut_path: ${output.dir}/lut/lut.zarr
+      sim_path: ${output.dir}/lut/sims
+      lut_grid: {}
+      lut_subset: {}
+      rt_mode: transm
+      statevector_names: []
+      statevector: {}
+      unknowns: {}
+      configure_and_exit: false
+      interpolator_style: null
+      wavelength_range: null
+      multipart_transmittance: false
+      irradiance_file: null
+
+    instrument:
+      wavelength_file: null
+      integrations: null
+      unknowns:
+        channelized_radiometric_uncertainty_file: null
+        uncorrelated_radiometric_uncertainty: null
+        wavelength_calibration_uncertainty: null
+        stray_srf_uncertainty: null
+        dn_uncertainty_file: null
+      fast_resample: true
+      SNR: null
+      parametric_noise_file: null
+      pushbroom_noise_file: null
+      nedt_noise_file: null
+      eof_path: null
+      statevector:
+        EOF_1: null
+        EOF_2: null
+        EOF_3: null
+        GROW_FWHM: null
+        WL_SHIFT: null
+        WL_SPACE: null
+
+  implementation:
+    mode: inversion
+    n_cores: null
+    task_inflation_factor: 10
+    ip_head: null
+    redis_password: null
+    ray_include_dashboard: false
+    ray_temp_dir: /tmp/ray
+    ray_ignore_reinit_error: true
+    io_buffer_size: 100
+    max_hash_table_size: 50
+    per_pixel_heuristic_prior: false
+    debug_mode: false
+    inversion:
+      windows: []
+      cressie_map_confidence: false
+      integration_grid: {}
+      priors_in_initial_guess: true
+      inversion_grid_as_preseed: false
+      mcmc:
+        iterations: 10000
+        burnin: 200
+        regularizer: 0.001
+        proposal_scaling: 0.01
+        verbose: true
+        restart_every: 2000
+      least_squares_params:
+        method: trf
+        max_nfev: 20
+        xtol: null
+        ftol: 0.01
+        gtol: null
+        tr_solver: lsmr
+
+# ---------------------------------------------------------------------------
+# Engine profiles: inherit all of `default`, then override the RT engine with
+# its own name and engine-specific defaults.
+# ---------------------------------------------------------------------------
+
+prebuilt:
+  ^^: default
+  forward_model:
+    atmosphere:
+      engine:
+        name: prebuilt
+
+modtran:
+  ^^: default
+  forward_model:
+    atmosphere:
+      engine:
+        name: modtran
+        base_dir: null
+        multipart_transmittance: ${forward_model.atmosphere.multipart_transmittance}
+        aerosol_template_file: null
+        aerosol_model_file: null
+        template_file: null
+
+sixs:
+  ^^: default
+  forward_model:
+    atmosphere:
+      engine:
+        name: sixs
+        base_dir: null
+        day: null
+        month: null
+        elev: null
+        alt: null
+        solzen: null
+        solaz: null
+        viewzen: null
+        viewaz: null
+        wlinf: null
+        wlsup: null
+        template_file: null
+        aerosol_model_file: null
+        aerosol_template_file: null
+        obs: null
+        earth_sun_distance_file: null
+
+srtmnet:
+  ^^: default
+  forward_model:
+    atmosphere:
+      engine:
+        name: srtmnet
+        base_dir: null
+        emulator_batch_size: 4096
+        emulator_file: null
+        emulator_aux_file: null
+        template_file: null
+
+libradtran:
+  ^^: default
+  forward_model:
+    atmosphere:
+      engine:
+        name: libradtran
+        base_dir: null
+        reptran_band_model: coarse
+        # Required by LibRadTranConfig (no model default); set per run.
+        kb_alpha_1: null
+        kb_alpha_2: null
+        gg_set: null
+        gg_file: null
+        tau_file: null
+        ssa_file: null
+        ssa_scale: null
+        moments_file: null
+        template_file: null
+
+kernelflows:
+  ^^: default
+  forward_model:
+    atmosphere:
+      engine:
+        name: kernelflows
+        emulator_file: null
+        template_file: null
