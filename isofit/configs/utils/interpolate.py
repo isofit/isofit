@@ -607,13 +607,16 @@ def preview(ctx: click.Context, noflow=False, validate=False, **kwargs: Any) -> 
     Logger.info(yml)
 
     if validate:
-        Logger.info(
-            "Validating the config. If there are no errors, nothing will be printed."
-        )
-
         from isofit.configs import load_config_dict
 
-        load_config_dict(box.to_dict())
+        try:
+            load_config_dict(box.to_dict())
+        except Exception as e:
+            Logger.error(
+                f"The above configuration encountered the following errors:\n{e}"
+            )
+        else:
+            Logger.info("The above configuration is valid")
 
 
 @cli.command(context_settings=CS)
@@ -661,4 +664,9 @@ def validate(ctx: click.Context, **kwargs: Any) -> None:
 
     from isofit.configs import load_config_dict
 
-    load_config_dict(box.to_dict())
+    try:
+        load_config_dict(box.to_dict())
+    except Exception as e:
+        Logger.error(f"The above configuration encountered the following errors:\n{e}")
+    else:
+        Logger.info("The above configuration is valid")
