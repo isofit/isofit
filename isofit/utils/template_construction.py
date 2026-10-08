@@ -1926,11 +1926,12 @@ def make_instrument_config(
     use_superpixels: bool = True,
     uncorrelated_radiometric_uncertainty: float = 0.0,
     dn_uncertainty_file: str = None,
-    cal_wavelength_variables=[],
-    cal_per_channel_rcc=False,
-    rcc_prior_file=None,
-    spline_indices=[0, 19, 400, 425],
-    snr=500,
+    cal_wavelength_variables: list = [],
+    cal_per_channel_rcc: bool = False,
+    rcc_prior_file: str = None,
+    wlspl_prior_file: str = None,
+    spline_indices: list = [],
+    snr: int = 500,
     **kwargs,
 ):
     config = {
@@ -1985,6 +1986,9 @@ def make_instrument_config(
 
     if rcc_prior_file:
         config["rcc_prior_file"] = rcc_prior_file
+
+    if wlspl_prior_file:
+        config["wlspl_prior_file"] = wlspl_prior_file
 
     if noise_path is not None:
         config["parametric_noise_file"] = noise_path

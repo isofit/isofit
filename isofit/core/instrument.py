@@ -103,52 +103,6 @@ DefaultGROWFWHMPrior = DefaultState(
 )
 
 
-class PerWLRCC:
-    """Specialized function calls for statevector elements for
-    per-wavelength RCCs"""
-
-    # Hard coded for now, likely instrument-specific
-    loose_distance = 500
-    tight_distance = 20
-
-    def Sa(self, base_prior_var, wl, dist_scale=2):
-        dense_loose = self.rbf_kernel(
-            wl, self.loose_distance, base_prior_var * dist_scale
-        )
-        dense_tight = self.rbf_kernel(wl, self.tight_distance, base_prior_var)
-        diagonal = np.diag(np.full(len(wl), base_prior_var))
-
-        return dense_loose + dense_tight + diagonal
-
-    @staticmethod
-    def rbf_kernel(x, length_scale, _prior_var):
-        n_points = len(x)
-        diffs = np.abs(x[:, None] - x[None, :])
-        K = _prior_var * np.exp(-(diffs**2) / (2 * (length_scale**2)))
-        return K
-
-
-class WLSPL:
-    """Specialized function calls for statevector elements for
-    per-wavelength RCCs"""
-
-    # Hard coded for now, likely instrument-specific
-    distance = 50.0
-    loose_sigma = 1.0
-    tight_sigma = 1.0
-
-    def Sa(self, base_prior_var, wl, idx, statevec_names):
-        x = []
-        for i, v in enumerate(idx):
-            chan = int(statevec_names[v].split("_")[1])
-            x.append(wl[chan])
-        x = np.array(x)
-        d = x[:, None] - x[None, :]
-        rbf = np.exp(-0.5 * (d / self.distance) ** 2)
-
-        return self.tight_sigma**2 + self.loose_sigma**2 * rbf + (1e-6 * np.eye(len(x)))
-
-
 class NoiseModel:
     def __init__(self, config):
         self.wl, _ = load_wavelen(config.wavelength_file)
@@ -326,28 +280,26 @@ class Instrument(NoiseModel):
         # Build Sa
         sa = np.zeros((self.n_state, self.n_state))
         for name, idx in self.state_idx.items():
-            if name == "PER_WL_RCC":
-                k = PerWLRCC().Sa(self.prior_sigma[idx], self.wl_init)
-            elif name == "WLSPL":
-                k = WLSPL().Sa(
-                    self.prior_sigma[idx], self.wl_init, idx, self.statevec_names
-                )
-            else:
-                k = np.diagflat(np.power(self.prior_sigma[idx], 2))
+            # Use default values
+            sa[np.ix_(idx, idx)] = np.diagflat(np.power(self.prior_sigma[idx], 2))
 
-            sa[np.ix_(idx, idx)] = k
-
+        # Overwrite priors based on files
+        override_prior_files = {}
         if config.rcc_prior_file is not None:
+            override_prior_files["PER_WL_RCC"] = config.rcc_prior_file
+        if config.wlspl_prior_file is not None:
+            override_prior_files["WLSPL"] = config.wlspl_prior_file
+
+        for key, override_prior_file in override_prior_files.items():
             (_bounds, _scale, _init, _prior_mean, _prior_cov) = self.load_prior_file(
-                config.rcc_prior_file
+                override_prior_file
             )
-            idx = self.state_idx["PER_WL_RCC"]
+            idx = self.state_idx[key]
             assert len(_prior_mean) == len(idx), (
-                "Number of channels in RCC prior file does not match matched "
-                "instrument wavelength indices."
+                "Number of channels in prior file does not match matched "
+                "instrument indices."
             )
 
-            # Overwrite
             for i in idx:
                 self.bounds[i] = _bounds[i]
                 self.scale[i] = _scale

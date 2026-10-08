@@ -167,6 +167,13 @@ class InstrumentConfig(BaseConfigSection):
         measured spectrum.  There is one RCC element for each measured 
         channel. If not specified, these values are assumed to be unity."""
 
+        self._wlspl_prior_file_type = str
+        self.wlspl_prior_file = None
+        """str: Indicates a .mat file containing a mean vector "mean" 
+        and a covariance matrix "cov" represetnting  a prior over 
+        wavelength shift for spline indices. These inform the spline
+        representation for spectral calibration."""
+
         self.set_config_options(sub_configdic)
 
         # If necessary, initialize some blank options
