@@ -107,9 +107,46 @@ class PerWLRCC:
     """Specialized function calls for statevector elements for
     per-wavelength RCCs"""
 
+    # Hard coded for now, likely instrument-specific
+    loose_distance = 500
+    tight_distance = 20
+
+    def Sa(self, base_prior_var, wl, dist_scale=2):
+        dense_loose = self.rbf_kernel(
+            wl, self.loose_distance, base_prior_var * dist_scale
+        )
+        dense_tight = self.rbf_kernel(wl, self.tight_distance, base_prior_var)
+        diagonal = np.diag(np.full(len(wl), base_prior_var))
+
+        return dense_loose + dense_tight + diagonal
+
     @staticmethod
-    def Sa(_prior_sigma, wl):
-        return np.diagflat(np.power(np.full(len(wl), _prior_sigma), 2))
+    def rbf_kernel(x, length_scale, _prior_var):
+        n_points = len(x)
+        diffs = np.abs(x[:, None] - x[None, :])
+        K = _prior_var * np.exp(-(diffs**2) / (2 * (length_scale**2)))
+        return K
+
+
+class WLSPL:
+    """Specialized function calls for statevector elements for
+    per-wavelength RCCs"""
+
+    # Hard coded for now, likely instrument-specific
+    distance = 50.0
+    loose_sigma = 1.0
+    tight_sigma = 1.0
+
+    def Sa(self, base_prior_var, wl, idx, statevec_names):
+        x = []
+        for i, v in enumerate(idx):
+            chan = int(statevec_names[v].split("_")[1])
+            x.append(wl[chan])
+        x = np.array(x)
+        d = x[:, None] - x[None, :]
+        rbf = np.exp(-0.5 * (d / self.distance) ** 2)
+
+        return self.tight_sigma**2 + self.loose_sigma**2 * rbf + (1e-6 * np.eye(len(x)))
 
 
 class NoiseModel:
@@ -290,7 +327,11 @@ class Instrument(NoiseModel):
         sa = np.zeros((self.n_state, self.n_state))
         for name, idx in self.state_idx.items():
             if name == "PER_WL_RCC":
-                k = PerWLRCC.Sa(self.prior_sigma[idx], self.wl_init)
+                k = PerWLRCC().Sa(self.prior_sigma[idx], self.wl_init)
+            elif name == "WLSPL":
+                k = WLSPL().Sa(
+                    self.prior_sigma[idx], self.wl_init, idx, self.statevec_names
+                )
             else:
                 k = np.diagflat(np.power(self.prior_sigma[idx], 2))
 
