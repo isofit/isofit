@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from isofit.core.instrument import Instrument, wl_tol
+from isofit.core.instrument import Instrument, NoiseModel, wl_tol
 
 
 def test_wl_tol():
@@ -13,18 +13,22 @@ def test_wl_tol():
 # Helpers
 
 
-def _mock_inst(n_chan=5, n_state=0, statevec_names=None):
+def _mock_inst(n_chan=5, n_state=0, **kwargs):
     """Minimal Instrument mock with attributes set directly."""
     inst = MagicMock(spec=Instrument)
     inst.n_chan = n_chan
     inst.n_state = n_state
-    inst.statevec_names = statevec_names or []
+    inst.statevec_names = []
     inst.wl_init = np.linspace(400, 2500, n_chan)
     inst.fwhm_init = np.full(n_chan, 10.0)
     inst.init = np.zeros(n_state)
-    inst.eof = None
-    inst.eof_idx = []
+    inst.state_idx = {}
+    inst.config_state_names = []
     inst.unknowns = None
+
+    for key, value in kwargs.items():
+        setattr(inst, key, value)
+
     return inst
 
 
@@ -55,8 +59,6 @@ def test_Sa_zero_state_returns_empty():
 
 
 # Sy — SNR noise model
-
-
 def test_Sy_snr_diagonal():
     """Sy for SNR model is diagonal with (meas/snr)^2 on the diagonal."""
     n = 6
@@ -67,7 +69,7 @@ def test_Sy_snr_diagonal():
     inst.integrations = 1
 
     meas = np.linspace(1.0, 10.0, n)
-    Sy = Instrument.Sy(inst, meas, MagicMock())
+    Sy = NoiseModel.Sy_SNR(inst, meas, MagicMock())
 
     expected_diag = np.power(meas / inst.snr, 2)
     assert np.allclose(np.diag(Sy), expected_diag)
@@ -84,7 +86,7 @@ def test_Sy_snr_clamps_small_noise():
     inst.integrations = 1
 
     meas = np.full(n, 1e-10)
-    Sy = Instrument.Sy(inst, meas, MagicMock())
+    Sy = NoiseModel.Sy_SNR(inst, meas, MagicMock())
 
     assert np.all(np.diag(Sy) > 0)
 
@@ -97,8 +99,10 @@ def test_sample_fastpath_same_wavelengths():
     n = 8
     wl = np.linspace(400, 2500, n)
     inst = _mock_inst(n_chan=n)
-    inst.calibration_fixed = True
+    inst.wavelengths_fixed = True
     rdn_hi = np.random.default_rng(0).uniform(0, 1, n)
+
+    Instrument.calibration(inst, np.array([]))
 
     result = Instrument.sample(inst, np.array([]), wl, rdn_hi)
     assert np.array_equal(result, rdn_hi)
@@ -108,7 +112,7 @@ def test_sample_fastpath_skipped_when_lengths_differ():
     """When wl_hi has a different length, the fast path is bypassed and calibration() is called."""
     n = 8
     inst = _mock_inst(n_chan=n)
-    inst.calibration_fixed = True
+    inst.wavelengths_fixed = True
     # wl_hi has length n+1 → different from wl_init (length n), triggers resampling
     wl_hi = np.linspace(400, 2500, n + 1)
     rdn_hi = np.ones(n + 1)
@@ -134,7 +138,14 @@ def test_calibration_no_statevec_returns_init():
 def test_calibration_wl_shift():
     """WL_SHIFT element translates all wavelengths by the given offset."""
     n = 6
-    inst = _mock_inst(n_chan=n, n_state=1, statevec_names=["WL_SHIFT"])
+    inst = _mock_inst(
+        n_chan=n,
+        n_state=1,
+        statevec_names=["WL_SHIFT"],
+        config_state_names=["WL_SHIFT"],
+        state_idx={"WL_SHIFT": [0]},
+        calibration_fixed=False,
+    )
     shift = 5.0
     x = np.array([shift])
 
@@ -146,7 +157,14 @@ def test_calibration_wl_shift():
 def test_calibration_grow_fwhm():
     """GROW_FWHM element broadens all channels by the given delta."""
     n = 6
-    inst = _mock_inst(n_chan=n, n_state=1, statevec_names=["GROW_FWHM"])
+    inst = _mock_inst(
+        n_chan=n,
+        n_state=1,
+        statevec_names=["GROW_FWHM"],
+        config_state_names=["GROW_FWHM"],
+        state_idx={"GROW_FWHM": [0]},
+        calibration_fixed=False,
+    )
     delta = 2.5
     x = np.array([delta])
 
@@ -170,7 +188,7 @@ def test_eof_offset_single_eof_column():
     n = 4
     inst = _mock_inst(n_chan=n, n_state=2)
     inst.eof = np.ones((n, 2))  # both columns are all-ones
-    inst.eof_idx = [1]  # retrieve second column
+    inst.state_idx["EOF"] = [1]  # retrieve second column
     x_instrument = np.array([0.0, 3.0])
 
     result = Instrument.eof_offset(inst, x_instrument)

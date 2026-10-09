@@ -345,8 +345,9 @@ class ForwardModel:
             geom=geom,
         )
 
-        return self.instrument.sample(
-            x_instrument, self.atmosphere.wl, rdn
+        return (
+            self.instrument.sample(x_instrument, self.atmosphere.wl, rdn)
+            * self.instrument.rcc_factor(x_instrument)
         ) + self.eof_offset(x_instrument)
 
     def calc_atmosphere_quantities(
@@ -734,9 +735,13 @@ class ForwardModel:
         dmeas_dsurface = self.instrument.sample(
             x_instrument, self.atmosphere.wl, drdn_dsurface.T
         ).T
+        dmeas_dsurface *= self.instrument.rcc_factor(x_instrument)[:, None]
+
         dmeas_datmosphere = self.instrument.sample(
             x_instrument, self.atmosphere.wl, drdn_datmosphere.T
         ).T
+        dmeas_datmosphere *= self.instrument.rcc_factor(x_instrument)[:, None]
+
         dmeas_dinstrument = self.instrument.dmeas_dinstrument(
             x_instrument, self.atmosphere.wl, rdn
         )
@@ -819,9 +824,14 @@ class ForwardModel:
         dmeas_datmosphereb = self.instrument.sample(
             x_instrument, self.atmosphere.wl, drdn_datmosphereb.T
         ).T
+        if dmeas_datmosphereb.size:
+            dmeas_datmosphereb *= self.instrument.rcc_factor(x_instrument)[:, None]
+
         dmeas_dinstrumentb = self.instrument.dmeas_dinstrumentb(
             x_instrument, self.atmosphere.wl, rdn
-        )
+        ).T
+        if dmeas_dinstrumentb.size:
+            dmeas_dinstrumentb *= self.instrument.rcc_factor(x_instrument)[:, None]
 
         # Put it together
         Kb = np.zeros((self.n_meas, self.nbvec), dtype=float)

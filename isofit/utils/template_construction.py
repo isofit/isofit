@@ -21,8 +21,16 @@ from isofit.atmosphere.atmosphere import (
     modtran_aot_lowerbound_polynomials,
     modtran_water_upperbound_polynomials,
 )
+from isofit.configs.sections.instrument_config import WORKING_WAVELENGTH_CAL_VARIABLES
 from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
+from isofit.core.instrument import (
+    DefaultEOFPrior,
+    DefaultGROWFWHMPrior,
+    DefaultRCCPrior,
+    DefaultWLSHIFTPrior,
+    DefaultWLSPLPrior,
+)
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.luts.reader import inspect_lut_dimensions
@@ -1521,6 +1529,8 @@ def make_atmosphere_config(
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
     unknowns: dict = {},
+    wavelength_file: str = None,
+    **kwargs,
 ):
     avc = np.sum(
         [
@@ -1810,6 +1820,10 @@ def make_atmosphere_config(
         atmosphere_config["statevector"].keys()
     )
 
+    # Add atmosphere-specific wavelength file if passed
+    if wavelength_file:
+        atmosphere_config["engine"]["wavelength_file"] = wavelength_file
+
     return atmosphere_config
 
 
@@ -1823,6 +1837,7 @@ def make_surface_config(
     max_slope: float = 20.0,
     surface_refractive_index_path: str = None,
     use_background_rfl=False,
+    **kwargs,
 ):
     # Initialize config dict
     surface_config_dict = {
@@ -1916,6 +1931,13 @@ def make_instrument_config(
     use_superpixels: bool = True,
     uncorrelated_radiometric_uncertainty: float = 0.0,
     dn_uncertainty_file: str = None,
+    cal_wavelength_variables: list = [],
+    cal_per_channel_rcc: bool = False,
+    rcc_prior_file: str = None,
+    wlspl_prior_file: str = None,
+    spline_indices: list = [],
+    snr: int = 500,
+    **kwargs,
 ):
     config = {
         "wavelength_file": wavelength_path,
@@ -1936,22 +1958,47 @@ def make_instrument_config(
 
         # Add a state vector element for each column in the EOF file
         eof = np.loadtxt(eof_path)
-        config["statevector"] = {}
+        config.setdefault("statevector", {})
         for idx in range(eof.shape[1]):
             key = "EOF_%i" % (idx + 1)
-            config["statevector"][key] = {
-                "bounds": [-10, 10],
-                "scale": 1,
-                "init": 0,
-                "prior_sigma": 100.0,
-                "prior_mean": 0,
-            }
+            config["statevector"][key] = DefaultRCCPrior._asdict()
+
+    if len(cal_wavelength_variables):
+        # Hard coded check against list
+        assert all(
+            item in WORKING_WAVELENGTH_CAL_VARIABLES
+            for item in cal_wavelength_variables
+        ), (
+            "Wavelength calibration parameter passed into "
+            "build_instrument_configuration not added to the "
+            "global list of validated variables"
+        )
+        config.setdefault("statevector", {})
+        for var in cal_wavelength_variables:
+            if var == "GROW_FWHM":
+                config["statevector"][var] = DefaultGROWFWHMPrior._asdict()
+            elif var == "WL_SHIFT":
+                config["statevector"][var] = DefaultWLSHIFTPrior._asdict()
+            elif var == "WLSPL":
+                for index in spline_indices:
+                    config["statevector"][
+                        f"{var}_{index}"
+                    ] = DefaultWLSPLPrior._asdict()
+
+    if cal_per_channel_rcc:
+        config.setdefault("statevector", {})
+        config["statevector"]["PER_WL_RCC"] = DefaultRCCPrior._asdict()
+
+    if rcc_prior_file:
+        config["rcc_prior_file"] = rcc_prior_file
+
+    if wlspl_prior_file:
+        config["wlspl_prior_file"] = wlspl_prior_file
 
     if noise_path is not None:
         config["parametric_noise_file"] = noise_path
-
     else:
-        config["SNR"] = 500
+        config["SNR"] = snr
 
     return config
 
@@ -1963,6 +2010,7 @@ def make_implementation_config(
     n_cores: int = -1,
     debug: bool = False,
     per_pixel_heuristic_prior: bool = False,
+    **kwargs,
 ):
 
     return {
@@ -1983,6 +2031,7 @@ def make_input_config(
     svf_input_path: str = None,
     rdn_factors_path: str = None,
     bgrfl_path: str = None,
+    **kwargs,
 ):
     input_config = {}
     input_config["measured_radiance_file"] = rdn_input_path
@@ -2002,6 +2051,7 @@ def make_output_config(
     state_output_path: str,
     posterior_output_path: str = None,
     rfl_output_path: str = None,
+    **kwargs,
 ):
     output_config = {}
     output_config["estimated_state_file"] = state_output_path
