@@ -103,15 +103,6 @@ DefaultGROWFWHMPrior = DefaultState(
 )
 
 
-class PerWLRCC:
-    """Specialized function calls for statevector elements for
-    per-wavelength RCCs"""
-
-    @staticmethod
-    def Sa(_prior_sigma, wl):
-        return np.diagflat(np.power(np.full(len(wl), _prior_sigma), 2))
-
-
 class NoiseModel:
     def __init__(self, config):
         self.wl, _ = load_wavelen(config.wavelength_file)
@@ -289,24 +280,26 @@ class Instrument(NoiseModel):
         # Build Sa
         sa = np.zeros((self.n_state, self.n_state))
         for name, idx in self.state_idx.items():
-            if name == "PER_WL_RCC":
-                k = PerWLRCC.Sa(self.prior_sigma[idx], self.wl_init)
-            else:
-                k = np.diagflat(np.power(self.prior_sigma[idx], 2))
+            # Use default values
+            sa[np.ix_(idx, idx)] = np.diagflat(np.power(self.prior_sigma[idx], 2))
 
-            sa[np.ix_(idx, idx)] = k
-
+        # Overwrite priors based on files
+        override_prior_files = {}
         if config.rcc_prior_file is not None:
+            override_prior_files["PER_WL_RCC"] = config.rcc_prior_file
+        if config.wlspl_prior_file is not None:
+            override_prior_files["WLSPL"] = config.wlspl_prior_file
+
+        for key, override_prior_file in override_prior_files.items():
             (_bounds, _scale, _init, _prior_mean, _prior_cov) = self.load_prior_file(
-                config.rcc_prior_file
+                override_prior_file
             )
-            idx = self.state_idx["PER_WL_RCC"]
+            idx = self.state_idx[key]
             assert len(_prior_mean) == len(idx), (
-                "Number of channels in RCC prior file does not match matched "
-                "instrument wavelength indices."
+                "Number of channels in prior file does not match matched "
+                "instrument indices."
             )
 
-            # Overwrite
             for i in idx:
                 self.bounds[i] = _bounds[i]
                 self.scale[i] = _scale

@@ -23,11 +23,6 @@ from typing import Dict, List, Type
 import numpy as np
 
 from isofit.configs.base_config import BaseConfigSection
-from isofit.surface.surface_glint_model import (
-    DefaultSkyGlintPrior,
-    DefaultSunGlintPrior,
-)
-from isofit.surface.surface_thermal import DefaultSurfTempKPrior
 
 
 class StateVectorElementConfig(BaseConfigSection):
