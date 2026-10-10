@@ -35,6 +35,20 @@ class Remote:
     def remote(self, *args, **kwargs):
         return Remote(self.obj, *args, **kwargs)
 
+    def options(self, **kwargs):
+        """
+        Emulates ray's `.options()` for scheduling directives, eg.
+        `Worker.options(num_gpus=1).remote(...)`. Resource requests are
+        meaningless without a scheduler, so they are ignored and the same Remote
+        is returned to keep the call chain intact.
+
+        Defined explicitly rather than falling through to __getattr__, which
+        would look for an `options` attribute on the wrapped object and fail.
+        """
+        if kwargs:
+            Logger.debug(f"Ignoring scheduling options in bypass mode: {kwargs}")
+        return self
+
     def get(self):
         return self.obj(*self.args, **self.kwargs)
 

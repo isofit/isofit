@@ -35,6 +35,7 @@ import yaml
 from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.atmosphere.engines import SixSRT
 from isofit.core import units
+from isofit.core.backend import resolve_device
 from isofit.core.common import Track, calculate_resample_matrix, resample_spectrum
 from isofit.luts.writer import Writer
 
@@ -112,10 +113,8 @@ class SRTMnetModel(torch.nn.Module):
             self.weights["3c"] = torch.nn.ParameterList(w_list)
             self.biases["3c"] = torch.nn.ParameterList(b_list)
 
-        # Determine device
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        if torch.backends.mps.is_available():
-            self.device = torch.device("mps")
+        # Determine device (cuda > mps > cpu; see isofit.core.backend)
+        self.device = resolve_device("auto", allow_cpu_fallback=True)
 
         self.to(self.device)
         self.eval()

@@ -13,13 +13,15 @@ Method | Command
 pip | `pip install -e ".[test]"`
 uv | `uv sync --optional test`
 
-There are three subtypes of pytests:
+There are five subtypes of pytests:
 
 Subtype | Time | Description
 -|-|-
 unmarked | Short | All of the generic test cases of small size
 examples | Medium | Runs through a few of the examples
 slow | Long | Full apply_oe tests
+torch_cpu | Short | Parity tests for the optional torch backend, run on CPU. Safe to run anywhere, including CI
+gpu | Short | Tests requiring an accelerator. Skipped with a named reason when no device is present
 
 It is strongly recommended to execute each subtype separately. This can be done via the `-m/--marker` flag, for example:
 
@@ -27,11 +29,36 @@ It is strongly recommended to execute each subtype separately. This can be done 
 $ pytest -m unmarked
 $ pytest -m examples
 $ pytest -m slow
+$ pytest -m torch_cpu
+$ pytest -m gpu
 ```
 
 ???+ note
 
     You may see an <span style="color: yellow; background: black">x</span> for some test cases. These are *expected* failures and are considered as a **pass**
+
+### Torch backend parity tests
+
+The optional torch backend is guarded by parity tests that check its numerical agreement with the existing numpy implementation, module by module.
+
+Marker | Requirement | How to run
+-|-|-
+`torch_cpu` | torch, any machine | `$ pytest -m torch_cpu`
+`gpu` | A visible CUDA device | `$ pytest -m gpu`
+
+`torch_cpu` is the leg that runs in continuous integration: it is an entry in the pytest matrix of `.github/workflows/test_pip.yml`, alongside `unmarked`, `slow`, and `examples`. It needs no GPU and no CUDA-enabled torch build, so it gates the backend's correctness on every pull request.
+
+`gpu` tests carry a `skipif` with a named reason, so a machine without a device reports skips rather than a silent pass. Nothing in continuous integration runs them; they need a machine with a visible CUDA device and a CUDA-enabled torch build.
+
+#### Same-host parity
+
+Every parity test computes both sides itself: the numpy reference and the torch result are produced from the same inputs, in the same test process, and compared there. Nothing is compared against a stored golden array.
+
+This is deliberate. The numpy reference runs through whichever BLAS the environment happens to link -- OpenBLAS, MKL, or Accelerate -- and those builds differ in threading, blocking, and vectorization, so their results differ from each other in the last few bits. A golden file pinned on one maintainer's laptop drifts against CI at the 1e-12 level and starts failing for reasons that have nothing to do with the change under review, which trains everyone to widen tolerances until the tests stop detecting anything.
+
+Computing both sides in the same session cancels that variance: whatever BLAS is in play, both sides use it, so the remaining difference is the backend's and nothing else. That is what makes the tight tolerances defensible rather than aspirational.
+
+The CPU leg runs in float64, the same precision the CUDA production path uses, which is why it is a meaningful gate. MPS is float32-only and is therefore not a parity target at all.
 
 ## Examples
 
