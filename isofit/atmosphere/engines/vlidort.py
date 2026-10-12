@@ -12,7 +12,7 @@ import numpy as np
 from ray.util.queue import Queue
 
 from isofit.atmosphere import BaseAtmosphere
-from isofit.core.common import combos
+from isofit.core.common import calculate_resample_matrix, combos, resample_spectrum
 from isofit.data import env
 from isofit.luts.writer import Writer
 
@@ -48,21 +48,15 @@ class VLIDORT(BaseAtmosphere, Writer):
         "CO2",
     }
 
+    # VLIDORT simulation wavelength grid spacing (nm), convolved to the LUT wavelengths
+    wl_spacing = 0.05
+
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)
 
     def preSim(self):
         if missing := self.required - set(self.lut_names):
             raise AttributeError(f"Missing required LUT dimensions: {missing}")
-
-        spacing = np.unique(np.round(np.diff(self.wl), decimals=6))
-        if spacing.size > 1:
-            Logger.error(f"Inconsistent wavelength spacing: {spacing}")
-            Logger.warning("Using the first value")
-            spacing = spacing[[0]]
-
-        (self.wl_spacing,) = spacing
-        Logger.debug(f"Detected wavelength spacing: {self.wl_spacing}")
 
         self.sims = Path(self.config.sim_path)
         self.sims.mkdir(parents=True, exist_ok=True)
@@ -78,6 +72,16 @@ class VLIDORT(BaseAtmosphere, Writer):
             Logger.info(f"Wrote configuration to {file}")
             sys.exit(0)
 
+        # Run the first point upfront to retrieve the VLIDORT output wavelength grid
+        # and cache the resampling matrix to the LUT wavelengths. This must be done
+        # here as readSim is executed in independent ray jobs
+        point = combos(self.lut_grid.values())[0]
+        self.makeSim(point)
+
+        self.sim_wl = self.parseSim(point)["wl"]
+        self.matrix_H = calculate_resample_matrix(self.sim_wl, self.wl, self.fwhm)
+        # Logger.debug(f"VLIDORT output grid: {self.sim_wl[0]}-{self.sim_wl[-1]} nm, {self.sim_wl.size} wavelengths")
+
         return  # TODO: Finish implementing the pre-run
 
         PRE = """\
@@ -89,7 +93,7 @@ class VLIDORT(BaseAtmosphere, Writer):
 
         if file.exists():
             Logger.debug(
-                f"Sim data file for this point already exists, skipping. Point = {name}"
+                f"Sim data file for this point already exists, skipping. Point = {file.name}"
             )
             return
 
@@ -100,7 +104,7 @@ class VLIDORT(BaseAtmosphere, Writer):
             check=True,
         )
 
-    def readSim(self, point):
+    def parseSim(self, point):
         name = self.point_to_filename(point)
         file = self.sims / name
 
@@ -127,6 +131,25 @@ class VLIDORT(BaseAtmosphere, Writer):
 
         return data
 
+    def readSim(self, point):
+        data = self.parseSim(point)
+
+        # Convolve from the VLIDORT wavelength grid to the LUT wavelengths using the matrix cached in preSim
+        wl = data.pop("wl")
+        H = self.matrix_H
+        if not np.array_equal(wl, self.sim_wl):
+            Logger.warning(
+                f"VLIDORT output wavelengths differ from the cached grid for point {point}, recalculating the resampling matrix"
+            )
+            H = calculate_resample_matrix(wl, self.wl, self.fwhm)
+
+        data = {
+            key: resample_spectrum(vals, wl, self.wl, self.fwhm, H=H)
+            for key, vals in data.items()
+        }
+
+        return data
+
     def make_cmd(self, point):
         name = self.point_to_filename(point)
         file = self.sims / name
@@ -140,7 +163,9 @@ class VLIDORT(BaseAtmosphere, Writer):
             "pwv": dims["H2OSTR"],
             "aod": dims["AOT550"],
             "vel": 58.0,  # Required to be 58.0 per Vijay
-            "sel": round(dims["surface_elevation_km"]), # REVIEW: Temporarily must be an int, eventually remove the rounding once VLIDORT fixes it
+            "sel": round(
+                dims["surface_elevation_km"]
+            ),  # REVIEW: Temporarily must be an int, eventually remove the rounding once VLIDORT fixes it
             "wgs": self.wl_spacing,
             "co2": dims["CO2"],
             "ch4": 1.9,  # REVIEW: 1.9 ppm is roughly the global average
