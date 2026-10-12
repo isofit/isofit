@@ -124,6 +124,14 @@ class OutputConfig(BaseConfigSection):
         self._posterior_uncertainty_file_type = str
         self.posterior_uncertainty_file = None
 
+        self._averaging_kernel_file_header = (
+            "statevector",
+            "{State Parameter, Value}",
+            "{}",
+        )
+        self._averaging_kernel_file_type = str
+        self.averaging_kernel_file = None
+
         self._plot_surface_components_type = bool
         self.plot_surface_components = False
 
