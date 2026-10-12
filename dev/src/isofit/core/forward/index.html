@@ -4961,10 +4961,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.core.forward.ForwardModel.drdn_datmosphere" class="md-nav__link">
+  <a href="#isofit.core.forward.ForwardModel.dmeas_datmosphere" class="md-nav__link">
     <span class="md-ellipsis">
       
-        drdn_datmosphere
+        dmeas_datmosphere
       
     </span>
   </a>
@@ -4972,10 +4972,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.core.forward.ForwardModel.drdn_datmosphereb" class="md-nav__link">
+  <a href="#isofit.core.forward.ForwardModel.dmeas_datmosphereb" class="md-nav__link">
     <span class="md-ellipsis">
       
-        drdn_datmosphereb
+        dmeas_datmosphereb
       
     </span>
   </a>
@@ -6113,7 +6113,16 @@
 <span class="normal">1015</span>
 <span class="normal">1016</span>
 <span class="normal">1017</span>
-<span class="normal">1018</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1018</span>
+<span class="normal">1019</span>
+<span class="normal">1020</span>
+<span class="normal">1021</span>
+<span class="normal">1022</span>
+<span class="normal">1023</span>
+<span class="normal">1024</span>
+<span class="normal">1025</span>
+<span class="normal">1026</span>
+<span class="normal">1027</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6791,7 +6800,7 @@
         <span class="c1"># Call surface emission, upsample</span>
         <span class="n">Ls_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_Ls</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">))</span>
 
-        <span class="n">rdn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
+        <span class="n">rdn_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
             <span class="n">x_atmosphere</span><span class="p">,</span>
             <span class="n">rho_dir_dir</span><span class="o">=</span><span class="n">rho_dir_dir_hi</span><span class="p">,</span>
             <span class="n">rho_dif_dir</span><span class="o">=</span><span class="n">rho_dif_dir_hi</span><span class="p">,</span>
@@ -6806,6 +6815,7 @@
             <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span>
             <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="n">meas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rdn_hi</span><span class="p">)</span>
 
         <span class="c1"># Call derivative of rfl wrt surface state, upsample</span>
         <span class="n">drfl_dsurface_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span>
@@ -6817,18 +6827,6 @@
         <span class="n">dLs_dsurface_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">dLs_dsurface</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
         <span class="p">)</span><span class="o">.</span><span class="n">T</span>
-
-        <span class="c1"># To get the derivative w.r.t. atmosphere</span>
-        <span class="n">drdn_datmosphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drdn_datmosphere</span><span class="p">(</span>
-            <span class="n">x_atmosphere</span><span class="p">,</span>
-            <span class="n">geom</span><span class="p">,</span>
-            <span class="n">rho_dir_dir</span><span class="o">=</span><span class="n">rho_dir_dir_hi</span><span class="p">,</span>
-            <span class="n">rho_dif_dir</span><span class="o">=</span><span class="n">rho_dif_dir_hi</span><span class="p">,</span>
-            <span class="n">rho_dir_dif</span><span class="o">=</span><span class="n">rho_dir_dif_hi</span><span class="p">,</span>
-            <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif_hi</span><span class="p">,</span>
-            <span class="n">Ls</span><span class="o">=</span><span class="n">Ls_hi</span><span class="p">,</span>
-            <span class="n">rdn</span><span class="o">=</span><span class="n">rdn</span><span class="p">,</span>
-        <span class="p">)</span>
 
         <span class="c1"># To get the derivative w.r.t. Surface</span>
         <span class="c1"># ToDo: Move this to ForwardModel as well?</span>
@@ -6849,11 +6847,22 @@
         <span class="n">dmeas_dsurface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
             <span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">drdn_dsurface</span><span class="o">.</span><span class="n">T</span>
         <span class="p">)</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">dmeas_datmosphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
-            <span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">drdn_datmosphere</span><span class="o">.</span><span class="n">T</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="c1"># To get the derivative w.r.t. atmosphere</span>
+        <span class="n">dmeas_datmosphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmeas_datmosphere</span><span class="p">(</span>
+            <span class="n">x_atmosphere</span><span class="p">,</span>
+            <span class="n">x_instrument</span><span class="p">,</span>
+            <span class="n">geom</span><span class="p">,</span>
+            <span class="n">rho_dir_dir</span><span class="o">=</span><span class="n">rho_dir_dir_hi</span><span class="p">,</span>
+            <span class="n">rho_dif_dir</span><span class="o">=</span><span class="n">rho_dif_dir_hi</span><span class="p">,</span>
+            <span class="n">rho_dir_dif</span><span class="o">=</span><span class="n">rho_dir_dif_hi</span><span class="p">,</span>
+            <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif_hi</span><span class="p">,</span>
+            <span class="n">Ls</span><span class="o">=</span><span class="n">Ls_hi</span><span class="p">,</span>
+            <span class="n">meas</span><span class="o">=</span><span class="n">meas</span><span class="p">,</span>
+        <span class="p">)</span>
+
         <span class="n">dmeas_dinstrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">dmeas_dinstrument</span><span class="p">(</span>
-            <span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rdn</span>
+            <span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rdn_hi</span>
         <span class="p">)</span>
 
         <span class="c1"># Put it all together</span>
@@ -6903,7 +6912,7 @@
         <span class="c1"># Call surface emission, upsample</span>
         <span class="n">Ls_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upsample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_Ls</span><span class="p">(</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">))</span>
 
-        <span class="n">rdn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
+        <span class="n">rdn_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
             <span class="n">x_atmosphere</span><span class="p">,</span>
             <span class="n">rho_dir_dir</span><span class="o">=</span><span class="n">rho_dir_dir_hi</span><span class="p">,</span>
             <span class="n">rho_dif_dir</span><span class="o">=</span><span class="n">rho_dif_dir_hi</span><span class="p">,</span>
@@ -6918,24 +6927,23 @@
             <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">,</span>
             <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="n">meas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rdn_hi</span><span class="p">)</span>
 
-        <span class="n">drdn_datmosphereb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drdn_datmosphereb</span><span class="p">(</span>
+        <span class="n">dmeas_datmosphereb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmeas_datmosphereb</span><span class="p">(</span>
             <span class="n">x_atmosphere</span><span class="p">,</span>
+            <span class="n">x_instrument</span><span class="p">,</span>
             <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span>
             <span class="n">rho_dir_dir</span><span class="o">=</span><span class="n">rho_dir_dir_hi</span><span class="p">,</span>
             <span class="n">rho_dif_dir</span><span class="o">=</span><span class="n">rho_dif_dir_hi</span><span class="p">,</span>
             <span class="n">rho_dir_dif</span><span class="o">=</span><span class="n">rho_dir_dif_hi</span><span class="p">,</span>
             <span class="n">rho_dif_dif</span><span class="o">=</span><span class="n">rho_dif_dif_hi</span><span class="p">,</span>
             <span class="n">Ls</span><span class="o">=</span><span class="n">Ls_hi</span><span class="p">,</span>
-            <span class="n">rdn</span><span class="o">=</span><span class="n">rdn</span><span class="p">,</span>
+            <span class="n">meas</span><span class="o">=</span><span class="n">meas</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># To get derivatives w.r.t. instrument, downsample to instrument wavelengths</span>
-        <span class="n">dmeas_datmosphereb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
-            <span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">drdn_datmosphereb</span><span class="o">.</span><span class="n">T</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">T</span>
         <span class="n">dmeas_dinstrumentb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">dmeas_dinstrumentb</span><span class="p">(</span>
-            <span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rdn</span>
+            <span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rdn_hi</span>
         <span class="p">)</span>
 
         <span class="c1"># Put it together</span>
@@ -6944,16 +6952,17 @@
         <span class="n">Kb</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument_b_inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">dmeas_dinstrumentb</span>
         <span class="k">return</span> <span class="n">Kb</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">drdn_datmosphere</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.drdn_datmosphere"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.drdn_datmosphere" title="Go to docs">[docs]</a></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dmeas_datmosphere</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.dmeas_datmosphere"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.dmeas_datmosphere" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">x_atmosphere</span><span class="p">,</span>
+        <span class="n">x_instrument</span><span class="p">,</span>
         <span class="n">geom</span><span class="p">,</span>
         <span class="n">rho_dir_dir</span><span class="p">,</span>
         <span class="n">rho_dif_dir</span><span class="p">,</span>
         <span class="n">rho_dir_dif</span><span class="p">,</span>
         <span class="n">rho_dif_dif</span><span class="p">,</span>
         <span class="n">Ls</span><span class="p">,</span>
-        <span class="n">rdn</span><span class="p">,</span>
+        <span class="n">meas</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Derivative of estimated radiance w.r.t. atmosphere statevector elements.</span>
 <span class="sd">        We use a numerical approach to approximate datmosphere with a constant surface</span>
@@ -6976,37 +6985,42 @@
             <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_atmosphere_quantities</span><span class="p">(</span><span class="n">x_atmosphere_perturb</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span><span class="p">)</span>
 
             <span class="c1"># Surface state is held constant?</span>
-            <span class="n">rdne</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
-                <span class="n">x_atmosphere_perturb</span><span class="p">,</span>
-                <span class="n">rho_dir_dir</span><span class="p">,</span>
-                <span class="n">rho_dif_dir</span><span class="p">,</span>
-                <span class="n">rho_dir_dif</span><span class="p">,</span>
-                <span class="n">rho_dif_dif</span><span class="p">,</span>
-                <span class="n">Ls</span><span class="p">,</span>
-                <span class="n">L_tot</span><span class="p">,</span>
-                <span class="n">L_dir_dir</span><span class="p">,</span>
-                <span class="n">L_dif_dir</span><span class="p">,</span>
-                <span class="n">L_dir_dif</span><span class="p">,</span>
-                <span class="n">L_dif_dif</span><span class="p">,</span>
-                <span class="n">r</span><span class="p">,</span>
-                <span class="n">geom</span><span class="p">,</span>
+            <span class="n">mease</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="n">x_instrument</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
+                    <span class="n">x_atmosphere_perturb</span><span class="p">,</span>
+                    <span class="n">rho_dir_dir</span><span class="p">,</span>
+                    <span class="n">rho_dif_dir</span><span class="p">,</span>
+                    <span class="n">rho_dir_dif</span><span class="p">,</span>
+                    <span class="n">rho_dif_dif</span><span class="p">,</span>
+                    <span class="n">Ls</span><span class="p">,</span>
+                    <span class="n">L_tot</span><span class="p">,</span>
+                    <span class="n">L_dir_dir</span><span class="p">,</span>
+                    <span class="n">L_dif_dir</span><span class="p">,</span>
+                    <span class="n">L_dir_dif</span><span class="p">,</span>
+                    <span class="n">L_dif_dif</span><span class="p">,</span>
+                    <span class="n">r</span><span class="p">,</span>
+                    <span class="n">geom</span><span class="p">,</span>
+                <span class="p">),</span>
             <span class="p">)</span>
-            <span class="n">K_atmosphere</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">rdne</span> <span class="o">-</span> <span class="n">rdn</span><span class="p">)</span> <span class="o">/</span> <span class="n">eps</span><span class="p">)</span>
+            <span class="n">K_atmosphere</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">mease</span> <span class="o">-</span> <span class="n">meas</span><span class="p">)</span> <span class="o">/</span> <span class="n">eps</span><span class="p">)</span>
 
         <span class="n">K_atmosphere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">K_atmosphere</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
 
         <span class="k">return</span> <span class="n">K_atmosphere</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">drdn_datmosphereb</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.drdn_datmosphereb"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.drdn_datmosphereb" title="Go to docs">[docs]</a></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dmeas_datmosphereb</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.dmeas_datmosphereb"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.dmeas_datmosphereb" title="Go to docs">[docs]</a></div>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">x_atmosphere</span><span class="p">,</span>
+        <span class="n">x_instrument</span><span class="p">,</span>
         <span class="n">geom</span><span class="p">,</span>
         <span class="n">rho_dir_dir</span><span class="p">,</span>
         <span class="n">rho_dif_dir</span><span class="p">,</span>
         <span class="n">rho_dir_dif</span><span class="p">,</span>
         <span class="n">rho_dif_dif</span><span class="p">,</span>
         <span class="n">Ls</span><span class="p">,</span>
-        <span class="n">rdn</span><span class="p">,</span>
+        <span class="n">meas</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Derivative of estimated rdn w.r.t. H2O_ABSCO</span>
 
@@ -7016,7 +7030,7 @@
 <span class="sd">        (which is very unlikely though).</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">bvec</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">Kb_atmosphere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">)))</span>
+            <span class="n">Kb_atmosphere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_meas</span><span class="p">))</span>
 
         <span class="c1"># ToDo: might require modification in case more unknowns are added</span>
         <span class="c1"># The following statement captures the case that H2O is not part</span>
@@ -7052,22 +7066,26 @@
                         <span class="n">x_atmosphere_perturb</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rho_dif_dif</span>
                     <span class="p">)</span>
 
-                    <span class="n">rdne</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
-                        <span class="n">x_atmosphere_perturb</span><span class="p">,</span>
-                        <span class="n">rho_dir_dir</span><span class="p">,</span>
-                        <span class="n">rho_dif_dir</span><span class="p">,</span>
-                        <span class="n">rho_dir_dif</span><span class="p">,</span>
-                        <span class="n">rho_dif_dif</span><span class="p">,</span>
-                        <span class="n">Ls</span><span class="p">,</span>
-                        <span class="n">L_tot</span><span class="p">,</span>
-                        <span class="n">L_dir_dir</span><span class="p">,</span>
-                        <span class="n">L_dif_dir</span><span class="p">,</span>
-                        <span class="n">L_dir_dif</span><span class="p">,</span>
-                        <span class="n">L_dif_dif</span><span class="p">,</span>
-                        <span class="n">r</span><span class="p">,</span>
-                        <span class="n">geom</span><span class="p">,</span>
+                    <span class="n">mease</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                        <span class="n">x_instrument</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn</span><span class="p">(</span>
+                            <span class="n">x_atmosphere_perturb</span><span class="p">,</span>
+                            <span class="n">rho_dir_dir</span><span class="p">,</span>
+                            <span class="n">rho_dif_dir</span><span class="p">,</span>
+                            <span class="n">rho_dir_dif</span><span class="p">,</span>
+                            <span class="n">rho_dif_dif</span><span class="p">,</span>
+                            <span class="n">Ls</span><span class="p">,</span>
+                            <span class="n">L_tot</span><span class="p">,</span>
+                            <span class="n">L_dir_dir</span><span class="p">,</span>
+                            <span class="n">L_dif_dir</span><span class="p">,</span>
+                            <span class="n">L_dir_dif</span><span class="p">,</span>
+                            <span class="n">L_dif_dif</span><span class="p">,</span>
+                            <span class="n">r</span><span class="p">,</span>
+                            <span class="n">geom</span><span class="p">,</span>
+                        <span class="p">),</span>
                     <span class="p">)</span>
-                    <span class="n">Kb_atmosphere</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">rdne</span> <span class="o">-</span> <span class="n">rdn</span><span class="p">)</span> <span class="o">/</span> <span class="n">eps</span><span class="p">)</span>
+                    <span class="n">Kb_atmosphere</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">mease</span> <span class="o">-</span> <span class="n">meas</span><span class="p">)</span> <span class="o">/</span> <span class="n">eps</span><span class="p">)</span>
 
         <span class="n">Kb_atmosphere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Kb_atmosphere</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
 

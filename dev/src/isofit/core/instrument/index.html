@@ -5376,7 +5376,17 @@
 <span class="normal">487</span>
 <span class="normal">488</span>
 <span class="normal">489</span>
-<span class="normal">490</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5571,6 +5581,18 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">bvec</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">"Cal_Stray_SRF"</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cal_stray_idx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bval</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">bval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">bval</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">stray_srf_uncertainty</span><span class="p">])</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty_file</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="s2">"#"</span>
+                <span class="p">)</span>
+                <span class="c1"># Brute-force check on file construction. If multi-col, use col 1</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span>
+                <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+                    <span class="p">)</span>
 
         <span class="c1"># Determine whether the calibration is fixed.  If it is fixed,</span>
         <span class="c1"># and the wavelengths of atmospheric radiative transfer modeling and instrument</span>
@@ -5606,11 +5628,9 @@
         <span class="c1"># of wavelength.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unknowns</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty_file</span>
-                <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="s2">"#"</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="n">u</span> <span class="o">=</span> <span class="n">u</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
-                <span class="n">bval</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span><span class="p">]</span> <span class="o">=</span> <span class="n">bval</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span><span class="p">]</span> <span class="o">+</span> <span class="nb">pow</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">bval</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span><span class="p">]</span> <span class="o">=</span> <span class="n">bval</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_chan</span><span class="p">]</span> <span class="o">+</span> <span class="nb">pow</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">channelized_radiometric_uncertainty</span><span class="p">,</span> <span class="mi">2</span>
+                <span class="p">)</span>
 
             <span class="c1"># Uncorrelated radiometric uncertainties are consistent and</span>
             <span class="c1"># independent in all channels.</span>
