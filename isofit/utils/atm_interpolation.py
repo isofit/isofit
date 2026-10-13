@@ -201,7 +201,7 @@ def _run_chunk(
                     n_input_lines,
                     int(row - start_line),
                     int(stop_line - start_line),
-                    round(float(nspectra) / elapsed, 2),
+                    round(float(nspectra) / max(elapsed, 1e-9), 2),
                 )
             )
 
