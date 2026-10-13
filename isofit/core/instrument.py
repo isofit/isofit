@@ -193,6 +193,18 @@ class Instrument:
                 self.bvec += ["Cal_Stray_SRF"]
                 self.cal_stray_idx = len(self.bval) + 1
                 self.bval = np.hstack([self.bval, self.unknowns.stray_srf_uncertainty])
+            if self.unknowns.channelized_radiometric_uncertainty_file is not None:
+                self.channelized_radiometric_uncertainty = np.loadtxt(
+                    self.unknowns.channelized_radiometric_uncertainty_file, comments="#"
+                )
+                # Brute-force check on file construction. If multi-col, use col 1
+                if (
+                    len(self.channelized_radiometric_uncertainty.shape) > 0
+                    and self.channelized_radiometric_uncertainty.shape[1] > 1
+                ):
+                    self.channelized_radiometric_uncertainty = (
+                        self.channelized_radiometric_uncertainty[:, 1]
+                    )
 
         # Determine whether the calibration is fixed.  If it is fixed,
         # and the wavelengths of atmospheric radiative transfer modeling and instrument
@@ -228,11 +240,9 @@ class Instrument:
         # of wavelength.
         if self.unknowns:
             if self.unknowns.channelized_radiometric_uncertainty_file is not None:
-                f = self.unknowns.channelized_radiometric_uncertainty_file
-                u = np.loadtxt(f, comments="#")
-                if len(u.shape) > 0 and u.shape[1] > 1:
-                    u = u[:, 1]
-                bval[: self.n_chan] = bval[: self.n_chan] + pow(u, 2)
+                bval[: self.n_chan] = bval[: self.n_chan] + pow(
+                    self.channelized_radiometric_uncertainty, 2
+                )
 
             # Uncorrelated radiometric uncertainties are consistent and
             # independent in all channels.
