@@ -5,7 +5,6 @@
 This module configures 6S for ISOFIT atmospheric correction.
 """
 
-from pathlib import Path
 from typing import Annotated, Literal, Optional
 
 from pydantic import (
@@ -16,14 +15,9 @@ from pydantic import (
     DirectoryPath,
     Field,
     FilePath,
-    PositiveFloat,
-    field_validator,
-    model_validator,
 )
 
-from isofit.data import env
-
-from . import NameAlias, inputKey, standardName
+from . import NameAlias, standardName
 
 
 class SixSConfig(BaseModel):
@@ -38,8 +32,9 @@ class SixSConfig(BaseModel):
     name : Literal["sixs"]
         Engine identifier. Must be "sixs" or "6s".
     base_dir : DirectoryPath
-        Base path to 6S installation directory. If not provided, falls back
-        to environment configuration.
+        Base path to 6S installation directory. The base configs default this
+        to the ISOFIT ini ``sixs`` path. Accepts the legacy key
+        ``engine_base_dir``.
     day : int
         Day of year (1-366) for solar geometry calculations.
     month : int
@@ -172,32 +167,3 @@ class SixSConfig(BaseModel):
     earth_sun_distance_file: Optional[FilePath] = Field(
         description="Earth-Sun distance file",
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def env_fallback(cls, data: dict, info: dict) -> dict:
-        """
-        Handle base_dir environment fallback.
-
-        If base_dir is not defined in configuration, falls back to environment
-        settings. If base_dir is defined, updates the current environment to
-        use the new base path (without saving to disk).
-
-        Parameters
-        ----------
-        data : dict
-            Raw configuration data before validation.
-        info : dict
-            Validation context information from Pydantic.
-
-        Returns
-        -------
-        dict
-            Configuration data with base_dir set from config or environment.
-        """
-        key = inputKey(cls, data, "base_dir")
-        if base := data.get(key):
-            env.changePath("sixs", base)
-        data[key] = env.sixs
-
-        return data

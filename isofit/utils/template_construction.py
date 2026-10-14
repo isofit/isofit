@@ -1612,11 +1612,9 @@ def make_atmosphere_config(
         atmosphere_rte["emulator_file"] = abspath(emulator_base)
         atmosphere_rte["earth_sun_distance_file"] = earth_sun_distance_path
         atmosphere_config["irradiance_file"] = irradiance_file
-        # NB: do not set the emulator engine's ``base_dir`` to ``sixs_path`` --
-        # that is the 6S install dir, and each engine's ``base_dir`` validator
-        # rewrites the matching ISOFIT env path (env.changePath), which would
-        # corrupt the sRTMnet path to point at the 6S directory. The 6S
-        # surrogate resolves its own install dir via ``build_sixs_config``.
+        # The 6S install used for the surrogate simulations, not the sRTMnet
+        # ``base_dir``
+        atmosphere_rte["sixs_dir"] = sixs_path
         if multipart_transmittance:
             atmosphere_rte["emulator_aux_file"] = abspath(emulator_base)
         else:

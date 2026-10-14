@@ -15,12 +15,9 @@ from pydantic import (
     DirectoryPath,
     Field,
     FilePath,
-    model_validator,
 )
 
-from isofit.data import env
-
-from . import NameAlias, inputKey, standardName
+from . import NameAlias, standardName
 
 
 class ModtranConfig(BaseModel):
@@ -36,8 +33,9 @@ class ModtranConfig(BaseModel):
     name : Literal["modtran"]
         Engine identifier. Must be "modtran".
     base_dir : DirectoryPath
-        Base path to MODTRAN installation directory. If not provided,
-        falls back to environment configuration.
+        Base path to MODTRAN installation directory. The base configs default
+        this to the ISOFIT ini ``modtran`` path. Accepts the legacy key
+        ``engine_base_dir``.
     multipart_transmittance : bool
         Apply triple-run diffuse & direct transmittance estimation for
         improved accuracy. Increases runtime 3x. Default is False.
@@ -104,37 +102,3 @@ class ModtranConfig(BaseModel):
     template_file: Optional[FilePath] = Field(
         description="MODTRAN input template file",
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def env_fallback(cls, data: dict, info: dict) -> dict:
-        """
-        Handle base_dir environment fallback.
-
-        If base_dir is not defined in configuration, falls back to environment
-        settings. If base_dir is defined, updates the current environment to
-        use the new base path (without saving to disk).
-
-        Parameters
-        ----------
-        data : dict
-            Raw configuration data before validation.
-        info : dict
-            Validation context information from Pydantic.
-
-        Returns
-        -------
-        dict
-            Configuration data with base_dir set from config or environment.
-
-        Notes
-        -----
-        This allows MODTRAN installation path to be configured once in
-        environment settings and reused across multiple configurations.
-        """
-        key = inputKey(cls, data, "base_dir")
-        if base := data.get(key):
-            env.changePath("modtran", base)
-        data[key] = env.modtran
-
-        return data

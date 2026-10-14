@@ -29,21 +29,20 @@ def _engine_field_map() -> dict:
 
     Introspects the ``Engines`` discriminated union so legacy-config routing
     stays in sync as engines are added or removed. Validation aliases (e.g.
-    the legacy ``engine_base_dir`` for ``base_dir``) and an engine's
-    ``legacy_keys`` are included so legacy keys are routed to the engine and
-    handled by the engine model itself.
+    the legacy ``engine_base_dir`` for ``base_dir``) are included so legacy
+    keys are routed to the engine and renamed by the engine model itself.
 
     Returns
     -------
     dict[str, set[str]]
-        Mapping of standardized engine name to the set of field names,
-        validation aliases, and legacy keys on that engine's config model.
+        Mapping of standardized engine name to the set of field names and
+        validation aliases on that engine's config model.
     """
     union, _discriminator = typing.get_args(Engines)
     fields = {}
     for member in typing.get_args(union):
         model, tag = typing.get_args(member)
-        keys = set(getattr(model, "legacy_keys", ()))
+        keys = set()
         for name, info in model.model_fields.items():
             keys.add(name)
             if isinstance(info.validation_alias, AliasChoices):
