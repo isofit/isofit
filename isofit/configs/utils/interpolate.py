@@ -596,7 +596,7 @@ def _format_yaml(box, noflow):
 @click.option("-v", "--validate", is_flag=True, help="Validate the config")
 def preview(ctx: click.Context, noflow=False, validate=False, **kwargs: Any) -> None:
     """
-    Preview the final, interpolated configuration.
+    Preview the final, interpolated configuration
 
     Loads and processes the configuration file (with interpolation and
     overrides) and displays it in YAML format without executing any
@@ -670,3 +670,15 @@ def validate(ctx: click.Context, **kwargs: Any) -> None:
         Logger.error(f"The above configuration encountered the following errors:\n{e}")
     else:
         Logger.info("The above configuration is valid")
+
+
+@cli.command(context_settings=CS, name="list")
+def list_sections():
+    """
+    Lists the available base configs
+    """
+    from isofit.configs.loader import available_base_configs
+
+    items = "\n- ".join(available_base_configs())
+
+    Logger.info(f"Available base configs:\n- {items}")
