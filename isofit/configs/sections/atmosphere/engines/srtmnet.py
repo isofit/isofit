@@ -6,21 +6,18 @@ orders-of-magnitude speedup over physics-based RT codes while maintaining
 high accuracy.
 """
 
-from pathlib import Path
-from typing import Annotated, ClassVar, Literal, Optional
+from typing import Annotated, Literal, Optional
 
 from pydantic import (
+    AliasChoices,
     BaseModel,
     BeforeValidator,
     ConfigDict,
     DirectoryPath,
     Field,
     FilePath,
-    field_validator,
     model_validator,
 )
-
-from isofit.data import env
 
 from . import NameAlias, standardName
 
@@ -38,18 +35,22 @@ class sRTMnetConfig(BaseModel):
     name : Literal["srtmnet"]
         Engine identifier. Must be "srtmnet" or "kf" (alias).
     base_dir : DirectoryPath
-        Base path to sRTMnet installation directory. If not provided,
-        falls back to environment configuration.
+        Base path to sRTMnet installation directory. The base configs default
+        this to the ISOFIT ini ``srtmnet`` path.
+    sixs_dir : DirectoryPath
+        Path to the 6S installation used to run the surrogate simulations.
+        The base configs default this to the ISOFIT ini ``sixs`` path. Accepts
+        the legacy key ``engine_base_dir``, which held this path for sRTMnet.
     emulator_batch_size : int
         Batch size for sRTMnet predictions. Larger batches are faster but
         require more GPU memory. Reduce if running out of memory.
         Default is 4096.
     emulator_file : FilePath
-        Path to trained sRTMnet model file (.6s or other format). If not
-        provided, uses default from environment.
+        Path to trained sRTMnet model file (.6s or other format). The base
+        configs default this to the ISOFIT ini ``srtmnet.file``.
     emulator_aux_file : FilePath
         Path to auxiliary emulator data file (normalization parameters, etc.).
-        If not provided, uses default from environment.
+        The base configs default this to the ISOFIT ini ``srtmnet.aux``.
 
     Examples
     --------
@@ -80,15 +81,17 @@ class sRTMnetConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    # Legacy keys consumed by `env_fallback` rather than stored on a field
-    legacy_keys: ClassVar[set[str]] = {"engine_base_dir"}
-
     name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)] = Field(
         validation_alias=NameAlias,
     )
 
     base_dir: Optional[DirectoryPath] = Field(
         description="Base path to engine directory",
+    )
+
+    sixs_dir: Optional[DirectoryPath] = Field(
+        validation_alias=AliasChoices("sixs_dir", "engine_base_dir"),
+        description="Path to the 6S installation used for the surrogate simulations (legacy alias: engine_base_dir)",
     )
 
     emulator_batch_size: int = Field(
@@ -109,74 +112,18 @@ class sRTMnetConfig(BaseModel):
         description="MODTRAN template file used to build the 6S surrogate simulations",
     )
 
-    @model_validator(mode="before")
-    @classmethod
-    def env_fallback(cls, data: dict, info: dict) -> dict:
-        """
-        Handle base_dir and emulator file environment fallback.
-
-        If base_dir is not defined in configuration, falls back to environment
-        settings. If base_dir is defined, updates the current environment.
-        After synchronizing base_dir, sets emulator_file and emulator_aux_file
-        to defaults from environment if not explicitly specified.
-
-        Parameters
-        ----------
-        data : dict
-            Raw configuration data before validation.
-        info : dict
-            Validation context information from Pydantic.
-
-        Returns
-        -------
-        dict
-            Configuration data with paths set from config or environment defaults.
-
-        Notes
-        -----
-        This allows sRTMnet installation and model files to be configured once
-        in environment settings and reused across multiple configurations.
-
-        The legacy ``engine_base_dir`` key is deliberately not an alias of
-        ``base_dir``: for sRTMnet it pointed at the 6S installation used to
-        run the surrogate simulations, so it updates the 6S environment path
-        that ``build_sixs_config`` falls back to.
-        """
-        if sixs := data.pop("engine_base_dir", None):
-            env.changePath("sixs", sixs)
-
-        if base := data.get("base_dir"):
-            env.changePath("srtmnet", base)
-        data["base_dir"] = env.srtmnet
-
-        if data.get("emulator_file") is None:
-            data["emulator_file"] = env.path("srtmnet", key="srtmnet.file", rpe=False)
-
-        if data.get("emulator_aux_file") is None:
-            data["emulator_aux_file"] = env.path(
-                "srtmnet", key="srtmnet.aux", rpe=False
-            )
-
-        return data
-
-    @field_validator("emulator_file", mode="after")
-    @classmethod
-    def check_6c(cls, file: Path) -> Path:
+    @model_validator(mode="after")
+    def check_6c(self) -> "sRTMnetConfig":
         """
         Validate CO2 version compatibility for .6c models.
 
         The .6c model variant includes CO2 absorption and requires a
         CO2-enabled version of 6S for consistency.
 
-        Parameters
-        ----------
-        file : Path
-            Emulator file path to validate.
-
         Returns
         -------
-        Path
-            The validated file path.
+        sRTMnetConfig
+            The validated config.
 
         Raises
         ------
@@ -188,12 +135,12 @@ class sRTMnetConfig(BaseModel):
         CO2-enabled 6S versions are available from the isofit/6S repository
         with tags indicating CO2 support.
         """
-        if file.suffix == ".6c":
+        if self.emulator_file and self.emulator_file.suffix == ".6c":
             from isofit.atmosphere.engines.six_s import get_exe
 
-            if "co2" not in get_exe(cls.base_dir, version=True):
+            if "co2" not in get_exe(self.sixs_dir, version=True):
                 raise ValueError(
                     "sRTMnet 6C requires a CO2 version of 6S. Please use the isofit download CLI to pull a CO2 tag: https://github.com/isofit/6S/tags"
                 )
 
-        return file
+        return self

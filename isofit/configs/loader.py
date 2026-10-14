@@ -250,8 +250,9 @@ def load_base_config(name: str, overrides: dict | None = None) -> Box:
     path = index[name]
     Logger.info(f"Loading base config section {name!r} from {path}")
 
-    # Insert the ISOFIT ini environment to make interpolation easy
+    # Insert the ISOFIT ini environment to make interpolation easy. `modtran` is
+    # not a default ini directory, so default it to null for ${env.modtran}
     overrides = overrides or {}
-    overrides["env"] = dict(env.items())
+    overrides["env"] = {"modtran": None, **dict(env.items())}
 
     return interpolate.load(str(path), section=name, ctx=overrides)
