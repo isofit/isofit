@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Annotated, Literal, Optional
 
 from pydantic import (
+    AliasChoices,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -22,7 +23,7 @@ from pydantic import (
 
 from isofit.data import env
 
-from . import standardName
+from . import NameAlias, inputKey, standardName
 
 
 class SixSConfig(BaseModel):
@@ -97,10 +98,13 @@ class SixSConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["sixs"], BeforeValidator(standardName)]
+    name: Annotated[Literal["sixs"], BeforeValidator(standardName)] = Field(
+        validation_alias=NameAlias,
+    )
 
     base_dir: Optional[DirectoryPath] = Field(
-        description="Base path to engine directory",
+        validation_alias=AliasChoices("base_dir", "engine_base_dir"),
+        description="Base path to engine directory (legacy alias: engine_base_dir)",
     )
 
     # The solar/observer geometry parameters below are populated dynamically by
@@ -161,7 +165,8 @@ class SixSConfig(BaseModel):
     )
 
     obs: Optional[FilePath] = Field(
-        description="6S observation file",
+        validation_alias=AliasChoices("obs", "obs_file"),
+        description="6S observation file (legacy alias: obs_file)",
     )
 
     earth_sun_distance_file: Optional[FilePath] = Field(
@@ -190,8 +195,9 @@ class SixSConfig(BaseModel):
         dict
             Configuration data with base_dir set from config or environment.
         """
-        if base := data.get("base_dir"):
+        key = inputKey(cls, data, "base_dir")
+        if base := data.get(key):
             env.changePath("sixs", base)
-        data["base_dir"] = env.sixs
+        data[key] = env.sixs
 
         return data

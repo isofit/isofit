@@ -8,9 +8,9 @@ standard atmospheric conditions.
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
-from . import standardName
+from . import NameAlias, standardName
 
 
 class PrebuiltConfig(BaseModel):
@@ -46,4 +46,6 @@ class PrebuiltConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["prebuilt"], BeforeValidator(standardName)]
+    name: Annotated[Literal["prebuilt"], BeforeValidator(standardName)] = Field(
+        validation_alias=NameAlias,
+    )
