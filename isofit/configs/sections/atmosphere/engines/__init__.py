@@ -8,7 +8,10 @@ unions to handle different engine types with a common interface.
 
 from typing import Annotated, Union
 
-from pydantic import BeforeValidator, Discriminator, Tag
+from pydantic import AliasChoices, BeforeValidator, Discriminator, Tag
+
+# Validation alias shared by every engine's `name` field; `engine_name` is the legacy key
+NameAlias = AliasChoices("name", "engine_name")
 
 
 def standardName(name: str) -> str:
@@ -75,12 +78,41 @@ def selectByName(data: dict) -> str:
     Notes
     -----
     This function is called automatically by Pydantic during validation
-    and should not be invoked directly by users.
+    and should not be invoked directly by users. Discriminators run before
+    aliases are resolved, so the legacy ``engine_name`` key is checked here
+    explicitly.
     """
-    name = data.get("name")
+    name = data.get("name", data.get("engine_name"))
     if isinstance(name, str):
         return standardName(name)
     return name
+
+
+def inputKey(model, data: dict, field: str) -> str:
+    """
+    Find the key in raw input data that supplies a field.
+
+    ``mode="before"`` validators run before aliases are resolved, so they must
+    read and write a field under whichever of its validation aliases was given.
+
+    Parameters
+    ----------
+    model : type[pydantic.BaseModel]
+        Model class that defines ``field``.
+    data : dict
+        Raw configuration data before validation.
+    field : str
+        Field name to look up.
+
+    Returns
+    -------
+    str
+        The first of the field's aliases present in ``data``, otherwise the
+        field name itself.
+    """
+    alias = model.model_fields[field].validation_alias
+    choices = alias.choices if isinstance(alias, AliasChoices) else [field]
+    return next((key for key in choices if key in data), field)
 
 
 from .kernelflows import KernelFlowsConfig

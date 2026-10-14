@@ -7,7 +7,7 @@ high accuracy.
 """
 
 from pathlib import Path
-from typing import Annotated, Literal, Optional
+from typing import Annotated, ClassVar, Literal, Optional
 
 from pydantic import (
     BaseModel,
@@ -22,7 +22,7 @@ from pydantic import (
 
 from isofit.data import env
 
-from . import standardName
+from . import NameAlias, standardName
 
 
 class sRTMnetConfig(BaseModel):
@@ -80,7 +80,12 @@ class sRTMnetConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)]
+    # Legacy keys consumed by `env_fallback` rather than stored on a field
+    legacy_keys: ClassVar[set[str]] = {"engine_base_dir"}
+
+    name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)] = Field(
+        validation_alias=NameAlias,
+    )
 
     base_dir: Optional[DirectoryPath] = Field(
         description="Base path to engine directory",
@@ -131,7 +136,15 @@ class sRTMnetConfig(BaseModel):
         -----
         This allows sRTMnet installation and model files to be configured once
         in environment settings and reused across multiple configurations.
+
+        The legacy ``engine_base_dir`` key is deliberately not an alias of
+        ``base_dir``: for sRTMnet it pointed at the 6S installation used to
+        run the surrogate simulations, so it updates the 6S environment path
+        that ``build_sixs_config`` falls back to.
         """
+        if sixs := data.pop("engine_base_dir", None):
+            env.changePath("sixs", sixs)
+
         if base := data.get("base_dir"):
             env.changePath("srtmnet", base)
         data["base_dir"] = env.srtmnet

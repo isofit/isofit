@@ -9,7 +9,7 @@ from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, FilePath
 
-from . import standardName
+from . import NameAlias, standardName
 
 
 class KernelFlowsConfig(BaseModel):
@@ -51,7 +51,9 @@ class KernelFlowsConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["kernelflows"], BeforeValidator(standardName)]
+    name: Annotated[Literal["kernelflows"], BeforeValidator(standardName)] = Field(
+        validation_alias=NameAlias,
+    )
 
     emulator_file: Optional[FilePath] = Field(
         description="Path to the Kernel Flows emulator model file",
