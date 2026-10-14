@@ -12,13 +12,14 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
+    DirectoryPath,
     Field,
+    FilePath,
     PositiveFloat,
     field_validator,
     model_validator,
 )
 
-from isofit.configs.utils.validators import PathExists
 from isofit.data import env
 
 from . import standardName
@@ -35,7 +36,7 @@ class SixSConfig(BaseModel):
     ----------
     name : Literal["sixs"]
         Engine identifier. Must be "sixs" or "6s".
-    base_dir : PathExists
+    base_dir : DirectoryPath
         Base path to 6S installation directory. If not provided, falls back
         to environment configuration.
     day : int
@@ -54,11 +55,11 @@ class SixSConfig(BaseModel):
         View zenith angle in degrees.
     viewaz : float
         View azimuth angle in degrees.
-    obs : PathExists
+    obs : FilePath
         Path to 6S observation file with geometry parameters.
-    earth_sun_distance_file : PathExists
+    earth_sun_distance_file : FilePath
         Path to Earth-Sun distance file for irradiance corrections.
-    irradiance_file : PathExists
+    irradiance_file : FilePath
         Path to solar irradiance file.
 
     Examples
@@ -98,7 +99,7 @@ class SixSConfig(BaseModel):
 
     name: Annotated[Literal["sixs"], BeforeValidator(standardName)]
 
-    base_dir: Optional[PathExists] = Field(
+    base_dir: Optional[DirectoryPath] = Field(
         description="Base path to engine directory",
     )
 
@@ -147,23 +148,23 @@ class SixSConfig(BaseModel):
         description="Longest wavelength (microns) to run the simulation for",
     )
 
-    template_file: Optional[PathExists] = Field(
+    template_file: Optional[FilePath] = Field(
         description="MODTRAN template file used to populate 6S geometry",
     )
 
-    aerosol_model_file: Optional[PathExists] = Field(
+    aerosol_model_file: Optional[FilePath] = Field(
         description="Aerosol model file",
     )
 
-    aerosol_template_file: Optional[PathExists] = Field(
+    aerosol_template_file: Optional[FilePath] = Field(
         description="Aerosol template file",
     )
 
-    obs: Optional[PathExists] = Field(
+    obs: Optional[FilePath] = Field(
         description="6S observation file",
     )
 
-    earth_sun_distance_file: Optional[PathExists] = Field(
+    earth_sun_distance_file: Optional[FilePath] = Field(
         description="Earth-Sun distance file",
     )
 

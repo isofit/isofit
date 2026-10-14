@@ -13,12 +13,13 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
+    DirectoryPath,
     Field,
+    FilePath,
     field_validator,
     model_validator,
 )
 
-from isofit.configs.utils.validators import PathExists
 from isofit.data import env
 
 from . import standardName
@@ -36,7 +37,7 @@ class LibRadTranConfig(BaseModel):
     ----------
     name : Literal["libradtran"]
         Engine identifier. Must be "libradtran".
-    base_dir : PathExists
+    base_dir : DirectoryPath
         Base path to LibRadTran installation directory. If not provided,
         falls back to environment configuration.
     reptran_band_model : {"coarse", "medium", "fine"}
@@ -93,7 +94,7 @@ class LibRadTranConfig(BaseModel):
 
     name: Annotated[Literal["libradtran"], BeforeValidator(standardName)]
 
-    base_dir: Optional[PathExists] = Field(
+    base_dir: Optional[DirectoryPath] = Field(
         description="Base path to engine directory",
     )
 
@@ -134,7 +135,7 @@ class LibRadTranConfig(BaseModel):
         description="Path to a phase function moments file that overwrites default profile",
     )
 
-    template_file: Optional[PathExists] = Field(
+    template_file: Optional[FilePath] = Field(
         description="Template file used as the base configuration for libRadtran",
     )
 

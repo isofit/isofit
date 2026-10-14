@@ -9,13 +9,12 @@ parameters for temperature and glint effects.
 from pathlib import Path
 from typing import Dict, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, FilePath, field_validator
 
 from isofit.configs.sections.statevector import (
     StateVectorConfig,
     StateVectorElementConfig,
 )
-from isofit.configs.utils.validators import PathExists
 
 
 class SurfaceStateVectorConfig(StateVectorConfig):
@@ -81,21 +80,21 @@ class SurfaceConfig(BaseModel):
         based on classification map. Default is False.
     use_background_rfl : bool
         Use background reflectance for spatial inference. Default is False.
-    surface_file : PathExists, optional
+    surface_file : FilePath, optional
         Path to surface model file in .mat format containing reflectance
         priors, basis vectors, and covariance information.
     surface_category : {"surface", "multicomponent_surface", "glint_model_surface", "thermal_surface", "lut_surface"}, optional
         Type of surface model to use. Determines which surface class is
         instantiated.
-    surface_class_file : PathExists, optional
+    surface_class_file : FilePath, optional
         Path to surface classification file (ENVI format) for multi-surface mode.
-    base_surface_class_file : PathExists, optional
+    base_surface_class_file : FilePath, optional
         Path to base surface classification file for hierarchical classification.
     Surfaces : dict[str, dict]
         Multi-surface configuration dictionary mapping surface class names to
         their configurations. Each entry must have 'surface_category',
         'surface_file', and 'surface_int' (integer mapping).
-    wavelength_file : PathExists, optional
+    wavelength_file : FilePath, optional
         Path to wavelength file for surface model spectral sampling.
     select_on_init : bool
         Force use of initialization state and never change surface model
@@ -165,7 +164,7 @@ class SurfaceConfig(BaseModel):
 
     use_background_rfl: bool = Field(description="Use background reflectance")
 
-    surface_file: Optional[PathExists] = Field(
+    surface_file: Optional[FilePath] = Field(
         description="Path to surface model file (.mat format)"
     )
 
@@ -179,11 +178,11 @@ class SurfaceConfig(BaseModel):
         ]
     ] = Field(description="Type of surface model to use")
 
-    surface_class_file: Optional[PathExists] = Field(
+    surface_class_file: Optional[FilePath] = Field(
         description="Path to surface classification file"
     )
 
-    base_surface_class_file: Optional[PathExists] = Field(
+    base_surface_class_file: Optional[FilePath] = Field(
         description="Path to base surface classification file"
     )
 
@@ -191,7 +190,7 @@ class SurfaceConfig(BaseModel):
         description="Multi-surface configuration dictionary"
     )
 
-    wavelength_file: Optional[PathExists] = Field(description="Path to wavelength file")
+    wavelength_file: Optional[FilePath] = Field(description="Path to wavelength file")
 
     select_on_init: bool = Field(
         description="Force use of initialization state and never change"

@@ -9,13 +9,12 @@ parameters for optimizing spectral and radiometric calibration.
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, FilePath, model_validator
 
 from isofit.configs.sections.statevector import (
     StateVectorConfig,
     StateVectorElementConfig,
 )
-from isofit.configs.utils.validators import PathExists
 
 
 class InstrumentStateVectorConfig(StateVectorConfig):
@@ -90,7 +89,7 @@ class InstrumentUnknownsConfig(BaseModel):
 
     Attributes
     ----------
-    channelized_radiometric_uncertainty_file : PathExists, optional
+    channelized_radiometric_uncertainty_file : FilePath, optional
         Path to file containing per-channel radiometric uncertainty values
         (e.g., systematic calibration errors that vary by wavelength).
     uncorrelated_radiometric_uncertainty : float, optional
@@ -102,7 +101,7 @@ class InstrumentUnknownsConfig(BaseModel):
     stray_srf_uncertainty : float, optional
         Uncertainty in spectral response function due to stray light or
         out-of-band response.
-    dn_uncertainty_file : PathExists, optional
+    dn_uncertainty_file : FilePath, optional
         Path to digital number uncertainty file for sensor-specific
         uncertainty characterization.
 
@@ -120,7 +119,7 @@ class InstrumentUnknownsConfig(BaseModel):
     are combined with noise model to form the measurement covariance matrix.
     """
 
-    channelized_radiometric_uncertainty_file: Optional[PathExists] = Field(
+    channelized_radiometric_uncertainty_file: Optional[FilePath] = Field(
         description="Path to channelized radiometric uncertainty file"
     )
 
@@ -136,7 +135,7 @@ class InstrumentUnknownsConfig(BaseModel):
         description="Stray spectral response function uncertainty"
     )
 
-    dn_uncertainty_file: Optional[PathExists] = Field(
+    dn_uncertainty_file: Optional[FilePath] = Field(
         description="Path to digital number uncertainty file"
     )
 
@@ -151,7 +150,7 @@ class InstrumentConfig(BaseModel):
 
     Attributes
     ----------
-    wavelength_file : PathExists, optional
+    wavelength_file : FilePath, optional
         Path to file containing instrument wavelength centers for each channel.
     integrations : int, optional
         Number of integrations comprising the measurement. Noise diminishes
@@ -167,17 +166,17 @@ class InstrumentConfig(BaseModel):
     SNR : float, optional
         Uniform signal-independent SNR applied to all wavelengths. Mutually
         exclusive with other noise models.
-    parametric_noise_file : PathExists, optional
+    parametric_noise_file : FilePath, optional
         Path to parametric noise model file (signal and wavelength-dependent
         noise function). Mutually exclusive with other noise models.
-    pushbroom_noise_file : PathExists, optional
+    pushbroom_noise_file : FilePath, optional
         Path to pushbroom noise model file in ENVI format (2D noise model
         varying by channel and across-track position). Mutually exclusive
         with other noise models.
-    nedt_noise_file : PathExists, optional
+    nedt_noise_file : FilePath, optional
         Path to Noise Equivalent Delta Temperature (NEDT) file for thermal
         sensors. Mutually exclusive with other noise models.
-    eof_path : PathExists, optional
+    eof_path : FilePath, optional
         Path to Empirical Orthogonal Function (EOF) file for spectral
         radiometric error modeling.
 
@@ -202,7 +201,7 @@ class InstrumentConfig(BaseModel):
     InstrumentUnknownsConfig : Calibration uncertainties
     """
 
-    wavelength_file: Optional[PathExists] = Field(description="Path to wavelength file")
+    wavelength_file: Optional[FilePath] = Field(description="Path to wavelength file")
 
     integrations: Optional[int] = Field(
         description="Number of integrations comprising the measurement. Noise diminishes with square root of this number.",
@@ -224,17 +223,17 @@ class InstrumentConfig(BaseModel):
         description="Uniform signal-independent SNR applied to all wavelengths",
     )
 
-    parametric_noise_file: Optional[PathExists] = Field(
+    parametric_noise_file: Optional[FilePath] = Field(
         description="Path to parametric noise file (signal and wavelength-dependent noise function)",
     )
 
-    pushbroom_noise_file: Optional[PathExists] = Field(
+    pushbroom_noise_file: Optional[FilePath] = Field(
         description="Path to pushbroom noise model file (ENVI format)"
     )
 
-    nedt_noise_file: Optional[PathExists] = Field(description="Path to NEDT noise file")
+    nedt_noise_file: Optional[FilePath] = Field(description="Path to NEDT noise file")
 
-    eof_path: Optional[PathExists] = Field(
+    eof_path: Optional[FilePath] = Field(
         description="Path to Empirical Orthogonal Function (EOF) file"
     )
 
