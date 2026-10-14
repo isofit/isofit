@@ -9,10 +9,9 @@ This module defines Pydantic models for specifying input data files
 from pathlib import Path
 from typing import ClassVar, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, FilePath
 
 from isofit.configs.utils.accessors import ElementAccessorMixin
-from isofit.configs.utils.validators import PathExists
 
 
 class InputConfig(BaseModel, ElementAccessorMixin):
@@ -25,29 +24,29 @@ class InputConfig(BaseModel, ElementAccessorMixin):
 
     Attributes
     ----------
-    measured_radiance_file : PathExists, optional
+    measured_radiance_file : FilePath, optional
         Input radiance file (.mat, .txt, or ENVI format) containing at-sensor
         radiance measurements for inverse modeling. Also accepts alias 'rdn'.
-    reference_reflectance_file : PathExists, optional
+    reference_reflectance_file : FilePath, optional
         Input reference reflectance file for radiometric calibration.
-    reflectance_file : PathExists, optional
+    reflectance_file : FilePath, optional
         Input reflectance file for forward modeling (reflectance -> radiance).
         Required when implementation.mode is 'simulation'.
-    obs_file : PathExists, optional
+    obs_file : FilePath, optional
         Observation file with viewing and illumination geometry (solar zenith,
         view zenith, relative azimuth angles). Also accepts alias 'obs'.
-    glt_file : PathExists, optional
+    glt_file : FilePath, optional
         Geographic Lookup Table (GLT) file with spatial offset information
         for orthorectified data.
-    loc_file : PathExists, optional
+    loc_file : FilePath, optional
         Location file with latitude, longitude, and elevation for each pixel.
         Also accepts alias 'loc'.
-    background_reflectance_file : PathExists, optional
+    background_reflectance_file : FilePath, optional
         Background reflectance file for spatial inference and contextual
         atmospheric correction.
-    radiometry_correction_file : PathExists, optional
+    radiometry_correction_file : FilePath, optional
         Radiometric correction file for systematic error correction.
-    skyview_factor_file : PathExists, optional
+    skyview_factor_file : FilePath, optional
         Skyview factor file to modulate diffuse radiance contribution based
         on terrain occlusion.
 
@@ -63,7 +62,7 @@ class InputConfig(BaseModel, ElementAccessorMixin):
     Notes
     -----
     All file paths are validated to ensure they exist on the filesystem
-    using the PathExists type. Paths can be absolute or relative to the
+    using the FilePath type. Paths can be absolute or relative to the
     configuration file directory (expansion happens in the loader).
     """
 
@@ -72,44 +71,44 @@ class InputConfig(BaseModel, ElementAccessorMixin):
     # Pydantic v2 restricts population to the alias unless this is enabled.
     model_config = ConfigDict(populate_by_name=True)
 
-    measured_radiance_file: Optional[PathExists] = Field(
+    measured_radiance_file: Optional[FilePath] = Field(
         alias="rdn",
         description="Input radiance file (.mat, .txt, or ENVI format) for inverse-modeling",
     )
 
-    reference_reflectance_file: Optional[PathExists] = Field(
+    reference_reflectance_file: Optional[FilePath] = Field(
         alias="rrf",
         description="Input reference reflectance file for radiometric calibration",
     )
 
-    reflectance_file: Optional[PathExists] = Field(
+    reflectance_file: Optional[FilePath] = Field(
         alias="rfl",
         description="Input reflectance file for forward-modeling (reflectance -> radiance)",
     )
 
-    obs_file: Optional[PathExists] = Field(
+    obs_file: Optional[FilePath] = Field(
         alias="obs",
         description="Observation file with viewing/illumination geometry",
     )
 
-    glt_file: Optional[PathExists] = Field(
+    glt_file: Optional[FilePath] = Field(
         alias="glt", description="GLT file with spatial offset information"
     )
 
-    loc_file: Optional[PathExists] = Field(
+    loc_file: Optional[FilePath] = Field(
         alias="loc",
         description="Location file with lat, lon, and elevation",
     )
 
-    background_reflectance_file: Optional[PathExists] = Field(
+    background_reflectance_file: Optional[FilePath] = Field(
         alias="brf", description="Background reflectance file for spatial inference"
     )
 
-    radiometry_correction_file: Optional[PathExists] = Field(
+    radiometry_correction_file: Optional[FilePath] = Field(
         alias="rcf", description="Radiometric correction file for systematic errors"
     )
 
-    skyview_factor_file: Optional[PathExists] = Field(
+    skyview_factor_file: Optional[FilePath] = Field(
         alias="sff", description="Skyview factor file to modulate diffuse radiance"
     )
 

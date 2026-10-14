@@ -7,9 +7,7 @@ atmospheric correction capabilities.
 
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
-
-from isofit.configs.utils.validators import PathExists
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, FilePath
 
 from . import standardName
 
@@ -25,10 +23,10 @@ class KernelFlowsConfig(BaseModel):
     ----------
     name : Literal["kernelflows"]
         Engine identifier. Must be "kernelflows" or "kf" (alias).
-    emulator_file : PathExists, optional
+    emulator_file : FilePath, optional
         Path to the trained Kernel Flows emulator model file. If None,
         uses default from environment.
-    template_file : PathExists
+    template_file : FilePath
         Path to template configuration file for Kernel Flows parameters.
 
     Examples
@@ -55,10 +53,10 @@ class KernelFlowsConfig(BaseModel):
 
     name: Annotated[Literal["kernelflows"], BeforeValidator(standardName)]
 
-    emulator_file: Optional[PathExists] = Field(
+    emulator_file: Optional[FilePath] = Field(
         description="Path to the Kernel Flows emulator model file",
     )
 
-    template_file: Optional[PathExists] = Field(
+    template_file: Optional[FilePath] = Field(
         description="Path to Kernel Flows template configuration file",
     )
