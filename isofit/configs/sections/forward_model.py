@@ -10,21 +10,12 @@ formats.
 import typing
 from typing import Optional
 
-from pydantic import BaseModel, Field, FilePath, model_validator
+from pydantic import AliasChoices, BaseModel, Field, FilePath, model_validator
 
 from isofit.configs.sections.atmosphere import AtmosphereConfig
-from isofit.configs.sections.atmosphere.engines import Engines, standardName
+from isofit.configs.sections.atmosphere.engines import Engines, selectByName
 from isofit.configs.sections.instrument import InstrumentConfig
 from isofit.configs.sections.surface import SurfaceConfig
-
-# Legacy engine keys whose names changed in the new schema. Maps the old
-# key (as it appears under a radiative_transfer_engines entry) to the field
-# name on the engine config model.
-_LEGACY_ENGINE_RENAMES = {
-    "engine_name": "name",
-    "engine_base_dir": "base_dir",
-    "obs_file": "obs",
-}
 
 # Legacy engine keys that, in the new schema, live at the atmosphere level as
 # well as (or instead of) the engine level. These are copied up to the
@@ -34,22 +25,30 @@ _LEGACY_SHARED_KEYS = {"multipart_transmittance"}
 
 def _engine_field_map() -> dict:
     """
-    Map each standardized engine name to the set of its config field names.
+    Map each standardized engine name to the set of keys its config accepts.
 
     Introspects the ``Engines`` discriminated union so legacy-config routing
-    stays in sync as engines are added or removed.
+    stays in sync as engines are added or removed. Validation aliases (e.g.
+    the legacy ``engine_base_dir`` for ``base_dir``) and an engine's
+    ``legacy_keys`` are included so legacy keys are routed to the engine and
+    handled by the engine model itself.
 
     Returns
     -------
     dict[str, set[str]]
-        Mapping of standardized engine name to the set of field names on that
-        engine's config model.
+        Mapping of standardized engine name to the set of field names,
+        validation aliases, and legacy keys on that engine's config model.
     """
     union, _discriminator = typing.get_args(Engines)
     fields = {}
     for member in typing.get_args(union):
         model, tag = typing.get_args(member)
-        fields[tag.tag] = set(model.model_fields)
+        keys = set(getattr(model, "legacy_keys", ()))
+        for name, info in model.model_fields.items():
+            keys.add(name)
+            if isinstance(info.validation_alias, AliasChoices):
+                keys.update(info.validation_alias.choices)
+        fields[tag.tag] = keys
     return fields
 
 
@@ -169,28 +168,18 @@ class ForwardModelConfig(BaseModel):
                 # Take the first engine (usually the only one, e.g. "vswir")
                 first_engine = next(iter(engines.values()), {}) if engines else {}
 
-                # Apply legacy key renames (e.g. engine_name -> name) before
-                # routing so keys land under their new field names.
-                engine_in = {
-                    _LEGACY_ENGINE_RENAMES.get(key, key): value
-                    for key, value in first_engine.items()
-                }
-
                 # Route each legacy engine key to either the engine sub-config
-                # or the atmosphere level. The engine is selected by its
-                # (renamed) `name`; unknown/unnamed engines fall through to the
+                # or the atmosphere level. Renamed keys (engine_name,
+                # engine_base_dir, ...) are validation aliases on the engine
+                # models, so they're routed as-is. The engine is selected by
+                # its name; unknown/unnamed engines fall through to the
                 # atmosphere default (prebuilt).
-                name = engine_in.get("name")
-                engine_fields = _engine_field_map()
-                selected = (
-                    engine_fields.get(standardName(name))
-                    if isinstance(name, str)
-                    else None
-                )
+                name = selectByName(first_engine)
+                selected = _engine_field_map().get(name)
 
                 engine = {}
                 atmosphere = {}
-                for key, value in engine_in.items():
+                for key, value in first_engine.items():
                     if selected is not None and key in selected:
                         engine[key] = value
                         if key in _LEGACY_SHARED_KEYS:

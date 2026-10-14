@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Annotated, Literal, Optional
 
 from pydantic import (
+    AliasChoices,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -22,7 +23,7 @@ from pydantic import (
 
 from isofit.data import env
 
-from . import standardName
+from . import NameAlias, inputKey, standardName
 
 
 class LibRadTranConfig(BaseModel):
@@ -92,10 +93,13 @@ class LibRadTranConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["libradtran"], BeforeValidator(standardName)]
+    name: Annotated[Literal["libradtran"], BeforeValidator(standardName)] = Field(
+        validation_alias=NameAlias,
+    )
 
     base_dir: Optional[DirectoryPath] = Field(
-        description="Base path to engine directory",
+        validation_alias=AliasChoices("base_dir", "engine_base_dir"),
+        description="Base path to engine directory (legacy alias: engine_base_dir)",
     )
 
     reptran_band_model: Literal["coarse", "medium", "fine"] = Field(
@@ -166,8 +170,9 @@ class LibRadTranConfig(BaseModel):
         This allows LibRadTran installation path to be configured once in
         environment settings and reused across multiple configurations.
         """
-        if base := data.get("base_dir"):
+        key = inputKey(cls, data, "base_dir")
+        if base := data.get(key):
             env.changePath("libradtran", base)
-        data["base_dir"] = env.libradtran
+        data[key] = env.libradtran
 
         return data

@@ -19,6 +19,7 @@ from pydantic import ValidationError
 from isofit.configs.config import Config
 from isofit.configs.utils import interpolate
 from isofit.core import common
+from isofit.data import env
 
 Logger = logging.getLogger(__name__)
 ConfigsDir = Path(__file__).resolve().parents[2] / "configs"
@@ -248,5 +249,9 @@ def load_base_config(name: str, overrides: dict | None = None) -> Box:
 
     path = index[name]
     Logger.info(f"Loading base config section {name!r} from {path}")
+
+    # Insert the ISOFIT ini environment to make interpolation easy
+    overrides = overrides or {}
+    overrides["env"] = dict(env.items())
 
     return interpolate.load(str(path), section=name, ctx=overrides)
