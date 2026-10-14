@@ -10,13 +10,12 @@ formats.
 import typing
 from typing import Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, FilePath, model_validator
 
 from isofit.configs.sections.atmosphere import AtmosphereConfig
 from isofit.configs.sections.atmosphere.engines import Engines, standardName
 from isofit.configs.sections.instrument import InstrumentConfig
 from isofit.configs.sections.surface import SurfaceConfig
-from isofit.configs.utils.validators import PathExists
 
 # Legacy engine keys whose names changed in the new schema. Maps the old
 # key (as it appears under a radiative_transfer_engines entry) to the field
@@ -73,7 +72,7 @@ class ForwardModelConfig(BaseModel):
     instrument : InstrumentConfig, optional
         Instrument model configuration including spectral response, noise
         characteristics, and instrument state vector parameters.
-    model_discrepancy_file : PathExists, optional
+    model_discrepancy_file : FilePath, optional
         Path to numpy-format covariance matrix representing systematic
         model-observation discrepancy. Used to account for forward model
         errors during inversion.
@@ -118,7 +117,7 @@ class ForwardModelConfig(BaseModel):
         description="Instrument configuration"
     )
 
-    model_discrepancy_file: Optional[PathExists] = Field(
+    model_discrepancy_file: Optional[FilePath] = Field(
         description="Path to numpy-format covariance matrix for model discrepancy",
     )
 

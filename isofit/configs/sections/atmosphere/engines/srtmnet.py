@@ -13,12 +13,13 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
+    DirectoryPath,
     Field,
+    FilePath,
     field_validator,
     model_validator,
 )
 
-from isofit.configs.utils.validators import PathExists
 from isofit.data import env
 
 from . import standardName
@@ -36,17 +37,17 @@ class sRTMnetConfig(BaseModel):
     ----------
     name : Literal["srtmnet"]
         Engine identifier. Must be "srtmnet" or "kf" (alias).
-    base_dir : PathExists
+    base_dir : DirectoryPath
         Base path to sRTMnet installation directory. If not provided,
         falls back to environment configuration.
     emulator_batch_size : int
         Batch size for sRTMnet predictions. Larger batches are faster but
         require more GPU memory. Reduce if running out of memory.
         Default is 4096.
-    emulator_file : PathExists
+    emulator_file : FilePath
         Path to trained sRTMnet model file (.6s or other format). If not
         provided, uses default from environment.
-    emulator_aux_file : PathExists
+    emulator_aux_file : FilePath
         Path to auxiliary emulator data file (normalization parameters, etc.).
         If not provided, uses default from environment.
 
@@ -81,7 +82,7 @@ class sRTMnetConfig(BaseModel):
 
     name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)]
 
-    base_dir: Optional[PathExists] = Field(
+    base_dir: Optional[DirectoryPath] = Field(
         description="Base path to engine directory",
     )
 
@@ -91,15 +92,15 @@ class sRTMnetConfig(BaseModel):
         examples=[512, 1024, 2048, 4096, 8192],
     )
 
-    emulator_file: Optional[PathExists] = Field(
+    emulator_file: Optional[FilePath] = Field(
         description="",
     )
 
-    emulator_aux_file: Optional[PathExists] = Field(
+    emulator_aux_file: Optional[FilePath] = Field(
         description="",
     )
 
-    template_file: Optional[PathExists] = Field(
+    template_file: Optional[FilePath] = Field(
         description="MODTRAN template file used to build the 6S surrogate simulations",
     )
 

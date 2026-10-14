@@ -7,9 +7,16 @@ wavelengths. This module configures MODTRAN 6.0 for ISOFIT atmospheric correctio
 
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, model_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    DirectoryPath,
+    Field,
+    FilePath,
+    model_validator,
+)
 
-from isofit.configs.utils.validators import PathExists
 from isofit.data import env
 
 from . import standardName
@@ -27,18 +34,18 @@ class ModtranConfig(BaseModel):
     ----------
     name : Literal["modtran"]
         Engine identifier. Must be "modtran".
-    base_dir : PathExists
+    base_dir : DirectoryPath
         Base path to MODTRAN installation directory. If not provided,
         falls back to environment configuration.
     multipart_transmittance : bool
         Apply triple-run diffuse & direct transmittance estimation for
         improved accuracy. Increases runtime 3x. Default is False.
-    aerosol_template_file : PathExists
+    aerosol_template_file : FilePath
         Path to aerosol template file defining aerosol optical properties
         and vertical profiles.
-    aerosol_model_file : PathExists
+    aerosol_model_file : FilePath
         Path to aerosol model file with wavelength-dependent properties.
-    template_file : PathExists
+    template_file : FilePath
         Path to MODTRAN input template file (tape5 or JSON format) with
         base atmospheric configuration.
 
@@ -74,7 +81,7 @@ class ModtranConfig(BaseModel):
 
     name: Annotated[Literal["modtran"], BeforeValidator(standardName)]
 
-    base_dir: Optional[PathExists] = Field(
+    base_dir: Optional[DirectoryPath] = Field(
         description="Base path to engine directory",
     )
 
@@ -82,15 +89,15 @@ class ModtranConfig(BaseModel):
         description="Apply triple-run diffuse & direct transmittance estimation",
     )
 
-    aerosol_template_file: Optional[PathExists] = Field(
+    aerosol_template_file: Optional[FilePath] = Field(
         description="Aerosol template file",
     )
 
-    aerosol_model_file: Optional[PathExists] = Field(
+    aerosol_model_file: Optional[FilePath] = Field(
         description="Aerosol model file",
     )
 
-    template_file: Optional[PathExists] = Field(
+    template_file: Optional[FilePath] = Field(
         description="MODTRAN input template file",
     )
 
