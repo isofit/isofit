@@ -777,6 +777,9 @@ def build_sixs_config(config):
     # Swap the engine out for a 6S engine populated from the MODTRAN template
     config.engine = SixSConfig(
         name="sixs",
+        base_dir=config.engine.sixs_dir,
+        obs=None,
+        earth_sun_distance_file=None,
         aerosol_model_file=None,
         aerosol_template_file=None,
         template_file=template_file,

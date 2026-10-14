@@ -17,13 +17,9 @@ from pydantic import (
     DirectoryPath,
     Field,
     FilePath,
-    field_validator,
-    model_validator,
 )
 
-from isofit.data import env
-
-from . import NameAlias, inputKey, standardName
+from . import NameAlias, standardName
 
 
 class LibRadTranConfig(BaseModel):
@@ -39,8 +35,9 @@ class LibRadTranConfig(BaseModel):
     name : Literal["libradtran"]
         Engine identifier. Must be "libradtran".
     base_dir : DirectoryPath
-        Base path to LibRadTran installation directory. If not provided,
-        falls back to environment configuration.
+        Base path to LibRadTran installation directory. The base configs
+        default this to the ISOFIT ini ``libradtran``/``libradtran.version``
+        path. Accepts the legacy key ``engine_base_dir``.
     reptran_band_model : {"coarse", "medium", "fine"}
         REPTRAN correlated-k band model resolution. "coarse" (15 cm⁻¹) is
         fastest, "fine" (1 cm⁻¹) is most accurate but slower. Default is "coarse".
@@ -142,37 +139,3 @@ class LibRadTranConfig(BaseModel):
     template_file: Optional[FilePath] = Field(
         description="Template file used as the base configuration for libRadtran",
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def env_fallback(cls, data: dict, info: dict) -> dict:
-        """
-        Handle base_dir environment fallback.
-
-        If base_dir is not defined in configuration, falls back to environment
-        settings. If base_dir is defined, updates the current environment to
-        use the new base path (without saving to disk).
-
-        Parameters
-        ----------
-        data : dict
-            Raw configuration data before validation.
-        info : dict
-            Validation context information from Pydantic.
-
-        Returns
-        -------
-        dict
-            Configuration data with base_dir set from config or environment.
-
-        Notes
-        -----
-        This allows LibRadTran installation path to be configured once in
-        environment settings and reused across multiple configurations.
-        """
-        key = inputKey(cls, data, "base_dir")
-        if base := data.get(key):
-            env.changePath("libradtran", base)
-        data[key] = env.libradtran
-
-        return data

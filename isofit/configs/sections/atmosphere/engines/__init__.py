@@ -88,33 +88,6 @@ def selectByName(data: dict) -> str:
     return name
 
 
-def inputKey(model, data: dict, field: str) -> str:
-    """
-    Find the key in raw input data that supplies a field.
-
-    ``mode="before"`` validators run before aliases are resolved, so they must
-    read and write a field under whichever of its validation aliases was given.
-
-    Parameters
-    ----------
-    model : type[pydantic.BaseModel]
-        Model class that defines ``field``.
-    data : dict
-        Raw configuration data before validation.
-    field : str
-        Field name to look up.
-
-    Returns
-    -------
-    str
-        The first of the field's aliases present in ``data``, otherwise the
-        field name itself.
-    """
-    alias = model.model_fields[field].validation_alias
-    choices = alias.choices if isinstance(alias, AliasChoices) else [field]
-    return next((key for key in choices if key in data), field)
-
-
 from .kernelflows import KernelFlowsConfig
 from .libradtran import LibRadTranConfig
 from .modtran import ModtranConfig
