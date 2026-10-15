@@ -9,7 +9,6 @@ high accuracy.
 from typing import Annotated, Literal, Optional
 
 from pydantic import (
-    AliasChoices,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -19,7 +18,7 @@ from pydantic import (
     model_validator,
 )
 
-from . import NameAlias, standardName
+from . import standardName
 
 
 class sRTMnetConfig(BaseModel):
@@ -39,8 +38,7 @@ class sRTMnetConfig(BaseModel):
         this to the ISOFIT ini ``srtmnet`` path.
     sixs_dir : DirectoryPath
         Path to the 6S installation used to run the surrogate simulations.
-        The base configs default this to the ISOFIT ini ``sixs`` path. Accepts
-        the legacy key ``engine_base_dir``, which held this path for sRTMnet.
+        The base configs default this to the ISOFIT ini ``sixs`` path.
     emulator_batch_size : int
         Batch size for sRTMnet predictions. Larger batches are faster but
         require more GPU memory. Reduce if running out of memory.
@@ -81,17 +79,14 @@ class sRTMnetConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)] = Field(
-        validation_alias=NameAlias,
-    )
+    name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)] = Field()
 
     base_dir: Optional[DirectoryPath] = Field(
         description="Base path to engine directory",
     )
 
     sixs_dir: Optional[DirectoryPath] = Field(
-        validation_alias=AliasChoices("sixs_dir", "engine_base_dir"),
-        description="Path to the 6S installation used for the surrogate simulations (legacy alias: engine_base_dir)",
+        description="Path to the 6S installation used for the surrogate simulations",
     )
 
     emulator_batch_size: int = Field(

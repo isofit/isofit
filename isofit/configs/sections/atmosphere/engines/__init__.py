@@ -8,10 +8,7 @@ unions to handle different engine types with a common interface.
 
 from typing import Annotated, Union
 
-from pydantic import AliasChoices, BeforeValidator, Discriminator, Tag
-
-# Validation alias shared by every engine's `name` field; `engine_name` is the legacy key
-NameAlias = AliasChoices("name", "engine_name")
+from pydantic import Discriminator, Tag
 
 
 def standardName(name: str) -> str:
@@ -78,11 +75,9 @@ def selectByName(data: dict) -> str:
     Notes
     -----
     This function is called automatically by Pydantic during validation
-    and should not be invoked directly by users. Discriminators run before
-    aliases are resolved, so the legacy ``engine_name`` key is checked here
-    explicitly.
+    and should not be invoked directly by users.
     """
-    name = data.get("name", data.get("engine_name"))
+    name = data.get("name")
     if isinstance(name, str):
         return standardName(name)
     return name

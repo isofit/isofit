@@ -21,7 +21,8 @@ from isofit.atmosphere.atmosphere import (
     modtran_aot_lowerbound_polynomials,
     modtran_water_upperbound_polynomials,
 )
-from isofit.configs.loader import load_base_config, load_config_dict
+from isofit.configs import Config
+from isofit.configs.loader import resolve_config_dict
 from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.core.multistate import SurfaceMapping
@@ -693,28 +694,13 @@ def check_surface_model(
         )
 
 
-def _validate_config(config: dict, emulator_base: str = None) -> dict:
-    """Overlay the assembled config dict onto the matching engine base config,
+def _validate_config(config: dict) -> dict:
+    """Overlay the assembled config dict onto the base config for its engine,
     validate the merged result with Pydantic (raising early if invalid), and
     return the merged dict for writing to disk.
-
-    Mirrors make_atmosphere_config's own engine-selection heuristic so the
-    base config's engine profile matches
-    config["forward_model"]["atmosphere"]["engine"]["name"].
     """
-    if emulator_base is None:
-        engine_name = "modtran"
-    elif emulator_base.endswith(".jld2"):
-        engine_name = "kernelflows"
-    else:
-        engine_name = "srtmnet"
-
-    base = load_base_config(engine_name)
-    base.pop("env", None)
-    base.merge_update(config)
-
-    merged = base.to_dict()
-    validated = load_config_dict(merged)
+    merged = resolve_config_dict(config)
+    validated = Config.model_validate(merged)
     validated.get_config_errors()
     return merged
 
@@ -903,7 +889,7 @@ def build_config(
             "model_discrepancy_file"
         ] = paths.model_discrepancy_working_path
 
-    config = _validate_config(config, emulator_base=emulator_base)
+    config = _validate_config(config)
 
     # write main config file
     with open(paths.isofit_full_config_path, "w") as fout:

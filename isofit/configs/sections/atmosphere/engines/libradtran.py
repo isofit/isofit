@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Annotated, Literal, Optional
 
 from pydantic import (
-    AliasChoices,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -19,7 +18,7 @@ from pydantic import (
     FilePath,
 )
 
-from . import NameAlias, standardName
+from . import standardName
 
 
 class LibRadTranConfig(BaseModel):
@@ -37,7 +36,7 @@ class LibRadTranConfig(BaseModel):
     base_dir : DirectoryPath
         Base path to LibRadTran installation directory. The base configs
         default this to the ISOFIT ini ``libradtran``/``libradtran.version``
-        path. Accepts the legacy key ``engine_base_dir``.
+        path.
     reptran_band_model : {"coarse", "medium", "fine"}
         REPTRAN correlated-k band model resolution. "coarse" (15 cm⁻¹) is
         fastest, "fine" (1 cm⁻¹) is most accurate but slower. Default is "coarse".
@@ -90,13 +89,10 @@ class LibRadTranConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["libradtran"], BeforeValidator(standardName)] = Field(
-        validation_alias=NameAlias,
-    )
+    name: Annotated[Literal["libradtran"], BeforeValidator(standardName)] = Field()
 
     base_dir: Optional[DirectoryPath] = Field(
-        validation_alias=AliasChoices("base_dir", "engine_base_dir"),
-        description="Base path to engine directory (legacy alias: engine_base_dir)",
+        description="Base path to engine directory",
     )
 
     reptran_band_model: Literal["coarse", "medium", "fine"] = Field(

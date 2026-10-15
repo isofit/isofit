@@ -14,9 +14,10 @@ from typing import Union
 
 import yaml
 from box import Box
-from pydantic import ValidationError
 
+from isofit.configs import legacy
 from isofit.configs.config import Config
+from isofit.configs.sections.atmosphere.engines import selectByName
 from isofit.configs.utils import interpolate
 from isofit.core import common
 from isofit.data import env
@@ -79,12 +80,76 @@ def create_new_config(config_file: Union[str, Path]) -> Config:
 
     # Expand paths relative to config file directory
     configdir, _ = os.path.split(os.path.abspath(config_file))
-    config_dict = common.expand_all_paths(config_dict, configdir)
 
-    # Validate and create config
-    config = Config.model_validate(config_dict)
+    return load_config_dict(config_dict, base_dir=configdir)
 
-    return config
+
+def base_config_name(config_dict: dict) -> str:
+    """
+    Select the base config whose defaults underlie a config dict.
+
+    This is the engine profile in ``default.yml`` matching the atmosphere engine,
+    or ``default`` if the config doesn't name one.
+
+    Parameters
+    ----------
+    config_dict : dict
+        A config dict in the current (non-legacy) schema.
+
+    Returns
+    -------
+    str
+        A name accepted by :func:`load_base_config`.
+    """
+    forward_model = config_dict.get("forward_model") or {}
+    engine = (forward_model.get("atmosphere") or {}).get("engine")
+
+    if isinstance(engine, dict):
+        name = selectByName(engine)
+        if name in available_base_configs():
+            return name
+
+    return "default"
+
+
+def resolve_config_dict(config_dict: dict, base_dir: str | None = None) -> dict:
+    """
+    Resolve a user config dict into a complete config dict.
+
+    The config is upgraded from any legacy format (see
+    :mod:`isofit.configs.legacy`), then overlaid onto the base config for its
+    engine (see :func:`base_config_name`) so every field not set by the user
+    takes the shipped default. ``${...}`` references are interpolated after the
+    overlay, so defaults such as ``${output.dir}/lut/lut.zarr`` follow the
+    user's values.
+
+    Parameters
+    ----------
+    config_dict : dict
+        User configuration dictionary. Not mutated.
+    base_dir : str, optional
+        Base directory for expanding relative file paths in ``config_dict``.
+        If None, paths are not expanded. By default None.
+
+    Returns
+    -------
+    dict
+        The complete, interpolated config, ready for ``Config.model_validate``.
+    """
+    config_dict = legacy.convert(config_dict)
+
+    if base_dir:
+        config_dict = common.expand_all_paths(config_dict, base_dir)
+
+    name = base_config_name(config_dict)
+    Logger.debug(f"Overlaying config onto base config {name!r}")
+
+    box = load_base_config(name, interp=False)
+    box.merge_update(config_dict)
+    box = interpolate.interpolate(box)
+    box.pop("env", None)
+
+    return box.to_dict()
 
 
 def load_config_dict(config_dict: dict, base_dir: str | None = None) -> Config:
@@ -92,14 +157,16 @@ def load_config_dict(config_dict: dict, base_dir: str | None = None) -> Config:
     Load a config from a dictionary.
 
     Creates a validated Config object from a Python dictionary, optionally
-    expanding relative paths relative to a specified base directory.
+    expanding relative paths relative to a specified base directory. Fields
+    not set in the dictionary take the defaults of the matching base config;
+    see :func:`resolve_config_dict`.
 
     Parameters
     ----------
     config_dict : dict
         Configuration dictionary with structure matching Config model schema.
         Should contain keys like 'input', 'output', 'forward_model', and
-        'implementation'.
+        'implementation'. Legacy formats are accepted.
     base_dir : str, optional
         Base directory for expanding relative file paths in the configuration.
         If None, paths are not expanded and must be absolute. By default None.
@@ -129,10 +196,7 @@ def load_config_dict(config_dict: dict, base_dir: str | None = None) -> Config:
     This function is useful for programmatically constructing configurations
     or for testing purposes. For loading from files, use create_new_config() instead.
     """
-    if base_dir:
-        config_dict = common.expand_all_paths(config_dict, base_dir)
-
-    return Config.model_validate(config_dict)
+    return Config.model_validate(resolve_config_dict(config_dict, base_dir))
 
 
 def _base_config_index() -> dict[str, Path]:
@@ -173,7 +237,9 @@ def available_base_configs() -> list[str]:
     return sorted(_base_config_index())
 
 
-def load_base_config(name: str, overrides: dict | None = None) -> Box:
+def load_base_config(
+    name: str, overrides: dict | None = None, interp: bool = True
+) -> Box:
     """
     Load one of the base configurations shipped with ISOFIT by name.
 
@@ -208,6 +274,10 @@ def load_base_config(name: str, overrides: dict | None = None) -> Box:
         (``{"implementation.n_cores": 4}``) and values are used as-is, so pass
         already-typed Python objects (``"forward_model.instrument.SNR": 500``,
         not ``"500"``).
+    interp : bool, default=True
+        Interpolate ``${...}`` references before returning. Disable to overlay
+        further values first (as :func:`resolve_config_dict` does); the
+        injected ``env`` section is kept so references remain resolvable.
 
     Returns
     -------
@@ -255,4 +325,4 @@ def load_base_config(name: str, overrides: dict | None = None) -> Box:
     overrides = overrides or {}
     overrides["env"] = {"modtran": None, **dict(env.items())}
 
-    return interpolate.load(str(path), section=name, ctx=overrides)
+    return interpolate.load(str(path), section=name, ctx=overrides, interp=interp)
