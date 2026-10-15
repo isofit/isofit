@@ -106,7 +106,7 @@ def analytical_line(
     wl_init, fwhm_init = load_wavelen(config.forward_model.instrument.wavelength_file)
 
     # Set up input file paths
-    subs_state_file = config.output.estimated_state_file
+    subs_state_file = str(config.output.estimated_state_file)
     subs_loc_file = config.input.loc_file
 
     # Rename files
