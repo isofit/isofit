@@ -21,6 +21,7 @@ from isofit.atmosphere.atmosphere import (
     modtran_aot_lowerbound_polynomials,
     modtran_water_upperbound_polynomials,
 )
+from isofit.configs.loader import load_base_config, load_config_dict
 from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.core.multistate import SurfaceMapping
@@ -692,6 +693,32 @@ def check_surface_model(
         )
 
 
+def _validate_config(config: dict, emulator_base: str = None) -> dict:
+    """Overlay the assembled config dict onto the matching engine base config,
+    validate the merged result with Pydantic (raising early if invalid), and
+    return the merged dict for writing to disk.
+
+    Mirrors make_atmosphere_config's own engine-selection heuristic so the
+    base config's engine profile matches
+    config["forward_model"]["atmosphere"]["engine"]["name"].
+    """
+    if emulator_base is None:
+        engine_name = "modtran"
+    elif emulator_base.endswith(".jld2"):
+        engine_name = "kernelflows"
+    else:
+        engine_name = "srtmnet"
+
+    base = load_base_config(engine_name)
+    base.pop("env", None)
+    base.merge_update(config)
+
+    merged = base.to_dict()
+    validated = load_config_dict(merged)
+    validated.get_config_errors()
+    return merged
+
+
 def build_config(
     paths: Pathnames,
     h2o_lut_grid: np.array = None,
@@ -875,6 +902,8 @@ def build_config(
         config["forward_model"][
             "model_discrepancy_file"
         ] = paths.model_discrepancy_working_path
+
+    config = _validate_config(config, emulator_base=emulator_base)
 
     # write main config file
     with open(paths.isofit_full_config_path, "w") as fout:
@@ -1554,7 +1583,6 @@ def make_atmosphere_config(
     atmosphere_config = {
         "engine": {
             "name": engine_name,
-            "aerosol_template_file": aerosol_tpl_path,
             "template_file": modtran_template_path,
         },
         "sim_path": lut_dir,
@@ -1570,10 +1598,16 @@ def make_atmosphere_config(
         "unknowns": unknowns,
     }
 
+    # aerosol_template_file/earth_sun_distance_file only exist on the
+    # modtran/sixs engine schemas; srtmnet and kernelflows reject unknown keys.
+    if engine_name in ("modtran", "sixs"):
+        atmosphere_config["engine"]["aerosol_template_file"] = aerosol_tpl_path
+
     atmosphere_rte = {}
     if emulator_base is not None:
         atmosphere_rte["emulator_file"] = abspath(emulator_base)
-        atmosphere_rte["earth_sun_distance_file"] = earth_sun_distance_path
+        if engine_name == "sixs":
+            atmosphere_rte["earth_sun_distance_file"] = earth_sun_distance_path
         atmosphere_config["irradiance_file"] = irradiance_file
         # The 6S install used for the surrogate simulations, not the sRTMnet
         # ``base_dir``
@@ -1588,7 +1622,7 @@ def make_atmosphere_config(
         atmosphere_rte["base_dir"] = modtran_path
     atmosphere_config["engine"].update(atmosphere_rte)
 
-    if aerosol_model_file is not None:
+    if aerosol_model_file is not None and engine_name in ("modtran", "sixs"):
         atmosphere_config["engine"]["aerosol_model_file"] = aerosol_model_file
 
     # First, build the general lut grid
