@@ -300,7 +300,7 @@ class Instrument(NoiseModel):
                 "instrument indices."
             )
 
-            for i in idx:
+            for i in range(len(idx)):
                 self.bounds[i] = _bounds[i]
                 self.scale[i] = _scale
                 self.init[i] = _init[i]

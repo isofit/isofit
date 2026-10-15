@@ -55,6 +55,9 @@ class InstrumentStateVectorConfig(StateVectorConfig):
         self._PER_WL_RCC_type = StateVectorElementConfig
         self.PER_WL_RCC: StateVectorElementConfig = None
 
+        self._WLSPL_type = StateVectorElementConfig
+        self.WLSPL: StateVectorElementConfig = None
+
         self._WL_SPACE_type = StateVectorElementConfig
         self.WL_SPACE: StateVectorElementConfig = None
 
