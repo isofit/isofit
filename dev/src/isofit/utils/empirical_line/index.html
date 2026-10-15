@@ -5685,7 +5685,7 @@
                 <span class="n">n_input_lines</span><span class="p">,</span>
                 <span class="nb">int</span><span class="p">(</span><span class="n">row</span> <span class="o">-</span> <span class="n">start_line</span><span class="p">),</span>
                 <span class="nb">int</span><span class="p">(</span><span class="n">stop_line</span> <span class="o">-</span> <span class="n">start_line</span><span class="p">),</span>
-                <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">nspectra</span><span class="p">)</span> <span class="o">/</span> <span class="n">elapsed</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">nspectra</span><span class="p">)</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">elapsed</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">),</span> <span class="mi">2</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="p">)</span>
 
