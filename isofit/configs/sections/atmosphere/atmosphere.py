@@ -8,7 +8,7 @@ RT engine selection, lookup table settings, and atmospheric state vector paramet
 from pathlib import Path
 from typing import Any, List, Literal
 
-from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .engines import Engines
 from .statevector import AtmosphereStateVectorConfig, AtmosphereUnknownsConfig
@@ -42,8 +42,6 @@ class AtmosphereConfig(BaseModel):
     lut_subset : dict[str, Any]
         Subset of lut_grid to use for processing. Allows using a smaller
         region of a large pre-computed LUT. Empty dict means use full grid.
-        Accepts the legacy key ``lut_names`` as an alias for backward
-        compatibility with older configs.
     rt_mode : {"rdn", "transm"}
         Atmospheric RT mode for LUT simulations. "transm" for transmittances
         (standard), "rdn" for reflected radiance. Default is "transm".
@@ -74,9 +72,8 @@ class AtmosphereConfig(BaseModel):
     During inversion, ISOFIT interpolates this LUT rather than running
     the RT code for each pixel, reducing runtime by orders of magnitude.
 
-    Commented-out validators in the code suggest that lut_grid validation
-    (ensuring >= 2 unique values per dimension, sorting) may be re-enabled
-    in future versions.
+    The lut_grid dimensions (and each dimension's grid points), lut_subset, and
+    statevector_names are sorted on validation.
 
     See Also
     --------
@@ -103,8 +100,7 @@ class AtmosphereConfig(BaseModel):
     lut_grid: dict[str, list[float]] = Field(description="")
 
     lut_subset: dict[str, Any] = Field(
-        validation_alias=AliasChoices("lut_subset", "lut_names"),
-        description="Subset of the lut_grid to use (legacy alias: lut_names)",
+        description="Subset of the lut_grid to use",
     )
 
     rt_mode: Literal["rdn", "transm"] = Field(
@@ -142,3 +138,23 @@ class AtmosphereConfig(BaseModel):
     irradiance_file: Path | None = Field(
         description="Solar irradiance file (used for RT and PACE-OCI SRF handling)",
     )
+
+    @model_validator(mode="after")
+    def sort_lut_dimensions(self) -> "AtmosphereConfig":
+        """
+        Sort the LUT dimensions by name, and each dimension's grid points.
+
+        The LUT dimension order determines simulation filenames and LUT layout,
+        so it must not depend on the key order of the config file.
+
+        Returns
+        -------
+        AtmosphereConfig
+            The validated config.
+        """
+        self.lut_grid = {
+            key: sorted(self.lut_grid[key]) for key in sorted(self.lut_grid)
+        }
+        self.lut_subset = {key: self.lut_subset[key] for key in sorted(self.lut_subset)}
+        self.statevector_names = sorted(self.statevector_names)
+        return self

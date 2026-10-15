@@ -10,7 +10,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
-from . import NameAlias, standardName
+from . import standardName
 
 
 class PrebuiltConfig(BaseModel):
@@ -46,6 +46,4 @@ class PrebuiltConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["prebuilt"], BeforeValidator(standardName)] = Field(
-        validation_alias=NameAlias,
-    )
+    name: Annotated[Literal["prebuilt"], BeforeValidator(standardName)] = Field()
