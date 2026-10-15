@@ -27,7 +27,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from spectral.io import envi
 
-from isofit.configs.sections.statevector_config import StateVectorElementConfig
+from isofit.configs.sections.statevector import StateVectorElementConfig
 from isofit.core.common import envi_header
 from isofit.core.instrument import Instrument
 from isofit.surface import Surface
@@ -97,8 +97,8 @@ def construct_full_state(full_config):
 
     rt_states = atmosphere_config.statevector_names
     if not rt_states:
-        lut_names = atmosphere_config.lut_names or atmosphere_config.lut_grid
-        rt_states = sorted(lut_names.keys()) if lut_names else []
+        lut_subset = atmosphere_config.lut_subset or atmosphere_config.lut_grid
+        rt_states = sorted(lut_subset.keys()) if lut_subset else []
 
     # Check for config type
     if full_config.forward_model.surface.multi_surface_flag:
@@ -277,8 +277,8 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
     # Experimental: added statevector elements
     for key, value in isurface.get("rt_statevector_elements", {}).items():
         # Add the statevector params
-        config.forward_model.atmosphere.statevector.surface_elevation_km = (
-            StateVectorElementConfig(value)
+        config.forward_model.atmosphere.statevector.root["surface_elevation_km"] = (
+            StateVectorElementConfig(**value)
         )
 
         # Add the statevector names
