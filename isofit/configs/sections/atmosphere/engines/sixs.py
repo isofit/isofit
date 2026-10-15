@@ -8,7 +8,6 @@ This module configures 6S for ISOFIT atmospheric correction.
 from typing import Annotated, Literal, Optional
 
 from pydantic import (
-    AliasChoices,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -17,7 +16,7 @@ from pydantic import (
     FilePath,
 )
 
-from . import NameAlias, standardName
+from . import standardName
 
 
 class SixSConfig(BaseModel):
@@ -33,8 +32,7 @@ class SixSConfig(BaseModel):
         Engine identifier. Must be "sixs" or "6s".
     base_dir : DirectoryPath
         Base path to 6S installation directory. The base configs default this
-        to the ISOFIT ini ``sixs`` path. Accepts the legacy key
-        ``engine_base_dir``.
+        to the ISOFIT ini ``sixs`` path.
     day : int
         Day of year (1-366) for solar geometry calculations.
     month : int
@@ -93,13 +91,10 @@ class SixSConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["sixs"], BeforeValidator(standardName)] = Field(
-        validation_alias=NameAlias,
-    )
+    name: Annotated[Literal["sixs"], BeforeValidator(standardName)] = Field()
 
     base_dir: Optional[DirectoryPath] = Field(
-        validation_alias=AliasChoices("base_dir", "engine_base_dir"),
-        description="Base path to engine directory (legacy alias: engine_base_dir)",
+        description="Base path to engine directory",
     )
 
     # The solar/observer geometry parameters below are populated dynamically by
@@ -160,8 +155,7 @@ class SixSConfig(BaseModel):
     )
 
     obs: Optional[FilePath] = Field(
-        validation_alias=AliasChoices("obs", "obs_file"),
-        description="6S observation file (legacy alias: obs_file)",
+        description="6S observation file",
     )
 
     earth_sun_distance_file: Optional[FilePath] = Field(

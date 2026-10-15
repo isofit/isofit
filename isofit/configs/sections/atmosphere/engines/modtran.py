@@ -8,7 +8,6 @@ wavelengths. This module configures MODTRAN 6.0 for ISOFIT atmospheric correctio
 from typing import Annotated, Literal, Optional
 
 from pydantic import (
-    AliasChoices,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -17,7 +16,7 @@ from pydantic import (
     FilePath,
 )
 
-from . import NameAlias, standardName
+from . import standardName
 
 
 class ModtranConfig(BaseModel):
@@ -34,8 +33,7 @@ class ModtranConfig(BaseModel):
         Engine identifier. Must be "modtran".
     base_dir : DirectoryPath
         Base path to MODTRAN installation directory. The base configs default
-        this to the ISOFIT ini ``modtran`` path. Accepts the legacy key
-        ``engine_base_dir``.
+        this to the ISOFIT ini ``modtran`` path.
     multipart_transmittance : bool
         Apply triple-run diffuse & direct transmittance estimation for
         improved accuracy. Increases runtime 3x. Default is False.
@@ -78,13 +76,10 @@ class ModtranConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["modtran"], BeforeValidator(standardName)] = Field(
-        validation_alias=NameAlias,
-    )
+    name: Annotated[Literal["modtran"], BeforeValidator(standardName)] = Field()
 
     base_dir: Optional[DirectoryPath] = Field(
-        validation_alias=AliasChoices("base_dir", "engine_base_dir"),
-        description="Base path to engine directory (legacy alias: engine_base_dir)",
+        description="Base path to engine directory",
     )
 
     multipart_transmittance: bool = Field(
