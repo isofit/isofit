@@ -687,6 +687,7 @@ def apply_oe(
         "terrain_style": terrain_style,
         "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
         "use_background_rfl": use_background_rfl,
+        "elevation_km": mean_elevation_km,
     }
     if presolve:
         # write modtran presolve template
@@ -819,10 +820,11 @@ def apply_oe(
         # add aerosol elements from climatology
         aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
             tmpl.load_climatology(
-                paths.aerosol_climatology,
-                mean_latitude,
-                mean_longitude,
-                dt,
+                config_path=paths.aerosol_climatology,
+                latitude=mean_latitude,
+                longitude=mean_longitude,
+                elevation_km=mean_elevation_km,
+                acquisition_datetime=dt,
                 lut_params=lut_params,
             )
         )
