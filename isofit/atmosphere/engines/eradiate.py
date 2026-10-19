@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import logging
+import os
 
 import eradiate
 import joseki
@@ -45,6 +46,7 @@ from eradiate.units import unit_registry as ureg
 
 from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core import units
+from isofit.core.common import json_load_ascii
 from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__name__)
@@ -71,6 +73,15 @@ class EradiateRT(BaseAtmosphere, Writer):
 
     # Reference wavelength for aerosol optical thickness (nm)
     aot_w_ref = 550.0
+
+    # Fallbacks for the background gas and aerosol load, used only when
+    # neither a LUT dimension nor the MODTRAN template supplies them (see
+    # resolve_point). AFGL 1986's own values are badly dated -- it carries
+    # CO2 at 330 ppm and CH4 at 1.7 ppm at the surface. CO2 is uniform, CH4 a
+    # surface value the profile's shape is scaled to.
+    default_co2_ppm = 420.0
+    default_ch4_ppm = 1.93
+    default_aot550 = 0.1
 
     # Height of the BOA "surface-leaving radiance" sensor above ground (m)
     boa_sensor_height = 1.0
@@ -114,6 +125,10 @@ class EradiateRT(BaseAtmosphere, Writer):
 
         eradiate.set_mode(self.eradiate_mode)
 
+        # Parsed once here rather than per-point in readSim, which runs in
+        # ray workers
+        self._template_defaults = self.template_defaults(self.config.template_file)
+
         # Loaded once; per-point gas/aerosol scaling starts from these and
         # never mutates them in place.
         self._base_thermoprops = self.default_thermoprops()
@@ -122,6 +137,7 @@ class EradiateRT(BaseAtmosphere, Writer):
         )
 
         super().__init__(full_config, wl=wl, fwhm=fwhm, **kwargs)
+        self.output_terms = self.lut_keys.keys() + ["solar_irr"]
 
     def preSim(self):
         """Records engine configuration on the LUT for provenance."""
@@ -144,21 +160,6 @@ class EradiateRT(BaseAtmosphere, Writer):
             point: Unused.
             template_only: Unused.
         """
-
-    # Output terms two_albedo_method computes or passes through per
-    # sub-wavelength, SRF-averaged in readSim to get each channel's final
-    # LUT value.
-    output_terms = (
-        "rhoatm",
-        "sphalb",
-        "transm_down_dir",
-        "transm_down_dif",
-        "transm_up_dir",
-        "transm_up_dif",
-        "solar_irr",
-        "thermal_upwelling",
-        "thermal_downwelling",
-    )
 
     def readSim(self, point: np.array):
         """Runs the three albedo simulations for a LUT point and reduces
@@ -314,6 +315,15 @@ class EradiateRT(BaseAtmosphere, Writer):
                 if key in sub_data:
                     sub_data[key] = np.clip(sub_data[key], 0.0, 1.0)
 
+        # Pair the transmittances here rather than leaving it to couple() at
+        # load time: pairing before the SRF average keeps the product
+        # consistent with the sub-wavelength transmittances rather than the
+        # channel means
+        l_solar = units.E_to_L(irr_sub, coszen)
+        sub_data = self.couple(sub_data)
+        for term in self.coupling_terms:
+            sub_data[term] = sub_data[term] * l_solar
+
         sigma = fwhm / 2.3548200450309493
         response = np.exp(-0.5 * ((w_sub - center) / sigma) ** 2)
         return {
@@ -325,24 +335,43 @@ class EradiateRT(BaseAtmosphere, Writer):
         """Merges fixed engine-config geometry with this LUT point's
         values, mapping ISOFIT's geometry-key conventions onto eradiate's.
 
+        Values resolve in order of decreasing specificity:
+            1) Lut point
+            2) engine config
+            3) MODTRAN template
+            4) class defaults
+
         Args:
             point: LUT point to process.
 
         Returns:
             dict: Geometry and state-vector values keyed by name.
         """
+
+        def setting(key, default=None):
+            val = getattr(self.config, key, None)
+            if val is None:
+                val = self._template_defaults.get(key, default)
+            return val
+
         vals = {
-            "solzen": self.config.solzen,
-            "solaz": self.config.solaz,
-            "viewzen": self.config.viewzen,
-            "viewaz": self.config.viewaz,
-            "elev": abs(max(self.config.elev or 0.0, 0.0)),
+            "solzen": setting("solzen"),
+            "solaz": setting("solaz"),
+            "viewzen": setting("viewzen"),
+            "viewaz": setting("viewaz"),
+            "elev": abs(max(setting("elev", 0.0) or 0.0, 0.0)),
             # None means "satellite/TOA sensor" (infinite distance); only a
             # value strictly below the atmosphere top switches to a finite,
             # airborne ray_offset (see build_experiment).
-            "alt": self.config.alt,
+            "alt": setting("alt"),
+            # Gases and aerosol the state vector doesn't always retrieve, so
+            # they need a sensible default value
+            "CO2": self._template_defaults.get("CO2", self.default_co2_ppm),
+            "CH4": self._template_defaults.get("CH4", self.default_ch4_ppm),
+            "AOT550": self._template_defaults.get("AOT550", self.default_aot550),
         }
 
+        # A LUT dimension of the same name always takes precedence
         for key, val in zip(self.lut_names, point):
             vals[key] = val
 
@@ -380,7 +409,7 @@ class EradiateRT(BaseAtmosphere, Writer):
                 thermoprops, "x_CO2", vals["CO2"]
             )
         if "CH4" in vals:
-            thermoprops = self.set_uniform_mixing_ratio(
+            thermoprops = self.scale_surface_mixing_ratio(
                 thermoprops, "x_CH4", vals["CH4"]
             )
         if "O3" in vals:
@@ -481,6 +510,59 @@ class EradiateRT(BaseAtmosphere, Writer):
         return exp, measures_toa, measures_boa
 
     @staticmethod
+    def template_defaults(template_file: str) -> dict:
+        """Pulls the scene's geometry, gas and aerosol defaults out of the
+        MODTRAN template apply_oe writes, mapping MODTRAN's parameter
+        names onto the engine's own. Follows the same mapping
+        template_construction uses to recover scene means for a prebuilt LUT.
+
+        Args:
+            template_file: Path to the MODTRAN template, or None.
+
+        Returns:
+            dict: Engine-keyed defaults found in the template. Keys absent
+            from the template are left out entirely so resolve_point can fall
+            back to the class defaults.
+        """
+        if not template_file or not os.path.exists(template_file):
+            return {}
+
+        template = json_load_ascii(template_file)
+        if "cases" in template:
+            template = template["cases"][0]
+        template = template["MODTRAN"][0]["MODTRANINPUT"]
+
+        geometry = template.get("GEOMETRY", {})
+        atmosphere = template.get("ATMOSPHERE", {})
+
+        defaults = {
+            "solzen": geometry.get("PARM2"),
+            "viewaz": geometry.get("TRUEAZ"),
+            "elev": template.get("SURFACE", {}).get("GNDALT"),
+            "alt": geometry.get("H1ALT"),
+            "CO2": atmosphere.get("CO2MX"),
+            "CH4": atmosphere.get("CH4MX"),
+        }
+
+        # MODTRAN reports the observer zenith in its own convention
+        obszen = geometry.get("OBSZEN")
+        if obszen is not None:
+            defaults["viewzen"] = 180.0 - obszen
+
+        # IPARM 12 carries the solar azimuth relative to the view azimuth,
+        # the same sum resolve_point applies to a relative_azimuth dimension
+        trueaz, parm1 = geometry.get("TRUEAZ"), geometry.get("PARM1")
+        if trueaz is not None and parm1 is not None:
+            defaults["solaz"] = trueaz + parm1
+
+        # MODTRAN carries the aerosol load as a visibility, not an AOT
+        vis = template.get("AEROSOLS", {}).get("VIS")
+        if vis is not None:
+            defaults["AOT550"] = units.vis_to_aod(vis)
+
+        return {key: val for key, val in defaults.items() if val is not None}
+
+    @staticmethod
     def infer_spectral_mode(database: str) -> str:
         """Infers eradiate's mono/ckd mode from the absorption database name
         (gecko/komodo are mono-only, monotropa/mycena/panellus/tuber are
@@ -495,18 +577,27 @@ class EradiateRT(BaseAtmosphere, Writer):
         is_ckd = "CKD" in type(absdb_factory.create(database)).__name__
         return "ckd" if is_ckd else "mono"
 
-    @staticmethod
-    def default_thermoprops():
+    @classmethod
+    def default_thermoprops(cls):
         """Loads the default AFGL US-standard thermophysical profile
-        (0-120 km), matching MolecularAtmosphere's own default.
+        (0-120 km), matching MolecularAtmosphere's own default, then brings
+        the background gases up to present-day concentrations. AFGL 1986 is
+        a 1986 profile: it carries CO2 at 330 ppm and CH4 at 1.7 ppm, which
+        is sadly dated. CO2 is well mixed so it is set uniformly,
+        whereas CH4 is only well mixed through the troposphere and so scales
+        the profile instead.
 
         Returns:
             xr.Dataset: Thermophysical profile.
         """
-        return joseki.make(
+        thermoprops = joseki.make(
             identifier="afgl_1986-us_standard",
             z=np.linspace(0.0, 120.0, 121) * ureg.km,
         )
+        thermoprops = cls.set_uniform_mixing_ratio(
+            thermoprops, "x_CO2", cls.default_co2_ppm
+        )
+        return cls.scale_surface_mixing_ratio(thermoprops, "x_CH4", cls.default_ch4_ppm)
 
     @staticmethod
     def load_particle_properties(dataset_id: str):
@@ -582,6 +673,34 @@ class EradiateRT(BaseAtmosphere, Writer):
         """
         scaled = thermoprops.copy(deep=True)
         scaled[variable] = thermoprops[variable] * 0.0 + (target_ppm * 1e-6)
+        return scaled
+
+    @staticmethod
+    def scale_surface_mixing_ratio(thermoprops, variable: str, target_ppm: float):
+        """Scales a mixing ratio profile so its surface value matches
+        target_ppm, preserving the default profile's vertical shape.
+
+        Suits gases that are well mixed only through the troposphere, where
+        set_uniform_mixing_ratio would be wrong (e.g. methane).
+
+        Args:
+            thermoprops: Thermophysical profile to scale.
+            variable: Mixing-ratio variable name, e.g. "x_CH4".
+            target_ppm: Target surface mixing ratio (ppm).
+
+        Returns:
+            xr.Dataset: Thermophysical profile with the rescaled gas.
+        """
+        surface = float(thermoprops[variable].isel(z=0))
+
+        if surface <= 0:
+            Logger.warning(
+                f"Default {variable} surface value is non-positive, cannot scale"
+            )
+            return thermoprops
+
+        scaled = thermoprops.copy(deep=True)
+        scaled[variable] = thermoprops[variable] * (target_ppm * 1e-6 / surface)
         return scaled
 
     @staticmethod
