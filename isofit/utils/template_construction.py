@@ -88,8 +88,8 @@ class Pathnames:
             self.fid = split(input_radiance)[-1][:24]
         elif sensor == "tanager":
             self.fid = split(input_radiance)[-1][:23]
-        elif sensor == "custom" or sensor[:3] == "NA-":
-            # Custom sensors ("custom" or "NA-*") keep the full basename, minus any
+        elif sensor == "custom" or sensor[:2] == "NA":
+            # Custom sensors ("custom" or "NA") keep the full basename, minus any
             # trailing _rdn
             self.fid = os.path.splitext(os.path.basename(input_radiance))[0]
             self.fid = self.fid.removesuffix("_rdn")
@@ -1437,15 +1437,12 @@ def get_sensor_metadata_from_fid(sensor: str, fid: str, datestr: str = None):
     elif sensor == "tanager":
         # parse flightline ID (Tanager assumptions)
         dt = datetime.strptime(fid[:15], "%Y%m%d_%H%M%S")
-    elif sensor == "custom" or sensor[:3] == "NA-":
-        # Custom sensors: parse the fid with datestr, otherwise use the date in an
-        # "NA-YYYYMMDD" sensor name
+    elif sensor == "custom" or sensor[:2] == "NA":
+        # Custom sensors: parse the fid with datestr
         if datestr is not None:
             dt = parse_datestr(fid, datestr)
-        elif sensor == "custom":
-            raise ValueError('datestr is required for the "custom" sensor')
         else:
-            dt = datetime.strptime(sensor[3:], "%Y%m%d")
+            raise ValueError('datestr is required for the "NA/custom" sensor')
     else:
         raise ValueError(
             "Datetime object could not be obtained. Please check file name of input"
