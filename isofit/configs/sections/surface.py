@@ -206,9 +206,10 @@ class SurfaceConfig(BaseModel):
         based on classification map. Default is False.
     use_background_rfl : bool
         Use background reflectance for spatial inference. Default is False.
-    surface_file : FilePath, optional
+    surface_file : Path, optional
         Path to surface model file in .mat format containing reflectance
-        priors, basis vectors, and covariance information.
+        priors, basis vectors, and covariance information. Need not exist
+        yet, as it may be built later by ``isofit surface_model``.
     surface_category : {"surface", "multicomponent_surface", "glint_model_surface", "thermal_surface", "lut_surface"}, optional
         Type of surface model to use. Determines which surface class is
         instantiated.
@@ -292,7 +293,9 @@ class SurfaceConfig(BaseModel):
 
     use_background_rfl: bool = Field(description="Use background reflectance")
 
-    surface_file: Optional[FilePath] = Field(
+    # Not a FilePath: the file may be built after the config is written
+    # (e.g. by `isofit surface_model`)
+    surface_file: Optional[Path] = Field(
         description="Path to surface model file (.mat format)"
     )
 
