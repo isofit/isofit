@@ -23,7 +23,7 @@ from isofit.core import common
 from isofit.data import env
 
 Logger = logging.getLogger(__name__)
-ConfigsDir = Path(__file__).resolve().parents[2] / "configs"
+ConfigsDir = Path(__file__).resolve().parent / "yamls"
 
 
 def create_new_config(config_file: Union[str, Path]) -> Config:
@@ -243,7 +243,7 @@ def load_base_config(
     """
     Load one of the base configurations shipped with ISOFIT by name.
 
-    Base configs live in the repository-level ``configs/`` directory
+    Base configs live in the package's ``isofit/configs/yamls/`` directory
     (:data:`ConfigsDir`). Each is a named top-level section of one of the
     ``*.yml`` files there:
 
