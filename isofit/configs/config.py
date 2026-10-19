@@ -99,11 +99,16 @@ class Config(BaseModel):
         -----
         The following inter-field validations are performed:
         - Simulation mode requires input.reflectance_file to be set
+        - The surface checks of :meth:`SurfaceConfig.get_config_issues`, which
+          read the surface model files
         """
         Logger.info("Checking config sections for configuration issues")
 
         errors = []
         warnings = []
+
+        if self.forward_model.surface is not None:
+            errors, warnings = self.forward_model.surface.get_config_issues()
 
         # Check inter-section validity
         # 1. Simulation mode requires reflectance_file

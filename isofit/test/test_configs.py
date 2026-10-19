@@ -1,10 +1,14 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
+from pydantic import ValidationError
+from scipy.io import savemat
 
 from isofit.configs import create_new_config, legacy, load_config_dict
 from isofit.configs.loader import base_config_name, resolve_config_dict
+from isofit.core.multistate import update_config_for_surface
 from isofit.data import env
 
 Data = Path(__file__).parent / "data"
@@ -169,7 +173,248 @@ def test_legacy_config_loads():
     # Defaults from configs/default.yml
     assert config.implementation.mode == "inversion"
     assert config.implementation.inversion.least_squares_params.method == "trf"
-    assert config.forward_model.surface.selection_metric == "SGA"
+    assert config.forward_model.surface.selection_metric == "Euclidean"
+    assert config.forward_model.atmosphere.interpolator_style == "mlg_numba"
+
+
+@pytest.mark.parametrize(
+    "lut_grid, match",
+    [
+        ({"H2OSTR": [1.0]}, "less than the required 2"),
+        ({"H2OSTR": [1.0, 1.0, 2.0]}, "duplicate values"),
+    ],
+)
+def test_invalid_lut_grid(lut_grid, match):
+    data = legacy_config({"engine_name": "6s"})
+    data["forward_model"]["radiative_transfer"]["lut_grid"] = lut_grid
+    with pytest.raises(ValidationError, match=match):
+        load_config_dict(data)
+
+
+def test_invalid_interpolator_style():
+    data = legacy_config({"engine_name": "6s", "interpolator_style": "nds-3"})
+    with pytest.raises(ValidationError, match="interpolator_style"):
+        load_config_dict(data)
+
+
+def test_windows_required_outside_simulation():
+    data = legacy_config({"engine_name": "6s"})
+    data["implementation"]["inversion"]["windows"] = []
+    with pytest.raises(ValidationError, match="inversion.windows"):
+        load_config_dict(data)
+
+
+def test_surface_file_required():
+    """Without Surfaces, surface_file must be set (checked by get_config_errors)."""
+    config = load_config_dict(legacy_config({"engine_name": "6s"}))
+    errors, _ = config.forward_model.surface.get_config_issues()
+    assert any("surface_file not specified" in e for e in errors)
+    with pytest.raises(AttributeError):
+        config.get_config_errors()
+
+
+def test_surface_statevector_mismatch_warns(tmp_path):
+    """Configured statevector values differing from the .mat file warn."""
+    mat = tmp_path / "surface.mat"
+    savemat(
+        mat,
+        {
+            "statevec_names": ["SURF_TEMP_K"],
+            "bounds": [[250.0, 400.0]],
+            "scale": [100.0],
+            "prior_mean": [300.0],
+            "prior_sigma": [1.0],
+            "init": [300.0],
+        },
+    )
+
+    data = legacy_config({"engine_name": "6s"})
+    data["forward_model"]["surface"] = {
+        "surface_category": "thermal_surface",
+        "surface_file": str(mat),
+        "statevector": {
+            "SURF_TEMP_K": {
+                "bounds": [250.0, 400.0],
+                "scale": 100.0,
+                "prior_mean": 310.0,
+                "prior_sigma": 1.0,
+                "init": 300.0,
+            }
+        },
+    }
+    config = load_config_dict(data)
+
+    errors, warnings = config.forward_model.surface.get_config_issues()
+    assert errors == []
+    assert len(warnings) == 1
+    assert "SURF_TEMP_K: prior_mean" in warnings[0]
+
+
+def glint_mat(path, scale):
+    """Write a surface .mat file storing SKY_GLINT and SUN_GLINT elements."""
+    savemat(
+        path,
+        {
+            "statevec_names": ["SKY_GLINT", "SUN_GLINT"],
+            "bounds": [[0.0, 1.0], [0.0, 10.0]],
+            "scale": [scale, scale],
+            "prior_mean": [0.02, 0.5],
+            "prior_sigma": [1.0, 1.0],
+            "init": [0.02, 0.5],
+        },
+    )
+
+
+Glint = {
+    "SKY_GLINT": {"bounds": [0.0, 1.0], "scale": 1.0, "prior_mean": 0.02,
+                  "prior_sigma": 1.0, "init": 0.02},
+    "SUN_GLINT": {"bounds": [0.0, 10.0], "scale": 1.0, "prior_mean": 0.5,
+                  "prior_sigma": 1.0, "init": 0.5},
+}  # fmt: skip
+
+
+def test_multi_surface_statevector_mismatch_warns(tmp_path):
+    """Each sub-surface file is checked against its own statevector, and every
+    mismatching element is reported."""
+    matching, differing = tmp_path / "matching.mat", tmp_path / "differing.mat"
+    glint_mat(matching, scale=1.0)
+    glint_mat(differing, scale=2.0)
+
+    data = legacy_config({"engine_name": "6s"})
+    data["forward_model"]["surface"] = {
+        "multi_surface_flag": True,
+        "Surfaces": {
+            "glint_model_surface": {
+                "surface_category": "glint_model_surface",
+                "surface_file": str(matching),
+                "surface_int": 1,
+                "statevector": Glint,
+            },
+            "other_glint": {
+                "surface_category": "glint_model_surface",
+                "surface_file": str(differing),
+                "surface_int": 2,
+                "statevector": Glint,
+            },
+            "not_built_yet": {
+                "surface_category": "multicomponent_surface",
+                "surface_file": str(tmp_path / "missing.mat"),
+                "surface_int": 0,
+            },
+        },
+    }
+    config = load_config_dict(data)
+
+    errors, warnings = config.forward_model.surface.get_config_issues()
+    assert errors == []
+    assert len(warnings) == 1
+    assert f"SKY_GLINT: scale ({differing})" in warnings[0]
+    assert f"SUN_GLINT: scale ({differing})" in warnings[0]
+    assert str(matching) not in warnings[0]
+
+
+def test_unset_statevector_values_match_nan(tmp_path):
+    """Values unset in both the config and the .mat file (NaN) don't warn, and
+    fields missing from the .mat file are skipped."""
+    mat = tmp_path / "surface.mat"
+    savemat(
+        mat,
+        {
+            "statevec_names": ["SURF_TEMP_K"],
+            "bounds": [[250.0, 400.0]],
+            "scale": [np.nan],
+        },
+    )
+
+    data = legacy_config({"engine_name": "6s"})
+    data["forward_model"]["surface"] = {
+        "surface_category": "thermal_surface",
+        "surface_file": str(mat),
+        "statevector": {"SURF_TEMP_K": {"bounds": [250.0, 400.0]}},
+    }
+    config = load_config_dict(data)
+
+    assert config.forward_model.surface.get_config_issues() == ([], [])
+
+
+@pytest.mark.parametrize(
+    "sub_surface, match",
+    [
+        ({"surface_file": "a.mat", "surface_int": 0}, "surface_category"),
+        ({"surface_category": "surface", "surface_int": 0}, "surface_file"),
+        ({"surface_category": "surface", "surface_file": "a.mat"}, "surface_int"),
+        (
+            {"surface_category": "surface", "surface_file": "a.mat", "surface_int": -1},
+            "surface_int",
+        ),
+        (
+            {
+                "surface_category": "surface",
+                "surface_file": "a.mat",
+                "surface_int": 0,
+                "statevector": {"SKY_GLINT": {"scale": "big"}},
+            },
+            "scale",
+        ),
+    ],
+)
+def test_sub_surface_validation(sub_surface, match):
+    """Malformed Surfaces entries fail at load time."""
+    data = legacy_config({"engine_name": "6s"})
+    data["forward_model"]["surface"] = {"Surfaces": {"bad": sub_surface}}
+    with pytest.raises(ValidationError, match=match):
+        load_config_dict(data)
+
+
+def test_update_from_subconfig():
+    """Sub-surface settings, including extra keys, overwrite the active surface."""
+    data = legacy_config({"engine_name": "6s"})
+    data["forward_model"]["surface"] = {
+        "Surfaces": {
+            "glint_model_surface": {
+                "surface_category": "glint_model_surface",
+                "surface_file": "glint.mat",
+                "surface_int": 1,
+                "terrain_style": "dem",
+            }
+        },
+    }
+    surface = load_config_dict(data).forward_model.surface
+    surface.update_from_subconfig(surface.Surfaces["glint_model_surface"])
+
+    assert surface.surface_category == "glint_model_surface"
+    assert surface.surface_file == Path("glint.mat")
+    assert surface.terrain_style == "dem"
+    assert surface.statevector.SKY_GLINT is None
+
+
+def test_update_config_for_surface_rt_statevector_elements():
+    """A sub-surface's rt_statevector_elements are added to the atmosphere
+    under their own names, once, even when updated repeatedly."""
+    data = legacy_config({"engine_name": "6s"})
+    data["forward_model"]["surface"] = {
+        "surface_class_file": str(Wavelengths),
+        "Surfaces": {
+            "glint_model_surface": {
+                "surface_category": "glint_model_surface",
+                "surface_file": "glint.mat",
+                "surface_int": 1,
+                "rt_statevector_elements": {
+                    "AOT550": {"bounds": [0.001, 1.0], "scale": 1.0},
+                    "GNDALT": {"bounds": [0.0, 3.0], "scale": 1.0},
+                },
+            }
+        },
+    }
+    config = load_config_dict(data)
+    config.forward_model.atmosphere.statevector_names = ["H2OSTR"]
+    for _ in range(2):
+        config = update_config_for_surface(config, "glint_model_surface")
+
+    atmosphere = config.forward_model.atmosphere
+    assert atmosphere.statevector_names == ["AOT550", "GNDALT", "H2OSTR"]
+    assert atmosphere.statevector.root["GNDALT"].bounds == [0.0, 3.0]
+    assert "surface_elevation_km" not in atmosphere.statevector.root
 
 
 def test_defaults_interpolate_after_overlay():
