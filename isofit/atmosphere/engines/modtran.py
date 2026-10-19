@@ -34,8 +34,8 @@ import scipy.stats
 from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core import units
 from isofit.core.common import json_load_ascii, recursive_replace
-from isofit.luts.writer import Writer
 from isofit.core.units import modtran_rdn_in_nm
+from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__file__)
 
@@ -902,7 +902,7 @@ class ModtranRT(BaseAtmosphere, Writer):
                     # We don't need a .chn file if we're writing a tp7!
                     # Delete it. And set the DV and FWHM parameters to something
                     # arbitrarily high
-                    if self.config.use_tp7:
+                    if self.config.engine.use_tp7:
                         if "FILTNM" in case_param["MODTRANINPUT"]["SPECTRAL"]:
                             del case_param["MODTRANINPUT"]["SPECTRAL"]["FILTNM"]
 

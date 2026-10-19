@@ -123,8 +123,8 @@ class AtmosphereConfig(BaseModel):
         description="Build/configure the RT engine and exit without running simulations",
     )
 
-    interpolator_style: str | None = Field(
-        description="LUT interpolation style; falls back to the instrument setting if unset",
+    interpolator_style: Literal["rg", "mlg", "mlg_numba"] = Field(
+        description="LUT interpolation style: `rg` (RegularGrid), `mlg` (multilinear grid), or `mlg_numba`",
     )
 
     wavelength_range: List[float] | None = Field(
@@ -138,6 +138,36 @@ class AtmosphereConfig(BaseModel):
     irradiance_file: Path | None = Field(
         description="Solar irradiance file (used for RT and PACE-OCI SRF handling)",
     )
+
+    @field_validator("lut_grid")
+    @classmethod
+    def validate_lut_grid(cls, v: dict[str, list[float]]) -> dict[str, list[float]]:
+        """
+        Validate that each LUT dimension can be interpolated over.
+
+        Parameters
+        ----------
+        v : dict[str, list[float]]
+            The LUT grid to validate.
+
+        Returns
+        -------
+        dict[str, list[float]]
+            The validated LUT grid.
+
+        Raises
+        ------
+        ValueError
+            If a dimension has fewer than 2 grid points or duplicate grid points.
+        """
+        for key, points in v.items():
+            if len(points) < 2:
+                raise ValueError(
+                    f"lut_grid item {key} has less than the required 2 elements"
+                )
+            if len(set(points)) < len(points):
+                raise ValueError(f"Detected duplicate values in lut_grid item {key}")
+        return v
 
     @model_validator(mode="after")
     def sort_lut_dimensions(self) -> "AtmosphereConfig":

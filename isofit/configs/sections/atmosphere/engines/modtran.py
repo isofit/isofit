@@ -37,6 +37,9 @@ class ModtranConfig(BaseModel):
     multipart_transmittance : bool
         Apply triple-run diffuse & direct transmittance estimation for
         improved accuracy. Increases runtime 3x. Default is False.
+    use_tp7 : bool
+        Write TP7 outputs instead of the default CHN outputs. Only applies
+        when multipart_transmittance is enabled. Default is False.
     aerosol_template_file : FilePath
         Path to aerosol template file defining aerosol optical properties
         and vertical profiles.
@@ -84,6 +87,10 @@ class ModtranConfig(BaseModel):
 
     multipart_transmittance: bool = Field(
         description="Apply triple-run diffuse & direct transmittance estimation",
+    )
+
+    use_tp7: bool = Field(
+        description="Write TP7 outputs instead of CHN outputs (multipart_transmittance only)",
     )
 
     aerosol_template_file: Optional[FilePath] = Field(

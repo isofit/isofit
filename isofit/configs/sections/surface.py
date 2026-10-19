@@ -9,12 +9,67 @@ parameters for temperature and glint effects.
 from pathlib import Path
 from typing import Dict, Literal, Optional
 
-from pydantic import BaseModel, Field, FilePath, field_validator
+import numpy as np
+from pydantic import BaseModel, ConfigDict, Field, FilePath, NonNegativeInt
+from scipy.io import loadmat
 
 from isofit.configs.sections.statevector import (
     StateVectorConfig,
     StateVectorElementConfig,
 )
+
+SurfaceCategory = Literal[
+    "surface",
+    "multicomponent_surface",
+    "glint_model_surface",
+    "thermal_surface",
+    "lut_surface",
+]
+
+
+def statevector_mismatches(
+    file: Path, configured: Dict[str, StateVectorElementConfig]
+) -> list[str]:
+    """
+    Compare configured statevector elements with those stored in a surface file.
+
+    Parameters
+    ----------
+    file : Path
+        Surface model file (.mat format). If it doesn't exist yet (e.g. it is
+        built later by ``isofit surface_model``), nothing is compared.
+    configured : dict[str, StateVectorElementConfig]
+        Configured statevector elements by name. Elements stored in the file
+        but not configured here are skipped, as are fields missing from the
+        file. Values unset (NaN) in both are considered equal.
+
+    Returns
+    -------
+    list[str]
+        One ``"NAME: field (file)"`` entry per mismatching value.
+    """
+    if not file.exists():
+        return []
+
+    mismatch = []
+    model_dict = loadmat(file)
+    for i, name in enumerate(model_dict.get("statevec_names", [])):
+        name = name.strip()
+        if name not in configured:
+            continue
+        for key in StateVectorElementConfig.model_fields:
+            if key not in model_dict:
+                continue
+            values = model_dict[key]
+            if key == "bounds":
+                stored = np.reshape(values, (-1, 2))[i]
+            else:
+                stored = np.ravel(values)[i]
+            value = getattr(configured[name], key)
+            if not np.allclose(value, stored, equal_nan=True):
+                mismatch.append(f"{name}: {key} ({file})")
+
+    return mismatch
 
 
 class SurfaceStateVectorConfig(StateVectorConfig):
@@ -65,6 +120,77 @@ class SurfaceStateVectorConfig(StateVectorConfig):
     )
 
 
+class SubSurfaceConfig(BaseModel):
+    """
+    Configuration for one surface class in multi-surface mode.
+
+    Each entry of :attr:`SurfaceConfig.Surfaces` maps a classification value
+    to the surface model used for those pixels. When a class is processed,
+    :meth:`SurfaceConfig.update_from_subconfig` copies these settings onto the
+    active surface config.
+
+    Attributes
+    ----------
+    surface_category : {"surface", "multicomponent_surface", "glint_model_surface", "thermal_surface", "lut_surface"}
+        Type of surface model for this class.
+    surface_file : Path
+        Path to the surface model file (.mat format) for this class. Need not
+        exist at load time, as it may be built later (e.g. by
+        ``isofit surface_model``).
+    surface_int : int
+        Value of this class in the surface classification file.
+    statevector : dict[str, StateVectorElementConfig]
+        Non-reflectance statevector elements expected in ``surface_file``.
+        Only used by :meth:`SurfaceConfig.get_config_issues`; runs use
+        :attr:`SurfaceConfig.statevector`.
+    rt_statevector_elements : dict[str, StateVectorElementConfig]
+        Experimental: statevector elements added to the atmosphere for this
+        class.
+
+    Notes
+    -----
+    Any other key (e.g. ``terrain_style``, ``max_slope``) is kept as-is and
+    overwrites the matching :class:`SurfaceConfig` field for this class.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    surface_category: SurfaceCategory = Field(
+        description="Type of surface model for this class"
+    )
+    surface_file: Path = Field(description="Path to surface model file (.mat format)")
+    surface_int: NonNegativeInt = Field(
+        description="Value of this class in the surface classification file"
+    )
+    statevector: Dict[str, StateVectorElementConfig] = Field(
+        default_factory=dict,
+        description="Non-reflectance statevector elements expected in surface_file",
+    )
+    rt_statevector_elements: Dict[str, StateVectorElementConfig] = Field(
+        default_factory=dict,
+        description="Experimental: atmosphere statevector elements for this class",
+    )
+
+    def statevector_mismatches(
+        self, base: Dict[str, StateVectorElementConfig]
+    ) -> list[str]:
+        """
+        Compare the statevector configured for this class with its surface file.
+
+        Parameters
+        ----------
+        base : dict[str, StateVectorElementConfig]
+            Statevector elements configured for the parent surface. This
+            class's own ``statevector`` overrides them by name.
+
+        Returns
+        -------
+        list[str]
+            Mismatches found, see :func:`statevector_mismatches`.
+        """
+        return statevector_mismatches(self.surface_file, {**base, **self.statevector})
+
+
 class SurfaceConfig(BaseModel):
     """
     Surface configuration.
@@ -90,7 +216,7 @@ class SurfaceConfig(BaseModel):
         Path to surface classification file (ENVI format) for multi-surface mode.
     base_surface_class_file : FilePath, optional
         Path to base surface classification file for hierarchical classification.
-    Surfaces : dict[str, dict]
+    Surfaces : dict[str, SubSurfaceConfig]
         Multi-surface configuration dictionary mapping surface class names to
         their configurations. Each entry must have 'surface_category',
         'surface_file', and 'surface_int' (integer mapping).
@@ -99,9 +225,10 @@ class SurfaceConfig(BaseModel):
     select_on_init : bool
         Force use of initialization state and never change surface model
         selection. Default is True.
-    selection_metric : {"Euclidean", "SGA", "NormSGA"}
-        Metric for surface model selection in multi-surface mode. "SGA"
-        (Spectral Gradient Angle) is recommended. Default is "SGA".
+    selection_metric : {"Euclidean", "SGA", "SpecAngle"}
+        Metric for selecting the surface prior component: Euclidean distance,
+        "SGA" (Spectral Gradient Angle), or "SpecAngle" (spectral angle).
+        Default is "Euclidean".
     statevector : SurfaceStateVectorConfig
         Surface state vector configuration for temperature and glint parameters.
     emissivity_for_surface_T_init : float
@@ -158,6 +285,7 @@ class SurfaceConfig(BaseModel):
     See Also
     --------
     SurfaceStateVectorConfig : Surface parameters for optimization
+    SubSurfaceConfig : Per-class configuration in multi-surface mode
     """
 
     multi_surface_flag: bool = Field(description="Enable multi-surface mode")
@@ -168,15 +296,9 @@ class SurfaceConfig(BaseModel):
         description="Path to surface model file (.mat format)"
     )
 
-    surface_category: Optional[
-        Literal[
-            "surface",
-            "multicomponent_surface",
-            "glint_model_surface",
-            "thermal_surface",
-            "lut_surface",
-        ]
-    ] = Field(description="Type of surface model to use")
+    surface_category: Optional[SurfaceCategory] = Field(
+        description="Type of surface model to use"
+    )
 
     surface_class_file: Optional[FilePath] = Field(
         description="Path to surface classification file"
@@ -186,7 +308,7 @@ class SurfaceConfig(BaseModel):
         description="Path to base surface classification file"
     )
 
-    Surfaces: Dict[str, Dict] = Field(
+    Surfaces: Dict[str, SubSurfaceConfig] = Field(
         description="Multi-surface configuration dictionary"
     )
 
@@ -196,7 +318,7 @@ class SurfaceConfig(BaseModel):
         description="Force use of initialization state and never change"
     )
 
-    selection_metric: Literal["Euclidean", "SGA", "NormSGA"] = Field(
+    selection_metric: Literal["Euclidean", "SGA", "SpecAngle"] = Field(
         description="Metric for surface selection"
     )
 
@@ -218,7 +340,7 @@ class SurfaceConfig(BaseModel):
 
     refractive_index_path: str = Field(description="Path to refractive index data")
 
-    def update_from_subconfig(self, subconfig_dict: dict):
+    def update_from_subconfig(self, subconfig: SubSurfaceConfig):
         """
         Overwrite fields from a per-class multi-surface sub-config.
 
@@ -229,8 +351,8 @@ class SurfaceConfig(BaseModel):
 
         Parameters
         ----------
-        subconfig_dict : dict
-            Mapping of field names to values for the selected surface class.
+        subconfig : SubSurfaceConfig
+            Settings for the selected surface class.
         """
         keys_to_ignore = {
             "multi_surface_flag",
@@ -240,49 +362,61 @@ class SurfaceConfig(BaseModel):
             "statevector",
         }
 
-        for key, value in subconfig_dict.items():
+        # Iterating a model yields its declared fields followed by its extras
+        for key, value in subconfig:
             if key in keys_to_ignore:
                 continue
             if key in type(self).model_fields:
                 setattr(self, key, value)
 
-    @field_validator("Surfaces")
-    @classmethod
-    def validate_surfaces(cls, v: Dict[str, Dict]) -> Dict[str, Dict]:
+    def get_config_issues(self) -> tuple[list[str], list[str]]:
         """
-        Validate multi-surface configuration.
+        Check the config for completeness and against the surface model files.
 
-        Parameters
-        ----------
-        v : dict[str, dict]
-            Multi-surface configuration dictionary to validate.
+        These checks run from :meth:`isofit.configs.Config.get_config_errors`
+        rather than at validation time: base configs (e.g. ``default.yml``)
+        intentionally leave the surface file unset, and the surface model files
+        may not have been built yet when the config is loaded.
 
         Returns
         -------
-        dict[str, dict]
-            The validated configuration.
-
-        Raises
-        ------
-        ValueError
-            If any surface configuration is missing required fields
-            (surface_category, surface_file, or valid surface_int).
+        tuple[list[str], list[str]]
+            Errors and warnings found.
 
         Notes
         -----
-        Each surface entry must have:
-        - surface_category: Type of surface model
-        - surface_file: Path to prior/model file
-        - surface_int: Integer >= 0 mapping to classification values
+        Checks performed:
+        - Outside multi-surface mode, surface_file and surface_category must be set
+        - Statevector elements (e.g. SURF_TEMP_K) configured for each surface
+          file should match those stored in it; a mismatch is a warning, as the
+          configured values are used. The base statevector applies to every
+          file, and a sub-surface's own statevector overrides it for that
+          sub-surface's file. Files that don't exist yet are skipped
         """
-        if v:
-            for name, config in v.items():
-                if not config.get("surface_category"):
-                    raise ValueError(f"Surface '{name}' missing surface_category")
-                if not config.get("surface_file"):
-                    raise ValueError(f"Surface '{name}' missing surface_file")
-                if config.get("surface_int", -1) < 0:
-                    raise ValueError(
-                        f"Surface '{name}' missing valid surface_int mapping"
-                    )
-        return v
+        errors, warnings = [], []
+
+        if not self.Surfaces:
+            if self.surface_file is None:
+                errors.append(
+                    "surface_file not specified. All current supported surface models require surface_file to be provided"
+                )
+            if self.surface_category is None:
+                errors.append("surface->surface_category or Surfaces must be specified")
+
+        elements, names = self.statevector.get_elements()
+        statevector = dict(zip(names, elements))
+
+        mismatch = []
+        if self.surface_file is not None:
+            mismatch += statevector_mismatches(self.surface_file, statevector)
+        for sub_surface in self.Surfaces.values():
+            mismatch += sub_surface.statevector_mismatches(statevector)
+
+        if mismatch:
+            warnings.append(
+                "Configured non-reflectance surface statevector elements do not "
+                "match .mat file.\nRun will use configured values in the config."
+                "\nMismatching values:\n" + "\n".join(mismatch)
+            )
+
+        return errors, warnings

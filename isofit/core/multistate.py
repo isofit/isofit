@@ -27,7 +27,6 @@ import numpy as np
 from scipy.interpolate import interp1d
 from spectral.io import envi
 
-from isofit.configs.sections.statevector import StateVectorElementConfig
 from isofit.core.common import envi_header
 from isofit.core.instrument import Instrument
 from isofit.surface import Surface
@@ -224,7 +223,7 @@ def index_spectra_by_surface_view(config, index_pairs, force_full_res=False):
     class_groups = {}
     for c, surface_sub_config in surface_config.Surfaces.items():
         surface_pixel_list = np.ascontiguousarray(
-            np.argwhere(classes == surface_sub_config["surface_int"]).astype(int)
+            np.argwhere(classes == surface_sub_config.surface_int).astype(int)
         )
 
         if not len(surface_pixel_list):
@@ -275,14 +274,16 @@ def update_config_for_surface(config, surface_class_str, clouds=True):
     config.forward_model.surface.update_from_subconfig(isurface)
 
     # Experimental: added statevector elements
-    for key, value in isurface.get("rt_statevector_elements", {}).items():
+    atmosphere = config.forward_model.atmosphere
+    for key, value in isurface.rt_statevector_elements.items():
         # Add the statevector params
-        config.forward_model.atmosphere.statevector.root["surface_elevation_km"] = (
-            StateVectorElementConfig(**value)
-        )
+        atmosphere.statevector.root[key] = value
 
-        # Add the statevector names
-        config.forward_model.atmosphere.statevector_names.append(key)
+        # Add the statevector names, kept sorted as on validation. The config
+        # may be updated for several surfaces in turn (see
+        # construct_full_state), so don't add a name twice
+        if key not in atmosphere.statevector_names:
+            atmosphere.statevector_names = sorted(atmosphere.statevector_names + [key])
 
     return config
 

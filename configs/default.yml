@@ -56,7 +56,7 @@ default:
       Surfaces: {}
       wavelength_file: null
       select_on_init: true
-      selection_metric: SGA
+      selection_metric: Euclidean
       emissivity_for_surface_T_init: 0.98
       terrain_style: flat
       max_slope: 90.0
@@ -81,7 +81,7 @@ default:
       statevector: {}
       unknowns: {}
       configure_and_exit: false
-      interpolator_style: null
+      interpolator_style: mlg_numba
       wavelength_range: null
       multipart_transmittance: false
       irradiance_file: null
@@ -163,6 +163,7 @@ modtran:
         name: modtran
         base_dir: ${env.modtran}
         multipart_transmittance: ${forward_model.atmosphere.multipart_transmittance}
+        use_tp7: false
         aerosol_template_file: null
         aerosol_model_file: null
         template_file: null
