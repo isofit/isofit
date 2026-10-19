@@ -160,20 +160,26 @@ class ImplementationConfig(BaseModel):
         Raises
         ------
         ValueError
-            If inversion is not defined for non-simulation modes, or if
-            only one of ip_head/redis_password is specified.
+            If inversion or its windows are not defined for non-simulation
+            modes, or if only one of ip_head/redis_password is specified.
 
         Notes
         -----
         Validation checks:
-        - Inversion must be defined when mode is "inversion" or "mcmc_inversion"
+        - Inversion, with at least one window, must be defined when mode is
+          "inversion" or "mcmc_inversion"
         - Both ip_head and redis_password must be specified together (or neither)
         """
         # Check that inversion is defined for non-simulation modes
-        if self.mode != "simulation" and self.inversion is None:
-            raise ValueError(
-                "Inversion must be defined when running outside simulation mode"
-            )
+        if self.mode != "simulation":
+            if self.inversion is None:
+                raise ValueError(
+                    "Inversion must be defined when running outside simulation mode"
+                )
+            if not self.inversion.windows:
+                raise ValueError(
+                    "inversion.windows must be defined when running outside simulation mode"
+                )
 
         # Check ray multi-node parameters
         if (self.ip_head is None) != (self.redis_password is None):
