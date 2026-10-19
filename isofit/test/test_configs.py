@@ -170,7 +170,7 @@ def test_legacy_config_loads():
     assert atmosphere.lut_grid == {"H2OSTR": [0.5, 1.0, 2.0]}
     assert atmosphere.unknowns.root == {"H2O_ABSCO": 0.01}
 
-    # Defaults from configs/default.yml
+    # Defaults from isofit/configs/yamls/default.yml
     assert config.implementation.mode == "inversion"
     assert config.implementation.inversion.least_squares_params.method == "trf"
     assert config.forward_model.surface.selection_metric == "Euclidean"

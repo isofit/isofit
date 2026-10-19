@@ -99,4 +99,3 @@ path = "isofit/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["isofit"]
-force-include = { "configs" = "configs" }
