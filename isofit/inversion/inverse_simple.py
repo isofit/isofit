@@ -27,7 +27,7 @@ from scipy.optimize import least_squares, minimize
 from scipy.optimize import minimize_scalar as min1d
 
 from isofit.core import units
-from isofit.atmosphere.atmosphere import aeronet_aod_prior
+from isofit.atmosphere.atmosphere import aeronet_model
 from isofit.core.common import emissive_radiance, eps
 from isofit.core.forward import ForwardModel
 from isofit.data import env
@@ -80,7 +80,7 @@ def heuristic_atmosphere(
 
     # Update aerosol init based on elevation
     if fm.atmosphere.aerosol_i is not None:
-        xa_aerosol, _ = aeronet_aod_prior(
+        xa_aerosol, _ = aeronet_model(
             elevation_km=geom.surface_elevation_km,
         )
         x_new[fm.atmosphere.aerosol_i] = xa_aerosol

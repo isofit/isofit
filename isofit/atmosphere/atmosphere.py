@@ -364,26 +364,9 @@ class BaseAtmosphere(Reader):
     def update_heuristic_prior_means(self, x_atmosphere, geom):
         xa = self.prior_mean.copy()
         xa[self.h2o_i] = x_atmosphere[self.h2o_i]
-
-        xa_aerosol, _ = aeronet_aod_prior(
-            elevation_km=geom.surface_elevation_km,
-        )
-        xa[self.aerosol_i] = xa_aerosol
+        xa[self.aerosol_i] = x_atmosphere[self.aerosol_i]
 
         return xa
-
-    def update_heuristic_prior_sa(self, geom):
-        Sa_atmosphere = self.Sa_cached.copy()
-
-        _, sigma_aerosol = aeronet_aod_prior(
-            elevation_km=geom.surface_elevation_km,
-        )
-        Sa_atmosphere[self.aerosol_i, self.aerosol_i] = sigma_aerosol**2
-
-        Sa_atm_norm = Sa_atmosphere / np.mean(np.diag(Sa_atmosphere))
-        Sa_inv_norm, Sa_inv_sqrt_norm = svd_inv_sqrt(Sa_atm_norm)
-
-        return Sa_atmosphere, Sa_inv_norm, Sa_inv_sqrt_norm
 
     def xa(self, x_atmosphere, geom):
         """
@@ -745,13 +728,13 @@ def modtran_aot_lowerbound_polynomials() -> dict:
     return polynomials
 
 
-def aeronet_aod_prior(
-    elevation_km: float, aod_min: float = 0.01, aod_max: float = 1.0
+def aeronet_model(
+    elevation_km: float, aot_min: float = 0.01, aot_max: float = 1.0
 ) -> tuple:
     """
-    Daily average aeronet modeled/converted AOD @ 550 nm, accessed on 2 October 2026 (via 440-870_Angstrom_Exponent).
+    Daily average aeronet modeled/converted AOT @ 550 nm, accessed on 2 October 2026 (via 440-870_Angstrom_Exponent).
     Data were binned by elevation every 200 m, then were modeled using empirically derived relation.
-    The output is a prior mean and standard deviation for AOD-550 with respect to elevation.
+    The output is a prior mean and standard deviation for AOT-550 with respect to elevation.
     """
     try:
         elevation_m = units.km_to_m(elevation_km)
@@ -770,6 +753,6 @@ def aeronet_aod_prior(
     prior_sd = np.polyval(p_std, elevation_m)
 
     # Guard against out of bounds in LUT (allows for prebuilt LUT logic)
-    prior_mean = max(min(prior_mean, aod_max), aod_min)
+    prior_mean = max(min(prior_mean, aot_max), aot_min)
 
     return prior_mean, prior_sd

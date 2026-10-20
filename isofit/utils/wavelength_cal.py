@@ -598,7 +598,6 @@ def wavelength_cal(
                 config_path=paths.aerosol_climatology,
                 latitude=mean_latitude,
                 longitude=mean_longitude,
-                elevation_km=mean_elevation_km,
                 acquisition_datetime=dt,
                 lut_params=lut_params,
             )
@@ -629,7 +628,6 @@ def wavelength_cal(
             ),
             to_sun_zenith_lut_grid=[mean_to_sun_zenith],
             relative_azimuth_lut_grid=[mean_relative_azimuth],
-            elevation_km=mean_elevation_km,
         )
 
         add_wavelength_elements(
