@@ -915,21 +915,6 @@ def get_aerosol_initial_value(range_min: float, range_max: float) -> float:
     return (range_max - range_min) / 10.0 + range_min
 
 
-def get_aerosol_initial_value(range_min: float, range_max: float) -> float:
-    """Calculate the initial/interpolation value for aerosol parameters.
-    Somewhat arbitrary, but puts the starting value away from the lower bound,
-    but still low (assuming clear sky).
-
-    Args:
-        range_min: minimum value of the aerosol parameter range
-        range_max: maximum value of the aerosol parameter range
-
-    Returns:
-        float: the initial/interpolation value (min + 10% of range)
-    """
-    return (range_max - range_min) / 10.0 + range_min
-
-
 def get_lut_subset(vals):
     """Populate lut_names for the appropriate style of subsetting
 
