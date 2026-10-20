@@ -1064,10 +1064,10 @@ def load_climatology(
     config_path: str,
     latitude: float,
     longitude: float,
-    elevation_km: float,
     acquisition_datetime: datetime,
     lut_params: LUTConfig,
-    aeronet_prior: bool,
+    elevation_km: float = 0.0,
+    aeronet_prior: bool = False,
 ):
     """Load climatology data, based on location and configuration
 
@@ -1075,9 +1075,9 @@ def load_climatology(
         config_path: path to the base configuration directory for isofit
         latitude: latitude to set for the segment (mean of acquisition suggested)
         longitude: latitude to set for the segment (mean of acquisition suggested)
-        elevation_km: determined mean elevation in km for image used for AOT priors
         acquisition_datetime: datetime to use for the segment( mean of acquisition suggested)
         lut_params: parameters to use to define lut grid
+        elevation_km: determined mean elevation in km for image used for AOT priors
         aeronet_prior: define prior mean and sigma for AOT 550 as a function of aeronet climatology
 
     :Returns
