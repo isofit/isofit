@@ -35,7 +35,7 @@ class LibRadTranConfig(BaseModel):
     >>> librad = LibRadTranConfig(
     ...     name="libradtran",
     ...     base_dir="/opt/libRadtran",
-    ...     reptran_band_model="medium",
+    ...     reptran_band_model="coarse",
     ...     kb_alpha_1=1.3,
     ...     kb_alpha_2=0.2,
     ...     gg_set=0.7
@@ -46,8 +46,9 @@ class LibRadTranConfig(BaseModel):
     LibRadTran is freely available from: http://www.libradtran.org/
 
     The REPTRAN band model provides efficient correlated-k absorption
-    calculations. For high spectral resolution applications, "fine" mode
-    or line-by-line calculations may be needed.
+    calculations. Only the "coarse" band model is currently supported by
+    ``isofit download libradtran``; the "medium" and "fine" models must be
+    obtained separately from the LibRadTran website.
 
     LibRadTran offers multiple RT solvers including DISORT, SDISORT, and
     Monte Carlo options, configured in the template file.
