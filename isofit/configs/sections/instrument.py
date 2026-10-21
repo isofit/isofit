@@ -9,7 +9,7 @@ parameters for optimizing spectral and radiometric calibration.
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, Field, FilePath, model_validator
+from pydantic import BaseModel, ConfigDict, Field, FilePath, model_validator
 
 from isofit.configs.sections.statevector import (
     StateVectorConfig,
@@ -24,23 +24,6 @@ class InstrumentStateVectorConfig(StateVectorConfig):
     Defines parameters that can be optimized during inversion to refine
     instrument calibration, including Empirical Orthogonal Functions (EOFs)
     for spectral shape, wavelength calibration, and spectral resolution.
-
-    Attributes
-    ----------
-    EOF_1 : StateVectorElementConfig, optional
-        First Empirical Orthogonal Function for modeling systematic spectral
-        radiometric errors.
-    EOF_2 : StateVectorElementConfig, optional
-        Second EOF component.
-    EOF_3 : StateVectorElementConfig, optional
-        Third EOF component.
-    GROW_FWHM : StateVectorElementConfig, optional
-        Growth of Full Width Half Maximum. Models changes in spectral resolution
-        across the focal plane.
-    WL_SHIFT : StateVectorElementConfig, optional
-        Wavelength shift parameter for uniform spectral calibration offset.
-    WL_SPACE : StateVectorElementConfig, optional
-        Wavelength spacing parameter for spectral sampling interval adjustment.
 
     Examples
     --------
@@ -57,25 +40,45 @@ class InstrumentStateVectorConfig(StateVectorConfig):
     -----
     EOFs are derived from principal component analysis of instrument
     artifacts and provide a compact representation of systematic errors.
+
+    Additional elements may be given by name, e.g. the wavelength and FWHM
+    spline knots ``WLSPL_<i>`` and ``FWHMSPL_<i>`` written by
+    ``isofit wavelength_cal``. Each is validated as a
+    :class:`StateVectorElementConfig`.
     """
 
+    model_config = ConfigDict(extra="allow")
+
+    # Validate extra (dynamically named) elements as state vector elements
+    __pydantic_extra__: dict[str, StateVectorElementConfig] = Field(init=False)
+
     EOF_1: Optional[StateVectorElementConfig] = Field(
-        description="First Empirical Orthogonal Function"
+        description=(
+            "First Empirical Orthogonal Function (EOF) component, for modeling "
+            "systematic spectral radiometric errors"
+        )
     )
     EOF_2: Optional[StateVectorElementConfig] = Field(
-        description="Second Empirical Orthogonal Function"
+        description="Second Empirical Orthogonal Function (EOF) component"
     )
     EOF_3: Optional[StateVectorElementConfig] = Field(
-        description="Third Empirical Orthogonal Function"
+        description="Third Empirical Orthogonal Function (EOF) component"
     )
     GROW_FWHM: Optional[StateVectorElementConfig] = Field(
-        description="Growth of Full Width Half Maximum"
+        description=(
+            "Growth of Full Width Half Maximum (FWHM). Models changes in spectral "
+            "resolution across the focal plane"
+        )
     )
     WL_SHIFT: Optional[StateVectorElementConfig] = Field(
-        description="Wavelength shift parameter"
+        description=(
+            "Wavelength shift parameter for a uniform spectral calibration offset"
+        )
     )
     WL_SPACE: Optional[StateVectorElementConfig] = Field(
-        description="Wavelength spacing parameter"
+        description=(
+            "Wavelength spacing parameter for adjusting the spectral sampling interval"
+        )
     )
 
 
@@ -86,24 +89,6 @@ class InstrumentUnknownsConfig(BaseModel):
     Specifies uncertainty sources in instrument calibration and measurement
     process. These uncertainties are incorporated into the inversion cost
     function and posterior uncertainty estimates.
-
-    Attributes
-    ----------
-    channelized_radiometric_uncertainty_file : FilePath, optional
-        Path to file containing per-channel radiometric uncertainty values
-        (e.g., systematic calibration errors that vary by wavelength).
-    uncorrelated_radiometric_uncertainty : float, optional
-        Scalar uncorrelated radiometric uncertainty value applied uniformly
-        across all channels.
-    wavelength_calibration_uncertainty : float, optional
-        Uncertainty in wavelength calibration in nanometers. Represents
-        knowledge of true spectral registration.
-    stray_srf_uncertainty : float, optional
-        Uncertainty in spectral response function due to stray light or
-        out-of-band response.
-    dn_uncertainty_file : FilePath, optional
-        Path to digital number uncertainty file for sensor-specific
-        uncertainty characterization.
 
     Examples
     --------
@@ -120,23 +105,38 @@ class InstrumentUnknownsConfig(BaseModel):
     """
 
     channelized_radiometric_uncertainty_file: Optional[FilePath] = Field(
-        description="Path to channelized radiometric uncertainty file"
+        description=(
+            "Path to file containing per-channel radiometric uncertainty values "
+            "(e.g. systematic calibration errors that vary by wavelength)"
+        )
     )
 
     uncorrelated_radiometric_uncertainty: Optional[float] = Field(
-        description="Uncorrelated radiometric uncertainty value"
+        description=(
+            "Scalar uncorrelated radiometric uncertainty value applied uniformly "
+            "across all channels"
+        )
     )
 
     wavelength_calibration_uncertainty: Optional[float] = Field(
-        description="Wavelength calibration uncertainty"
+        description=(
+            "Uncertainty in wavelength calibration, in nanometers. Represents "
+            "knowledge of the true spectral registration"
+        )
     )
 
     stray_srf_uncertainty: Optional[float] = Field(
-        description="Stray spectral response function uncertainty"
+        description=(
+            "Uncertainty in the spectral response function due to stray light or "
+            "out-of-band response"
+        )
     )
 
     dn_uncertainty_file: Optional[FilePath] = Field(
-        description="Path to digital number uncertainty file"
+        description=(
+            "Path to digital number (DN) uncertainty file for sensor-specific "
+            "uncertainty characterization"
+        )
     )
 
 
@@ -147,38 +147,6 @@ class InstrumentConfig(BaseModel):
     Configures instrument model including spectral sampling, noise
     characteristics, calibration parameters, and instrument state vector
     for optimizing calibration during inversion.
-
-    Attributes
-    ----------
-    wavelength_file : FilePath, optional
-        Path to file containing instrument wavelength centers for each channel.
-    integrations : int, optional
-        Number of integrations comprising the measurement. Noise diminishes
-        with square root of this number.
-    unknowns : InstrumentUnknownsConfig, optional
-        Instrument calibration uncertainties configuration.
-    fast_resample : bool
-        If True, approximate complete spectral resampling by convolution with
-        uniform FWHM. Faster but less accurate. Default is True.
-    statevector : InstrumentStateVectorConfig
-        Instrument state vector configuration for optimizable calibration
-        parameters. Default is empty.
-    SNR : float, optional
-        Uniform signal-independent SNR applied to all wavelengths. Mutually
-        exclusive with other noise models.
-    parametric_noise_file : FilePath, optional
-        Path to parametric noise model file (signal and wavelength-dependent
-        noise function). Mutually exclusive with other noise models.
-    pushbroom_noise_file : FilePath, optional
-        Path to pushbroom noise model file in ENVI format (2D noise model
-        varying by channel and across-track position). Mutually exclusive
-        with other noise models.
-    nedt_noise_file : FilePath, optional
-        Path to Noise Equivalent Delta Temperature (NEDT) file for thermal
-        sensors. Mutually exclusive with other noise models.
-    eof_path : FilePath, optional
-        Path to Empirical Orthogonal Function (EOF) file for spectral
-        radiometric error modeling.
 
     Examples
     --------
@@ -201,40 +169,74 @@ class InstrumentConfig(BaseModel):
     InstrumentUnknownsConfig : Calibration uncertainties
     """
 
-    wavelength_file: Optional[FilePath] = Field(description="Path to wavelength file")
+    wavelength_file: Optional[FilePath] = Field(
+        description=(
+            "Path to file containing instrument wavelength centers for each channel"
+        )
+    )
 
     integrations: Optional[int] = Field(
-        description="Number of integrations comprising the measurement. Noise diminishes with square root of this number.",
+        description=(
+            "Number of integrations comprising the measurement. Noise diminishes "
+            "with the square root of this number"
+        ),
     )
 
     unknowns: Optional[InstrumentUnknownsConfig] = Field(
-        description="Instrument unknowns configuration"
+        description=(
+            "Instrument calibration uncertainties configuration. See "
+            ":class:`InstrumentUnknownsConfig`"
+        )
     )
 
     fast_resample: bool = Field(
-        description="Approximate complete resampling by convolution with uniform FWHM",
+        description=(
+            "If True, approximate complete spectral resampling by convolution with "
+            "a uniform FWHM. Faster but less accurate"
+        ),
     )
 
     statevector: InstrumentStateVectorConfig = Field(
-        description="Instrument state vector configuration",
+        description=(
+            "Instrument state vector configuration for optimizable calibration "
+            "parameters. See :class:`InstrumentStateVectorConfig`"
+        ),
     )
 
     SNR: Optional[float] = Field(
-        description="Uniform signal-independent SNR applied to all wavelengths",
+        description=(
+            "Uniform signal-independent SNR applied to all wavelengths. Mutually "
+            "exclusive with the other noise models"
+        ),
     )
 
     parametric_noise_file: Optional[FilePath] = Field(
-        description="Path to parametric noise file (signal and wavelength-dependent noise function)",
+        description=(
+            "Path to parametric noise model file (signal and wavelength-dependent "
+            "noise function). Mutually exclusive with the other noise models"
+        ),
     )
 
     pushbroom_noise_file: Optional[FilePath] = Field(
-        description="Path to pushbroom noise model file (ENVI format)"
+        description=(
+            "Path to pushbroom noise model file in ENVI format (2D noise model "
+            "varying by channel and across-track position). Mutually exclusive "
+            "with the other noise models"
+        )
     )
 
-    nedt_noise_file: Optional[FilePath] = Field(description="Path to NEDT noise file")
+    nedt_noise_file: Optional[FilePath] = Field(
+        description=(
+            "Path to Noise Equivalent Delta Temperature (NEDT) file for thermal "
+            "sensors. Mutually exclusive with the other noise models"
+        )
+    )
 
     eof_path: Optional[FilePath] = Field(
-        description="Path to Empirical Orthogonal Function (EOF) file"
+        description=(
+            "Path to Empirical Orthogonal Function (EOF) file for spectral "
+            "radiometric error modeling"
+        )
     )
 
     @model_validator(mode="after")

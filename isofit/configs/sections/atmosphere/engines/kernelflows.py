@@ -19,16 +19,6 @@ class KernelFlowsConfig(BaseModel):
     Kernel Flows is a machine learning emulator for atmospheric RT calculations,
     providing efficient atmospheric correction through learned representations.
 
-    Attributes
-    ----------
-    name : Literal["kernelflows"]
-        Engine identifier. Must be "kernelflows" or "kf" (alias).
-    emulator_file : FilePath, optional
-        Path to the trained Kernel Flows emulator model file. If None,
-        uses default from environment.
-    template_file : FilePath
-        Path to template configuration file for Kernel Flows parameters.
-
     Examples
     --------
     >>> from isofit.configs.sections.atmosphere.engines import KernelFlowsConfig
@@ -51,12 +41,19 @@ class KernelFlowsConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["kernelflows"], BeforeValidator(standardName)] = Field()
+    name: Annotated[Literal["kernelflows"], BeforeValidator(standardName)] = Field(
+        description=(
+            'Engine identifier. Must be "kernelflows" or its alias "kf" '
+            "(case-insensitive)"
+        )
+    )
 
     emulator_file: Optional[FilePath] = Field(
-        description="Path to the Kernel Flows emulator model file",
+        description="Path to the trained Kernel Flows emulator model file",
     )
 
     template_file: Optional[FilePath] = Field(
-        description="Path to Kernel Flows template configuration file",
+        description=(
+            "Path to the template configuration file for Kernel Flows parameters"
+        ),
     )

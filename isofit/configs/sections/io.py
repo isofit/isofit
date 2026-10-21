@@ -22,34 +22,6 @@ class InputConfig(BaseModel, ElementAccessorMixin):
     measured radiance, observation geometry, location data, and optional
     auxiliary inputs like background reflectance and radiometric corrections.
 
-    Attributes
-    ----------
-    measured_radiance_file : FilePath, optional
-        Input radiance file (.mat, .txt, or ENVI format) containing at-sensor
-        radiance measurements for inverse modeling. Also accepts alias 'rdn'.
-    reference_reflectance_file : FilePath, optional
-        Input reference reflectance file for radiometric calibration.
-    reflectance_file : FilePath, optional
-        Input reflectance file for forward modeling (reflectance -> radiance).
-        Required when implementation.mode is 'simulation'.
-    obs_file : FilePath, optional
-        Observation file with viewing and illumination geometry (solar zenith,
-        view zenith, relative azimuth angles). Also accepts alias 'obs'.
-    glt_file : FilePath, optional
-        Geographic Lookup Table (GLT) file with spatial offset information
-        for orthorectified data.
-    loc_file : FilePath, optional
-        Location file with latitude, longitude, and elevation for each pixel.
-        Also accepts alias 'loc'.
-    background_reflectance_file : FilePath, optional
-        Background reflectance file for spatial inference and contextual
-        atmospheric correction.
-    radiometry_correction_file : FilePath, optional
-        Radiometric correction file for systematic error correction.
-    skyview_factor_file : FilePath, optional
-        Skyview factor file to modulate diffuse radiance contribution based
-        on terrain occlusion.
-
     Examples
     --------
     >>> from isofit.configs.sections.io import InputConfig
@@ -73,7 +45,10 @@ class InputConfig(BaseModel, ElementAccessorMixin):
 
     measured_radiance_file: Optional[FilePath] = Field(
         alias="rdn",
-        description="Input radiance file (.mat, .txt, or ENVI format) for inverse-modeling",
+        description=(
+            "Input radiance file (.mat, .txt, or ENVI format) containing at-sensor "
+            "radiance measurements for inverse modeling"
+        ),
     )
 
     reference_reflectance_file: Optional[FilePath] = Field(
@@ -83,33 +58,54 @@ class InputConfig(BaseModel, ElementAccessorMixin):
 
     reflectance_file: Optional[FilePath] = Field(
         alias="rfl",
-        description="Input reflectance file for forward-modeling (reflectance -> radiance)",
+        description=(
+            "Input reflectance file for forward modeling (reflectance -> radiance). "
+            "Required when ``implementation.mode`` is 'simulation'"
+        ),
     )
 
     obs_file: Optional[FilePath] = Field(
         alias="obs",
-        description="Observation file with viewing/illumination geometry",
+        description=(
+            "Observation file with viewing and illumination geometry (solar zenith, "
+            "view zenith, relative azimuth angles)"
+        ),
     )
 
     glt_file: Optional[FilePath] = Field(
-        alias="glt", description="GLT file with spatial offset information"
+        alias="glt",
+        description=(
+            "Geographic Lookup Table (GLT) file with spatial offset information for "
+            "orthorectified data"
+        ),
     )
 
     loc_file: Optional[FilePath] = Field(
         alias="loc",
-        description="Location file with lat, lon, and elevation",
+        description=(
+            "Location file with latitude, longitude, and elevation for each pixel"
+        ),
     )
 
     background_reflectance_file: Optional[FilePath] = Field(
-        alias="brf", description="Background reflectance file for spatial inference"
+        alias="brf",
+        description=(
+            "Background reflectance file for spatial inference and contextual "
+            "atmospheric correction"
+        ),
     )
 
     radiometry_correction_file: Optional[FilePath] = Field(
-        alias="rcf", description="Radiometric correction file for systematic errors"
+        alias="rcf",
+        description="Radiometric correction file for systematic error correction",
     )
 
     skyview_factor_file: Optional[FilePath] = Field(
-        alias="sff", description="Skyview factor file to modulate diffuse radiance"
+        alias="sff",
+        description=(
+            "Skyview factor file to modulate diffuse radiance contribution based on "
+            "terrain occlusion"
+        ),
     )
 
 
@@ -120,46 +116,6 @@ class OutputConfig(BaseModel):
     Specifies output directory and all output product files that ISOFIT can
     generate, including estimated surface reflectance, state vectors, modeled
     radiance, atmospheric coefficients, uncertainties, and diagnostic products.
-
-    Attributes
-    ----------
-    dir : Path
-        Output directory for ISOFIT products. Default is './isofit-output/'.
-    reset : bool
-        If True, delete the output directory before starting if it exists.
-        Default is False to preserve previous results.
-    estimated_state_file : Path, optional
-        Output file for estimated state vector containing optimized parameter
-        values for each pixel.
-    estimated_reflectance_file : Path, optional
-        Output file for estimated Lambertian surface reflectance.
-    estimated_emission_file : Path, optional
-        Output file for estimated emitted radiance (thermal component).
-    modeled_radiance_file : Path, optional
-        Output file for forward-modeled at-sensor radiance using estimated
-        surface and atmosphere.
-    apparent_reflectance_file : Path, optional
-        Output file for apparent surface reflectance (radiance / downwelling
-        irradiance) without atmospheric correction.
-    path_radiance_file : Path, optional
-        Output file for path radiance contribution.
-    simulated_measurement_file : Path, optional
-        Output file for simulated at-sensor radiance in simulation mode.
-    algebraic_inverse_file : Path, optional
-        Output file for algebraic inverse solution.
-    atmospheric_coefficients_file : Path, optional
-        Output file for atmospheric optical parameters (aerosol optical depth,
-        water vapor, etc.).
-    radiometry_correction_file : Path, optional
-        Output file for radiometric correction factors.
-    spectral_calibration_file : Path, optional
-        Output file for spectral calibration (wavelength corrections).
-    posterior_uncertainty_file : Path, optional
-        Output file for posterior uncertainty (diagonal of posterior covariance).
-    plot_surface_components : bool
-        If True, generate diagnostic plots of surface components. Default is False.
-    mcmc_samples_file : Path, optional
-        Output file for MCMC samples when running in mcmc_inversion mode.
 
     Examples
     --------
@@ -181,43 +137,58 @@ class OutputConfig(BaseModel):
     dir: Path = Field(description="Output directory for ISOFIT")
 
     reset: bool = Field(
-        description="Delete output directory before starting if it exists",
+        description=(
+            "If True, delete the output directory before starting if it exists. "
+            "Leave False to preserve previous results"
+        ),
     )
 
     estimated_state_file: Optional[Path] = Field(
-        description="Output file for estimated state vector"
+        description=(
+            "Output file for estimated state vector containing optimized parameter "
+            "values for each pixel"
+        )
     )
 
     estimated_reflectance_file: Optional[Path] = Field(
-        description="Output file for estimated Lambertian reflectance"
+        description="Output file for estimated Lambertian surface reflectance"
     )
 
     estimated_emission_file: Optional[Path] = Field(
-        description="Output file for estimated emitted radiance"
+        description="Output file for estimated emitted radiance (thermal component)"
     )
 
     modeled_radiance_file: Optional[Path] = Field(
-        description="Output file for modeled radiance"
+        description=(
+            "Output file for forward-modeled at-sensor radiance using the estimated "
+            "surface and atmosphere"
+        )
     )
 
     apparent_reflectance_file: Optional[Path] = Field(
-        description="Output file for apparent surface reflectance"
+        description=(
+            "Output file for apparent surface reflectance (radiance / downwelling "
+            "irradiance) without atmospheric correction"
+        )
     )
 
     path_radiance_file: Optional[Path] = Field(
-        description="Output file for path radiance"
+        description="Output file for path radiance contribution"
     )
 
     simulated_measurement_file: Optional[Path] = Field(
-        description="Output file for simulated radiance"
+        description="Output file for simulated at-sensor radiance in simulation mode"
     )
 
     algebraic_inverse_file: Optional[Path] = Field(
-        description="Output file for algebraic inverse"
+        description="Output file for algebraic inverse solution"
     )
 
     atmospheric_coefficients_file: Optional[Path] = Field(
-        description="Output file for atmospheric optical parameters"
+        description=(
+            "Output file for atmospheric optical parameters (aerosol optical depth, "
+            "water vapor, etc.)"
+        )
     )
 
     radiometry_correction_file: Optional[Path] = Field(
@@ -225,19 +196,21 @@ class OutputConfig(BaseModel):
     )
 
     spectral_calibration_file: Optional[Path] = Field(
-        description="Output file for spectral calibration"
+        description="Output file for spectral calibration (wavelength corrections)"
     )
 
     posterior_uncertainty_file: Optional[Path] = Field(
-        description="Output file for posterior uncertainty"
+        description=(
+            "Output file for posterior uncertainty (diagonal of posterior covariance)"
+        )
     )
 
     plot_surface_components: bool = Field(
-        description="Generate plots of surface components"
+        description="If True, generate diagnostic plots of surface components"
     )
 
     mcmc_samples_file: Optional[Path] = Field(
-        description="Output file for MCMC samples"
+        description="Output file for MCMC samples when running in mcmc_inversion mode"
     )
 
     # Header metadata (band-name key, ztitle, zrange) for each writable output

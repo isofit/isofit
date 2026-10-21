@@ -21,11 +21,6 @@ class PrebuiltConfig(BaseModel):
     without requiring MODTRAN, 6S, or other RT codes. Suitable for standard
     atmospheric correction scenarios.
 
-    Attributes
-    ----------
-    name : Literal["prebuilt"]
-        Engine identifier. Must be "prebuilt".
-
     Examples
     --------
     >>> from isofit.configs.sections.atmosphere.engines import PrebuiltConfig
@@ -46,4 +41,6 @@ class PrebuiltConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["prebuilt"], BeforeValidator(standardName)] = Field()
+    name: Annotated[Literal["prebuilt"], BeforeValidator(standardName)] = Field(
+        description='Engine identifier. Must be "prebuilt" (case-insensitive)'
+    )

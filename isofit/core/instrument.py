@@ -215,6 +215,9 @@ class Instrument:
             config.statevector.GROW_FWHM is not None
             or config.statevector.WL_SHIFT is not None
             or config.statevector.WL_SPACE is not None
+            or any(
+                name.startswith(("WLSPL", "FWHMSPL")) for name in self.statevec_names
+            )
         ):
             self.calibration_fixed = False
 

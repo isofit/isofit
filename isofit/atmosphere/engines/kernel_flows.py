@@ -237,6 +237,9 @@ class KernelFlowsRT(BaseAtmosphere, Writer):
         # override default radiative transfer simulation mode
         # as KernelFlowsGP always runs in radiance space
         self.rt_mode = "rdn"
+
+        # assign_bounds needs the LUT grid, which BaseAtmosphere sets later
+        self.lut_grid = self.config.lut_grid
         self.assign_bounds()
 
         super().__init__(full_config, **kwargs)

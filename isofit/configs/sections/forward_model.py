@@ -23,22 +23,6 @@ class ForwardModelConfig(BaseModel):
     to predict at-sensor radiance. During inversion, ISOFIT optimizes parameters
     in these components to match observed radiance.
 
-    Attributes
-    ----------
-    surface : SurfaceConfig, optional
-        Surface model configuration specifying reflectance model, priors,
-        and surface parameters like temperature and glint.
-    atmosphere : AtmosphereConfig, optional
-        Atmospheric radiative transfer configuration including RT engine,
-        lookup table settings, and atmospheric state vector parameters.
-    instrument : InstrumentConfig, optional
-        Instrument model configuration including spectral response, noise
-        characteristics, and instrument state vector parameters.
-    model_discrepancy_file : FilePath, optional
-        Path to numpy-format covariance matrix representing systematic
-        model-observation discrepancy. Used to account for forward model
-        errors during inversion.
-
     Examples
     --------
     >>> from isofit.configs.sections import (
@@ -69,16 +53,31 @@ class ForwardModelConfig(BaseModel):
     isofit.configs.sections.instrument.InstrumentConfig : Instrument configuration
     """
 
-    surface: Optional[SurfaceConfig] = Field(description="Surface configuration")
+    surface: Optional[SurfaceConfig] = Field(
+        description=(
+            "Surface model configuration specifying the reflectance model, priors, "
+            "and surface parameters like temperature and glint"
+        )
+    )
 
     atmosphere: Optional[AtmosphereConfig] = Field(
-        description="Atmospheric radiative transfer configuration"
+        description=(
+            "Atmospheric radiative transfer configuration including the RT engine, "
+            "lookup table settings, and atmospheric state vector parameters"
+        )
     )
 
     instrument: Optional[InstrumentConfig] = Field(
-        description="Instrument configuration"
+        description=(
+            "Instrument model configuration including spectral response, noise "
+            "characteristics, and instrument state vector parameters"
+        )
     )
 
     model_discrepancy_file: Optional[FilePath] = Field(
-        description="Path to numpy-format covariance matrix for model discrepancy",
+        description=(
+            "Path to a numpy-format covariance matrix representing systematic "
+            "model-observation discrepancy. Used to account for forward model "
+            "errors during inversion"
+        ),
     )

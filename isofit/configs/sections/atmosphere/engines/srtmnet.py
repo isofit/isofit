@@ -29,27 +29,6 @@ class sRTMnetConfig(BaseModel):
     simulations. It provides near-instantaneous RT calculations suitable
     for real-time or large-scale processing.
 
-    Attributes
-    ----------
-    name : Literal["srtmnet"]
-        Engine identifier. Must be "srtmnet" or "kf" (alias).
-    base_dir : DirectoryPath
-        Base path to sRTMnet installation directory. The base configs default
-        this to the ISOFIT ini ``srtmnet`` path.
-    sixs_dir : DirectoryPath
-        Path to the 6S installation used to run the surrogate simulations.
-        The base configs default this to the ISOFIT ini ``sixs`` path.
-    emulator_batch_size : int
-        Batch size for sRTMnet predictions. Larger batches are faster but
-        require more GPU memory. Reduce if running out of memory.
-        Default is 4096.
-    emulator_file : FilePath
-        Path to trained sRTMnet model file (.6s or other format). The base
-        configs default this to the ISOFIT ini ``srtmnet.file``.
-    emulator_aux_file : FilePath
-        Path to auxiliary emulator data file (normalization parameters, etc.).
-        The base configs default this to the ISOFIT ini ``srtmnet.aux``.
-
     Examples
     --------
     >>> from isofit.configs.sections.atmosphere.engines import sRTMnetConfig
@@ -79,28 +58,40 @@ class sRTMnetConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)] = Field()
+    name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)] = Field(
+        description='Engine identifier. Must be ``"srtmnet"``'
+    )
 
     base_dir: Optional[DirectoryPath] = Field(
-        description="Base path to engine directory",
+        description="Base path to the sRTMnet installation directory",
     )
 
     sixs_dir: Optional[DirectoryPath] = Field(
-        description="Path to the 6S installation used for the surrogate simulations",
+        description="Path to the 6S installation used to run the surrogate simulations",
     )
 
     emulator_batch_size: int = Field(
         ge=1,
-        description="Batch size for sRTMnet predictions. Set smaller to reduce memory usage, larger for faster emulation.",
+        description=(
+            "Batch size for sRTMnet predictions. Larger batches are faster but "
+            "require more memory (GPU memory when running on GPU); reduce if "
+            "running out of memory"
+        ),
         examples=[512, 1024, 2048, 4096, 8192],
     )
 
     emulator_file: Optional[FilePath] = Field(
-        description="",
+        description=(
+            "Path to the trained sRTMnet model file. A ``.6c`` model includes CO2 "
+            "absorption and requires a CO2-enabled 6S at ``sixs_dir``"
+        ),
     )
 
     emulator_aux_file: Optional[FilePath] = Field(
-        description="",
+        description=(
+            "Path to the auxiliary emulator data file (normalization parameters, "
+            "etc.)"
+        ),
     )
 
     template_file: Optional[FilePath] = Field(
@@ -135,7 +126,9 @@ class sRTMnetConfig(BaseModel):
 
             if "co2" not in get_exe(self.sixs_dir, version=True):
                 raise ValueError(
-                    "sRTMnet 6C requires a CO2 version of 6S. Please use the isofit download CLI to pull a CO2 tag: https://github.com/isofit/6S/tags"
+                    "sRTMnet 6C requires a CO2 version of 6S. Please use the "
+                    "isofit download CLI to pull a CO2 tag: "
+                    "https://github.com/isofit/6S/tags"
                 )
 
         return self

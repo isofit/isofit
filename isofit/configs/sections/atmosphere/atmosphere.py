@@ -22,33 +22,6 @@ class AtmosphereConfig(BaseModel):
     (MODTRAN, 6S, LibRadTran, sRTMnet, or prebuilt), lookup table generation
     and storage, and atmospheric state vector parameters.
 
-    Attributes
-    ----------
-    engine : Engines
-        Radiative transfer engine configuration. Defaults to prebuilt LUT
-        (no RT code required).
-    wavelength_file : Path, optional
-        Optional path to wavelength file for high-resolution atmospheric
-        calculations. If None, uses instrument wavelengths.
-    lut_path : Path
-        Path to the lookup table storage directory. Supports .zarr format
-        for efficient multidimensional array storage.
-    sim_path : Path
-        Path to RT simulation output directory.
-    lut_grid : dict[str, list[float]]
-        Lookup table grid specification. Keys are atmospheric parameter names
-        (e.g., "H2OSTR", "AOT550"), values are lists of sample points for
-        that parameter. Empty dict means no LUT generation.
-    lut_subset : dict[str, Any]
-        Subset of lut_grid to use for processing. Allows using a smaller
-        region of a large pre-computed LUT. Empty dict means use full grid.
-    rt_mode : {"rdn", "transm"}
-        Atmospheric RT mode for LUT simulations. "transm" for transmittances
-        (standard), "rdn" for reflected radiance. Default is "transm".
-    statevector_names : list[str]
-        Names of statevector elements to use with this atmospheric RT engine.
-        Determines which atmospheric parameters are optimized during inversion.
-
     Examples
     --------
     >>> from isofit.configs.sections.atmosphere import AtmosphereConfig
@@ -81,34 +54,61 @@ class AtmosphereConfig(BaseModel):
     """
 
     engine: Engines = Field(
-        description="Radiative transfer engine; defaults to a prebuilt LUT",
+        description=(
+            "Radiative transfer engine configuration, selected by its ``name`` (e.g. "
+            "``prebuilt``, which uses a pre-computed LUT and requires no RT code)"
+        ),
     )
 
     wavelength_file: Path | None = Field(
-        description="Optional path to wavelength file for high-res atmospheric calculations",
+        description=(
+            "Optional path to a wavelength file for high-resolution atmospheric "
+            "calculations. If None, the instrument wavelengths are used"
+        ),
         examples=[""],
     )
 
     lut_path: Path = Field(
-        description="Path to the look up table directory",
+        description=(
+            "Path to the lookup table storage. Supports the .zarr format for "
+            "efficient multidimensional array storage"
+        ),
     )
 
     sim_path: Path = Field(
-        description="Path to the look up table directory",
+        description="Path to the RT simulation output directory",
     )
 
-    lut_grid: dict[str, list[float]] = Field(description="")
+    lut_grid: dict[str, list[float]] = Field(
+        description=(
+            "Lookup table grid specification. Keys are atmospheric parameter names "
+            '(e.g. "H2OSTR", "AOT550"), values are the sample points for that '
+            "parameter (at least 2, no duplicates). An empty dict means no LUT "
+            "generation"
+        )
+    )
 
     lut_subset: dict[str, Any] = Field(
-        description="Subset of the lut_grid to use",
+        description=(
+            "Subset of ``lut_grid`` to use for processing, allowing a smaller region "
+            "of a large pre-computed LUT to be used. An empty dict means the full "
+            "grid is used"
+        ),
     )
 
     rt_mode: Literal["rdn", "transm"] = Field(
-        description="Atmospheric radiative transfer mode of LUT simulations: `transm` for transmittances, `rdn` for reflected radiance",
+        description=(
+            "Atmospheric radiative transfer mode of LUT simulations: ``transm`` for "
+            "transmittances (standard), ``rdn`` for reflected radiance"
+        ),
     )
 
     statevector_names: List[str] = Field(
-        description="Names of the statevector elements to use with this atmospheric RT engine",
+        description=(
+            "Names of the statevector elements to use with this atmospheric RT "
+            "engine. Determines which atmospheric parameters are optimized during "
+            "inversion"
+        ),
     )
 
     statevector: AtmosphereStateVectorConfig = Field(
@@ -120,15 +120,22 @@ class AtmosphereConfig(BaseModel):
     )
 
     configure_and_exit: bool = Field(
-        description="Build/configure the RT engine and exit without running simulations",
+        description=(
+            "Build/configure the RT engine and exit without running simulations"
+        ),
     )
 
     interpolator_style: Literal["rg", "mlg", "mlg_numba"] = Field(
-        description="LUT interpolation style: `rg` (RegularGrid), `mlg` (multilinear grid), or `mlg_numba`",
+        description=(
+            "LUT interpolation style: ``rg`` (RegularGrid), ``mlg`` (multilinear "
+            "grid), or ``mlg_numba``"
+        ),
     )
 
     wavelength_range: List[float] | None = Field(
-        description="Optional [min, max] wavelength range to subset the LUT to after load",
+        description=(
+            "Optional [min, max] wavelength range to subset the LUT to after load"
+        ),
     )
 
     multipart_transmittance: bool = Field(
