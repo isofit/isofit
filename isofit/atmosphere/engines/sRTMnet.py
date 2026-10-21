@@ -450,11 +450,10 @@ class SimulatedModtranRT(BaseAtmosphere, Writer):
 
         # Convert our irradiance to date 0 then back to current date
         # sc - If statement to make sure tsis solar model is used if supplied
-        if os.path.basename(self.config.irradiance_file) == "tsis_f0_0p1.txt":
+        irr_file = self.config.irradiance_file
+        if irr_file is not None and Path(irr_file).name == "tsis_f0_0p1.txt":
             # Load coarser TSIS model to match emulator expectations
-            _, sol_irr = np.loadtxt(
-                os.path.split(self.config.irradiance_file)[0] + "/tsis_f0_0p5.txt"
-            ).T
+            _, sol_irr = np.loadtxt(Path(irr_file).parent / "tsis_f0_0p5.txt").T
             sol_irr = sol_irr / 10  # Convert to uW cm-2 sr-1 nm-1
         else:
             sol_irr = aux["solar_irr"]  # Otherwise, use sRTMnet f0

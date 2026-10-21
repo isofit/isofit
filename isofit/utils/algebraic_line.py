@@ -98,7 +98,7 @@ def algebraic_line(
     config = configs.create_new_config(file)
     config.forward_model.instrument.integrations = 1
 
-    subs_state_file = config.output.estimated_state_file
+    subs_state_file = str(config.output.estimated_state_file)
     subs_loc_file = config.input.loc_file
 
     if (

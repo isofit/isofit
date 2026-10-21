@@ -366,7 +366,9 @@ class Instrument(NoiseModel):
             config.statevector.GROW_FWHM is not None
             or config.statevector.WL_SHIFT is not None
             or config.statevector.WL_SPACE is not None
-            or "WLSPL" in list(self.state_idx.keys())
+            or any(
+                name.startswith(("WLSPL", "FWHMSPL")) for name in self.statevec_names
+            )
         ):
             self.wavelengths_fixed = False
 

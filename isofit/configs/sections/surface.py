@@ -80,18 +80,6 @@ class SurfaceStateVectorConfig(StateVectorConfig):
     including surface temperature for thermal retrievals and glint parameters
     for water surfaces.
 
-    Attributes
-    ----------
-    SURF_TEMP_K : StateVectorElementConfig, optional
-        Surface temperature in Kelvin. Used for thermal emission modeling
-        in thermal infrared (TIR) retrievals.
-    SKY_GLINT : StateVectorElementConfig, optional
-        Sky glint parameter for modeling specular reflection of sky radiance
-        from water surfaces.
-    SUN_GLINT : StateVectorElementConfig, optional
-        Sun glint parameter for modeling specular reflection of direct solar
-        radiance from water surfaces.
-
     Examples
     --------
     >>> from isofit.configs.sections.surface import SurfaceStateVectorConfig
@@ -110,13 +98,22 @@ class SurfaceStateVectorConfig(StateVectorConfig):
     """
 
     SURF_TEMP_K: Optional[StateVectorElementConfig] = Field(
-        description="Surface temperature in Kelvin"
+        description=(
+            "Surface temperature in Kelvin. Used for thermal emission modeling in "
+            "thermal infrared (TIR) retrievals"
+        )
     )
     SKY_GLINT: Optional[StateVectorElementConfig] = Field(
-        description="Sky glint parameter"
+        description=(
+            "Sky glint parameter for modeling specular reflection of sky radiance "
+            "from water surfaces"
+        )
     )
     SUN_GLINT: Optional[StateVectorElementConfig] = Field(
-        description="Sun glint parameter"
+        description=(
+            "Sun glint parameter for modeling specular reflection of direct solar "
+            "radiance from water surfaces"
+        )
     )
 
 
@@ -129,24 +126,6 @@ class SubSurfaceConfig(BaseModel):
     :meth:`SurfaceConfig.update_from_subconfig` copies these settings onto the
     active surface config.
 
-    Attributes
-    ----------
-    surface_category : {"surface", "multicomponent_surface", "glint_model_surface", "thermal_surface", "lut_surface"}
-        Type of surface model for this class.
-    surface_file : Path
-        Path to the surface model file (.mat format) for this class. Need not
-        exist at load time, as it may be built later (e.g. by
-        ``isofit surface_model``).
-    surface_int : int
-        Value of this class in the surface classification file.
-    statevector : dict[str, StateVectorElementConfig]
-        Non-reflectance statevector elements expected in ``surface_file``.
-        Only used by :meth:`SurfaceConfig.get_config_issues`; runs use
-        :attr:`SurfaceConfig.statevector`.
-    rt_statevector_elements : dict[str, StateVectorElementConfig]
-        Experimental: statevector elements added to the atmosphere for this
-        class.
-
     Notes
     -----
     Any other key (e.g. ``terrain_style``, ``max_slope``) is kept as-is and
@@ -158,17 +137,29 @@ class SubSurfaceConfig(BaseModel):
     surface_category: SurfaceCategory = Field(
         description="Type of surface model for this class"
     )
-    surface_file: Path = Field(description="Path to surface model file (.mat format)")
+    surface_file: Path = Field(
+        description=(
+            "Path to the surface model file (.mat format) for this class. Need not "
+            "exist at load time, as it may be built later (e.g. by "
+            "``isofit surface_model``)"
+        )
+    )
     surface_int: NonNegativeInt = Field(
         description="Value of this class in the surface classification file"
     )
     statevector: Dict[str, StateVectorElementConfig] = Field(
         default_factory=dict,
-        description="Non-reflectance statevector elements expected in surface_file",
+        description=(
+            "Non-reflectance statevector elements expected in ``surface_file``. Only "
+            "used by :meth:`SurfaceConfig.get_config_issues`; runs use "
+            ":attr:`SurfaceConfig.statevector`"
+        ),
     )
     rt_statevector_elements: Dict[str, StateVectorElementConfig] = Field(
         default_factory=dict,
-        description="Experimental: atmosphere statevector elements for this class",
+        description=(
+            "Experimental: statevector elements added to the atmosphere for this class"
+        ),
     )
 
     def statevector_mismatches(
@@ -198,52 +189,6 @@ class SurfaceConfig(BaseModel):
     Configures surface reflectance model including surface type, priors,
     multi-surface mode for classification-based processing, terrain handling,
     and surface state vector parameters.
-
-    Attributes
-    ----------
-    multi_surface_flag : bool
-        Enable multi-surface mode where different surface models are used
-        based on classification map. Default is False.
-    use_background_rfl : bool
-        Use background reflectance for spatial inference. Default is False.
-    surface_file : Path, optional
-        Path to surface model file in .mat format containing reflectance
-        priors, basis vectors, and covariance information. Need not exist
-        yet, as it may be built later by ``isofit surface_model``.
-    surface_category : {"surface", "multicomponent_surface", "glint_model_surface", "thermal_surface", "lut_surface"}, optional
-        Type of surface model to use. Determines which surface class is
-        instantiated.
-    surface_class_file : FilePath, optional
-        Path to surface classification file (ENVI format) for multi-surface mode.
-    base_surface_class_file : FilePath, optional
-        Path to base surface classification file for hierarchical classification.
-    Surfaces : dict[str, SubSurfaceConfig]
-        Multi-surface configuration dictionary mapping surface class names to
-        their configurations. Each entry must have 'surface_category',
-        'surface_file', and 'surface_int' (integer mapping).
-    wavelength_file : FilePath, optional
-        Path to wavelength file for surface model spectral sampling.
-    select_on_init : bool
-        Force use of initialization state and never change surface model
-        selection. Default is True.
-    selection_metric : {"Euclidean", "SGA", "SpecAngle"}
-        Metric for selecting the surface prior component: Euclidean distance,
-        "SGA" (Spectral Gradient Angle), or "SpecAngle" (spectral angle).
-        Default is "Euclidean".
-    statevector : SurfaceStateVectorConfig
-        Surface state vector configuration for temperature and glint parameters.
-    emissivity_for_surface_T_init : float
-        Initial emissivity value for surface temperature estimation. Value
-        of 0.98 recommended by Glynn Hulley for most surfaces. Default is 0.98.
-    terrain_style : {"flat", "dem", "solved"}
-        Style of terrain to use in forward model. "flat" assumes level surface,
-        "dem" uses digital elevation model, "solved" optimizes terrain parameters.
-        Default is "flat".
-    max_slope : float
-        Maximum slope value in degrees for LUT calculations. Only relevant
-        for terrain_style="dem". Default is 90.0.
-    refractive_index_path : str
-        Path to refractive index data for water surface modeling. Default is "".
 
     Examples
     --------
@@ -289,59 +234,100 @@ class SurfaceConfig(BaseModel):
     SubSurfaceConfig : Per-class configuration in multi-surface mode
     """
 
-    multi_surface_flag: bool = Field(description="Enable multi-surface mode")
+    multi_surface_flag: bool = Field(
+        description=(
+            "Enable multi-surface mode, where different surface models are used "
+            "based on a classification map"
+        )
+    )
 
-    use_background_rfl: bool = Field(description="Use background reflectance")
+    use_background_rfl: bool = Field(
+        description="Use background reflectance for spatial inference"
+    )
 
     # Not a FilePath: the file may be built after the config is written
     # (e.g. by `isofit surface_model`)
     surface_file: Optional[Path] = Field(
-        description="Path to surface model file (.mat format)"
+        description=(
+            "Path to the surface model file (.mat format) containing reflectance "
+            "priors, basis vectors, and covariance information. Need not exist yet, "
+            "as it may be built later by ``isofit surface_model``"
+        )
     )
 
     surface_category: Optional[SurfaceCategory] = Field(
-        description="Type of surface model to use"
+        description=(
+            "Type of surface model to use. Determines which surface class is "
+            "instantiated"
+        )
     )
 
     surface_class_file: Optional[FilePath] = Field(
-        description="Path to surface classification file"
+        description=(
+            "Path to surface classification file (ENVI format) for multi-surface mode"
+        )
     )
 
     base_surface_class_file: Optional[FilePath] = Field(
-        description="Path to base surface classification file"
+        description=(
+            "Path to base surface classification file for hierarchical classification"
+        )
     )
 
     Surfaces: Dict[str, SubSurfaceConfig] = Field(
-        description="Multi-surface configuration dictionary"
+        description=(
+            "Multi-surface configuration mapping surface class names to their "
+            "configurations"
+        )
     )
 
-    wavelength_file: Optional[FilePath] = Field(description="Path to wavelength file")
+    wavelength_file: Optional[FilePath] = Field(
+        description="Path to wavelength file for surface model spectral sampling"
+    )
 
     select_on_init: bool = Field(
-        description="Force use of initialization state and never change"
+        description=(
+            "Force use of the initialization state and never change the surface "
+            "model selection"
+        )
     )
 
     selection_metric: Literal["Euclidean", "SGA", "SpecAngle"] = Field(
-        description="Metric for surface selection"
+        description=(
+            "Metric for selecting the surface prior component: Euclidean distance, "
+            "SGA (Spectral Gradient Angle), or SpecAngle (spectral angle)"
+        )
     )
 
     statevector: SurfaceStateVectorConfig = Field(
-        description="Surface state vector configuration",
+        description="Surface state vector configuration for temperature and glint",
     )
 
     emissivity_for_surface_T_init: float = Field(
-        description="Initial emissivity value for surface temperature (recommended by Glynn Hulley)",
+        description=(
+            "Initial emissivity value for surface temperature estimation. 0.98 is "
+            "recommended by Glynn Hulley for most surfaces"
+        ),
     )
 
     terrain_style: Literal["flat", "dem", "solved"] = Field(
-        description="Style of terrain to use in the forward model"
+        description=(
+            "Style of terrain to use in the forward model: 'flat' assumes a level "
+            "surface, 'dem' uses a digital elevation model, 'solved' optimizes "
+            "terrain parameters"
+        )
     )
 
     max_slope: float = Field(
-        description="Max slope value for LUT calculations (only relevant for 'dem' terrain_style)",
+        description=(
+            "Maximum slope in degrees for LUT calculations. Only relevant for "
+            "terrain_style='dem'"
+        ),
     )
 
-    refractive_index_path: str = Field(description="Path to refractive index data")
+    refractive_index_path: str = Field(
+        description="Path to refractive index data for water surface modeling"
+    )
 
     def update_from_subconfig(self, subconfig: SubSurfaceConfig):
         """

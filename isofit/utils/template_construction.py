@@ -1632,15 +1632,18 @@ def make_atmosphere_config(
         if engine_name == "sixs":
             atmosphere_rte["earth_sun_distance_file"] = earth_sun_distance_path
         atmosphere_config["irradiance_file"] = irradiance_file
-        # The 6S install used for the surrogate simulations, not the sRTMnet
-        # ``base_dir``
-        atmosphere_rte["sixs_dir"] = sixs_path
-        if multipart_transmittance:
-            atmosphere_rte["emulator_aux_file"] = abspath(emulator_base)
-        else:
-            atmosphere_rte["emulator_aux_file"] = abspath(
-                os.path.splitext(emulator_base)[0] + "_aux.npz"
-            )
+        # sixs_dir/emulator_aux_file only exist on the srtmnet engine schema;
+        # kernelflows rejects unknown keys
+        if engine_name == "srtmnet":
+            # The 6S install used for the surrogate simulations, not the
+            # sRTMnet ``base_dir``
+            atmosphere_rte["sixs_dir"] = sixs_path
+            if multipart_transmittance:
+                atmosphere_rte["emulator_aux_file"] = abspath(emulator_base)
+            else:
+                atmosphere_rte["emulator_aux_file"] = abspath(
+                    os.path.splitext(emulator_base)[0] + "_aux.npz"
+                )
     else:
         atmosphere_rte["base_dir"] = modtran_path
     atmosphere_config["engine"].update(atmosphere_rte)

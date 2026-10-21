@@ -171,7 +171,7 @@ class BaseAtmosphere(Reader):
                 self.config.wavelength_file
                 or full_config.forward_model.instrument.wavelength_file
             )
-            if os.path.exists(self.wavelength_file):
+            if self.wavelength_file and os.path.exists(self.wavelength_file):
                 Logger.info(f"Loading from wavelength_file: {self.wavelength_file}")
                 wl, fwhm = common.load_wavelen(self.wavelength_file)
 
