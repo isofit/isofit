@@ -29,35 +29,6 @@ class LibRadTranConfig(BaseModel):
     extensive atmospheric profile options. It supports UV through thermal
     infrared wavelengths.
 
-    Attributes
-    ----------
-    name : Literal["libradtran"]
-        Engine identifier. Must be "libradtran".
-    base_dir : DirectoryPath
-        Base path to LibRadTran installation directory. The base configs
-        default this to the ISOFIT ini ``libradtran``/``libradtran.version``
-        path.
-    reptran_band_model : {"coarse", "medium", "fine"}
-        REPTRAN correlated-k band model resolution. "coarse" (15 cm⁻¹) is
-        fastest, "fine" (1 cm⁻¹) is most accurate but slower. Default is "coarse".
-    kb_alpha_1 : float
-        King-Byrne Angstrom parameter (α₁) for aerosol wavelength dependence.
-        Setting to None uses default aerosol profile.
-    kb_alpha_2 : float
-        King-Byrne Angstrom parameter (α₂) for aerosol wavelength dependence.
-        Setting to None uses default aerosol profile.
-    gg_set : float
-        Constant asymmetry parameter (g) to represent aerosol phase function.
-    gg_file : Path
-        Path to asymmetry parameter file that overwrites default profile
-        with altitude-dependent values.
-    tau_file : Path
-        Path to aerosol optical depth file that overwrites default profile
-        with altitude-dependent values.
-    ssa_file : Path
-        Path to single scattering albedo file that overwrites default
-        aerosol absorption properties.
-
     Examples
     --------
     >>> from isofit.configs.sections.atmosphere.engines import LibRadTranConfig
@@ -89,39 +60,63 @@ class LibRadTranConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["libradtran"], BeforeValidator(standardName)] = Field()
+    name: Annotated[Literal["libradtran"], BeforeValidator(standardName)] = Field(
+        description='Engine identifier. Must be ``"libradtran"``'
+    )
 
     base_dir: Optional[DirectoryPath] = Field(
-        description="Base path to engine directory",
+        description="Base path to the LibRadTran installation directory",
     )
 
     reptran_band_model: Literal["coarse", "medium", "fine"] = Field(
-        description="REPTRAN band model. Options: coarse (15cm-1), medium (5 cm-1), fine (1 cm-1)",
+        description=(
+            "REPTRAN correlated-k band model resolution. Options: ``coarse`` "
+            "(15 cm-1, fastest), ``medium`` (5 cm-1), ``fine`` (1 cm-1, most "
+            "accurate but slower)"
+        ),
         examples=["coarse", "medium", "fine"],
     )
 
     kb_alpha_1: Optional[float] = Field(
-        description="King-Byrne Angstrom parameter (alpha 1). Setting to None uses default aerosol profile."
+        description=(
+            "King-Byrne Angstrom parameter (alpha 1) for aerosol wavelength "
+            "dependence. Setting to None uses the default aerosol profile"
+        )
     )
 
     kb_alpha_2: Optional[float] = Field(
-        description="King-Byrne Angstrom parameter (alpha 2). Setting to None uses default aerosol profile."
+        description=(
+            "King-Byrne Angstrom parameter (alpha 2) for aerosol wavelength "
+            "dependence. Setting to None uses the default aerosol profile"
+        )
     )
 
     gg_set: Optional[float] = Field(
-        description="Constant asymmetry parameter to represent aerosols. Setting to None uses the profile default."
+        description=(
+            "Constant asymmetry parameter (g) to represent the aerosol phase "
+            "function. Setting to None uses the profile default"
+        )
     )
 
     gg_file: Optional[Path] = Field(
-        description="Path to an asymmetry depth file that overwrites default profile"
+        description=(
+            "Path to an asymmetry parameter file that overwrites the default "
+            "profile with altitude-dependent values"
+        )
     )
 
     tau_file: Optional[Path] = Field(
-        description="Path to an optical depth file that overwrites default profile"
+        description=(
+            "Path to an aerosol optical depth file that overwrites the default "
+            "profile with altitude-dependent values"
+        )
     )
 
     ssa_file: Optional[Path] = Field(
-        description="Path to a single scattering albedo file that overwrites default profile",
+        description=(
+            "Path to a single scattering albedo file that overwrites the default "
+            "aerosol absorption properties"
+        ),
     )
 
     ssa_scale: Optional[float] = Field(
@@ -129,7 +124,10 @@ class LibRadTranConfig(BaseModel):
     )
 
     moments_file: Optional[Path] = Field(
-        description="Path to a phase function moments file that overwrites default profile",
+        description=(
+            "Path to a phase function moments file that overwrites the default "
+            "profile"
+        ),
     )
 
     template_file: Optional[FilePath] = Field(

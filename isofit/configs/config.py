@@ -22,21 +22,6 @@ class Config(BaseModel):
     including input/output files, forward model components (surface, atmosphere,
     instrument), and implementation settings.
 
-    Attributes
-    ----------
-    input : io.InputConfig
-        Input file configuration specifying measured radiance, observation files,
-        location files, and other input data sources.
-    output : io.OutputConfig
-        Output file configuration specifying where to write estimated states,
-        reflectance, radiance, and other products.
-    forward_model : ForwardModelConfig
-        Forward model configuration containing surface, atmosphere, and instrument
-        models used to simulate measurements.
-    implementation : ImplementationConfig
-        Implementation configuration specifying operating mode (inversion, MCMC,
-        simulation), Ray parallelization settings, and other runtime parameters.
-
     Examples
     --------
     >>> from isofit.configs import Config, load_config_dict
@@ -52,16 +37,33 @@ class Config(BaseModel):
     cannot be expressed as simple field constraints.
     """
 
-    input: io.InputConfig = Field(description="Input file configuration")
+    input: io.InputConfig = Field(
+        description=(
+            "Input file configuration specifying measured radiance, observation "
+            "files, location files, and other input data sources"
+        )
+    )
 
-    output: io.OutputConfig = Field(description="Output file configuration")
+    output: io.OutputConfig = Field(
+        description=(
+            "Output file configuration specifying where to write estimated states, "
+            "reflectance, radiance, and other products"
+        )
+    )
 
     forward_model: ForwardModelConfig = Field(
-        description="Forward model configuration (surface, atmosphere, instrument)",
+        description=(
+            "Forward model configuration containing the surface, atmosphere, and "
+            "instrument models used to simulate measurements"
+        ),
     )
 
     implementation: ImplementationConfig = Field(
-        description="Implementation configuration (mode, inversion, etc.)",
+        description=(
+            "Implementation configuration specifying the operating mode (inversion, "
+            "MCMC, simulation), Ray parallelization settings, and other runtime "
+            "parameters"
+        ),
     )
 
     def get_config_errors(self) -> None:
@@ -117,7 +119,8 @@ class Config(BaseModel):
             and self.input.reflectance_file is None
         ):
             errors.append(
-                "If implementation.mode is set to simulation, input.reflectance_file must be set"
+                "If implementation.mode is set to simulation, "
+                "input.reflectance_file must be set"
             )
 
         # Log warnings

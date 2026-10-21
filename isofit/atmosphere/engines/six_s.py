@@ -182,6 +182,11 @@ class SixSRT(BaseAtmosphere, Writer):
         """
         self.load_esd()
 
+        if self.config.irradiance_file is None:
+            raise AttributeError(
+                "6S requires forward_model.atmosphere.irradiance_file to be set"
+            )
+
         try:
             irr = np.loadtxt(self.config.irradiance_file, comments="#")
         except FileNotFoundError:

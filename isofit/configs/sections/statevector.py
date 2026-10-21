@@ -22,23 +22,6 @@ class StateVectorElementConfig(BaseModel):
     inversion. Each element has bounds, a scale factor, prior distribution
     parameters, and an initial guess value.
 
-    Attributes
-    ----------
-    bounds : list[float]
-        Lower and upper bounds for the parameter during optimization.
-        Default is [nan, nan] for unbounded parameters.
-    scale : float
-        Scale factor for normalizing the parameter during optimization.
-        Improves numerical conditioning. Default is nan (no scaling).
-    prior_mean : float
-        Mean of the prior distribution for this parameter. Used in
-        Bayesian estimation. Default is nan (no prior).
-    prior_sigma : float
-        Standard deviation of the prior distribution. Default is nan (no prior).
-    init : float
-        Initial guess value for the parameter at the start of optimization.
-        Default is nan (will be determined heuristically).
-
     Examples
     --------
     >>> from isofit.configs.sections.statevector import StateVectorElementConfig
@@ -61,19 +44,38 @@ class StateVectorElementConfig(BaseModel):
 
     bounds: list[float] = Field(
         default_factory=lambda: [np.nan, np.nan],
-        description="Bounds for the state vector element",
+        description=(
+            "Lower and upper bounds for the parameter during optimization. NaN "
+            "bounds leave the parameter unbounded"
+        ),
     )
     scale: float = Field(
-        default=np.nan, description="Scale for the state vector element"
+        default=np.nan,
+        description=(
+            "Scale factor for normalizing the parameter during optimization, which "
+            "improves numerical conditioning. NaN means no scaling"
+        ),
     )
     prior_mean: float = Field(
-        default=np.nan, description="Prior mean for the state vector element"
+        default=np.nan,
+        description=(
+            "Mean of the prior distribution for this parameter, used in Bayesian "
+            "estimation. NaN means no prior"
+        ),
     )
     prior_sigma: float = Field(
-        default=np.nan, description="Prior sigma for the state vector element"
+        default=np.nan,
+        description=(
+            "Standard deviation of the prior distribution for this parameter. NaN "
+            "means no prior"
+        ),
     )
     init: float = Field(
-        default=np.nan, description="Initial value for the state vector element"
+        default=np.nan,
+        description=(
+            "Initial guess for the parameter at the start of optimization. NaN means "
+            "it is determined heuristically"
+        ),
     )
 
 

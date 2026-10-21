@@ -21,13 +21,17 @@ The semantics intentionally match the old base class:
 class ElementAccessorMixin:
     """Restore the ``BaseConfigSection`` element-iteration API on a model."""
 
+    def _element_names(self):
+        """Declared field names followed by any extra (dynamic) field names."""
+        return list(type(self).model_fields) + list(self.model_extra or {})
+
     def get_all_elements(self):
         """Return the value of every field, in declaration order."""
-        return [getattr(self, name) for name in type(self).model_fields]
+        return [getattr(self, name) for name in self._element_names()]
 
     def get_all_element_names(self):
         """Return the name of every field, in declaration order."""
-        return list(type(self).model_fields)
+        return self._element_names()
 
     def get_elements(self):
         """
@@ -37,7 +41,7 @@ class ElementAccessorMixin:
         and names are sorted alphabetically by name to give a deterministic
         ordering.
         """
-        names = list(type(self).model_fields)
+        names = self._element_names()
         elements = [getattr(self, name) for name in names]
 
         pairs = [

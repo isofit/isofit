@@ -17,44 +17,46 @@ class McmcConfig(BaseModel):
     Parameters for Markov Chain Monte Carlo inversion mode, which samples
     the posterior distribution to quantify retrieval uncertainty.
 
-    Attributes
-    ----------
-    iterations : int
-        Number of MCMC iterations to run. More iterations improve convergence
-        but increase runtime. Default is 10000.
-    burnin : int
-        Number of burn-in iterations to discard before collecting samples.
-        Should be long enough for chain to reach stationary distribution.
-        Default is 200.
-    regularizer : float
-        Regularization parameter added to covariance matrix for numerical
-        stability. Default is 1e-3.
-    proposal_scaling : float
-        Scaling factor for MCMC proposal distribution. Smaller values lead
-        to higher acceptance rate but slower mixing. Default is 0.01.
-    verbose : bool
-        Enable verbose output during MCMC sampling. Default is True.
-    restart_every : int
-        Restart MCMC chain every N iterations to improve exploration.
-        Default is 2000.
-
     Examples
     --------
     >>> from isofit.configs.sections.inversion import McmcConfig
     >>> mcmc = McmcConfig(iterations=20000, burnin=500, proposal_scaling=0.005)
     """
 
-    iterations: int = Field(description="Number of MCMC iterations to run")
+    iterations: int = Field(
+        description=(
+            "Number of MCMC iterations to run. More iterations improve convergence "
+            "but increase runtime"
+        )
+    )
 
-    burnin: int = Field(description="Number of burn-in iterations")
+    burnin: int = Field(
+        description=(
+            "Number of burn-in iterations to discard before collecting samples. "
+            "Should be long enough for the chain to reach its stationary "
+            "distribution"
+        )
+    )
 
-    regularizer: float = Field(description="Regularization parameter")
+    regularizer: float = Field(
+        description=(
+            "Regularization parameter added to the covariance matrix for numerical "
+            "stability"
+        )
+    )
 
-    proposal_scaling: float = Field(description="Scaling factor for MCMC proposals")
+    proposal_scaling: float = Field(
+        description=(
+            "Scaling factor for the MCMC proposal distribution. Smaller values lead "
+            "to a higher acceptance rate but slower mixing"
+        )
+    )
 
-    verbose: bool = Field(description="Enable verbose output")
+    verbose: bool = Field(description="Enable verbose output during MCMC sampling")
 
-    restart_every: int = Field(description="Restart interval for MCMC")
+    restart_every: int = Field(
+        description="Restart the MCMC chain every N iterations to improve exploration"
+    )
 
 
 class LeastSquaresConfig(BaseModel):
@@ -63,28 +65,6 @@ class LeastSquaresConfig(BaseModel):
 
     Parameters for scipy.optimize.least_squares solver used in standard
     inversion mode.
-
-    Attributes
-    ----------
-    method : str
-        Optimization method to use. Options: 'trf' (Trust Region Reflective),
-        'dogbox', or 'lm' (Levenberg-Marquardt). Default is 'trf'.
-    max_nfev : int
-        Maximum number of forward model evaluations before termination.
-        Lower values speed up processing but may terminate before convergence.
-        Default is 20.
-    xtol : float, optional
-        Tolerance for termination by change of independent variables.
-        If None, uses scipy default. Default is None.
-    ftol : float
-        Tolerance for termination by change of cost function. Smaller values
-        require tighter convergence. Default is 0.01.
-    gtol : float, optional
-        Tolerance for termination by norm of gradient. If None, uses scipy
-        default. Default is None.
-    tr_solver : {"exact", "lsmr"}, optional
-        Method for solving trust-region subproblems. "lsmr" is faster for
-        large problems. Default is "lsmr".
 
     Examples
     --------
@@ -96,26 +76,46 @@ class LeastSquaresConfig(BaseModel):
     scipy.optimize.least_squares : Underlying solver documentation
     """
 
-    method: str = Field(description="Optimization method to use")
+    method: str = Field(
+        description=(
+            "Optimization method to use. Options: ``trf`` (Trust Region "
+            "Reflective), ``dogbox``, or ``lm`` (Levenberg-Marquardt)"
+        )
+    )
 
     max_nfev: int = Field(
-        description="Maximum number of function evaluations before termination",
+        description=(
+            "Maximum number of forward model evaluations before termination. Lower "
+            "values speed up processing but may terminate before convergence"
+        ),
     )
 
     xtol: Optional[float] = Field(
-        description="Tolerance for termination by change of independent variables",
+        description=(
+            "Tolerance for termination by change of independent variables. If "
+            "None, uses the scipy default"
+        ),
     )
 
     ftol: float = Field(
-        description="Tolerance for termination by change of cost function"
+        description=(
+            "Tolerance for termination by change of cost function. Smaller values "
+            "require tighter convergence"
+        )
     )
 
     gtol: Optional[float] = Field(
-        description="Tolerance for termination by norm of gradient"
+        description=(
+            "Tolerance for termination by norm of gradient. If None, uses the scipy "
+            "default"
+        )
     )
 
     tr_solver: Optional[Literal["exact", "lsmr"]] = Field(
-        description="Method for solving trust-region subproblems"
+        description=(
+            "Method for solving trust-region subproblems. ``lsmr`` is faster for "
+            "large problems"
+        )
     )
 
     def get_config_options_as_dict(self):
@@ -143,32 +143,6 @@ class InversionConfig(BaseModel):
     Configures the retrieval algorithm including spectral windows, optimization
     method, MCMC parameters, and various inversion options.
 
-    Attributes
-    ----------
-    windows : list[list[float]], optional
-        Inversion retrieval windows to operate over, specified as list of
-        [min_wavelength, max_wavelength] ranges in nanometers. Only wavelengths
-        within these windows are used in the cost function. If None, uses all
-        available wavelengths. Default is None.
-    cressie_map_confidence : bool
-        Use N. Cressie's alternate S_hat definition for more statistically-
-        consistent posterior confidence intervals. Default is False.
-    mcmc : McmcConfig
-        MCMC parameters used when implementation.mode is "mcmc_inversion".
-        Default uses McmcConfig defaults.
-    integration_grid : dict
-        Grid of inversion points for mode='grid' (advanced usage).
-        Default is empty.
-    priors_in_initial_guess : bool
-        Use surface priors outside inversion windows during initial guess
-        calculation. Improves initial guess quality. Default is True.
-    inversion_grid_as_preseed : bool
-        Treat inversion grid as seeds for optimization (True) or as fixed
-        points to evaluate (False). Default is False.
-    least_squares_params : LeastSquaresConfig
-        Least squares parameters for core inversion solve in standard
-        inversion mode. Default uses LeastSquaresConfig defaults.
-
     Examples
     --------
     >>> from isofit.configs.sections.inversion import InversionConfig, LeastSquaresConfig
@@ -190,31 +164,51 @@ class InversionConfig(BaseModel):
     """
 
     windows: Optional[List[List[float]]] = Field(
-        description="Inversion retrieval windows to operate over (list of [min, max] wavelength ranges)",
+        description=(
+            "Inversion retrieval windows to operate over, specified as a list of "
+            "``[min_wavelength, max_wavelength]`` ranges in nanometers (each with "
+            "min < max). Only wavelengths within these windows are used in the "
+            "cost function. If None, uses all available wavelengths"
+        ),
     )
 
     cressie_map_confidence: bool = Field(
-        description="Use N. Cressie's alternate S_hat definition for more statistically-consistent posterior confidence",
+        description=(
+            "Use N. Cressie's alternate S_hat definition for more "
+            "statistically-consistent posterior confidence intervals"
+        ),
     )
 
     mcmc: McmcConfig = Field(
-        description="MCMC parameters (only used if mode = mcmc)",
+        description=(
+            "MCMC parameters, used only when ``implementation.mode`` is "
+            "``mcmc_inversion``. See :class:`McmcConfig`"
+        ),
     )
 
     integration_grid: dict = Field(
-        description="Grid of inversion points for mode='grid'",
+        description="Grid of inversion points for ``mode='grid'`` (advanced usage)",
     )
 
     priors_in_initial_guess: bool = Field(
-        description="Use surface priors outside inversion windows during initial guess",
+        description=(
+            "Use surface priors outside inversion windows during initial guess "
+            "calculation. Improves initial guess quality"
+        ),
     )
 
     inversion_grid_as_preseed: bool = Field(
-        description="Treat inversion grid as seeds for optimization (True) or fixed points (False)",
+        description=(
+            "Treat the inversion grid as seeds for optimization (True) or as fixed "
+            "points to evaluate (False)"
+        ),
     )
 
     least_squares_params: LeastSquaresConfig = Field(
-        description="Least squares parameters for core inversion solve",
+        description=(
+            "Least squares parameters for the core inversion solve in standard "
+            "inversion mode. See :class:`LeastSquaresConfig`"
+        ),
     )
 
     @field_validator("windows")

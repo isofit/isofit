@@ -38,9 +38,7 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
     n = np.ones(len(x))
     D = np.c_[n, x, w]
     np.savetxt(hi_res_wavlengths, D, fmt="%8.6f")
-    config["forward_model"]["atmosphere"]["engine"][
-        "wavelength_file"
-    ] = hi_res_wavlengths
+    config["forward_model"]["atmosphere"]["wavelength_file"] = hi_res_wavlengths
 
     # Flag case where spline_indices is empty and using spline
     if not spline_indices and (
@@ -49,7 +47,7 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
         errstr = "Spline state given, but no indices provided"
         raise ValueError(errstr)
 
-    config["forward_model"]["instrument"]["calibration_fixed"] = False
+    # Instrument derives calibration_fixed from the statevector elements below
     if state_type == "shift":
         config["forward_model"]["instrument"]["statevector"] = {
             "GROW_FWHM": {
@@ -690,7 +688,7 @@ def get_wavelength_adjustment(
     # Load the statevector - we could do this by loading the forward
     # model and the indicies, but in case the LUT is large, we're
     # shortcutting here
-    state_ds = envi.open(envi_header(config["output"]["estimated_state_file"]))
+    state_ds = envi.open(envi_header(config.output.estimated_state_file))
     state_possible_names = ["GRWO_FWHM", "FWHMSPL", "WL_SPACE", "WL_SHIFT", "WLSPL"]
     band_names = list(state_ds.metadata["band names"])
     instrument_idx = np.array(

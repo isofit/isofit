@@ -27,28 +27,6 @@ class ModtranConfig(BaseModel):
     RT code supporting VNIR to TIR wavelengths with comprehensive atmospheric
     absorption and scattering.
 
-    Attributes
-    ----------
-    name : Literal["modtran"]
-        Engine identifier. Must be "modtran".
-    base_dir : DirectoryPath
-        Base path to MODTRAN installation directory. The base configs default
-        this to the ISOFIT ini ``modtran`` path.
-    multipart_transmittance : bool
-        Apply triple-run diffuse & direct transmittance estimation for
-        improved accuracy. Increases runtime 3x. Default is False.
-    use_tp7 : bool
-        Write TP7 outputs instead of the default CHN outputs. Only applies
-        when multipart_transmittance is enabled. Default is False.
-    aerosol_template_file : FilePath
-        Path to aerosol template file defining aerosol optical properties
-        and vertical profiles.
-    aerosol_model_file : FilePath
-        Path to aerosol model file with wavelength-dependent properties.
-    template_file : FilePath
-        Path to MODTRAN input template file (tape5 or JSON format) with
-        base atmospheric configuration.
-
     Examples
     --------
     >>> from isofit.configs.sections.atmosphere.engines import ModtranConfig
@@ -79,28 +57,44 @@ class ModtranConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["modtran"], BeforeValidator(standardName)] = Field()
+    name: Annotated[Literal["modtran"], BeforeValidator(standardName)] = Field(
+        description='Engine identifier. Must be "modtran" (case-insensitive)'
+    )
 
     base_dir: Optional[DirectoryPath] = Field(
-        description="Base path to engine directory",
+        description="Base path to the MODTRAN installation directory",
     )
 
     multipart_transmittance: bool = Field(
-        description="Apply triple-run diffuse & direct transmittance estimation",
+        description=(
+            "Apply triple-run diffuse & direct transmittance estimation for "
+            "improved accuracy. Increases runtime 3x"
+        ),
     )
 
     use_tp7: bool = Field(
-        description="Write TP7 outputs instead of CHN outputs (multipart_transmittance only)",
+        description=(
+            "Write TP7 outputs instead of the default CHN outputs. Only applies "
+            "when ``multipart_transmittance`` is enabled"
+        ),
     )
 
     aerosol_template_file: Optional[FilePath] = Field(
-        description="Aerosol template file",
+        description=(
+            "Path to the aerosol template file defining aerosol optical "
+            "properties and vertical profiles"
+        ),
     )
 
     aerosol_model_file: Optional[FilePath] = Field(
-        description="Aerosol model file",
+        description=(
+            "Path to the aerosol model file with wavelength-dependent properties"
+        ),
     )
 
     template_file: Optional[FilePath] = Field(
-        description="MODTRAN input template file",
+        description=(
+            "Path to the MODTRAN input template file (tape5 or JSON format) with "
+            "the base atmospheric configuration"
+        ),
     )

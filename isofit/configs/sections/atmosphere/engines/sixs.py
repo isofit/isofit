@@ -26,36 +26,6 @@ class SixSConfig(BaseModel):
     6S (Second Simulation of the Satellite Signal in the Solar Spectrum) is
     an open-source RT code for solar-reflected wavelengths (visible to SWIR).
 
-    Attributes
-    ----------
-    name : Literal["sixs"]
-        Engine identifier. Must be "sixs" or "6s".
-    base_dir : DirectoryPath
-        Base path to 6S installation directory. The base configs default this
-        to the ISOFIT ini ``sixs`` path.
-    day : int
-        Day of year (1-366) for solar geometry calculations.
-    month : int
-        Month (1-12) for solar geometry calculations.
-    elev : float
-        Surface elevation in kilometers (positive).
-    alt : float
-        Sensor altitude in kilometers (positive).
-    solzen : float
-        Solar zenith angle in degrees (0-180).
-    solaz : float
-        Solar azimuth angle in degrees.
-    viewzen : float
-        View zenith angle in degrees.
-    viewaz : float
-        View azimuth angle in degrees.
-    obs : FilePath
-        Path to 6S observation file with geometry parameters.
-    earth_sun_distance_file : FilePath
-        Path to Earth-Sun distance file for irradiance corrections.
-    irradiance_file : FilePath
-        Path to solar irradiance file.
-
     Examples
     --------
     >>> from isofit.configs.sections.atmosphere.engines import SixSConfig
@@ -72,7 +42,6 @@ class SixSConfig(BaseModel):
     ...     viewaz=0.0,
     ...     obs="geometry.txt",
     ...     earth_sun_distance_file="earth_sun_dist.txt",
-    ...     irradiance_file="solar_irrad.txt"
     ... )
 
     Notes
@@ -83,6 +52,10 @@ class SixSConfig(BaseModel):
     6S is generally faster than MODTRAN but has fewer atmospheric profile
     options and does not support thermal infrared wavelengths.
 
+    The solar irradiance file is not part of this engine config; it is set via
+    ``forward_model.atmosphere.irradiance_file`` (see :class:`AtmosphereConfig`),
+    which 6S requires.
+
     See Also
     --------
     ModtranConfig : Commercial RT engine with more capabilities
@@ -91,47 +64,61 @@ class SixSConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[Literal["sixs"], BeforeValidator(standardName)] = Field()
+    name: Annotated[Literal["sixs"], BeforeValidator(standardName)] = Field(
+        description=(
+            'Engine identifier. Accepts "sixs" or "6s" (case-insensitive), '
+            'normalized to "sixs"'
+        )
+    )
 
     base_dir: Optional[DirectoryPath] = Field(
-        description="Base path to engine directory",
+        description=(
+            "Base path to the 6S installation directory. The base configs default "
+            "this to the ISOFIT ini ``sixs`` path"
+        ),
     )
 
     # The solar/observer geometry parameters below are populated dynamically by
     # ``build_sixs_config`` (from a MODTRAN template) when 6S is run as the
     # sRTMnet surrogate, so they are nullable rather than carrying real values.
     day: Optional[int] = Field(
-        ge=1, le=366, description="Day Parameter", examples=[1, 365]
+        ge=1,
+        le=366,
+        description="Day of year (1-366) for solar geometry calculations",
+        examples=[1, 365],
     )
 
     month: Optional[int] = Field(
-        ge=1, le=12, description="Month parameter", examples=[1, 12]
+        ge=1,
+        le=12,
+        description="Month (1-12) for solar geometry calculations",
+        examples=[1, 12],
     )
 
     elev: Optional[float] = Field(
-        description="Elevation parameter",
+        description="Surface elevation in kilometers (positive)",
     )
 
     alt: Optional[float] = Field(
-        description="Altitude parameter",
+        description="Sensor altitude in kilometers (positive)",
     )
 
     solzen: Optional[float] = Field(
         ge=0,
         le=180,
-        description="Solar zenith parameter",
+        description="Solar zenith angle in degrees (0-180)",
     )
 
     solaz: Optional[float] = Field(
-        description="Solar azimuth parameter",
+        description="Solar azimuth angle in degrees",
     )
 
     viewzen: Optional[float] = Field(
-        description="View zenith parameter",
+        description="View zenith angle in degrees",
     )
 
     viewaz: Optional[float] = Field(
-        description="View azimuth parameter",
+        description="View azimuth angle in degrees",
     )
 
     wlinf: Optional[float] = Field(
@@ -155,9 +142,9 @@ class SixSConfig(BaseModel):
     )
 
     obs: Optional[FilePath] = Field(
-        description="6S observation file",
+        description="Path to the 6S observation file with geometry parameters",
     )
 
     earth_sun_distance_file: Optional[FilePath] = Field(
-        description="Earth-Sun distance file",
+        description="Path to the Earth-Sun distance file for irradiance corrections",
     )

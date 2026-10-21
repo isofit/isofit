@@ -440,6 +440,61 @@ def test_resolve_does_not_mutate_input():
     assert json.dumps(data, sort_keys=True) == snapshot
 
 
+def test_instrument_spline_statevector():
+    """Dynamically named instrument elements (wavelength_cal splines) are kept."""
+    element = {"bounds": [-5, 5], "init": 0, "prior_sigma": 100.0, "scale": 1}
+    data = legacy_config({"engine_name": "6s"})
+    data["forward_model"]["instrument"]["statevector"] = {
+        "GROW_FWHM": element,
+        "WLSPL_3": element,
+        "FWHMSPL_1": element,
+    }
+
+    statevector = load_config_dict(data).forward_model.instrument.statevector
+    assert statevector.get_element_names() == ["FWHMSPL_1", "GROW_FWHM", "WLSPL_3"]
+    assert statevector.WLSPL_3.bounds == [-5.0, 5.0]
+
+    data["forward_model"]["instrument"]["statevector"]["WLSPL_3"] = {"bounds": "x"}
+    with pytest.raises(ValidationError, match="WLSPL_3"):
+        load_config_dict(data)
+
+
+def test_atmosphere_wavelength_file_survives_resolve():
+    """An atmosphere-level edit to a resolved config (as wavelength_cal makes) is kept."""
+    once = resolve_config_dict(legacy_config({"engine_name": "6s"}))
+    once["forward_model"]["atmosphere"]["wavelength_file"] = Wavelengths
+    config = load_config_dict(once)
+    assert config.forward_model.atmosphere.wavelength_file == Path(Wavelengths)
+
+
+@pytest.mark.parametrize(
+    "emulator, engine",
+    [("emulator.jld2", "kernelflows"), ("emulator.h5", "srtmnet")],
+)
+def test_make_atmosphere_config_emulators(tmp_path, monkeypatch, emulator, engine):
+    """template_construction only sets the fields the selected emulator accepts."""
+    from isofit.atmosphere.engines import kernel_flows
+    from isofit.configs.sections.atmosphere import AtmosphereConfig
+    from isofit.utils.template_construction import make_atmosphere_config
+
+    # The KernelFlows bounds check reads the emulator, which is a stub here
+    monkeypatch.setattr(kernel_flows, "bounds_check", lambda *args, **kwargs: None)
+
+    for name in (emulator, "emulator_aux.npz", "template.json"):
+        (tmp_path / name).touch()
+
+    atmosphere = make_atmosphere_config(
+        lut_directory=str(tmp_path),
+        modtran_template_path=str(tmp_path / "template.json"),
+        emulator_base=str(tmp_path / emulator),
+        sixs_path=str(tmp_path),
+        h2o_lut_grid=np.array([0.5, 1.0]),
+    )
+    config = resolve_config_dict({"forward_model": {"atmosphere": atmosphere}})
+    validated = AtmosphereConfig.model_validate(config["forward_model"]["atmosphere"])
+    assert validated.engine.name == engine
+
+
 def test_create_new_config_relative_paths(tmp_path):
     """Relative paths resolve against the config file's directory."""
     data = legacy_config({"engine_name": "6s"})
