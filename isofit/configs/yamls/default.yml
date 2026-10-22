@@ -96,7 +96,7 @@ default:
         stray_srf_uncertainty: null
         dn_uncertainty_file: null
       fast_resample: true
-      SNR: null
+      SNR: 500
       parametric_noise_file: null
       pushbroom_noise_file: null
       nedt_noise_file: null
@@ -123,7 +123,7 @@ default:
     per_pixel_heuristic_prior: false
     debug_mode: false
     inversion:
-      windows: []
+      windows: [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
       cressie_map_confidence: false
       integration_grid: {}
       priors_in_initial_guess: true

@@ -30,7 +30,6 @@ simulation:
 
     instrument:
       wavelength_file: null        # SET: instrument wavelengths
-      SNR: 500
       integrations: 1
 
     atmosphere:
