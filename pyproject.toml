@@ -3,7 +3,7 @@ name = "isofit"
 dynamic = ["version"]
 description = "Imaging Spectrometer Optimal FITting"
 readme = "README.md"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.11,<3.14"
 license = {file = "LICENSE"}
 keywords = ["isofit"]
 authors = [
