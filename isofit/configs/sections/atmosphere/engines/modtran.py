@@ -29,15 +29,24 @@ class ModtranConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere.engines import ModtranConfig
-    >>> modtran = ModtranConfig(
-    ...     name="modtran",
-    ...     base_dir="/opt/modtran6.0",
-    ...     aerosol_template_file="aerosol_template.txt",
-    ...     aerosol_model_file="aerosol_model.txt",
-    ...     template_file="modtran_template.json",
-    ...     multipart_transmittance=True
-    ... )
+    The installation directory and template files must exist:
+
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "atmosphere": {
+    ...             "engine": {
+    ...                 "name": "modtran",
+    ...                 "base_dir": "/opt/modtran6.0",
+    ...                 "aerosol_template_file": "aerosol_template.json",
+    ...                 "aerosol_model_file": "aerosol_model.txt",
+    ...                 "template_file": "modtran_template.json",
+    ...                 "multipart_transmittance": True,
+    ...             }
+    ...         }
+    ...     }
+    ... })
+    >>> modtran = config.forward_model.atmosphere.engine
 
     Notes
     -----

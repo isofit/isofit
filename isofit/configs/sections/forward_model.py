@@ -25,17 +25,20 @@ class ForwardModelConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections import (
-    ...     ForwardModelConfig,
-    ...     SurfaceConfig,
-    ...     InstrumentConfig,
-    ... )
-    >>> from isofit.configs.sections.atmosphere import AtmosphereConfig
-    >>> fm = ForwardModelConfig(
-    ...     surface=SurfaceConfig(surface_file="surface.mat"),
-    ...     atmosphere=AtmosphereConfig(),
-    ...     instrument=InstrumentConfig(wavelength_file="wavelengths.txt", SNR=100.0)
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "surface": {
+    ...             "surface_file": "surface.mat",
+    ...             "surface_category": "multicomponent_surface",
+    ...         },
+    ...         "atmosphere": {"engine": {"name": "prebuilt"}},
+    ...         "instrument": {"SNR": 100.0},
+    ...     }
+    ... })
+    >>> fm = config.forward_model
+    >>> fm.instrument.SNR
+    100.0
 
     Notes
     -----

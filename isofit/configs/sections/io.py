@@ -24,12 +24,17 @@ class InputConfig(BaseModel, ElementAccessorMixin):
 
     Examples
     --------
-    >>> from isofit.configs.sections.io import InputConfig
-    >>> input_config = InputConfig(
-    ...     measured_radiance_file="data/radiance.mat",
-    ...     obs_file="data/obs.txt",
-    ...     loc_file="data/location.txt"
-    ... )
+    The input files must exist:
+
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "input": {
+    ...         "measured_radiance_file": "data/rdn.hdr",
+    ...         "obs_file": "data/obs.hdr",
+    ...         "loc_file": "data/loc.hdr",
+    ...     }
+    ... })
+    >>> input_config = config.input
 
     Notes
     -----
@@ -119,13 +124,17 @@ class OutputConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.io import OutputConfig
-    >>> from pathlib import Path
-    >>> output_config = OutputConfig(
-    ...     dir=Path("results/"),
-    ...     estimated_reflectance_file=Path("results/reflectance.dat"),
-    ...     posterior_uncertainty_file=Path("results/uncertainty.dat")
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "output": {
+    ...         "dir": "results",
+    ...         "estimated_reflectance_file": "results/reflectance.hdr",
+    ...         "posterior_uncertainty_file": "results/uncertainty.hdr",
+    ...     }
+    ... })
+    >>> output_config = config.output
+    >>> output_config.get_output_files()[2]
+    ['estimated_reflectance_file', 'posterior_uncertainty_file']
 
     Notes
     -----

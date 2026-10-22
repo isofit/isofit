@@ -24,13 +24,17 @@ class ImplementationConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections import ImplementationConfig, InversionConfig
-    >>> impl = ImplementationConfig(
-    ...     mode="inversion",
-    ...     n_cores=8,
-    ...     inversion=InversionConfig(),
-    ...     io_buffer_size=200
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "implementation": {
+    ...         "mode": "inversion",
+    ...         "n_cores": 8,
+    ...         "io_buffer_size": 200,
+    ...     }
+    ... })
+    >>> impl = config.implementation
+    >>> impl.n_cores
+    8
 
     Notes
     -----

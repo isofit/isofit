@@ -31,15 +31,23 @@ class LibRadTranConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere.engines import LibRadTranConfig
-    >>> librad = LibRadTranConfig(
-    ...     name="libradtran",
-    ...     base_dir="/opt/libRadtran",
-    ...     reptran_band_model="coarse",
-    ...     kb_alpha_1=1.3,
-    ...     kb_alpha_2=0.2,
-    ...     gg_set=0.7
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "atmosphere": {
+    ...             "engine": {
+    ...                 "name": "libradtran",
+    ...                 "reptran_band_model": "coarse",
+    ...                 "kb_alpha_1": 1.3,
+    ...                 "kb_alpha_2": 0.2,
+    ...                 "gg_set": 0.7,
+    ...             }
+    ...         }
+    ...     }
+    ... })
+    >>> librad = config.forward_model.atmosphere.engine
+    >>> librad.kb_alpha_1
+    1.3
 
     Notes
     -----

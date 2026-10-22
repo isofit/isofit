@@ -28,21 +28,27 @@ class SixSConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere.engines import SixSConfig
-    >>> sixs = SixSConfig(
-    ...     name="6s",
-    ...     base_dir="/opt/6S",
-    ...     day=172,
-    ...     month=6,
-    ...     elev=0.5,
-    ...     alt=705.0,
-    ...     solzen=30.0,
-    ...     solaz=180.0,
-    ...     viewzen=0.0,
-    ...     viewaz=0.0,
-    ...     obs="geometry.txt",
-    ...     earth_sun_distance_file="earth_sun_dist.txt",
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "atmosphere": {
+    ...             "engine": {
+    ...                 "name": "6s",
+    ...                 "day": 172,
+    ...                 "month": 6,
+    ...                 "elev": 0.5,
+    ...                 "alt": 705.0,
+    ...                 "solzen": 30.0,
+    ...                 "solaz": 180.0,
+    ...                 "viewzen": 0.0,
+    ...                 "viewaz": 0.0,
+    ...             }
+    ...         }
+    ...     }
+    ... })
+    >>> sixs = config.forward_model.atmosphere.engine
+    >>> sixs.name
+    'sixs'
 
     Notes
     -----

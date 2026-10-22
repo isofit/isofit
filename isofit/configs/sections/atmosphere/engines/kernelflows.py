@@ -21,12 +21,23 @@ class KernelFlowsConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere.engines import KernelFlowsConfig
-    >>> kf = KernelFlowsConfig(
-    ...     name="kernelflows",
-    ...     emulator_file="kf_emulator.pkl",
-    ...     template_file="kf_template.json"
-    ... )
+    The emulator and template files must exist:
+
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "atmosphere": {
+    ...             "engine": {
+    ...                 "name": "kf",
+    ...                 "emulator_file": "kf_emulator.h5",
+    ...                 "template_file": "modtran_template.json",
+    ...             }
+    ...         }
+    ...     }
+    ... })
+    >>> kf = config.forward_model.atmosphere.engine
+    >>> kf.name
+    'kernelflows'
 
     Notes
     -----

@@ -24,7 +24,9 @@ class PrebuiltConfig(BaseModel):
     Examples
     --------
     >>> from isofit.configs.sections.atmosphere.engines import PrebuiltConfig
-    >>> engine = PrebuiltConfig(name="prebuilt")
+    >>> engine = PrebuiltConfig(name="Prebuilt")
+    >>> engine.name
+    'prebuilt'
 
     Notes
     -----
