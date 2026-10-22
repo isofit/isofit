@@ -22,7 +22,7 @@ import logging
 
 import numpy as np
 
-from isofit.configs import configs
+from isofit import configs
 from isofit.core import units
 
 
