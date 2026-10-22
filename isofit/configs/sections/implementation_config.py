@@ -90,6 +90,11 @@ class ImplementationConfig(BaseConfigSection):
         False -> Use image-wide "unverisal" value
         """
 
+        self._aeronet_prior_type = bool
+        self.aeronet_prior = False
+        """bool: Define prior mean and sigma for AOT 550 as a function of aeronet climatology.
+        """
+
         self._debug_mode_type = bool
         self.debug_mode = False
         """bool: A flag to run the code in debug mode, which circumvents ray.
