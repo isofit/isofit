@@ -45,7 +45,6 @@ glint:
 
     instrument:
       wavelength_file: null        # SET: instrument wavelengths
-      SNR: 500
       integrations: 1
       unknowns:
         uncorrelated_radiometric_uncertainty: 0.01
