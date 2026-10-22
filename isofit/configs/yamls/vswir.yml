@@ -35,7 +35,6 @@ vswir:
       wavelength_file: null        # SET: instrument wavelengths
       # Pick one noise model. SNR is the simplest starting point; swap for a
       # parametric_noise_file when a characterized model is available.
-      SNR: 500
       integrations: 1
       unknowns:
         uncorrelated_radiometric_uncertainty: 0.01
