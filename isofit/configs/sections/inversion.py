@@ -19,8 +19,22 @@ class McmcConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.inversion import McmcConfig
-    >>> mcmc = McmcConfig(iterations=20000, burnin=500, proposal_scaling=0.005)
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "implementation": {
+    ...         "mode": "mcmc_inversion",
+    ...         "inversion": {
+    ...             "mcmc": {
+    ...                 "iterations": 20000,
+    ...                 "burnin": 500,
+    ...                 "proposal_scaling": 0.005,
+    ...             }
+    ...         },
+    ...     }
+    ... })
+    >>> mcmc = config.implementation.inversion.mcmc
+    >>> mcmc.iterations, mcmc.burnin
+    (20000, 500)
     """
 
     iterations: int = Field(
@@ -68,8 +82,21 @@ class LeastSquaresConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.inversion import LeastSquaresConfig
-    >>> ls = LeastSquaresConfig(max_nfev=10, ftol=0.05, method="dogbox")
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "implementation": {
+    ...         "inversion": {
+    ...             "least_squares_params": {
+    ...                 "method": "dogbox",
+    ...                 "max_nfev": 10,
+    ...                 "ftol": 0.05,
+    ...             }
+    ...         }
+    ...     }
+    ... })
+    >>> ls = config.implementation.inversion.least_squares_params
+    >>> ls.method, ls.max_nfev
+    ('dogbox', 10)
 
     See Also
     --------
@@ -145,11 +172,18 @@ class InversionConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.inversion import InversionConfig, LeastSquaresConfig
-    >>> inv = InversionConfig(
-    ...     windows=[[400.0, 1300.0], [1450.0, 1780.0], [1950.0, 2450.0]],
-    ...     least_squares_params=LeastSquaresConfig(max_nfev=15)
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "implementation": {
+    ...         "inversion": {
+    ...             "windows": [[400.0, 1300.0], [1450.0, 1780.0], [1950.0, 2450.0]],
+    ...             "least_squares_params": {"max_nfev": 15},
+    ...         }
+    ...     }
+    ... })
+    >>> inv = config.implementation.inversion
+    >>> inv.least_squares_params.max_nfev
+    15
 
     Notes
     -----

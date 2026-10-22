@@ -59,7 +59,6 @@ def create_new_config(config_file: Union[str, Path]) -> Config:
     >>> from isofit.configs import create_new_config
     >>> config = create_new_config("config.yaml")
     >>> config.get_config_errors()
-    >>> print(config.input.measured_radiance_file)
 
     Notes
     -----
@@ -183,13 +182,13 @@ def load_config_dict(config_dict: dict, base_dir: str | None = None) -> Config:
 
     Examples
     --------
+    >>> from isofit.configs import load_config_dict
     >>> config_dict = {
-    ...     "input": {"measured_radiance_file": "data/radiance.mat"},
-    ...     "output": {"dir": "output/"},
+    ...     "output": {"estimated_reflectance_file": "output/rfl.hdr"},
     ... }
     >>> config = load_config_dict(config_dict, base_dir="/path/to/project")
-    >>> print(config.input.measured_radiance_file)
-    PosixPath('/path/to/project/data/radiance.mat')
+    >>> config.output.estimated_reflectance_file
+    PosixPath('/path/to/project/output/rfl.hdr')
 
     Notes
     -----
@@ -299,7 +298,7 @@ def load_base_config(
     >>> cfg = load_base_config(
     ...     "vswir",
     ...     overrides={
-    ...         "input.measured_radiance_file": "radiance.hdr",
+    ...         "forward_model.surface.surface_file": "surface.mat",
     ...         "implementation.n_cores": 4,
     ...     },
     ... )

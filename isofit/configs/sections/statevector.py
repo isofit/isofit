@@ -94,10 +94,15 @@ class StateVectorConfig(BaseModel, ElementAccessorMixin, StateVectorValueMixin):
 
     Examples
     --------
-    >>> from isofit.configs.sections.surface import SurfaceStateVectorConfig
-    >>> from isofit.configs.sections.statevector import StateVectorElementConfig
-    >>> sv = SurfaceStateVectorConfig()
-    >>> sv.SURF_TEMP_K = StateVectorElementConfig(bounds=[250.0, 350.0])
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "surface": {
+    ...             "statevector": {"SURF_TEMP_K": {"bounds": [250.0, 350.0]}}
+    ...         }
+    ...     }
+    ... })
+    >>> sv = config.forward_model.surface.statevector
     >>> sv.get_all_bounds()
     [[250.0, 350.0]]
 

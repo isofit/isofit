@@ -82,14 +82,23 @@ class SurfaceStateVectorConfig(StateVectorConfig):
 
     Examples
     --------
-    >>> from isofit.configs.sections.surface import SurfaceStateVectorConfig
-    >>> from isofit.configs.sections.statevector import StateVectorElementConfig
-    >>> ssv = SurfaceStateVectorConfig()
-    >>> ssv.SURF_TEMP_K = StateVectorElementConfig(
-    ...     bounds=[250.0, 350.0],
-    ...     scale=50.0,
-    ...     init=300.0
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "surface": {
+    ...             "statevector": {
+    ...                 "SURF_TEMP_K": {
+    ...                     "bounds": [250.0, 350.0],
+    ...                     "scale": 50.0,
+    ...                     "init": 300.0,
+    ...                 }
+    ...             }
+    ...         }
+    ...     }
+    ... })
+    >>> ssv = config.forward_model.surface.statevector
+    >>> ssv.get_element_names()
+    ['SURF_TEMP_K']
 
     Notes
     -----
@@ -192,31 +201,43 @@ class SurfaceConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.surface import SurfaceConfig
-    >>> surf = SurfaceConfig(
-    ...     surface_file="surface_priors.mat",
-    ...     surface_category="multicomponent_surface",
-    ...     terrain_style="flat"
-    ... )
-
-    Multi-surface configuration example:
-
-    >>> multi_surf = SurfaceConfig(
-    ...     multi_surface_flag=True,
-    ...     surface_class_file="classification.img",
-    ...     Surfaces={
-    ...         "vegetation": {
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "surface": {
+    ...             "surface_file": "surface_priors.mat",
     ...             "surface_category": "multicomponent_surface",
-    ...             "surface_file": "veg_prior.mat",
-    ...             "surface_int": 1
-    ...         },
-    ...         "soil": {
-    ...             "surface_category": "multicomponent_surface",
-    ...             "surface_file": "soil_prior.mat",
-    ...             "surface_int": 2
+    ...             "terrain_style": "flat",
     ...         }
     ...     }
-    ... )
+    ... })
+    >>> surf = config.forward_model.surface
+    >>> surf.surface_category
+    'multicomponent_surface'
+
+    Multi-surface configuration example (the classification file must exist):
+
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "surface": {
+    ...             "multi_surface_flag": True,
+    ...             "surface_class_file": "classification.hdr",
+    ...             "Surfaces": {
+    ...                 "vegetation": {
+    ...                     "surface_category": "multicomponent_surface",
+    ...                     "surface_file": "veg_prior.mat",
+    ...                     "surface_int": 1,
+    ...                 },
+    ...                 "soil": {
+    ...                     "surface_category": "multicomponent_surface",
+    ...                     "surface_file": "soil_prior.mat",
+    ...                     "surface_int": 2,
+    ...                 },
+    ...             },
+    ...         }
+    ...     }
+    ... })
+    >>> multi_surf = config.forward_model.surface
 
     Notes
     -----

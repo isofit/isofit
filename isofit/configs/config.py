@@ -24,9 +24,15 @@ class Config(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs import Config, load_config_dict
-    >>> config_dict = {"input": {"measured_radiance_file": "data.mat"}}
-    >>> config = load_config_dict(config_dict)
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "surface": {
+    ...             "surface_file": "surface.mat",
+    ...             "surface_category": "multicomponent_surface",
+    ...         }
+    ...     }
+    ... })
     >>> config.get_config_errors()  # Validate inter-field constraints
 
     Notes
@@ -91,11 +97,21 @@ class Config(BaseModel):
 
         Examples
         --------
-        >>> config = Config(input=InputConfig(), output=OutputConfig())
+        >>> from isofit.configs import load_config_dict
+        >>> config = load_config_dict({
+        ...     "forward_model": {
+        ...         "surface": {
+        ...             "surface_file": "surface.mat",
+        ...             "surface_category": "multicomponent_surface",
+        ...         }
+        ...     }
+        ... })
         >>> config.get_config_errors()  # No errors
-        >>> config.implementation.mode = "simulation"
-        >>> config.input.reflectance_file = None
-        >>> config.get_config_errors()  # Raises AttributeError
+        >>> config.implementation.mode = "simulation"  # Without a reflectance_file
+        >>> config.get_config_errors()
+        Traceback (most recent call last):
+            ...
+        AttributeError: Configuration error(s) found. See log for details.
 
         Notes
         -----

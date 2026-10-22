@@ -24,19 +24,22 @@ class AtmosphereConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere import AtmosphereConfig
-    >>> from isofit.configs.sections.atmosphere.engines import ModtranConfig
-    >>> atm = AtmosphereConfig(
-    ...     engine=ModtranConfig(
-    ...         aerosol_template_file="aerosol.txt",
-    ...         template_file="template.json"
-    ...     ),
-    ...     lut_grid={
-    ...         "H2OSTR": [0.5, 1.0, 1.5, 2.0, 2.5],
-    ...         "AOT550": [0.05, 0.1, 0.2, 0.3]
-    ...     },
-    ...     statevector_names=["H2OSTR", "AOT550"]
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "atmosphere": {
+    ...             "engine": {"name": "sixs"},
+    ...             "lut_grid": {
+    ...                 "H2OSTR": [0.5, 1.0, 1.5, 2.0, 2.5],
+    ...                 "AOT550": [0.05, 0.1, 0.2, 0.3],
+    ...             },
+    ...             "statevector_names": ["H2OSTR", "AOT550"],
+    ...         }
+    ...     }
+    ... })
+    >>> atm = config.forward_model.atmosphere
+    >>> list(atm.lut_grid), atm.statevector_names
+    (['AOT550', 'H2OSTR'], ['AOT550', 'H2OSTR'])
 
     Notes
     -----

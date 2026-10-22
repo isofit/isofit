@@ -31,13 +31,17 @@ class sRTMnetConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.atmosphere.engines import sRTMnetConfig
-    >>> srtm = sRTMnetConfig(
-    ...     name="srtmnet",
-    ...     emulator_batch_size=2048,
-    ...     emulator_file="srtmnet_model.6s",
-    ...     emulator_aux_file="srtmnet_aux.npz"
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "atmosphere": {
+    ...             "engine": {"name": "srtmnet", "emulator_batch_size": 2048}
+    ...         }
+    ...     }
+    ... })
+    >>> srtm = config.forward_model.atmosphere.engine
+    >>> srtm.emulator_batch_size
+    2048
 
     Notes
     -----

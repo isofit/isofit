@@ -27,14 +27,19 @@ class InstrumentStateVectorConfig(StateVectorConfig):
 
     Examples
     --------
-    >>> from isofit.configs.sections.instrument import InstrumentStateVectorConfig
-    >>> from isofit.configs.sections.statevector import StateVectorElementConfig
-    >>> isv = InstrumentStateVectorConfig()
-    >>> isv.WL_SHIFT = StateVectorElementConfig(
-    ...     bounds=[-2.0, 2.0],
-    ...     scale=1.0,
-    ...     init=0.0
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "instrument": {
+    ...             "statevector": {
+    ...                 "WL_SHIFT": {"bounds": [-2.0, 2.0], "scale": 1.0, "init": 0.0},
+    ...             }
+    ...         }
+    ...     }
+    ... })
+    >>> isv = config.forward_model.instrument.statevector
+    >>> isv.get_element_names()
+    ['WL_SHIFT']
 
     Notes
     -----
@@ -92,11 +97,20 @@ class InstrumentUnknownsConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.instrument import InstrumentUnknownsConfig
-    >>> unknowns = InstrumentUnknownsConfig(
-    ...     uncorrelated_radiometric_uncertainty=0.02,
-    ...     wavelength_calibration_uncertainty=0.5
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "instrument": {
+    ...             "unknowns": {
+    ...                 "uncorrelated_radiometric_uncertainty": 0.02,
+    ...                 "wavelength_calibration_uncertainty": 0.5,
+    ...             }
+    ...         }
+    ...     }
+    ... })
+    >>> unknowns = config.forward_model.instrument.unknowns
+    >>> unknowns.uncorrelated_radiometric_uncertainty
+    0.02
 
     Notes
     -----
@@ -150,18 +164,28 @@ class InstrumentConfig(BaseModel):
 
     Examples
     --------
-    >>> from isofit.configs.sections.instrument import InstrumentConfig
-    >>> inst = InstrumentConfig(
-    ...     wavelength_file="wavelengths.txt",
-    ...     SNR=200.0,
-    ...     integrations=10
-    ... )
+    >>> from isofit.configs import load_config_dict
+    >>> config = load_config_dict({
+    ...     "forward_model": {"instrument": {"SNR": 200.0, "integrations": 10}}
+    ... })
+    >>> inst = config.forward_model.instrument
+    >>> inst.SNR, inst.integrations
+    (200.0, 10)
+
+    Using a noise file instead of the default SNR (the file must exist):
+
+    >>> config = load_config_dict({
+    ...     "forward_model": {
+    ...         "instrument": {"SNR": None, "parametric_noise_file": "noise.txt"}
+    ...     }
+    ... })
 
     Notes
     -----
     Exactly one noise model must be specified: SNR, parametric_noise_file,
     pushbroom_noise_file, or nedt_noise_file. The choice depends on available
-    instrument characterization data.
+    instrument characterization data. The base configs default SNR to 500, so
+    set it to None when selecting one of the noise files.
 
     See Also
     --------
