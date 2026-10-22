@@ -636,7 +636,11 @@ class ForwardModel:
         Kb = self.Kb(x, geom)
         Sy = self.instrument.Sy(meas, geom)
 
-        return Sy + Kb.dot(Sb).dot(Kb.T) + Gamma
+        diag_Sb = np.diag(Sb)
+        if np.array_equal(Sb, diag_Sb):
+            return (Kb * diag_Sb) @ Kb.T
+        else:
+            return Sy + Kb.dot(Sb).dot(Kb.T) + Gamma
 
     def K(self, x, geom):
         """Derivative of observation with respect to state vector. This is
