@@ -63,9 +63,9 @@ def test_custom_sensor_datestr(sensor, fid, datestr, expected):
     assert dt == expected
 
 
-def test_na_sensor_without_datestr():
-    dt, _ = get_sensor_metadata_from_fid("NA-20190626", "anything")
-    assert dt == datetime(2019, 6, 26)
+def test_na_sensor_requires_datestr():
+    with pytest.raises(ValueError, match="datestr is required"):
+        get_sensor_metadata_from_fid("NA-20190626", "anything")
 
 
 def test_custom_sensor_requires_datestr():
