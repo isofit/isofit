@@ -32,6 +32,12 @@ Logger = logging.getLogger(__name__)
 # Example: ./emit_radiance.exe 35 0 0 2.0 0.1 58.0 0.0 0.1 400.0 1.9 emit_outputs_11args.dat
 #          {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4}
 #            35     0     0   2.0   0.1  58.0   0.0   0.1  400.0  1.9
+#
+# Both emit_hitdump.exe and emit_radiance.exe take the same arguments. The HITRAN
+# dump must be generated once per surface elevation (and atmospheric profile) as
+# the layer structure changes the gas absorption cross sections. emit_radiance.exe
+# then reads the dumps from ../data/Hitran_Dumps/Case_*_{sel:.4f}.dat, relative
+# to the MASTERS directory. For emit_hitdump.exe, arg11 is unused
 CMD = """\
 ./{exe} {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4} {out}\
 """
@@ -62,31 +68,82 @@ class VLIDORT(BaseAtmosphere, Writer):
         self.sims.mkdir(parents=True, exist_ok=True)
 
         self.exe = Path(self.config.engine_base_dir) / "MASTERS"
+        self.dumps = self.exe.parent / "data" / "Hitran_Dumps"
 
         if self.configure_and_exit:
+            # HITRAN dumps must be generated before any radiance calculations
+            cmds = [cmd for cmd, _ in self.hitdump_cmds()]
+
+            # Group the radiance calculations by surface elevation
             points = combos(self.lut_grid.values())
-            cmds = [self.make_cmd(p)[0] for p in points]
+            i = self.lut_names.index("surface_elevation_km")
+            points = sorted(points, key=lambda p: p[i])
+            cmds += [self.make_cmd(p)[0] for p in points]
 
             file = self.sims / "jobs.txt"
             file.write_text("\n".join(cmds))
             Logger.info(f"Wrote configuration to {file}")
             sys.exit(0)
 
+        self.makeHitDumps()
+
         # Run the first point upfront to retrieve the VLIDORT output wavelength grid
-        # and cache the resampling matrix to the LUT wavelengths. This must be done
-        # here as readSim is executed in independent ray jobs
+        # and cache the resampling matrix to the LUT wavelengths
         point = combos(self.lut_grid.values())[0]
         self.makeSim(point)
 
         self.sim_wl = self.parseSim(point)["wl"]
         self.matrix_H = calculate_resample_matrix(self.sim_wl, self.wl, self.fwhm)
-        # Logger.debug(f"VLIDORT output grid: {self.sim_wl[0]}-{self.sim_wl[-1]} nm, {self.sim_wl.size} wavelengths")
 
-        return  # TODO: Finish implementing the pre-run
-
-        PRE = """\
-        ./emit_hitdump.exe {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4} {out}\
+    def hitdump_cmds(self):
         """
+        Builds the emit_hitdump.exe commands for each unique surface elevation that
+        does not yet have HITRAN dump files
+
+        Returns
+        -------
+        list[tuple[str, float]]
+            (command, surface elevation) pairs
+        """
+        # The dumps only depend on the surface elevation, use the first value of the other dimensions
+        point = [vals[0] for vals in self.lut_grid.values()]
+        i = self.lut_names.index("surface_elevation_km")
+
+        cmds = []
+        elevs = [round(e, 4) for e in self.lut_grid["surface_elevation_km"]]
+        for elev in elevs:
+            if any(self.dumps.glob(f"Case_*_{elev:.4f}.dat")):
+                Logger.debug(
+                    f"HITRAN dumps already exist for elevation {elev:.4f}, skipping"
+                )
+                continue
+
+            point[i] = elev
+            out = self.sims / f"hitdump_{elev:.4f}.log"
+            cmd, _ = self.make_cmd(point, exe="emit_hitdump.exe", out=out)
+            cmds.append((cmd, elev))
+
+        return cmds
+
+    def makeHitDumps(self):
+        """
+        Generates the HITRAN dumps for each surface elevation in parallel. These must
+        exist before emit_radiance.exe is executed for that elevation
+        """
+        cmds = self.hitdump_cmds()
+        if not cmds:
+            return
+
+        Logger.info(f"Generating HITRAN dumps for {len(cmds)} surface elevations")
+        procs = []
+        for cmd, elev in cmds:
+            Logger.debug(f"Executing {cmd}")
+            procs.append((subprocess.Popen(cmd.split(" "), cwd=self.exe), elev))
+
+        if failed := [elev for proc, elev in procs if proc.wait() != 0]:
+            raise RuntimeError(
+                f"emit_hitdump.exe failed for surface elevations: {failed}"
+            )
 
     def makeSim(self, point, **_):
         cmd, file = self.make_cmd(point)
@@ -150,22 +207,19 @@ class VLIDORT(BaseAtmosphere, Writer):
 
         return data
 
-    def make_cmd(self, point):
-        name = self.point_to_filename(point)
-        file = self.sims / name
+    def make_cmd(self, point, exe="emit_radiance.exe", out=None):
+        file = out or self.sims / self.point_to_filename(point)
 
         dims = dict(zip(self.lut_names, point))
         vals = {
-            "exe": "emit_radiance.exe",
+            "exe": exe,
             "sza": dims["solar_zenith"],
             "vza": dims["observer_zenith"],
             "rza": dims["relative_azimuth"],
             "pwv": dims["H2OSTR"],
             "aod": dims["AOT550"],
             "vel": 58.0,  # Required to be 58.0 per Vijay
-            "sel": round(
-                dims["surface_elevation_km"]
-            ),  # REVIEW: Temporarily must be an int, eventually remove the rounding once VLIDORT fixes it
+            "sel": round(dims["surface_elevation_km"], 4),
             "wgs": self.wl_spacing,
             "co2": dims["CO2"],
             "ch4": 1.9,  # REVIEW: 1.9 ppm is roughly the global average
