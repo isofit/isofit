@@ -304,10 +304,10 @@ def apply_oe(
         multipart_transmittance = True
 
     if sensor not in SUPPORTED_SENSORS:
-        if sensor != "custom" and sensor[:3] != "NA-":
+        if sensor != "custom" and sensor[:2] != "NA":
             errstr = (
                 f"Argument error: sensor must be one of {SUPPORTED_SENSORS}, "
-                '"custom" or "NA-*"'
+                'or "NA*"'
             )
             raise ValueError(errstr)
     if sensor == "custom" and datestr is None:
@@ -335,6 +335,12 @@ def apply_oe(
         raise ValueError(
             f"Invalid atmosphere_type '{atmosphere_type}'. Must be one of: {keys}"
         )
+
+    if datestr is not None and sensor in SUPPORTED_SENSORS:
+        raise ValueError(f'datestr is currently only used with custom sensors ("NA")')
+
+    if "NA" in sensor and datestr is None:
+        raise ValueError(f"NA sensor must specify --datestr")
 
     if os.path.isdir(working_directory) is False:
         os.mkdir(working_directory)
@@ -467,11 +473,6 @@ def apply_oe(
 
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
-    if datestr is not None and sensor in SUPPORTED_SENSORS:
-        logging.warning(
-            'datestr is currently only used with custom sensors ("custom" or "NA-*"), '
-            f"ignoring for {sensor}"
-        )
     dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(
         sensor, paths.fid, datestr
     )
