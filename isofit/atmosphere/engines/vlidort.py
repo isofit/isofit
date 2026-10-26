@@ -206,7 +206,7 @@ class VLIDORT(BaseAtmosphere, Writer):
     def hitdump_cmds(self):
         """
         Builds the emit_hitdump.exe commands for each unique surface elevation that
-        does not yet have HITRAN dump files
+        does not yet have valid HITRAN dump files
 
         Returns
         -------
@@ -220,7 +220,7 @@ class VLIDORT(BaseAtmosphere, Writer):
         cmds = []
         elevs = [round(e, 4) for e in self.lut_grid["surface_elevation_km"]]
         for elev in elevs:
-            if any(self.dumps.glob(f"Case_*_{elev:.4f}.dat")):
+            if self.validDumps(elev):
                 Logger.debug(
                     f"HITRAN dumps already exist for elevation {elev:.4f}, skipping"
                 )
@@ -232,6 +232,58 @@ class VLIDORT(BaseAtmosphere, Writer):
             cmds.append((cmd, elev))
 
         return cmds
+
+    def validDumps(self, elev):
+        """
+        Checks the H2O HITRAN dump of every case exists for a surface elevation with
+        the number of rows emit_radiance.exe will read for the current wl_spacing
+
+        Parameters
+        ----------
+        elev : float
+            Surface elevation (km)
+
+        Returns
+        -------
+        bool
+            True if the dumps are usable, False if they must be (re)generated
+        """
+        # Spectral range (nm) of each HITRAN dump case. The dumps are written and read with
+        # nint(range / wgs) rows (+1 for case 14), so dumps generated with a different wgs
+        # cause emit_radiance.exe to fail with an end of file error. Every case includes H2O
+        dumps = {
+            4: 31.2,
+            5: 523.8,
+            6: 421.2,
+            7: 297.1,
+            8: 181.95,
+            9: 22.55,
+            10: 94.6,
+            11: 25.0,
+            12: 51.6,
+            13: 140.2,
+            14: 161.0,
+        }
+
+        for case, span in dumps.items():
+            file = self.dumps / f"Case_{case:02d}_H2O_{elev:.4f}.dat"
+            if not file.exists():
+                return False
+
+            # Fortran nint rounds half away from zero
+            rows = int(span / self.wl_spacing + 0.5) + (case == 14)
+            with open(file) as f:
+                found = sum(1 for _ in f)
+
+            if found != rows:
+                Logger.warning(
+                    f"{file.name} has {found} rows but {rows} are expected for a "
+                    f"wavelength spacing of {self.wl_spacing} nm, regenerating the "
+                    f"HITRAN dumps for elevation {elev:.4f}"
+                )
+                return False
+
+        return True
 
     def makeHitDumps(self):
         """
