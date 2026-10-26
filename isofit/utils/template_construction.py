@@ -89,8 +89,11 @@ class Pathnames:
             self.fid = split(input_radiance)[-1][:24]
         elif sensor == "tanager":
             self.fid = split(input_radiance)[-1][:23]
-        elif sensor[:3] == "NA-":
+        elif sensor == "custom" or sensor[:2] == "NA":
+            # Custom sensors ("custom" or "NA") keep the full basename, minus any
+            # trailing _rdn
             self.fid = os.path.splitext(os.path.basename(input_radiance))[0]
+            self.fid = self.fid.removesuffix("_rdn")
 
         logging.info("Flightline ID: %s" % self.fid)
 
@@ -1389,7 +1392,27 @@ def get_metadata_from_loc(
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid
 
 
-def get_sensor_metadata_from_fid(sensor: str, fid: str):
+def parse_datestr(fid: str, datestr: str) -> datetime:
+    """Parse a datetime from the start of a flightline ID using a strptime format.
+
+    Args:
+        fid:     flightline ID, e.g. "CHEESEHEAD20190830-26_tile08"
+        datestr: strptime format matching the start of the fid, e.g. "CHEESEHEAD%Y%m%d"
+
+    Returns:
+        datetime parsed from the longest leading portion of fid that matches datestr
+    """
+    for end in range(len(fid), 0, -1):
+        try:
+            return datetime.strptime(fid[:end], datestr)
+        except ValueError:
+            continue
+    raise ValueError(
+        f'Flightline ID "{fid}" does not start with a date matching datestr "{datestr}"'
+    )
+
+
+def get_sensor_metadata_from_fid(sensor: str, fid: str, datestr: str = None):
     inversion_window_update = []
     if sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
@@ -1438,8 +1461,12 @@ def get_sensor_metadata_from_fid(sensor: str, fid: str):
     elif sensor == "tanager":
         # parse flightline ID (Tanager assumptions)
         dt = datetime.strptime(fid[:15], "%Y%m%d_%H%M%S")
-    elif sensor[:3] == "NA-":
-        dt = datetime.strptime(sensor[3:], "%Y%m%d")
+    elif sensor == "custom" or sensor[:2] == "NA":
+        # Custom sensors: parse the fid with datestr
+        if datestr is not None:
+            dt = parse_datestr(fid, datestr)
+        else:
+            raise ValueError('datestr is required for the "NA/custom" sensor')
     else:
         raise ValueError(
             "Datetime object could not be obtained. Please check file name of input"
