@@ -2,7 +2,7 @@
 #
 # `default` holds the complete set of defaults for every config section, mirroring
 # the Pydantic models in isofit/configs/sections. Each engine below inherits those
-# defaults via the `^^: default` directive (see configs/utils/interpolate.py) and
+# defaults via the `^^: default` directive (see configs/utils/interpolate/inherit.py) and
 # only overrides the radiative-transfer engine (and any engine-specific defaults).
 #
 # This file is meant to be loaded with configs/utils/interpolate.load, e.g.

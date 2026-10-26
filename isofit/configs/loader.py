@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Union
 
 import yaml
-from box import Box
 
 from isofit.configs import legacy
 from isofit.configs.config import Config
@@ -144,11 +143,11 @@ def resolve_config_dict(config_dict: dict, base_dir: str | None = None) -> dict:
     Logger.debug(f"Overlaying config onto base config {name!r}")
 
     box = load_base_config(name, interp=False)
-    box.merge_update(config_dict)
-    box = interpolate.interpolate(box)
+    interpolate.merge(box, config_dict)
+    interpolate.interpolate(box)
     box.pop("env", None)
 
-    return box.to_dict()
+    return box
 
 
 def load_config_dict(config_dict: dict, base_dir: str | None = None) -> Config:
@@ -238,7 +237,7 @@ def available_base_configs() -> list[str]:
 
 def load_base_config(
     name: str, overrides: dict | None = None, interp: bool = True
-) -> Box:
+) -> dict:
     """
     Load one of the base configurations shipped with ISOFIT by name.
 
@@ -259,8 +258,11 @@ def load_base_config(
     These configs are templates: they intentionally leave scene-specific inputs
     (radiance/obs/loc files, instrument noise, ...) unset, so the returned config
     is not guaranteed to pass :meth:`Config.get_config_errors`. Supply those
-    values with ``overrides`` (or by mutating the returned Box) before validating
+    values with ``overrides`` (or by mutating the returned dict) before validating
     or running.
+
+    To build a single validated section from a base config, pass ``base`` to
+    the section model instead, e.g. ``ImplementationConfig(base="vswir")``.
 
     Parameters
     ----------
@@ -269,7 +271,7 @@ def load_base_config(
     overrides : dict, optional
         Mapping of dotted keys to values, applied after inheritance is resolved
         but before interpolation, so overridden values are visible to ``${...}``
-        references. Keys use Box dot-notation for nested fields
+        references. Keys are dotted paths to nested fields
         (``{"implementation.n_cores": 4}``) and values are used as-is, so pass
         already-typed Python objects (``"forward_model.instrument.SNR": 500``,
         not ``"500"``).
@@ -280,7 +282,7 @@ def load_base_config(
 
     Returns
     -------
-    box.Box
+    dict
         The resolved, interpolated configuration.
 
     Raises
@@ -292,7 +294,7 @@ def load_base_config(
     --------
     >>> from isofit.configs import load_base_config, load_config_dict
     >>> cfg = load_base_config("vswir")
-    >>> cfg.forward_model.atmosphere.engine.name
+    >>> cfg["forward_model"]["atmosphere"]["engine"]["name"]
     'srtmnet'
     >>> # Overlay scene inputs via overrides, then validate/build a Config
     >>> cfg = load_base_config(
@@ -302,7 +304,7 @@ def load_base_config(
     ...         "implementation.n_cores": 4,
     ...     },
     ... )
-    >>> config = load_config_dict(cfg.to_dict())
+    >>> config = load_config_dict(cfg)
 
     See Also
     --------
@@ -319,9 +321,8 @@ def load_base_config(
     path = index[name]
     Logger.info(f"Loading base config section {name!r} from {path}")
 
-    # Insert the ISOFIT ini environment to make interpolation easy. `modtran` is
-    # not a default ini directory, so default it to null for ${env.modtran}
-    overrides = overrides or {}
-    overrides["env"] = {"modtran": None, **dict(env.items())}
+    # Insert the ISOFIT ini environment to make interpolation easy. Copied so
+    # the caller's overrides dict is not mutated
+    overrides = {**(overrides or {}), "env": {"modtran": None, **dict(env.items())}}
 
     return interpolate.load(str(path), section=name, ctx=overrides, interp=interp)

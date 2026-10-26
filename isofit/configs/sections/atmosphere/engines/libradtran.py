@@ -9,19 +9,14 @@ ISOFIT atmospheric correction.
 from pathlib import Path
 from typing import Annotated, Literal, Optional
 
-from pydantic import (
-    BaseModel,
-    BeforeValidator,
-    ConfigDict,
-    DirectoryPath,
-    Field,
-    FilePath,
-)
+from pydantic import BeforeValidator, ConfigDict, DirectoryPath, Field, FilePath
+
+from isofit.configs.base import SectionModel
 
 from . import standardName
 
 
-class LibRadTranConfig(BaseModel):
+class LibRadTranConfig(SectionModel):
     """
     LibRadTran engine configuration.
 
@@ -66,6 +61,8 @@ class LibRadTranConfig(BaseModel):
     ModtranConfig : Commercial RT engine alternative
     SixSConfig : Simpler open-source RT engine
     """
+
+    section = "forward_model.atmosphere.engine"
 
     model_config = ConfigDict(extra="forbid")
 

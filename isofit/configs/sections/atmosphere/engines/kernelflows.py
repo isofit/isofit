@@ -7,12 +7,14 @@ atmospheric correction capabilities.
 
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, FilePath
+from pydantic import BeforeValidator, ConfigDict, Field, FilePath
+
+from isofit.configs.base import SectionModel
 
 from . import standardName
 
 
-class KernelFlowsConfig(BaseModel):
+class KernelFlowsConfig(SectionModel):
     """
     Kernel Flows engine configuration.
 
@@ -49,6 +51,8 @@ class KernelFlowsConfig(BaseModel):
     sRTMnetConfig : Alternative ML-based RT emulator
     SixSConfig : Physics-based RT engine
     """
+
+    section = "forward_model.atmosphere.engine"
 
     model_config = ConfigDict(extra="forbid")
 

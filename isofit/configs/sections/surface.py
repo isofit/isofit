@@ -13,6 +13,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, FilePath, NonNegativeInt
 from scipy.io import loadmat
 
+from isofit.configs.base import SectionModel
 from isofit.configs.sections.statevector import (
     StateVectorConfig,
     StateVectorElementConfig,
@@ -106,6 +107,8 @@ class SurfaceStateVectorConfig(StateVectorConfig):
     where specular reflection from the water surface is significant.
     """
 
+    section = "forward_model.surface.statevector"
+
     SURF_TEMP_K: Optional[StateVectorElementConfig] = Field(
         description=(
             "Surface temperature in Kelvin. Used for thermal emission modeling in "
@@ -191,7 +194,7 @@ class SubSurfaceConfig(BaseModel):
         return statevector_mismatches(self.surface_file, {**base, **self.statevector})
 
 
-class SurfaceConfig(BaseModel):
+class SurfaceConfig(SectionModel):
     """
     Surface configuration.
 
@@ -254,6 +257,8 @@ class SurfaceConfig(BaseModel):
     SurfaceStateVectorConfig : Surface parameters for optimization
     SubSurfaceConfig : Per-class configuration in multi-surface mode
     """
+
+    section = "forward_model.surface"
 
     multi_surface_flag: bool = Field(
         description=(

@@ -9,7 +9,6 @@ high accuracy.
 from typing import Annotated, Literal, Optional
 
 from pydantic import (
-    BaseModel,
     BeforeValidator,
     ConfigDict,
     DirectoryPath,
@@ -18,10 +17,12 @@ from pydantic import (
     model_validator,
 )
 
+from isofit.configs.base import SectionModel
+
 from . import standardName
 
 
-class sRTMnetConfig(BaseModel):
+class sRTMnetConfig(SectionModel):
     """
     sRTMnet engine configuration.
 
@@ -59,6 +60,8 @@ class sRTMnetConfig(BaseModel):
     SixSConfig : Physics-based RT code that sRTMnet emulates
     PrebuiltConfig : Even faster option using pre-computed LUTs
     """
+
+    section = "forward_model.atmosphere.engine"
 
     model_config = ConfigDict(extra="forbid")
 

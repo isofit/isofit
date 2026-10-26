@@ -11,6 +11,7 @@ from typing import Optional
 import numpy as np
 from pydantic import BaseModel, Field
 
+from isofit.configs.base import SectionModel
 from isofit.configs.utils.accessors import ElementAccessorMixin, StateVectorValueMixin
 
 
@@ -79,7 +80,7 @@ class StateVectorElementConfig(BaseModel):
     )
 
 
-class StateVectorConfig(BaseModel, ElementAccessorMixin, StateVectorValueMixin):
+class StateVectorConfig(SectionModel, ElementAccessorMixin, StateVectorValueMixin):
     """
     Base state vector configuration.
 

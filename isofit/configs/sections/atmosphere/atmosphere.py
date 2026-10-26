@@ -8,13 +8,15 @@ RT engine selection, lookup table settings, and atmospheric state vector paramet
 from pathlib import Path
 from typing import Any, List, Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
+
+from isofit.configs.base import SectionModel
 
 from .engines import Engines
 from .statevector import AtmosphereStateVectorConfig, AtmosphereUnknownsConfig
 
 
-class AtmosphereConfig(BaseModel):
+class AtmosphereConfig(SectionModel):
     """
     Atmosphere configuration.
 
@@ -55,6 +57,8 @@ class AtmosphereConfig(BaseModel):
     --------
     isofit.configs.sections.atmosphere.engines : Available RT engines
     """
+
+    section = "forward_model.atmosphere"
 
     engine: Engines = Field(
         description=(

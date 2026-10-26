@@ -7,10 +7,12 @@ parameters, MCMC configuration, and least-squares solver options.
 
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
+
+from isofit.configs.base import SectionModel
 
 
-class McmcConfig(BaseModel):
+class McmcConfig(SectionModel):
     """
     MCMC inversion configuration.
 
@@ -36,6 +38,8 @@ class McmcConfig(BaseModel):
     >>> mcmc.iterations, mcmc.burnin
     (20000, 500)
     """
+
+    section = "implementation.inversion.mcmc"
 
     iterations: int = Field(
         description=(
@@ -73,7 +77,7 @@ class McmcConfig(BaseModel):
     )
 
 
-class LeastSquaresConfig(BaseModel):
+class LeastSquaresConfig(SectionModel):
     """
     Least squares inversion configuration.
 
@@ -102,6 +106,8 @@ class LeastSquaresConfig(BaseModel):
     --------
     scipy.optimize.least_squares : Underlying solver documentation
     """
+
+    section = "implementation.inversion.least_squares_params"
 
     method: str = Field(
         description=(
@@ -163,7 +169,7 @@ class LeastSquaresConfig(BaseModel):
         return options
 
 
-class InversionConfig(BaseModel):
+class InversionConfig(SectionModel):
     """
     Inversion configuration for ISOFIT.
 
@@ -196,6 +202,8 @@ class InversionConfig(BaseModel):
     McmcConfig : MCMC parameters
     LeastSquaresConfig : Least squares solver parameters
     """
+
+    section = "implementation.inversion"
 
     windows: Optional[List[List[float]]] = Field(
         description=(

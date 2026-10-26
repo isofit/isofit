@@ -8,14 +8,15 @@ reflectance.
 
 from typing import Optional
 
-from pydantic import BaseModel, Field, FilePath
+from pydantic import Field, FilePath
 
+from isofit.configs.base import SectionModel
 from isofit.configs.sections.atmosphere import AtmosphereConfig
 from isofit.configs.sections.instrument import InstrumentConfig
 from isofit.configs.sections.surface import SurfaceConfig
 
 
-class ForwardModelConfig(BaseModel):
+class ForwardModelConfig(SectionModel):
     """
     Forward model configuration.
 
@@ -55,6 +56,8 @@ class ForwardModelConfig(BaseModel):
     isofit.configs.sections.atmosphere.AtmosphereConfig : Atmosphere configuration
     isofit.configs.sections.instrument.InstrumentConfig : Instrument configuration
     """
+
+    section = "forward_model"
 
     surface: Optional[SurfaceConfig] = Field(
         description=(

@@ -8,12 +8,14 @@ standard atmospheric conditions.
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
+from pydantic import BeforeValidator, ConfigDict, Field
+
+from isofit.configs.base import SectionModel
 
 from . import standardName
 
 
-class PrebuiltConfig(BaseModel):
+class PrebuiltConfig(SectionModel):
     """
     Prebuilt LUT engine configuration.
 
@@ -40,6 +42,8 @@ class PrebuiltConfig(BaseModel):
     SixSConfig : 6S RT engine
     sRTMnetConfig : Machine learning RT emulator
     """
+
+    section = "forward_model.atmosphere.engine"
 
     model_config = ConfigDict(extra="forbid")
 
