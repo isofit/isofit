@@ -95,7 +95,7 @@ class InputConfig(SectionModel, ElementAccessorMixin):
         ),
     )
 
-    background_reflectance_file: Optional[FilePath] = Field(
+    background_reflectance_file: Optional[Path] = Field(
         alias="brf",
         description=(
             "Background reflectance file for spatial inference and contextual "
