@@ -17,7 +17,7 @@
       
       
       <link rel="icon" href="../../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -25,10 +25,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -3991,6 +3991,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_template_construction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test template construction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -5823,7 +5851,27 @@
 <span class="normal">1061</span>
 <span class="normal">1062</span>
 <span class="normal">1063</span>
-<span class="normal">1064</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1064</span>
+<span class="normal">1065</span>
+<span class="normal">1066</span>
+<span class="normal">1067</span>
+<span class="normal">1068</span>
+<span class="normal">1069</span>
+<span class="normal">1070</span>
+<span class="normal">1071</span>
+<span class="normal">1072</span>
+<span class="normal">1073</span>
+<span class="normal">1074</span>
+<span class="normal">1075</span>
+<span class="normal">1076</span>
+<span class="normal">1077</span>
+<span class="normal">1078</span>
+<span class="normal">1079</span>
+<span class="normal">1080</span>
+<span class="normal">1081</span>
+<span class="normal">1082</span>
+<span class="normal">1083</span>
+<span class="normal">1084</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: David R Thompson and Philip G. Brodrick</span>
 <span class="c1">#</span>
@@ -5939,6 +5987,7 @@
     <span class="n">eof_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">terrain_style</span><span class="o">=</span><span class="s2">"dem"</span><span class="p">,</span>
     <span class="n">per_pixel_heuristic_prior</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">datestr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Applies OE over a flightline using an atmospheric radiative transfer engine. This executes</span>
@@ -5965,7 +6014,7 @@
 <span class="sd">        Directory to stage multiple outputs, will contain subdirectories</span>
 <span class="sd">    sensor : str</span>
 <span class="sd">        The sensor used for acquisition, will be used to set noise and datetime</span>
-<span class="sd">        settings</span>
+<span class="sd">        settings. For custom sensors, use "custom" (requires datestr) or "NA-YYYYMMDD"</span>
 <span class="sd">    surface_path : str</span>
 <span class="sd">        Path to surface model or json dict of surface model configuration</span>
 <span class="sd">    copy_input_files : bool, default=False</span>
@@ -6086,6 +6135,12 @@
 <span class="sd">        with one number per instrument channel.</span>
 <span class="sd">    terrain_style : str, default=dem</span>
 <span class="sd">        Flag to set the terrain style.  dem uses provided obs values, flat sets the surface to the spheroid</span>
+<span class="sd">    datestr : str, default=None</span>
+<span class="sd">        strptime format matching the start of the radiance filename, e.g.</span>
+<span class="sd">        "emit%Y%m%dt%H%M%S", used to determine the acquisition date and time for custom</span>
+<span class="sd">        sensors. Required for sensor "custom". Optional for "NA-*" sensors, where the</span>
+<span class="sd">        date is otherwise taken from the sensor name ("NA-YYYYMMDD"). Currently ignored</span>
+<span class="sd">        for all other sensors.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -6122,11 +6177,14 @@
         <span class="n">multipart_transmittance</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">if</span> <span class="n">sensor</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SUPPORTED_SENSORS</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">sensor</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">"NA-"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sensor</span> <span class="o">!=</span> <span class="s2">"custom"</span> <span class="ow">and</span> <span class="n">sensor</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">"NA"</span><span class="p">:</span>
             <span class="n">errstr</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s1">'Argument error: sensor must be one of </span><span class="si">{</span><span class="n">SUPPORTED_SENSORS</span><span class="si">}</span><span class="s1"> or "NA-*"'</span>
+                <span class="sa">f</span><span class="s2">"Argument error: sensor must be one of </span><span class="si">{</span><span class="n">SUPPORTED_SENSORS</span><span class="si">}</span><span class="s2">, "</span>
+                <span class="s1">'or "NA*"'</span>
             <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errstr</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sensor</span> <span class="o">==</span> <span class="s2">"custom"</span> <span class="ow">and</span> <span class="n">datestr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Argument error: datestr is required for the "custom" sensor'</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">num_neighbors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">num_neighbors</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">analytical_line</span><span class="p">:</span>
@@ -6150,6 +6208,12 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"Invalid atmosphere_type '</span><span class="si">{</span><span class="n">atmosphere_type</span><span class="si">}</span><span class="s2">'. Must be one of: </span><span class="si">{</span><span class="n">keys</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">datestr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">SUPPORTED_SENSORS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'datestr is currently only used with custom sensors ("NA")'</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">"NA"</span> <span class="ow">in</span> <span class="n">sensor</span> <span class="ow">and</span> <span class="n">datestr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"NA sensor must specify --datestr"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">working_directory</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
         <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">working_directory</span><span class="p">)</span>
@@ -6282,7 +6346,9 @@
 
     <span class="c1"># Based on the sensor type, get appropriate year/month/day info from initial condition.</span>
     <span class="c1"># We'll adjust for line length and UTC day overrun later</span>
-    <span class="n">dt</span><span class="p">,</span> <span class="n">sensor_inversion_windows</span> <span class="o">=</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">get_sensor_metadata_from_fid</span><span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">paths</span><span class="o">.</span><span class="n">fid</span><span class="p">)</span>
+    <span class="n">dt</span><span class="p">,</span> <span class="n">sensor_inversion_windows</span> <span class="o">=</span> <span class="n">tmpl</span><span class="o">.</span><span class="n">get_sensor_metadata_from_fid</span><span class="p">(</span>
+        <span class="n">sensor</span><span class="p">,</span> <span class="n">paths</span><span class="o">.</span><span class="n">fid</span><span class="p">,</span> <span class="n">datestr</span>
+    <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">sensor_inversion_windows</span><span class="p">:</span>
         <span class="n">sensor_inversion_windows</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">350.0</span><span class="p">,</span> <span class="mf">1360.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1410</span><span class="p">,</span> <span class="mf">1800.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1970.0</span><span class="p">,</span> <span class="mf">2500.0</span><span class="p">]]</span>
 
@@ -6772,6 +6838,7 @@
                 <span class="n">paths</span><span class="o">.</span><span class="n">loc_working_path</span><span class="p">,</span>
                 <span class="n">paths</span><span class="o">.</span><span class="n">obs_working_path</span><span class="p">,</span>
                 <span class="n">working_directory</span><span class="p">,</span>
+                <span class="n">segmentation_file</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">lbl_working_path</span><span class="p">,</span>
                 <span class="n">output_rfl_file</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">rfl_working_path</span><span class="p">,</span>
                 <span class="n">output_unc_file</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">uncert_working_path</span><span class="p">,</span>
                 <span class="n">skyview_factor_file</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">svf_working_path</span><span class="p">,</span>
@@ -6852,6 +6919,7 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--eof_path"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--terrain_style"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"dem"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">"dem"</span><span class="p">,</span> <span class="s2">"flat"</span><span class="p">]))</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--per_pixel_heuristic_prior"</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--datestr"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
     <span class="s2">"--debug-args"</span><span class="p">,</span>
     <span class="n">help</span><span class="o">=</span><span class="s2">"Prints the arguments list without executing the command"</span><span class="p">,</span>
@@ -7003,10 +7071,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.expand", "navigation.path"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.expand", "navigation.path"], "search": "../../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../../../../javascript/mkapi.js"></script>
       

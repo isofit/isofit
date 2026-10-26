@@ -17,7 +17,7 @@
       
       
       <link rel="icon" href="../../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -25,10 +25,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -3991,6 +3991,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/isofit/test/test_template_construction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test template construction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4883,6 +4911,17 @@
     <span class="md-ellipsis">
       
         get_metadata_from_loc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.utils.template_construction.parse_datestr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_datestr
       
     </span>
   </a>
@@ -7043,7 +7082,34 @@
 <span class="normal">2010</span>
 <span class="normal">2011</span>
 <span class="normal">2012</span>
-<span class="normal">2013</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">2013</span>
+<span class="normal">2014</span>
+<span class="normal">2015</span>
+<span class="normal">2016</span>
+<span class="normal">2017</span>
+<span class="normal">2018</span>
+<span class="normal">2019</span>
+<span class="normal">2020</span>
+<span class="normal">2021</span>
+<span class="normal">2022</span>
+<span class="normal">2023</span>
+<span class="normal">2024</span>
+<span class="normal">2025</span>
+<span class="normal">2026</span>
+<span class="normal">2027</span>
+<span class="normal">2028</span>
+<span class="normal">2029</span>
+<span class="normal">2030</span>
+<span class="normal">2031</span>
+<span class="normal">2032</span>
+<span class="normal">2033</span>
+<span class="normal">2034</span>
+<span class="normal">2035</span>
+<span class="normal">2036</span>
+<span class="normal">2037</span>
+<span class="normal">2038</span>
+<span class="normal">2039</span>
+<span class="normal">2040</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick and Niklas Bohn</span>
 <span class="c1">#</span>
@@ -7133,8 +7199,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">input_radiance</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="mi">24</span><span class="p">]</span>
         <span class="k">elif</span> <span class="n">sensor</span> <span class="o">==</span> <span class="s2">"tanager"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">=</span> <span class="n">split</span><span class="p">(</span><span class="n">input_radiance</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="mi">23</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="n">sensor</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"NA-"</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">sensor</span> <span class="o">==</span> <span class="s2">"custom"</span> <span class="ow">or</span> <span class="n">sensor</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"NA"</span><span class="p">:</span>
+            <span class="c1"># Custom sensors ("custom" or "NA") keep the full basename, minus any</span>
+            <span class="c1"># trailing _rdn</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">input_radiance</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid</span><span class="o">.</span><span class="n">removesuffix</span><span class="p">(</span><span class="s2">"_rdn"</span><span class="p">)</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Flightline ID: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid</span><span class="p">)</span>
 
@@ -8410,7 +8479,27 @@
     <span class="k">return</span> <span class="n">mean_latitude</span><span class="p">,</span> <span class="n">mean_longitude</span><span class="p">,</span> <span class="n">mean_elevation_km</span><span class="p">,</span> <span class="n">elevation_lut_grid</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">get_sensor_metadata_from_fid</span><span class="p">(</span><span class="n">sensor</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.template_construction.get_sensor_metadata_from_fid"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.get_sensor_metadata_from_fid" title="Go to docs">[docs]</a></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_datestr</span><span class="p">(</span><span class="n">fid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datestr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="p">:</span><div class="mkapi-source-link" id="isofit.utils.template_construction.parse_datestr"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.parse_datestr" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""Parse a datetime from the start of a flightline ID using a strptime format.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fid:     flightline ID, e.g. "CHEESEHEAD20190830-26_tile08"</span>
+<span class="sd">        datestr: strptime format matching the start of the fid, e.g. "CHEESEHEAD%Y%m%d"</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        datetime parsed from the longest leading portion of fid that matches datestr</span>
+<span class="sd">    """</span>
+    <span class="k">for</span> <span class="n">end</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fid</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">fid</span><span class="p">[:</span><span class="n">end</span><span class="p">],</span> <span class="n">datestr</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">continue</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">'Flightline ID "</span><span class="si">{</span><span class="n">fid</span><span class="si">}</span><span class="s1">" does not start with a date matching datestr "</span><span class="si">{</span><span class="n">datestr</span><span class="si">}</span><span class="s1">"'</span>
+    <span class="p">)</span>
+
+<div class="mkapi-source-link" id="isofit.utils.template_construction.get_sensor_metadata_from_fid"><a href="../../../../api/isofit/utils/template_construction/#isofit.utils.template_construction.get_sensor_metadata_from_fid" title="Go to docs">[docs]</a></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_sensor_metadata_from_fid</span><span class="p">(</span><span class="n">sensor</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">datestr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="n">inversion_window_update</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="n">sensor</span> <span class="o">==</span> <span class="s2">"ang"</span><span class="p">:</span>
         <span class="c1"># parse flightline ID (AVIRIS-NG assumptions)</span>
@@ -8459,8 +8548,12 @@
     <span class="k">elif</span> <span class="n">sensor</span> <span class="o">==</span> <span class="s2">"tanager"</span><span class="p">:</span>
         <span class="c1"># parse flightline ID (Tanager assumptions)</span>
         <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">fid</span><span class="p">[:</span><span class="mi">15</span><span class="p">],</span> <span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S"</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">sensor</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"NA-"</span><span class="p">:</span>
-        <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">sensor</span><span class="p">[</span><span class="mi">3</span><span class="p">:],</span> <span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">sensor</span> <span class="o">==</span> <span class="s2">"custom"</span> <span class="ow">or</span> <span class="n">sensor</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"NA"</span><span class="p">:</span>
+        <span class="c1"># Custom sensors: parse the fid with datestr</span>
+        <span class="k">if</span> <span class="n">datestr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">parse_datestr</span><span class="p">(</span><span class="n">fid</span><span class="p">,</span> <span class="n">datestr</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'datestr is required for the "NA/custom" sensor'</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s2">"Datetime object could not be obtained. Please check file name of input"</span>
@@ -9172,10 +9265,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.expand", "navigation.path"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.expand", "navigation.path"], "search": "../../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../../../../javascript/mkapi.js"></script>
       

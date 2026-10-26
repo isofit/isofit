@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -29,10 +29,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -3995,6 +3995,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../test/test_template_construction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test template construction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4853,6 +4881,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.utils.template_construction.parse_datestr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_datestr
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.utils.template_construction.get_sensor_metadata_from_fid" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5247,6 +5286,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.utils.template_construction.parse_datestr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_datestr
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.utils.template_construction.get_sensor_metadata_from_fid" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5555,6 +5605,11 @@ to-sun zenith, phase, slope, aspect, cosine i, UTC time).</p>
 <p><span class="mkapi-item-name"><a href="./#isofit.utils.template_construction.get_metadata_from_loc" title="isofit.utils.template_construction.get_metadata_from_loc">get_metadata_from_loc</a></span>
  <span class="mkapi-dash">&mdash;</span>
 Get metadata needed for complete runs from the location file (bands long, lat, elev).</p>
+</li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.utils.template_construction.parse_datestr" title="isofit.utils.template_construction.parse_datestr">parse_datestr</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Parse a datetime from the start of a flightline ID using a strptime format.</p>
 </li>
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.utils.template_construction.get_sensor_metadata_from_fid" title="isofit.utils.template_construction.get_sensor_metadata_from_fid">get_sensor_metadata_from_fid</a></span></p>
@@ -6442,6 +6497,73 @@ retrieve pressure elevation (requires expanded ranges)</p>
         elevation_lut_grid - the elevation look up table, based on globals and values from location file</p>
 </div>
 </div>
+<p class="mkapi-object mkapi-page-source" id="isofit.utils.template_construction.parse_datestr">
+<span class="mkapi-object-link">
+
+
+<a href="../../../../src/isofit/utils/template_construction/#isofit.utils.template_construction.parse_datestr" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-object-name"><a href="./#isofit.utils.template_construction.parse_datestr" title="isofit.utils.template_construction.parse_datestr">parse_datestr</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">fid</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-comma">, </span><span class="mkapi-arg">datestr</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-paren">)</span><span class="mkapi-arrow"> → </span><span class="mkapi-return"><span class="mkapi-tooltip" title="_pydatetime.datetime">datetime</span></span></span>
+</p>
+<div class="mkapi-document">
+<p>Parse a datetime from the start of a flightline ID using a strptime format.</p>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle parameters">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Parameters</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-name">fid</span> : 
+<span class="mkapi-item-type">str</span> <span class="mkapi-dash">&mdash;</span>
+flightline ID, e.g. "CHEESEHEAD20190830-26_tile08"</p>
+</li>
+<li>
+<p><span class="mkapi-item-name">datestr</span> : 
+<span class="mkapi-item-type">str</span> <span class="mkapi-dash">&mdash;</span>
+strptime format matching the start of the fid, e.g. "CHEESEHEAD%Y%m%d"</p>
+</li>
+</ul>
+</div>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle returns">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Returns</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type"><span class="mkapi-tooltip" title="_pydatetime.datetime">datetime</span></span> <span class="mkapi-dash">&mdash;</span>
+datetime parsed from the longest leading portion of fid that matches datestr</p>
+</li>
+</ul>
+</div>
+<p class="mkapi-section">
+<span class="mkapi-object-link">
+<span class="mkapi-section-toggle" title="Toggle raises">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-section-name">Raises</span>
+</p>
+<div class="mkapi-section-content">
+<ul class="mkapi-item-list">
+<li>
+<p><span class="mkapi-item-type">ValueError</span></p>
+</li>
+</ul>
+</div>
+</div>
 <p class="mkapi-object mkapi-page-source" id="isofit.utils.template_construction.get_sensor_metadata_from_fid">
 <span class="mkapi-object-link">
 
@@ -6451,7 +6573,7 @@ retrieve pressure elevation (requires expanded ranges)</p>
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span>
-<span class="mkapi-object-name"><a href="./#isofit.utils.template_construction.get_sensor_metadata_from_fid" title="isofit.utils.template_construction.get_sensor_metadata_from_fid">get_sensor_metadata_from_fid</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">sensor</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-comma">, </span><span class="mkapi-arg">fid</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-paren">)</span></span>
+<span class="mkapi-object-name"><a href="./#isofit.utils.template_construction.get_sensor_metadata_from_fid" title="isofit.utils.template_construction.get_sensor_metadata_from_fid">get_sensor_metadata_from_fid</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">sensor</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-comma">, </span><span class="mkapi-arg">fid</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-comma">, </span><span class="mkapi-arg">datestr</span><span class="mkapi-colon">: </span><span class="mkapi-ann">str</span><span class="mkapi-equal"> = </span><span class="mkapi-default">None</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document">
 <p class="mkapi-section">
@@ -6795,10 +6917,10 @@ array of full width at half maximum</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.expand", "navigation.path"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.expand", "navigation.path"], "search": "../../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../../../../javascript/mkapi.js"></script>
       
