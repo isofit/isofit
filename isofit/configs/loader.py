@@ -22,7 +22,7 @@ from isofit.core import common
 from isofit.data import env
 
 Logger = logging.getLogger(__name__)
-ConfigsDir = Path(__file__).resolve().parent / "yamls"
+ConfigsDir = Path(__file__).resolve().parent / "templates"
 
 
 def create_new_config(config_file: Union[str, Path]) -> Config:
