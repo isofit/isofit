@@ -9,12 +9,13 @@ This module defines Pydantic models for specifying input data files
 from pathlib import Path
 from typing import ClassVar, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, FilePath
+from pydantic import ConfigDict, Field, FilePath
 
+from isofit.configs.base import SectionModel
 from isofit.configs.utils.accessors import ElementAccessorMixin
 
 
-class InputConfig(BaseModel, ElementAccessorMixin):
+class InputConfig(SectionModel, ElementAccessorMixin):
     """
     Input file configuration for ISOFIT.
 
@@ -42,6 +43,8 @@ class InputConfig(BaseModel, ElementAccessorMixin):
     using the FilePath type. Paths can be absolute or relative to the
     configuration file directory (expansion happens in the loader).
     """
+
+    section = "input"
 
     # Aliased fields (rdn/obs/loc) must also be settable by their full field
     # names, which is how the generated configs (e.g. apply_oe) write them.
@@ -114,7 +117,7 @@ class InputConfig(BaseModel, ElementAccessorMixin):
     )
 
 
-class OutputConfig(BaseModel):
+class OutputConfig(SectionModel):
     """
     Output file configuration for ISOFIT.
 
@@ -142,6 +145,8 @@ class OutputConfig(BaseModel):
     Only specified outputs will be written, reducing disk usage and processing
     time for large datasets.
     """
+
+    section = "output"
 
     dir: Path = Field(description="Output directory for ISOFIT")
 

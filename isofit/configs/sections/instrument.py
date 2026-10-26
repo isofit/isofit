@@ -9,8 +9,9 @@ parameters for optimizing spectral and radiometric calibration.
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, FilePath, model_validator
+from pydantic import ConfigDict, Field, FilePath, model_validator
 
+from isofit.configs.base import SectionModel
 from isofit.configs.sections.statevector import (
     StateVectorConfig,
     StateVectorElementConfig,
@@ -52,6 +53,8 @@ class InstrumentStateVectorConfig(StateVectorConfig):
     :class:`StateVectorElementConfig`.
     """
 
+    section = "forward_model.instrument.statevector"
+
     model_config = ConfigDict(extra="allow")
 
     # Validate extra (dynamically named) elements as state vector elements
@@ -87,7 +90,7 @@ class InstrumentStateVectorConfig(StateVectorConfig):
     )
 
 
-class InstrumentUnknownsConfig(BaseModel):
+class InstrumentUnknownsConfig(SectionModel):
     """
     Instrument unknowns configuration.
 
@@ -117,6 +120,8 @@ class InstrumentUnknownsConfig(BaseModel):
     At least one uncertainty source should be specified. These uncertainties
     are combined with noise model to form the measurement covariance matrix.
     """
+
+    section = "forward_model.instrument.unknowns"
 
     channelized_radiometric_uncertainty_file: Optional[FilePath] = Field(
         description=(
@@ -154,7 +159,7 @@ class InstrumentUnknownsConfig(BaseModel):
     )
 
 
-class InstrumentConfig(BaseModel):
+class InstrumentConfig(SectionModel):
     """
     Instrument configuration.
 
@@ -192,6 +197,8 @@ class InstrumentConfig(BaseModel):
     InstrumentStateVectorConfig : Instrument parameters for optimization
     InstrumentUnknownsConfig : Calibration uncertainties
     """
+
+    section = "forward_model.instrument"
 
     wavelength_file: Optional[FilePath] = Field(
         description=(

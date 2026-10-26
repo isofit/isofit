@@ -8,13 +8,14 @@ configuration.
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from isofit import __version__
+from isofit.configs.base import SectionModel
 from isofit.configs.sections.inversion import InversionConfig
 
 
-class ImplementationConfig(BaseModel):
+class ImplementationConfig(SectionModel):
     """
     Implementation configuration for ISOFIT runtime.
 
@@ -36,6 +37,14 @@ class ImplementationConfig(BaseModel):
     >>> impl.n_cores
     8
 
+    The section can also be built on its own, seeded from a base config
+    (see :class:`~isofit.configs.base.SectionModel`):
+
+    >>> from isofit.configs.sections.implementation import ImplementationConfig
+    >>> impl = ImplementationConfig(base="vswir", n_cores=8)
+    >>> impl.inversion.windows
+    [[380.0, 1325.0], [1435.0, 1770.0], [1965.0, 2500.0]]
+
     Notes
     -----
     For multi-node distributed processing, both ip_head and redis_password
@@ -55,6 +64,8 @@ class ImplementationConfig(BaseModel):
     --------
     isofit.configs.sections.inversion.InversionConfig : Inversion configuration
     """
+
+    section = "implementation"
 
     mode: Literal["inversion", "mcmc_inversion", "simulation"] = Field(
         description=(

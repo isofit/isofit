@@ -4,17 +4,18 @@ os.environ["PYDANTIC_ERRORS_INCLUDE_URL"] = "0"
 
 import logging
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field, ValidationError
 
 Logger = logging.getLogger(__name__)
 
+from isofit.configs.base import SectionModel
 from isofit.configs.sections import io
 from isofit.configs.sections.atmosphere import AtmosphereConfig
 from isofit.configs.sections.forward_model import ForwardModelConfig
 from isofit.configs.sections.implementation import ImplementationConfig
 
 
-class Config(BaseModel):
+class Config(SectionModel):
     """
     Main ISOFIT configuration model.
 
@@ -35,6 +36,15 @@ class Config(BaseModel):
     ... })
     >>> config.get_config_errors()  # Validate inter-field constraints
 
+    A Config, or any of its sections, can also be constructed directly from a
+    base config with the ``base`` keyword; the remaining keywords are
+    deep-merged on top (see :class:`~isofit.configs.base.SectionModel`):
+
+    >>> from isofit.configs import Config
+    >>> config = Config(base="vswir", implementation={"n_cores": 4})
+    >>> config.forward_model.atmosphere.engine.name
+    'srtmnet'
+
     Notes
     -----
     This class uses Pydantic for automatic validation at construction time. Most
@@ -42,6 +52,8 @@ class Config(BaseModel):
     get_config_errors() method performs additional inter-field validation that
     cannot be expressed as simple field constraints.
     """
+
+    section = ""
 
     input: io.InputConfig = Field(
         description=(

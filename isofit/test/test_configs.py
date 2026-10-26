@@ -6,8 +6,13 @@ import pytest
 from pydantic import ValidationError
 from scipy.io import savemat
 
-from isofit.configs import create_new_config, legacy, load_config_dict
+from isofit.configs import Config, create_new_config, legacy, load_config_dict
 from isofit.configs.loader import base_config_name, resolve_config_dict
+from isofit.configs.sections.atmosphere import AtmosphereConfig
+from isofit.configs.sections.atmosphere.engines.srtmnet import sRTMnetConfig
+from isofit.configs.sections.implementation import ImplementationConfig
+from isofit.configs.sections.inversion import InversionConfig
+from isofit.configs.sections.io import OutputConfig
 from isofit.core.multistate import update_config_for_surface
 from isofit.data import env
 
@@ -438,6 +443,55 @@ def test_resolve_does_not_mutate_input():
     snapshot = json.dumps(data, sort_keys=True)
     resolve_config_dict(data, base_dir="/tmp")
     assert json.dumps(data, sort_keys=True) == snapshot
+
+
+VswirWindows = [[380.0, 1325.0], [1435.0, 1770.0], [1965.0, 2500.0]]
+
+
+def test_section_from_base():
+    """A section seeded with base= takes that base config's subsection."""
+    impl = ImplementationConfig(base="vswir")
+    assert impl.mode == "inversion"
+    assert impl.inversion.windows == VswirWindows
+
+
+def test_section_from_base_overrides():
+    """Keyword arguments are deep-merged over the base config's defaults."""
+    assert ImplementationConfig(base="vswir", n_cores=4).n_cores == 4
+
+    inversion = InversionConfig(base="vswir", mcmc={"iterations": 5})
+    assert inversion.mcmc.iterations == 5
+    assert inversion.mcmc.burnin == 200
+    assert inversion.windows == VswirWindows
+
+    output = OutputConfig(base="vswir", estimated_state_file=None)
+    assert output.estimated_state_file is None
+
+
+def test_section_from_base_interpolates():
+    """References to other sections resolve, and follow the overrides."""
+    lut_path = AtmosphereConfig(base="vswir").lut_path
+    assert lut_path.parts[-3:] == ("isofit-output", "lut", "lut.zarr")
+
+    output = OutputConfig(base="vswir", dir="/x")
+    assert output.estimated_state_file == Path("/x/estimated_state")
+
+
+def test_section_from_base_nested():
+    """Engine models and nested model instances work with base=."""
+    assert sRTMnetConfig(base="vswir").name == "srtmnet"
+
+    impl = ImplementationConfig(base="vswir", inversion=InversionConfig(base="thermal"))
+    assert impl.inversion.windows == VswirWindows + [[7500.0, 12000.0]]
+
+    config = Config(base="vswir", implementation={"n_cores": 4})
+    assert config.implementation.n_cores == 4
+    assert config.forward_model.atmosphere.engine.name == "srtmnet"
+
+
+def test_section_from_unknown_base():
+    with pytest.raises(ValidationError, match="Available base configs"):
+        ImplementationConfig(base="nope")
 
 
 def test_instrument_spline_statevector():

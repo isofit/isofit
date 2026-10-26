@@ -7,19 +7,14 @@ This module configures 6S for ISOFIT atmospheric correction.
 
 from typing import Annotated, Literal, Optional
 
-from pydantic import (
-    BaseModel,
-    BeforeValidator,
-    ConfigDict,
-    DirectoryPath,
-    Field,
-    FilePath,
-)
+from pydantic import BeforeValidator, ConfigDict, DirectoryPath, Field, FilePath
+
+from isofit.configs.base import SectionModel
 
 from . import standardName
 
 
-class SixSConfig(BaseModel):
+class SixSConfig(SectionModel):
     """
     6S engine configuration.
 
@@ -67,6 +62,8 @@ class SixSConfig(BaseModel):
     ModtranConfig : Commercial RT engine with more capabilities
     LibRadTranConfig : Alternative open-source RT engine
     """
+
+    section = "forward_model.atmosphere.engine"
 
     model_config = ConfigDict(extra="forbid")
 
