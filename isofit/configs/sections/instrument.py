@@ -308,9 +308,9 @@ class InstrumentConfig(SectionModel):
             raise ValueError(
                 "Instrument noise not defined. Must specify one of: SNR, parametric_noise_file, pushbroom_noise_file, or nedt_noise_file"
             )
-        if count > 1:
-            raise ValueError(
-                "Multiple instrument noise options selected. Please choose only one."
-            )
+        # if count > 1:
+        #     raise ValueError(
+        #         "Multiple instrument noise options selected. Please choose only one."
+        #     )
 
         return self
