@@ -1,0 +1,391 @@
+from __future__ import annotations
+
+import logging
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import numpy as np
+from ray.util.queue import Queue
+
+from isofit.atmosphere import BaseAtmosphere
+from isofit.core.common import calculate_resample_matrix, combos, resample_spectrum
+from isofit.data import env
+from isofit.luts.writer import Writer
+
+Logger = logging.getLogger(__name__)
+
+# {sza} = arg1  = solar zenith angle (degrees)
+# {vza} = arg2  = viewing zenith angle (degrees)
+# {rza} = arg3  = relative azimuth angle (degrees)
+# {pwv} = arg4  = precipitable water vapor (cm)
+# {aod} = arg5  = AOD at 550 nm
+# {vel} = arg6  = viewing elevation (TOA = 58 km); current set up needs this to be 58.0
+# {sel} = arg7  = surface elevation (km)
+# {wgs} = arg8  = wavelength grid spacing (nm)
+# {co2} = arg9  = xco2 (ppm)
+# {ch4} = arg10 = xch4 (ppm)
+# {out} = arg11 = output file path
+# Example: ./emit_radiance.exe 35 0 0 2.0 0.1 58.0 0.0 0.1 400.0 1.9 emit_outputs_11args.dat
+#          {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4}
+#            35     0     0   2.0   0.1  58.0   0.0   0.1  400.0  1.9
+#
+# Both emit_hitdump.exe and emit_radiance.exe take the same arguments. The HITRAN
+# dump must be generated once per surface elevation (and atmospheric profile) as
+# the layer structure changes the gas absorption cross sections. emit_radiance.exe
+# then reads the dumps from ../data/Hitran_Dumps/Case_*_{sel:.4f}.dat, relative
+# to the MASTERS directory. For emit_hitdump.exe, arg11 is unused
+CMD = """\
+./{exe} {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4} {out}\
+"""
+
+# Makefiles in the MASTERS directory that build each executable for a general surface elevation
+MAKEFILES = {
+    "emit_hitdump.exe": "makefile_hitdump_genelev",
+    "emit_radiance.exe": "makefile_radiance_genelev",
+}
+
+
+class VLIDORT(BaseAtmosphere, Writer):
+    required = {
+        "solar_zenith",
+        "observer_zenith",
+        "relative_azimuth",
+        "H2OSTR",
+        "AOT550",
+        "surface_elevation_km",
+        "CO2",
+    }
+
+    # VLIDORT simulation wavelength grid spacing (nm), convolved to the LUT wavelengths
+    wl_spacing = 0.05
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+
+    def preSim(self):
+        if missing := self.required - set(self.lut_names):
+            raise AttributeError(f"Missing required LUT dimensions: {missing}")
+
+        self.sims = Path(self.config.sim_path)
+        self.sims.mkdir(parents=True, exist_ok=True)
+
+        base = Path(self.config.engine_base_dir)
+        if not (base / "MASTERS").is_dir():
+            raise FileNotFoundError(
+                f"VLIDORT MASTERS directory not found under engine_base_dir: {base}"
+            )
+
+        # The executables write logs to MASTERS and HITRAN dumps to data/Hitran_Dumps
+        if not all(
+            os.access(path, os.W_OK)
+            for path in (base / "MASTERS", base / "data" / "Hitran_Dumps")
+        ):
+            base = self.makeWorkspace(base)
+
+        self.exe = base / "MASTERS"
+        self.dumps = base / "data" / "Hitran_Dumps"
+
+        self.requireExe("emit_radiance.exe")
+
+        if self.configure_and_exit:
+            # HITRAN dumps must be generated before any radiance calculations
+            cmds = [cmd for cmd, _ in self.hitdump_cmds()]
+            if cmds:
+                self.requireExe("emit_hitdump.exe")
+
+            # Group the radiance calculations by surface elevation
+            points = combos(self.lut_grid.values())
+            i = self.lut_names.index("surface_elevation_km")
+            points = sorted(points, key=lambda p: p[i])
+            cmds += [self.make_cmd(p)[0] for p in points]
+
+            file = self.sims / "jobs.txt"
+            file.write_text("\n".join(cmds))
+            Logger.info(
+                f"Wrote configuration to {file}, commands must be executed from {self.exe}"
+            )
+            sys.exit(0)
+
+        self.makeHitDumps()
+
+        # Run the first point upfront to retrieve the VLIDORT output wavelength grid
+        # and cache the resampling matrix to the LUT wavelengths
+        point = combos(self.lut_grid.values())[0]
+        self.makeSim(point)
+
+        self.sim_wl = self.parseSim(point)["wl"]
+        self.matrix_H = calculate_resample_matrix(self.sim_wl, self.wl, self.fwhm)
+
+    def makeWorkspace(self, base):
+        """
+        Creates a writable working copy of a read-only VLIDORT installation under the
+        sim path. Large read-only inputs are symlinked, while the directories the
+        executables and builds write to are created locally. obj/ and mod/ are copied
+        with their timestamps preserved so make reuses the prebuilt objects rather than
+        recompiling sources that may not be readable
+
+        Parameters
+        ----------
+        base : Path
+            Read-only VLIDORT engine base directory
+
+        Returns
+        -------
+        Path
+            Workspace directory to use as the engine base directory
+        """
+        work = self.sims / "vlidort"
+        Logger.info(f"{base} is not writable, using VLIDORT workspace {work}")
+
+        def link(src, dst):
+            if not dst.exists() and not dst.is_symlink():
+                dst.symlink_to(src)
+
+        def copy(src, dst):
+            if not dst.exists():
+                shutil.copytree(src, dst, symlinks=True)
+
+        work.mkdir(parents=True, exist_ok=True)
+        for src in base.iterdir():
+            dst = work / src.name
+            if src.name in ("obj", "mod"):
+                copy(src, dst)
+            elif src.name in ("MASTERS", "data"):
+                dst.mkdir(exist_ok=True)
+                for child in src.iterdir():
+                    if child.name == "Hitran_Dumps":
+                        copy(child, dst / child.name)
+                    # Logs are written by the executables and must not point to the read-only originals
+                    elif child.suffix != ".log":
+                        link(child, dst / child.name)
+            else:
+                link(src, dst)
+
+        (work / "data" / "Hitran_Dumps").mkdir(exist_ok=True)
+
+        return work
+
+    def requireExe(self, name):
+        """
+        Ensures an executable exists in the MASTERS directory, building it with its
+        makefile if it is missing
+
+        Parameters
+        ----------
+        name : str
+            Executable name, a key of MAKEFILES
+        """
+        exe = self.exe / name
+        if exe.exists():
+            return
+
+        makefile = self.exe / MAKEFILES[name]
+        if not makefile.exists() or not os.access(self.exe, os.W_OK):
+            raise FileNotFoundError(
+                f"{exe} does not exist and cannot be built, expected a writable "
+                f"{self.exe} containing {makefile.name}"
+            )
+
+        log = self.sims / f"build_{exe.stem}.log"
+        Logger.info(f"{name} not found, building with {makefile.name}. Log: {log}")
+        with open(log, "w") as file:
+            proc = subprocess.run(
+                ["make", "-f", makefile.name, name],
+                cwd=self.exe,
+                stdout=file,
+                stderr=subprocess.STDOUT,
+            )
+
+        if proc.returncode != 0 or not exe.exists():
+            raise RuntimeError(f"Failed to build {exe}, see {log}")
+
+    def hitdump_cmds(self):
+        """
+        Builds the emit_hitdump.exe commands for each unique surface elevation that
+        does not yet have valid HITRAN dump files
+
+        Returns
+        -------
+        list[tuple[str, float]]
+            (command, surface elevation) pairs
+        """
+        # The dumps only depend on the surface elevation, use the first value of the other dimensions
+        point = [vals[0] for vals in self.lut_grid.values()]
+        i = self.lut_names.index("surface_elevation_km")
+
+        cmds = []
+        elevs = [round(e, 4) for e in self.lut_grid["surface_elevation_km"]]
+        for elev in elevs:
+            if self.validDumps(elev):
+                Logger.debug(
+                    f"HITRAN dumps already exist for elevation {elev:.4f}, skipping"
+                )
+                continue
+
+            point[i] = elev
+            out = self.sims / f"hitdump_{elev:.4f}.log"
+            cmd, _ = self.make_cmd(point, exe="emit_hitdump.exe", out=out)
+            cmds.append((cmd, elev))
+
+        return cmds
+
+    def validDumps(self, elev):
+        """
+        Checks the H2O HITRAN dump of every case exists for a surface elevation with
+        the number of rows emit_radiance.exe will read for the current wl_spacing
+
+        Parameters
+        ----------
+        elev : float
+            Surface elevation (km)
+
+        Returns
+        -------
+        bool
+            True if the dumps are usable, False if they must be (re)generated
+        """
+        # Spectral range (nm) of each HITRAN dump case. The dumps are written and read with
+        # nint(range / wgs) rows (+1 for case 14), so dumps generated with a different wgs
+        # cause emit_radiance.exe to fail with an end of file error. Every case includes H2O
+        dumps = {
+            4: 31.2,
+            5: 523.8,
+            6: 421.2,
+            7: 297.1,
+            8: 181.95,
+            9: 22.55,
+            10: 94.6,
+            11: 25.0,
+            12: 51.6,
+            13: 140.2,
+            14: 161.0,
+        }
+
+        for case, span in dumps.items():
+            file = self.dumps / f"Case_{case:02d}_H2O_{elev:.4f}.dat"
+            if not file.exists():
+                return False
+
+            # Fortran nint rounds half away from zero
+            rows = int(span / self.wl_spacing + 0.5) + (case == 14)
+            with open(file) as f:
+                found = sum(1 for _ in f)
+
+            if found != rows:
+                Logger.warning(
+                    f"{file.name} has {found} rows but {rows} are expected for a "
+                    f"wavelength spacing of {self.wl_spacing} nm, regenerating the "
+                    f"HITRAN dumps for elevation {elev:.4f}"
+                )
+                return False
+
+        return True
+
+    def makeHitDumps(self):
+        """
+        Generates the HITRAN dumps for each surface elevation in parallel. These must
+        exist before emit_radiance.exe is executed for that elevation
+        """
+        cmds = self.hitdump_cmds()
+        if not cmds:
+            return
+
+        self.requireExe("emit_hitdump.exe")
+
+        Logger.info(f"Generating HITRAN dumps for {len(cmds)} surface elevations")
+        procs = []
+        for cmd, elev in cmds:
+            Logger.debug(f"Executing {cmd}")
+            procs.append((subprocess.Popen(cmd.split(" "), cwd=self.exe), elev))
+
+        if failed := [elev for proc, elev in procs if proc.wait() != 0]:
+            raise RuntimeError(
+                f"emit_hitdump.exe failed for surface elevations: {failed}"
+            )
+
+    def makeSim(self, point, **_):
+        cmd, file = self.make_cmd(point)
+
+        if file.exists():
+            Logger.debug(
+                f"Sim data file for this point already exists, skipping. Point = {file.name}"
+            )
+            return
+
+        Logger.debug(f"Executing {cmd}")
+        subprocess.run(
+            cmd.split(" "),
+            cwd=self.exe,
+            check=True,
+        )
+
+    def parseSim(self, point):
+        name = self.point_to_filename(point)
+        file = self.sims / name
+
+        lines = file.read_text().splitlines()
+        parse = []
+        for line in lines:
+            data = re.findall(r"(\S+)", line)
+            data = np.array(data).astype(float)
+            parse.append(data)
+
+        data = np.vstack(parse)
+
+        # wl, PATH, TDIFFDN, TDIRDN, TDIFFUP, TDIRUP, SPHER
+        cols = [
+            "wl",
+            "rhoatm",
+            "transm_down_dif",
+            "transm_down_dir",
+            "transm_up_dif",
+            "transm_up_dir",
+            "sphalb",
+        ]
+        data = dict(zip(cols, data.T))
+
+        return data
+
+    def readSim(self, point):
+        data = self.parseSim(point)
+
+        # Convolve from the VLIDORT wavelength grid to the LUT wavelengths using the matrix cached in preSim
+        wl = data.pop("wl")
+        H = self.matrix_H
+        if not np.array_equal(wl, self.sim_wl):
+            Logger.warning(
+                f"VLIDORT output wavelengths differ from the cached grid for point {point}, recalculating the resampling matrix"
+            )
+            H = calculate_resample_matrix(wl, self.wl, self.fwhm)
+
+        data = {
+            key: resample_spectrum(vals, wl, self.wl, self.fwhm, H=H)
+            for key, vals in data.items()
+        }
+
+        return data
+
+    def make_cmd(self, point, exe="emit_radiance.exe", out=None):
+        file = out or self.sims / self.point_to_filename(point)
+
+        dims = dict(zip(self.lut_names, point))
+        vals = {
+            "exe": exe,
+            "sza": dims["solar_zenith"],
+            "vza": dims["observer_zenith"],
+            "rza": dims["relative_azimuth"],
+            "pwv": dims["H2OSTR"],
+            "aod": dims["AOT550"],
+            "vel": 58.0,  # Required to be 58.0 per Vijay
+            "sel": round(dims["surface_elevation_km"], 4),
+            "wgs": self.wl_spacing,
+            "co2": dims["CO2"],
+            "ch4": 1.9,  # REVIEW: 1.9 ppm is roughly the global average
+            "out": file,
+        }
+
+        return CMD.format(**vals), file
