@@ -42,6 +42,12 @@ CMD = """\
 ./{exe} {sza} {vza} {rza} {pwv} {aod} {vel} {sel} {wgs} {co2} {ch4} {out}\
 """
 
+# Makefiles in the MASTERS directory that build each executable for a general surface elevation
+MAKEFILES = {
+    "emit_hitdump.exe": "makefile_hitdump_genelev",
+    "emit_radiance.exe": "makefile_radiance_genelev",
+}
+
 
 class VLIDORT(BaseAtmosphere, Writer):
     required = {
@@ -67,12 +73,29 @@ class VLIDORT(BaseAtmosphere, Writer):
         self.sims = Path(self.config.sim_path)
         self.sims.mkdir(parents=True, exist_ok=True)
 
-        self.exe = Path(self.config.engine_base_dir) / "MASTERS"
-        self.dumps = self.exe.parent / "data" / "Hitran_Dumps"
+        base = Path(self.config.engine_base_dir)
+        if not (base / "MASTERS").is_dir():
+            raise FileNotFoundError(
+                f"VLIDORT MASTERS directory not found under engine_base_dir: {base}"
+            )
+
+        # The executables write logs to MASTERS and HITRAN dumps to data/Hitran_Dumps
+        if not all(
+            os.access(path, os.W_OK)
+            for path in (base / "MASTERS", base / "data" / "Hitran_Dumps")
+        ):
+            base = self.makeWorkspace(base)
+
+        self.exe = base / "MASTERS"
+        self.dumps = base / "data" / "Hitran_Dumps"
+
+        self.requireExe("emit_radiance.exe")
 
         if self.configure_and_exit:
             # HITRAN dumps must be generated before any radiance calculations
             cmds = [cmd for cmd, _ in self.hitdump_cmds()]
+            if cmds:
+                self.requireExe("emit_hitdump.exe")
 
             # Group the radiance calculations by surface elevation
             points = combos(self.lut_grid.values())
@@ -82,7 +105,9 @@ class VLIDORT(BaseAtmosphere, Writer):
 
             file = self.sims / "jobs.txt"
             file.write_text("\n".join(cmds))
-            Logger.info(f"Wrote configuration to {file}")
+            Logger.info(
+                f"Wrote configuration to {file}, commands must be executed from {self.exe}"
+            )
             sys.exit(0)
 
         self.makeHitDumps()
@@ -94,6 +119,89 @@ class VLIDORT(BaseAtmosphere, Writer):
 
         self.sim_wl = self.parseSim(point)["wl"]
         self.matrix_H = calculate_resample_matrix(self.sim_wl, self.wl, self.fwhm)
+
+    def makeWorkspace(self, base):
+        """
+        Creates a writable working copy of a read-only VLIDORT installation under the
+        sim path. Large read-only inputs are symlinked, while the directories the
+        executables and builds write to are created locally. obj/ and mod/ are copied
+        with their timestamps preserved so make reuses the prebuilt objects rather than
+        recompiling sources that may not be readable
+
+        Parameters
+        ----------
+        base : Path
+            Read-only VLIDORT engine base directory
+
+        Returns
+        -------
+        Path
+            Workspace directory to use as the engine base directory
+        """
+        work = self.sims / "vlidort"
+        Logger.info(f"{base} is not writable, using VLIDORT workspace {work}")
+
+        def link(src, dst):
+            if not dst.exists() and not dst.is_symlink():
+                dst.symlink_to(src)
+
+        def copy(src, dst):
+            if not dst.exists():
+                shutil.copytree(src, dst, symlinks=True)
+
+        work.mkdir(parents=True, exist_ok=True)
+        for src in base.iterdir():
+            dst = work / src.name
+            if src.name in ("obj", "mod"):
+                copy(src, dst)
+            elif src.name in ("MASTERS", "data"):
+                dst.mkdir(exist_ok=True)
+                for child in src.iterdir():
+                    if child.name == "Hitran_Dumps":
+                        copy(child, dst / child.name)
+                    # Logs are written by the executables and must not point to the read-only originals
+                    elif child.suffix != ".log":
+                        link(child, dst / child.name)
+            else:
+                link(src, dst)
+
+        (work / "data" / "Hitran_Dumps").mkdir(exist_ok=True)
+
+        return work
+
+    def requireExe(self, name):
+        """
+        Ensures an executable exists in the MASTERS directory, building it with its
+        makefile if it is missing
+
+        Parameters
+        ----------
+        name : str
+            Executable name, a key of MAKEFILES
+        """
+        exe = self.exe / name
+        if exe.exists():
+            return
+
+        makefile = self.exe / MAKEFILES[name]
+        if not makefile.exists() or not os.access(self.exe, os.W_OK):
+            raise FileNotFoundError(
+                f"{exe} does not exist and cannot be built, expected a writable "
+                f"{self.exe} containing {makefile.name}"
+            )
+
+        log = self.sims / f"build_{exe.stem}.log"
+        Logger.info(f"{name} not found, building with {makefile.name}. Log: {log}")
+        with open(log, "w") as file:
+            proc = subprocess.run(
+                ["make", "-f", makefile.name, name],
+                cwd=self.exe,
+                stdout=file,
+                stderr=subprocess.STDOUT,
+            )
+
+        if proc.returncode != 0 or not exe.exists():
+            raise RuntimeError(f"Failed to build {exe}, see {log}")
 
     def hitdump_cmds(self):
         """
@@ -133,6 +241,8 @@ class VLIDORT(BaseAtmosphere, Writer):
         cmds = self.hitdump_cmds()
         if not cmds:
             return
+
+        self.requireExe("emit_hitdump.exe")
 
         Logger.info(f"Generating HITRAN dumps for {len(cmds)} surface elevations")
         procs = []
