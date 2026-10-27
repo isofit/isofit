@@ -83,23 +83,25 @@ class SurfaceStateVectorConfig(StateVectorConfig):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "surface": {
-    ...             "statevector": {
-    ...                 "SURF_TEMP_K": {
-    ...                     "bounds": [250.0, 350.0],
-    ...                     "scale": 50.0,
-    ...                     "init": 300.0,
-    ...                 }
-    ...             }
-    ...         }
-    ...     }
-    ... })
-    >>> ssv = config.forward_model.surface.statevector
-    >>> ssv.get_element_names()
+    The ``default`` base config retrieves no surface parameters beyond
+    reflectance:
+
+    >>> from isofit.configs.sections.surface import SurfaceStateVectorConfig
+    >>> SurfaceStateVectorConfig().get_element_names()
+    []
+
+    The ``thermal`` and ``glint`` base configs add their own elements:
+
+    >>> SurfaceStateVectorConfig(base="thermal").get_element_names()
     ['SURF_TEMP_K']
+    >>> SurfaceStateVectorConfig(base="glint").get_element_names()
+    ['SKY_GLINT', 'SUN_GLINT']
+    >>> ssv = SurfaceStateVectorConfig(
+    ...     base="thermal",
+    ...     SURF_TEMP_K={"bounds": [250.0, 350.0]},
+    ... )
+    >>> ssv.get_all_bounds()
+    [[250.0, 350.0]]
 
     Notes
     -----
@@ -204,43 +206,40 @@ class SurfaceConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "surface": {
-    ...             "surface_file": "surface_priors.mat",
-    ...             "surface_category": "multicomponent_surface",
-    ...             "terrain_style": "flat",
-    ...         }
-    ...     }
-    ... })
-    >>> surf = config.forward_model.surface
+    The ``default`` base config leaves the surface model unset:
+
+    >>> from isofit.configs.sections.surface import SurfaceConfig
+    >>> surf = SurfaceConfig()
+    >>> surf.surface_category is None, surf.terrain_style
+    (True, 'flat')
+
+    The use-case base configs select a surface model; only the scene-specific
+    surface file needs to be supplied:
+
+    >>> surf = SurfaceConfig(base="vswir", surface_file="surface_priors.mat")
     >>> surf.surface_category
     'multicomponent_surface'
+    >>> SurfaceConfig(base="thermal").surface_category
+    'thermal_surface'
 
     Multi-surface configuration example (the classification file must exist):
 
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "surface": {
-    ...             "multi_surface_flag": True,
-    ...             "surface_class_file": "classification.hdr",
-    ...             "Surfaces": {
-    ...                 "vegetation": {
-    ...                     "surface_category": "multicomponent_surface",
-    ...                     "surface_file": "veg_prior.mat",
-    ...                     "surface_int": 1,
-    ...                 },
-    ...                 "soil": {
-    ...                     "surface_category": "multicomponent_surface",
-    ...                     "surface_file": "soil_prior.mat",
-    ...                     "surface_int": 2,
-    ...                 },
-    ...             },
-    ...         }
-    ...     }
-    ... })
-    >>> multi_surf = config.forward_model.surface
+    >>> multi_surf = SurfaceConfig(
+    ...     multi_surface_flag=True,
+    ...     surface_class_file="classification.hdr",
+    ...     Surfaces={
+    ...         "vegetation": {
+    ...             "surface_category": "multicomponent_surface",
+    ...             "surface_file": "veg_prior.mat",
+    ...             "surface_int": 1,
+    ...         },
+    ...         "soil": {
+    ...             "surface_category": "multicomponent_surface",
+    ...             "surface_file": "soil_prior.mat",
+    ...             "surface_int": 2,
+    ...         },
+    ...     },
+    ... )
 
     Notes
     -----

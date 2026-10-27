@@ -25,8 +25,10 @@ class PrebuiltConfig(SectionModel):
 
     Examples
     --------
+    Prebuilt is the engine of the ``default`` base config:
+
     >>> from isofit.configs.sections.atmosphere.engines import PrebuiltConfig
-    >>> engine = PrebuiltConfig(name="Prebuilt")
+    >>> engine = PrebuiltConfig()
     >>> engine.name
     'prebuilt'
 

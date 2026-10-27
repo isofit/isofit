@@ -25,25 +25,19 @@ class ImplementationConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "implementation": {
-    ...         "mode": "inversion",
-    ...         "n_cores": 8,
-    ...         "io_buffer_size": 200,
-    ...     }
-    ... })
-    >>> impl = config.implementation
-    >>> impl.n_cores
-    8
+    >>> from isofit.configs.sections.implementation import ImplementationConfig
+    >>> impl = ImplementationConfig(n_cores=8, io_buffer_size=200)
+    >>> impl.mode, impl.n_cores
+    ('inversion', 8)
 
-    The section can also be built on its own, seeded from a base config
+    Starting from an alternative base config
     (see :class:`~isofit.configs.base.SectionModel`):
 
-    >>> from isofit.configs.sections.implementation import ImplementationConfig
-    >>> impl = ImplementationConfig(base="vswir", n_cores=8)
+    >>> impl = ImplementationConfig(base="thermal", n_cores=8)
     >>> impl.inversion.windows
-    [[380.0, 1325.0], [1435.0, 1770.0], [1965.0, 2500.0]]
+    [[380.0, 1325.0], [1435.0, 1770.0], [1965.0, 2500.0], [7500.0, 12000.0]]
+    >>> ImplementationConfig(base="mcmc").mode
+    'mcmc_inversion'
 
     Notes
     -----

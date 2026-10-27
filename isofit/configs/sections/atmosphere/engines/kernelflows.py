@@ -23,23 +23,20 @@ class KernelFlowsConfig(SectionModel):
 
     Examples
     --------
-    The emulator and template files must exist:
+    The ``kernelflows`` base config leaves the emulator unset:
 
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "atmosphere": {
-    ...             "engine": {
-    ...                 "name": "kf",
-    ...                 "emulator_file": "kf_emulator.h5",
-    ...                 "template_file": "modtran_template.json",
-    ...             }
-    ...         }
-    ...     }
-    ... })
-    >>> kf = config.forward_model.atmosphere.engine
-    >>> kf.name
-    'kernelflows'
+    >>> from isofit.configs.sections.atmosphere.engines import KernelFlowsConfig
+    >>> kf = KernelFlowsConfig(base="kernelflows")
+    >>> kf.name, kf.emulator_file
+    ('kernelflows', None)
+
+    Supplying the emulator and template files (they must exist):
+
+    >>> kf = KernelFlowsConfig(
+    ...     base="kernelflows",
+    ...     emulator_file="kf_emulator.h5",
+    ...     template_file="modtran_template.json",
+    ... )
 
     Notes
     -----

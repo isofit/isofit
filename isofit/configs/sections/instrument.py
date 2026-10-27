@@ -28,17 +28,14 @@ class InstrumentStateVectorConfig(StateVectorConfig):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "instrument": {
-    ...             "statevector": {
-    ...                 "WL_SHIFT": {"bounds": [-2.0, 2.0], "scale": 1.0, "init": 0.0},
-    ...             }
-    ...         }
-    ...     }
-    ... })
-    >>> isv = config.forward_model.instrument.statevector
+    The base configs retrieve no instrument parameters:
+
+    >>> from isofit.configs.sections.instrument import InstrumentStateVectorConfig
+    >>> InstrumentStateVectorConfig().get_element_names()
+    []
+    >>> isv = InstrumentStateVectorConfig(
+    ...     WL_SHIFT={"bounds": [-2.0, 2.0], "scale": 1.0, "init": 0.0},
+    ... )
     >>> isv.get_element_names()
     ['WL_SHIFT']
 
@@ -100,20 +97,21 @@ class InstrumentUnknownsConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "instrument": {
-    ...             "unknowns": {
-    ...                 "uncorrelated_radiometric_uncertainty": 0.02,
-    ...                 "wavelength_calibration_uncertainty": 0.5,
-    ...             }
-    ...         }
-    ...     }
-    ... })
-    >>> unknowns = config.forward_model.instrument.unknowns
+    >>> from isofit.configs.sections.instrument import InstrumentUnknownsConfig
+    >>> unknowns = InstrumentUnknownsConfig(
+    ...     uncorrelated_radiometric_uncertainty=0.02,
+    ...     wavelength_calibration_uncertainty=0.5,
+    ... )
     >>> unknowns.uncorrelated_radiometric_uncertainty
     0.02
+
+    The ``default`` base config sets no uncertainties, whereas the use-case
+    base configs set an uncorrelated radiometric uncertainty:
+
+    >>> InstrumentUnknownsConfig().uncorrelated_radiometric_uncertainty is None
+    True
+    >>> InstrumentUnknownsConfig(base="vswir").uncorrelated_radiometric_uncertainty
+    0.01
 
     Notes
     -----
@@ -169,21 +167,17 @@ class InstrumentConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {"instrument": {"SNR": 200.0, "integrations": 10}}
-    ... })
-    >>> inst = config.forward_model.instrument
+    >>> from isofit.configs.sections.instrument import InstrumentConfig
+    >>> inst = InstrumentConfig()
     >>> inst.SNR, inst.integrations
-    (200.0, 10)
+    (500.0, None)
+    >>> inst = InstrumentConfig(base="vswir", SNR=200.0)
+    >>> inst.SNR, inst.integrations
+    (200.0, 1)
 
     Using a noise file instead of the default SNR (the file must exist):
 
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "instrument": {"SNR": None, "parametric_noise_file": "noise.txt"}
-    ...     }
-    ... })
+    >>> inst = InstrumentConfig(SNR=None, parametric_noise_file="noise.txt")
 
     Notes
     -----

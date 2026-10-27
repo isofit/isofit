@@ -26,18 +26,21 @@ class ForwardModelConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "surface": {
-    ...             "surface_file": "surface.mat",
-    ...             "surface_category": "multicomponent_surface",
-    ...         },
-    ...         "atmosphere": {"engine": {"name": "prebuilt"}},
-    ...         "instrument": {"SNR": 100.0},
-    ...     }
-    ... })
-    >>> fm = config.forward_model
+    >>> from isofit.configs.sections.forward_model import ForwardModelConfig
+    >>> fm = ForwardModelConfig()
+    >>> fm.atmosphere.engine.name, fm.instrument.SNR
+    ('prebuilt', 500.0)
+
+    Starting from the ``vswir`` base config, overriding nested sections with
+    dicts:
+
+    >>> fm = ForwardModelConfig(
+    ...     base="vswir",
+    ...     surface={"surface_file": "surface.mat"},
+    ...     instrument={"SNR": 100.0},
+    ... )
+    >>> fm.atmosphere.engine.name, fm.surface.surface_category
+    ('srtmnet', 'multicomponent_surface')
     >>> fm.instrument.SNR
     100.0
 

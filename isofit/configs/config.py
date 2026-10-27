@@ -25,25 +25,24 @@ class Config(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "surface": {
-    ...             "surface_file": "surface.mat",
-    ...             "surface_category": "multicomponent_surface",
-    ...         }
-    ...     }
-    ... })
-    >>> config.get_config_errors()  # Validate inter-field constraints
-
-    A Config, or any of its sections, can also be constructed directly from a
-    base config with the ``base`` keyword; the remaining keywords are
-    deep-merged on top (see :class:`~isofit.configs.base.SectionModel`):
+    With no arguments, the Config is built from the ``default`` base config:
 
     >>> from isofit.configs import Config
-    >>> config = Config(base="vswir", implementation={"n_cores": 4})
+    >>> config = Config()
+    >>> config.forward_model.atmosphere.engine.name
+    'prebuilt'
+
+    Start from an alternative base config with ``base``; the remaining keywords
+    are deep-merged on top (see :class:`~isofit.configs.base.SectionModel`):
+
+    >>> config = Config(
+    ...     base="vswir",
+    ...     forward_model={"surface": {"surface_file": "surface.mat"}},
+    ...     implementation={"n_cores": 4},
+    ... )
     >>> config.forward_model.atmosphere.engine.name
     'srtmnet'
+    >>> config.get_config_errors()  # Validate inter-field constraints
 
     Notes
     -----
@@ -109,15 +108,11 @@ class Config(SectionModel):
 
         Examples
         --------
-        >>> from isofit.configs import load_config_dict
-        >>> config = load_config_dict({
-        ...     "forward_model": {
-        ...         "surface": {
-        ...             "surface_file": "surface.mat",
-        ...             "surface_category": "multicomponent_surface",
-        ...         }
-        ...     }
-        ... })
+        >>> from isofit.configs import Config
+        >>> config = Config(
+        ...     base="vswir",
+        ...     forward_model={"surface": {"surface_file": "surface.mat"}},
+        ... )
         >>> config.get_config_errors()  # No errors
         >>> config.implementation.mode = "simulation"  # Without a reflectance_file
         >>> config.get_config_errors()

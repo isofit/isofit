@@ -25,17 +25,20 @@ class InputConfig(SectionModel, ElementAccessorMixin):
 
     Examples
     --------
-    The input files must exist:
+    The base configs leave every input unset:
 
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "input": {
-    ...         "measured_radiance_file": "data/rdn.hdr",
-    ...         "obs_file": "data/obs.hdr",
-    ...         "loc_file": "data/loc.hdr",
-    ...     }
-    ... })
-    >>> input_config = config.input
+    >>> from isofit.configs.sections.io import InputConfig
+    >>> InputConfig().measured_radiance_file is None
+    True
+
+    Supplying scene inputs on top of a base config (the files must exist):
+
+    >>> inputs = InputConfig(
+    ...     base="vswir",
+    ...     measured_radiance_file="data/rdn.hdr",
+    ...     obs_file="data/obs.hdr",
+    ...     loc_file="data/loc.hdr",
+    ... )
 
     Notes
     -----
@@ -127,17 +130,19 @@ class OutputConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "output": {
-    ...         "dir": "results",
-    ...         "estimated_reflectance_file": "results/reflectance.hdr",
-    ...         "posterior_uncertainty_file": "results/uncertainty.hdr",
-    ...     }
-    ... })
-    >>> output_config = config.output
-    >>> output_config.get_output_files()[2]
-    ['estimated_reflectance_file', 'posterior_uncertainty_file']
+    The ``default`` base config writes no products:
+
+    >>> from isofit.configs.sections.io import OutputConfig
+    >>> OutputConfig().get_output_files()[2]
+    []
+
+    The use-case base configs name their products relative to ``dir``:
+
+    >>> output = OutputConfig(base="vswir", dir="results")
+    >>> output.estimated_reflectance_file
+    PosixPath('results/estimated_reflectance')
+    >>> output.get_output_files()[2]
+    ['estimated_reflectance_file', 'estimated_state_file', 'posterior_uncertainty_file']
 
     Notes
     -----
