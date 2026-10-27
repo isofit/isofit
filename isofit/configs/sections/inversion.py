@@ -21,22 +21,15 @@ class McmcConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "implementation": {
-    ...         "mode": "mcmc_inversion",
-    ...         "inversion": {
-    ...             "mcmc": {
-    ...                 "iterations": 20000,
-    ...                 "burnin": 500,
-    ...                 "proposal_scaling": 0.005,
-    ...             }
-    ...         },
-    ...     }
-    ... })
-    >>> mcmc = config.implementation.inversion.mcmc
+    >>> from isofit.configs.sections.inversion import McmcConfig
+    >>> mcmc = McmcConfig(iterations=20000, proposal_scaling=0.005)
     >>> mcmc.iterations, mcmc.burnin
-    (20000, 500)
+    (20000, 200)
+
+    The ``mcmc`` base config uses a longer burn-in:
+
+    >>> McmcConfig(base="mcmc").burnin
+    2000
     """
 
     section = "implementation.inversion.mcmc"
@@ -86,19 +79,11 @@ class LeastSquaresConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "implementation": {
-    ...         "inversion": {
-    ...             "least_squares_params": {
-    ...                 "method": "dogbox",
-    ...                 "max_nfev": 10,
-    ...                 "ftol": 0.05,
-    ...             }
-    ...         }
-    ...     }
-    ... })
-    >>> ls = config.implementation.inversion.least_squares_params
+    >>> from isofit.configs.sections.inversion import LeastSquaresConfig
+    >>> ls = LeastSquaresConfig()
+    >>> ls.method, ls.max_nfev
+    ('trf', 20)
+    >>> ls = LeastSquaresConfig(method="dogbox", max_nfev=10, ftol=0.05)
     >>> ls.method, ls.max_nfev
     ('dogbox', 10)
 
@@ -178,18 +163,17 @@ class InversionConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "implementation": {
-    ...         "inversion": {
-    ...             "windows": [[400.0, 1300.0], [1450.0, 1780.0], [1950.0, 2450.0]],
-    ...             "least_squares_params": {"max_nfev": 15},
-    ...         }
-    ...     }
-    ... })
-    >>> inv = config.implementation.inversion
+    >>> from isofit.configs.sections.inversion import InversionConfig
+    >>> inv = InversionConfig(least_squares_params={"max_nfev": 15})
+    >>> inv.windows
+    [[350.0, 1360.0], [1410.0, 1800.0], [1970.0, 2500.0]]
     >>> inv.least_squares_params.max_nfev
     15
+
+    The ``thermal`` base config adds a thermal-infrared window:
+
+    >>> InversionConfig(base="thermal").windows
+    [[380.0, 1325.0], [1435.0, 1770.0], [1965.0, 2500.0], [7500.0, 12000.0]]
 
     Notes
     -----

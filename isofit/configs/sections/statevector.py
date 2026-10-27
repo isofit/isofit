@@ -95,17 +95,14 @@ class StateVectorConfig(SectionModel, ElementAccessorMixin, StateVectorValueMixi
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "surface": {
-    ...             "statevector": {"SURF_TEMP_K": {"bounds": [250.0, 350.0]}}
-    ...         }
-    ...     }
-    ... })
-    >>> sv = config.forward_model.surface.statevector
+    The accessors are used through a concrete subclass:
+
+    >>> from isofit.configs.sections.surface import SurfaceStateVectorConfig
+    >>> sv = SurfaceStateVectorConfig(base="thermal")
+    >>> sv.get_element_names()
+    ['SURF_TEMP_K']
     >>> sv.get_all_bounds()
-    [[250.0, 350.0]]
+    [[250.0, 400.0]]
 
     See Also
     --------

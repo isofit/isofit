@@ -6,7 +6,7 @@
 #
 # Inherits every default plus the sRTMnet engine profile from default.yml, then
 # overrides only the retrieval methodology. Load with:
-#   interpolate.load("vswir_reflectance.yml")
+#   interpolate.load("vswir.yml")
 #
 # Before running, fill in the scene-specific inputs marked `# SET:` below
 # (radiance/obs/loc files, instrument wavelengths + noise, surface model).

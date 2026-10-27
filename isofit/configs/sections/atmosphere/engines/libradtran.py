@@ -26,23 +26,15 @@ class LibRadTranConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "atmosphere": {
-    ...             "engine": {
-    ...                 "name": "libradtran",
-    ...                 "reptran_band_model": "coarse",
-    ...                 "kb_alpha_1": 1.3,
-    ...                 "kb_alpha_2": 0.2,
-    ...                 "gg_set": 0.7,
-    ...             }
-    ...         }
-    ...     }
-    ... })
-    >>> librad = config.forward_model.atmosphere.engine
-    >>> librad.kb_alpha_1
-    1.3
+    >>> from isofit.configs.sections.atmosphere.engines import LibRadTranConfig
+    >>> librad = LibRadTranConfig(
+    ...     base="libradtran",
+    ...     kb_alpha_1=1.3,
+    ...     kb_alpha_2=0.2,
+    ...     gg_set=0.7,
+    ... )
+    >>> librad.reptran_band_model, librad.kb_alpha_1
+    ('coarse', 1.3)
 
     Notes
     -----

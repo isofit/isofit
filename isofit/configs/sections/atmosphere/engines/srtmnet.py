@@ -32,15 +32,14 @@ class sRTMnetConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "atmosphere": {
-    ...             "engine": {"name": "srtmnet", "emulator_batch_size": 2048}
-    ...         }
-    ...     }
-    ... })
-    >>> srtm = config.forward_model.atmosphere.engine
+    The ``srtmnet`` base config (also underlying ``vswir``, ``glint``,
+    ``simulation``, and ``mcmc``) points the emulator at the ISOFIT ini paths:
+
+    >>> from isofit.configs.sections.atmosphere.engines import sRTMnetConfig
+    >>> srtm = sRTMnetConfig(base="srtmnet")
+    >>> srtm.emulator_batch_size
+    4096
+    >>> srtm = sRTMnetConfig(base="vswir", emulator_batch_size=2048)
     >>> srtm.emulator_batch_size
     2048
 

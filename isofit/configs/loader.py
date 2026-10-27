@@ -241,7 +241,7 @@ def load_base_config(
     """
     Load one of the base configurations shipped with ISOFIT by name.
 
-    Base configs live in the package's ``isofit/configs/yamls/`` directory
+    Base configs live in the package's ``isofit/configs/templates/`` directory
     (:data:`ConfigsDir`). Each is a named top-level section of one of the
     ``*.yml`` files there:
 

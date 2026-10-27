@@ -2,9 +2,9 @@
 Shared base model for config sections.
 
 The section models carry no Python-side defaults; those live in the base
-configs under ``isofit/configs/yamls/``. :class:`SectionModel` lets a section be
-constructed on its own by seeding it from one of those base configs via the
-``base`` keyword, e.g. ``ImplementationConfig(base="vswir", n_cores=4)``.
+configs under ``isofit/configs/templates/``. :class:`SectionModel` lets a
+section be constructed on its own by seeding it from one of those base configs
+via the ``base`` keyword, e.g. ``ImplementationConfig(base="vswir", n_cores=4)``.
 """
 
 from typing import Any, ClassVar, Optional

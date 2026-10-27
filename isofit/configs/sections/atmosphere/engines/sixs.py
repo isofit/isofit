@@ -23,27 +23,23 @@ class SixSConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "atmosphere": {
-    ...             "engine": {
-    ...                 "name": "6s",
-    ...                 "day": 172,
-    ...                 "month": 6,
-    ...                 "elev": 0.5,
-    ...                 "alt": 705.0,
-    ...                 "solzen": 30.0,
-    ...                 "solaz": 180.0,
-    ...                 "viewzen": 0.0,
-    ...                 "viewaz": 0.0,
-    ...             }
-    ...         }
-    ...     }
-    ... })
-    >>> sixs = config.forward_model.atmosphere.engine
-    >>> sixs.name
-    'sixs'
+    The ``sixs`` base config defaults ``base_dir`` to the ISOFIT ini ``sixs``
+    path and leaves the geometry unset:
+
+    >>> from isofit.configs.sections.atmosphere.engines import SixSConfig
+    >>> sixs = SixSConfig(
+    ...     base="sixs",
+    ...     day=172,
+    ...     month=6,
+    ...     elev=0.5,
+    ...     alt=705.0,
+    ...     solzen=30.0,
+    ...     solaz=180.0,
+    ...     viewzen=0.0,
+    ...     viewaz=0.0,
+    ... )
+    >>> sixs.name, sixs.day
+    ('sixs', 172)
 
     Notes
     -----

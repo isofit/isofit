@@ -26,22 +26,32 @@ class AtmosphereConfig(SectionModel):
 
     Examples
     --------
-    >>> from isofit.configs import load_config_dict
-    >>> config = load_config_dict({
-    ...     "forward_model": {
-    ...         "atmosphere": {
-    ...             "engine": {"name": "sixs"},
-    ...             "lut_grid": {
-    ...                 "H2OSTR": [0.5, 1.0, 1.5, 2.0, 2.5],
-    ...                 "AOT550": [0.05, 0.1, 0.2, 0.3],
-    ...             },
-    ...             "statevector_names": ["H2OSTR", "AOT550"],
-    ...         }
-    ...     }
-    ... })
-    >>> atm = config.forward_model.atmosphere
-    >>> list(atm.lut_grid), atm.statevector_names
-    (['AOT550', 'H2OSTR'], ['AOT550', 'H2OSTR'])
+    The ``default`` base config uses a prebuilt LUT with an empty grid:
+
+    >>> from isofit.configs.sections.atmosphere import AtmosphereConfig
+    >>> atm = AtmosphereConfig()
+    >>> atm.engine.name, atm.lut_grid
+    ('prebuilt', {})
+
+    The ``vswir`` base config uses sRTMnet and retrieves water vapor and
+    aerosol:
+
+    >>> atm = AtmosphereConfig(base="vswir")
+    >>> atm.engine.name, list(atm.lut_grid)
+    ('srtmnet', ['AOT550', 'H2OSTR'])
+
+    Each engine profile seeds its own engine defaults:
+
+    >>> atm = AtmosphereConfig(
+    ...     base="sixs",
+    ...     lut_grid={
+    ...         "H2OSTR": [0.5, 1.0, 1.5, 2.0, 2.5],
+    ...         "AOT550": [0.05, 0.1, 0.2, 0.3],
+    ...     },
+    ...     statevector_names=["H2OSTR", "AOT550"],
+    ... )
+    >>> atm.engine.name, atm.statevector_names
+    ('sixs', ['AOT550', 'H2OSTR'])
 
     Notes
     -----
