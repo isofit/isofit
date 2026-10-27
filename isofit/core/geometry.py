@@ -37,6 +37,9 @@ class Geometry:
         bg_rfl: np.array = None,
         svf: float = 1,
         coszen: float = None,
+        cos_i_bg: float = None,
+        skyview_factor_bg: float = None,
+        slope_bg: float = None,
         full_config: configs.Config = {},
     ):
         """Initialize geometry object.
@@ -46,6 +49,9 @@ class Geometry:
             bg_rfl: Background reflectance spectrum.
             svf: Sky view factor.
             coszen: Cosine of the solar zenith angle for top of atmosphere.
+            cos_i_bg: Cosine of the local solar zenith angle averaged over adjacency range.
+            skyview_factor_bg: Skyview factor averaged over adjacency range.
+            slope_bg: Terrain slope averaged over adjacency range.
             full_config: isofit config.
         """
         # Set some benign defaults...
@@ -53,12 +59,16 @@ class Geometry:
         self.observer_azimuth = None
         self.solar_zenith = None
         self.solar_azimuth = None
+        self.slope = None
         self.observer_altitude_km = None
         self.surface_elevation_km = None
 
         self.bg_rfl = bg_rfl
         self.cos_i = None
         self.skyview_factor = svf
+        self.cos_i_bg = cos_i_bg
+        self.skyview_factor_bg = skyview_factor_bg
+        self.slope_bg = slope_bg
 
         self.max_slope = 0.0
         self.terrain_style = "flat"
@@ -72,6 +82,7 @@ class Geometry:
             self.observer_zenith = obs[2]  # 0 to 90 from zenith
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
+            self.slope = obs[6]  # 0 to 90 from horizontal plane
             self.cos_i = obs[8]  # cosine of eSZA
             # calculate relative to-sun azimuth
             delta_phi = np.abs(self.solar_azimuth - self.observer_azimuth)
@@ -159,6 +170,27 @@ class Geometry:
             self.skyview_factor = (
                 1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
             )
+
+            # Set flat assumptions for the background topography if no information is given
+            if self.cos_i_bg is None:
+                self.cos_i_bg = self.coszen
+
+            if self.skyview_factor_bg is None:
+                self.skyview_factor_bg = 1.0
+
+            # Enforce max slope for both target pixel slope and background slope
+            if self.slope_bg is None:
+                self.cos_slope_bg = 1.0
+            else:
+                self.cos_slope_bg = np.cos(
+                    np.radians(min(self.slope_bg, self.max_slope))
+                )
+
+            if self.slope is None:
+                self.cos_slope = 1.0
+            else:
+                self.cos_slope = np.cos(np.radians(min(self.slope, self.max_slope)))
+
         else:
             logging.warning(
                 "Unable to determine coszen. Proceeding without will cause errors during the inversion."
