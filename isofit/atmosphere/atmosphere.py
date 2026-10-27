@@ -176,6 +176,8 @@ class BaseAtmosphere(Reader):
 
         self.rt_mode = self.config.rt_mode or "transm"
 
+        self.aeronet_prior = full_config.implementation.aeronet_prior
+
         # Use explicitely passed first
         if not any(wl) or not any(fwhm):
             self.wavelength_file = (

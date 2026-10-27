@@ -78,8 +78,8 @@ def heuristic_atmosphere(
 
     x_new = x_atmosphere.copy()
 
-    # Update aerosol init based on elevation
-    if fm.atmosphere.aerosol_i is not None:
+    # Update aerosol init based on elevation if aeronet prior model is enabled
+    if fm.atmosphere.aerosol_i is not None and fm.atmosphere.aeronet_prior:
         xa_aerosol, _ = aeronet_model(
             elevation_km=geom.surface_elevation_km,
         )
