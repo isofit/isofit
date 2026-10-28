@@ -72,7 +72,7 @@ def interp(val: str, rel: dict, full: dict, _seen: Optional[set] = None) -> Any:
             except KeyError:
                 msg = f"Interpolation reference {match!r} not found in config"
                 Logger.error(msg)
-                # raise KeyError(msg) from None
+                raise KeyError(msg) from None
             else:
                 # Recursively evaluate the substitute if it too needs interpolation
                 if isinstance(sub, str) and "${" in sub:
