@@ -1,3 +1,4 @@
+import copy
 import json
 
 import pytest
@@ -151,6 +152,28 @@ def test_patch_errors(tmp_path):
         interpolate.load(path, section="typo")
 
 
+def test_patch_same_name_across_files(tmp_path):
+    """A section name reused in another file is not mistaken for a cycle."""
+    (tmp_path / "base.yml").write_text(
+        "default: {x: 1, y: 1}\neng: {^^: default, y: 2}\n"
+    )
+    (tmp_path / "run.yml").write_text(
+        "default: {^^: base.yml:eng, z: 3}\nmyrun: {^^: default}\n"
+    )
+    box = interpolate.load(str(tmp_path / "run.yml"), section="myrun")
+    assert box == {"x": 1, "y": 2, "z": 3}
+
+
+def test_patch_cycles_across_files(tmp_path):
+    """Real cycles are still caught, across files and via a self file:section ref."""
+    (tmp_path / "one.yml").write_text("A: {^^: two.yml:B}\n")
+    (tmp_path / "two.yml").write_text("B: {^^: one.yml:A}\n")
+    (tmp_path / "self.yml").write_text("A: {^^: self.yml:B}\nB: {^^: A}\n")
+    for name in ("one.yml", "self.yml"):
+        with pytest.raises(ValueError, match="Circular"):
+            interpolate.load(str(tmp_path / name), section="A")
+
+
 def test_override():
     box = {"a": {"b": 1, "keep": 0}, "n": None}
     interpolate.override(
@@ -205,6 +228,53 @@ def test_interpolate_errors():
         interpolate.interpolate({"a": {"b": 1}, "c": "${a.b.c}"})
     with pytest.raises(KeyError, match="not found"):
         interpolate.interpolate({"l": [1], "c": "${l[1]}"})
+
+
+def interpolate_both_orders(box):
+    """Interpolate ``box`` with its top-level keys in order and reversed."""
+    forward = interpolate.interpolate(copy.deepcopy(box))
+    backward = interpolate.interpolate(dict(reversed(copy.deepcopy(box).items())))
+    assert forward == backward
+    return forward
+
+
+@pytest.mark.parametrize(
+    "box, key, expected",
+    [
+        # Relative refs reached through an absolute ref use their own section
+        (
+            {"s": {"c": 5, "v": "${.c}"}, "t": {"c": 9, "w": "${s.v}"}},
+            "t",
+            {"c": 9, "w": 5},
+        ),
+        ({"m": "${s.l[0]}", "s": {"c": 3, "l": ["${.c}"]}}, "m", 3),
+        # References to containers are interpolated before substitution
+        ({"d": "/x", "l": ["${d}"], "m": "${l}"}, "m", ["/x"]),
+        ({"d": "/x", "s": {"a": "${d}"}, "m": "${s}"}, "m", {"a": "/x"}),
+        # The same relative key in two sections is not a cycle
+        (
+            {"t": {"v": "${.c}", "c": 1}, "s": {"a": "${.c}", "c": "${t.v}"}},
+            "s",
+            {"a": 1, "c": 1},
+        ),
+    ],
+)
+def test_interpolate_order_independent(box, key, expected):
+    assert interpolate_both_orders(box)[key] == expected
+
+
+@pytest.mark.parametrize(
+    "box",
+    [
+        {"a": "${a}"},
+        {"s": {"a": "${.b}", "b": "${.a}"}},
+        {"m": "${s}", "s": {"a": "${m}"}},
+        {"s": {"a": "${s}"}},
+    ],
+)
+def test_interpolate_cycles(box):
+    with pytest.raises(ValueError, match="Circular"):
+        interpolate.interpolate(box)
 
 
 def test_load_base_returns_dicts():

@@ -19,6 +19,7 @@ def patch(
     _seen: Optional[set] = None,
     base_dir: Optional[Path] = None,
     cache: Optional[dict] = None,
+    file: Optional[Path] = None,
 ) -> dict:
     """
     Merge one or more referenced sections into ``box`` in place.
@@ -56,6 +57,11 @@ def patch(
     cache : dict, optional
         Internal mapping of resolved file path to its loaded config, so each
         referenced file is read from disk only once per ``patch`` tree.
+    file : pathlib.Path, optional
+        Resolved path of the file ``full`` was read from. Same-file references
+        are identified by it for cycle detection, so sections that share a name
+        across files are not mistaken for one another. Defaults to ``None``,
+        which treats ``full`` as an anonymous in-memory config.
 
     Returns
     -------
@@ -77,9 +83,10 @@ def patch(
     merged = {}
     for sect in sects:
         # Resolve the reference to (its full config, the subsection copy, the
-        # base_dir for *its* own ^^ refs, and a hashable identity for cycle
-        # detection). Cross-file refs carry a supported file extension, either
-        # bare (`path.yml`) or with a `:section` suffix (`path.yml:section`).
+        # base_dir for *its* own ^^ refs, and a hashable (file, section)
+        # identity for cycle detection). Cross-file refs carry a supported file
+        # extension, either bare (`path.yml`) or with a `:section` suffix
+        # (`path.yml:section`).
         if any(ext in sect for ext in Loaders):
             ref_full, ref, ref_dir, ident = resolve_file(sect, base_dir, cache)
         else:
@@ -88,13 +95,20 @@ def patch(
             ref_full = full
             ref = copy.deepcopy(full[sect])
             ref_dir = base_dir
-            ident = (None, sect)
+            ident = (file, sect)
 
         if ident in _seen:
             raise ValueError(f"Circular ^^ reference detected for section: {sect!r}")
 
         if "^^" in ref:
-            ref = patch(ref, ref_full, _seen | {ident}, base_dir=ref_dir, cache=cache)
+            ref = patch(
+                ref,
+                ref_full,
+                _seen | {ident},
+                base_dir=ref_dir,
+                cache=cache,
+                file=ident[0],
+            )
 
         merge(merged, ref)
 

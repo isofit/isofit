@@ -181,23 +181,64 @@ def get_dotted(data: Union[dict, list], key: str) -> Any:
     >>> get_dotted(data, "a.b[-1]")
     {'c': 2}
     """
-    if not key:
+    path = locate(data, key)
+    if not path:
         return data
+
+    parent, slot = path[-1]
+    return parent[slot]
+
+
+def locate(data: Union[dict, list], key: str) -> list[tuple[Union[dict, list], Any]]:
+    """
+    Find where a dotted key lives in a nested dict/list tree.
+
+    Resolves ``key`` exactly as :func:`get_dotted` does, but returns the path
+    taken rather than the value, so callers can tell which section a value
+    belongs to and update it in place.
+
+    Parameters
+    ----------
+    data : dict or list
+        The tree to search.
+    key : str
+        Dotted key, e.g. ``"a.b[1].c"``.
+
+    Returns
+    -------
+    list of (dict or list, str or int)
+        Each ``(container, slot)`` step from ``data`` down to the value, which
+        is ``path[-1][0][path[-1][1]]``. List indices are normalised to be
+        non-negative. An empty key returns an empty path.
+
+    Raises
+    ------
+    KeyError
+        If ``key`` does not resolve to a value.
+
+    Examples
+    --------
+    >>> data = {"a": {"b": [{"c": 1}, {"c": 2}]}}
+    >>> [slot for _, slot in locate(data, "a.b[-1].c")]
+    ['a', 'b', 1, 'c']
+    """
+    if not key:
+        return []
 
     if isinstance(data, list):
         i, rest = split_index(data, key)
-        return get_dotted(data[i], rest)
+        return [(data, i % len(data))] + locate(data[i], rest)
 
     if not isinstance(data, dict):
         raise KeyError(key)
 
     if key in data:
-        return data[key]
+        return [(data, key)]
 
     for head, rest, kind in split_points(key):
         if isinstance(data.get(head), kind):
             try:
-                return get_dotted(data[head], rest)
+                return [(data, head)] + locate(data[head], rest)
             except KeyError:
                 continue
 
