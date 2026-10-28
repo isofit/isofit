@@ -4,7 +4,7 @@ Upgrades configuration dicts written for older versions of ISOFIT.
 The config models in :mod:`isofit.configs.sections` only accept the current
 schema. Configs written for older versions of ISOFIT are converted here first,
 before they are overlaid onto a base config and validated (see
-:func:`isofit.configs.loader.resolve_config_dict`). Keeping every legacy fix in
+:func:`isofit.configs.loader.load`). Keeping every legacy fix in
 this module keeps the models free of backwards-compatibility aliases.
 
 The legacy layouts handled are:

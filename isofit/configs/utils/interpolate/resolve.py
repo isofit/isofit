@@ -44,6 +44,7 @@ def interp(val: str, rel: dict, full: dict, _seen: Optional[set] = None) -> Any:
         The interpolated value; a literal (int/list/...) when it parses as one,
         otherwise the substituted string (or ``val`` unchanged if it had no refs).
     """
+    new = val
     if matches := Interp.findall(val):
         if _seen is None:
             _seen = set()
@@ -66,24 +67,29 @@ def interp(val: str, rel: dict, full: dict, _seen: Optional[set] = None) -> Any:
                 lookup = key
 
             try:
-                new = get_dotted(ref, lookup)
+                # Lookup the substitute value
+                sub = get_dotted(ref, lookup)
             except KeyError:
                 msg = f"Interpolation reference {match!r} not found in config"
                 Logger.error(msg)
-                raise KeyError(msg) from None
+                # raise KeyError(msg) from None
+            else:
+                # Recursively evaluate the substitute if it too needs interpolation
+                if isinstance(sub, str) and "${" in sub:
+                    sub = interp(sub, rel, full, _seen | {key})
 
-            if isinstance(new, str) and "${" in new:
-                new = interp(new, rel, full, _seen | {key})
+                new = new.replace(match, str(sub))
+                Logger.debug(f"Replaced {match!r} with {sub!r}")
 
-            val = val.replace(match, str(new))
-            Logger.debug(f"Replaced {match!r} with {new!r}")
         try:
-            val = ast.literal_eval(val)
+            new = ast.literal_eval(new)
         except (ValueError, SyntaxError):
             pass
-        Logger.debug(f"New value: {val!r}")
 
-    return val
+        if new is not val:
+            Logger.debug(f"New value: {new!r}")
+
+    return new
 
 
 def interpolate(

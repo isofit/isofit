@@ -24,7 +24,7 @@ for inspecting and materialising configs.
 
 The module does **no schema validation**. It only produces a dict. Validation
 is entirely the job of `Config.model_validate` (via
-`isofit.configs.loader.load_config_dict`).
+`isofit.configs.loader.create_new_config`).
 
 ## Why it matters to ISOFIT
 
@@ -36,7 +36,7 @@ and every path would have to be written out in full.
 
 The module makes that manageable:
 
-1. **One source of truth for defaults.** `isofit/configs/yamls/default.yml`
+1. **One source of truth for defaults.** `isofit/configs/templates/default.yml`
    holds a `default` section that mirrors every Pydantic field. Each RT engine
    (`modtran`, `sixs`, `srtmnet`, `libradtran`, `kernelflows`, `prebuilt`) is a
    small section that does `^^: default` and overrides only the engine block.
@@ -47,12 +47,12 @@ The module makes that manageable:
 3. **Defaults that follow user values.** Defaults like
    `lut_path: ${output.dir}/lut/lut.zarr` are interpolated *after* the user's
    config is overlaid, so changing `output.dir` moves every derived path with it.
-4. **Install paths from the ISOFIT ini.** `load_base_config` injects the
+4. **Install paths from the ISOFIT ini.** `loader.load` injects the
    `isofit.ini` environment as an `env` section, so engine paths are written as
-   `${env.sixs}`, `${env.srtmnet}/${env.srtmnet.file}`, and so on, and resolve
+   `${env.sixs}`, `${env.srtmnet}/${env.srtmnet-file}`, and so on, and resolve
    correctly on every machine.
 5. **Legacy configs get defaults automatically.** Every config loaded through
-   `load_config_dict` / `create_new_config` (including `apply_oe` output and old
+   `create_new_config` / `Config(...)` (including `apply_oe` output and old
    JSON configs) is overlaid onto the matching engine's base config, so missing
    fields get the shipped defaults.
 
@@ -130,14 +130,20 @@ for these values in configs:
 
 These replace what a wrapper type would otherwise provide.
 
-- **`get_dotted(data, key)`** looks up `"a.b.c"` in nested dicts. A literal key
-  always wins over descending, and each dot is tried as a split point from left
-  to right. That is what lets `${env.srtmnet.file}` reach the ini key
-  `srtmnet.file` even though `env` also has a plain `srtmnet` key. It raises
-  `KeyError` if nothing matches.
+- **`get_dotted(data, key)`** looks up `"a.b.c"` in nested dicts, with `[i]`
+  indexing into lists: `"a.b[1].c"`, `"a.m[0][1]"`, and negative indices such
+  as `"a.b[-1]"`. A literal key always wins over descending, and each separator
+  is tried as a split point from left to right. That is what lets
+  `${env.srtmnet.file}` reach the ini key `srtmnet.file` even though `env` also
+  has a plain `srtmnet` key. It raises `KeyError` if nothing matches, including
+  an out-of-range index or a key that descends into a scalar.
 - **`set_dotted(data, key, value)`** assigns using the same key resolution. It
-  creates missing (or `null`) intermediate sections, and raises `TypeError`
-  when an intermediate exists but is a scalar.
+  creates missing (or `null`) intermediate sections as dicts, and raises
+  `TypeError` when an intermediate exists but is the wrong container (a scalar
+  or list before `.`, anything but a list before `[i]`). Lists are never
+  created or extended, so `[i]` must be in range or `KeyError` is raised. A
+  mapping assigned onto an existing mapping is deep-merged with `merge()`;
+  anything else replaces the value. The value is deep-copied.
 - **`merge(dst, src)`** deep-merges `src` into `dst` in place, with `src`
   winning. Nested mappings are merged key by key. Lists, scalars, and an
   explicit `null` replace the value outright. Values from `src` are
@@ -251,9 +257,10 @@ relative to that file.
 
 Applies the normalised overrides one at a time with `set_dotted()`, so
 `"forward_model.instrument.SNR"` reaches into nested sections and missing
-sections are created. Each value replaces the existing one outright:
-overriding a whole section with a mapping replaces that section instead of
-merging into it, and `--key None` sets `None`.
+sections are created. Overriding a section with a mapping deep-merges into it,
+so the section's other keys are kept. Lists and scalars replace the existing
+value outright, and `--key None` sets `None`. To replace a whole section,
+clear it first: `--key None --key "{...}"`.
 
 ### `interp(val, rel, full)`: resolving one string
 
@@ -297,7 +304,7 @@ This is the shared entry for the CLI commands. `config` may be either:
 - a **path** to a `.yml`, `.yaml`, or `.json` file, which is loaded with
   `load()`, or
 - the **name of a shipped base config** (`vswir`, `sixs`, ...), which is
-  loaded with `loader.load_base_config` and gets the `env` injection.
+  loaded with `loader.load(..., interp=True)` and gets the `env` injection.
 
 An existing file always wins over a base-config name. CLI overrides are
 applied in both cases.
@@ -306,42 +313,59 @@ applied in both cases.
 
 `isofit/configs/loader.py` is the main consumer.
 
-### `load_base_config(name, overrides=None, interp=True)`
+### `list_bases()`
 
-1. Finds which `isofit/configs/yamls/*.yml` file defines section `name`
-   (`_base_config_index`, which uses `interpolate.read`).
-2. Adds `env` to the overrides: the ISOFIT ini (`isofit.data.env`) as a dict,
-   with `modtran` defaulting to `null`. This is what makes `${env.sixs}` work.
-3. Calls `interpolate.load(path, section=name, ctx=overrides, interp=interp)`.
+Indexes every top-level section of every `isofit/configs/templates/*.yml`
+file (using `interpolate.read`), mapping the base config name to its file. The
+first file in sorted order wins on duplicates. The index is cached for the
+life of the process.
+
+### `load(key, section=None, overrides=None, interp=False)`
+
+1. Resolves `key` to a file: an existing path wins, otherwise it is looked up
+   in `list_bases()`.
+2. Calls `interpolate.load(file, section=<base name>, interp=False)` to resolve
+   `^^` inheritance, then `legacy.convert` to upgrade older schemas. The result
+   is cached in `loader.Cache` under `(file, base name)`.
+3. Deep-copies the cached dict and applies `overrides` to `section`. Overrides
+   are relative to `section`, not to the full config.
+4. If `interp` is set, adds `env` (the ISOFIT ini, `isofit.data.env`) to the
+   **full** config, interpolates it, then removes `env`. This is what makes
+   `${env.sixs}` work. Interpolating the full config (rather than only
+   `section`) lets a section reference values outside itself, e.g.
+   `forward_model.atmosphere.lut_path: ${output.dir}/lut/lut.zarr`.
+5. Returns only `section`.
 
 ```python
-from isofit.configs import load_base_config, load_config_dict
+from isofit.configs.loader import load
 
-cfg = load_base_config("vswir", overrides={
+cfg = load("vswir", interp=True, overrides={
     "input.measured_radiance_file": "rdn.hdr",
     "forward_model.surface.surface_file": "surface.mat",
     "implementation.n_cores": 4,
 })
-config = load_config_dict(cfg)
 ```
 
-### `resolve_config_dict(config_dict, base_dir=None)`
+### `create_new_config(file, **kwargs)` and `SectionModel(base=...)`
 
-Every config that goes through `load_config_dict` or `create_new_config` takes
-this path:
+`create_new_config` calls `load(file, **kwargs)` and passes the result to
+`Config.model_validate`. Every `SectionModel` (including the root `Config`) has
+a `before` validator that seeds itself from a base config:
+`load(base, section=cls.section, overrides=data, interp=True)`. `base`
+defaults to `default`, or to the engine's own profile (`sixs`, `modtran`, ...)
+for engine sections. The user's values are applied as overrides **before**
+interpolation, which is why `lut_path: ${output.dir}/lut/lut.zarr` follows the
+*user's* `output.dir`.
 
-1. `legacy.convert` upgrades older schemas.
-2. Relative paths are expanded against `base_dir`.
-3. `base_config_name` chooses the engine profile (`sixs`, `modtran`, ...) from
-   `forward_model.atmosphere.engine.name`, or `default`.
-4. The base config is loaded with **`interp=False`**, the user dict is
-   deep-merged on top with `interpolate.merge`, and **only then** is `interpolate.interpolate`
-   called. This is why `lut_path: ${output.dir}/lut/lut.zarr` follows the
-   *user's* `output.dir` (see `test_defaults_interpolate_after_overlay`).
-5. The `env` section is removed, and the dict goes to `Config.model_validate`.
+```python
+from isofit.configs import Config
 
-The process is idempotent: resolving an already-resolved config returns it
-unchanged (`test_resolve_is_idempotent`).
+config = Config(
+    base="vswir",
+    forward_model={"surface": {"surface_file": "surface.mat"}},
+    implementation={"n_cores": 4},
+)
+```
 
 ## The `isofit config` CLI
 
@@ -438,8 +462,8 @@ implementation:
 - **`^^` replaces lists.** Inheriting does not concatenate lists. The child's
   list wins entirely.
 - **`env` exists only for base configs.** `${env.*}` works when the config is
-  loaded through `load_base_config` (or `isofit config` with a base-config
-  name, or via `resolve_config_dict`). A raw `interpolate.load("my.yml")` on a
+  loaded through `loader.load(..., interp=True)` (or `isofit config` with a
+  base-config name, or via `create_new_config` / `Config(...)`). A raw `interpolate.load("my.yml")` on a
   file using `${env.sixs}` raises `KeyError` unless you pass `env` yourself as
   an override.
 
@@ -483,7 +507,7 @@ the current implementation.
 ## Testing
 
 Unit tests for the package live in `isofit/test/test_interpolate.py`. They
-cover the dict helpers (including the `env.srtmnet.file` dotted-key lookup),
+cover the dict helpers (including the `env.srtmnet-file` lookup),
 `read`, `^^` precedence, cycles and errors, overrides, interpolation, and the
 `copy` CLI command.
 

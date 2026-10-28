@@ -22,7 +22,6 @@ from isofit.atmosphere.atmosphere import (
     modtran_water_upperbound_polynomials,
 )
 from isofit.configs import Config
-from isofit.configs.loader import resolve_config_dict
 from isofit.configs.sections.instrument_config import WORKING_WAVELENGTH_CAL_VARIABLES
 from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
@@ -706,14 +705,13 @@ def check_surface_model(
 
 
 def _validate_config(config: dict) -> dict:
-    """Overlay the assembled config dict onto the base config for its engine,
-    validate the merged result with Pydantic (raising early if invalid), and
-    return the merged dict for writing to disk.
+    """Validate the assembled config dict with Pydantic (raising early if
+    invalid), which fills unset fields from the base configs, and return the
+    complete config as a JSON-ready dict for writing to disk.
     """
-    merged = resolve_config_dict(config)
-    validated = Config.model_validate(merged)
+    validated = Config.model_validate(config)
     validated.get_config_errors()
-    return merged
+    return validated.model_dump(mode="json")
 
 
 def build_config(

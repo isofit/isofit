@@ -60,6 +60,7 @@ class SixSConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
+    defaults = "sixs"
 
     model_config = ConfigDict(extra="forbid")
 

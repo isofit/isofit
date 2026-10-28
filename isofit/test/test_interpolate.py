@@ -3,13 +3,13 @@ import json
 import pytest
 from click.testing import CliRunner
 
-from isofit.configs.loader import load_base_config
+from isofit.configs.loader import load
 from isofit.configs.utils import interpolate
 from isofit.configs.utils.interpolate.cli import cli
 
 # Mirrors the ini `env` section, where literal dotted keys sit next to a plain
 # key that is a prefix of them
-Env = {"srtmnet": "/p", "srtmnet.file": "f.h5", "path.mingw": "/m"}
+Env = {"srtmnet": "/p", "srtmnet-file": "f.h5", "path-mingw": "/m"}
 
 
 def test_get_dotted():
@@ -17,10 +17,21 @@ def test_get_dotted():
     assert interpolate.get_dotted(data, "a.b.c") == 1
     assert interpolate.get_dotted(data, "a.b") == {"c": 1}
     assert interpolate.get_dotted(data, "env.srtmnet") == "/p"
-    assert interpolate.get_dotted(data, "env.srtmnet.file") == "f.h5"
-    assert interpolate.get_dotted(data, "env.path.mingw") == "/m"
+    assert interpolate.get_dotted(data, "env.srtmnet-file") == "f.h5"
+    assert interpolate.get_dotted(data, "env.path-mingw") == "/m"
 
-    for key in ("a.x", "a.b.c.d", "env.srtmnet.aux"):
+    for key in ("a.x", "a.b.c.d", "env.srtmnet-aux"):
+        with pytest.raises(KeyError):
+            interpolate.get_dotted(data, key)
+
+
+def test_get_dotted_lists():
+    data = {"a": {"b": [{"c": 1}, {"c": 2}], "m": [[1, 2], [3, 4]]}, "s": "abc"}
+    assert interpolate.get_dotted(data, "a.b[1].c") == 2
+    assert interpolate.get_dotted(data, "a.b[-1]") == {"c": 2}
+    assert interpolate.get_dotted(data, "a.m[1][0]") == 3
+
+    for key in ("a.b[2]", "a.b[x]", "a.b[0]c", "a.b[0].c.d", "s[0]"):
         with pytest.raises(KeyError):
             interpolate.get_dotted(data, key)
 
@@ -30,15 +41,47 @@ def test_set_dotted():
     interpolate.set_dotted(data, "a.b", 2)
     interpolate.set_dotted(data, "x.y.z", 3)
     interpolate.set_dotted(data, "n.k", 4)
-    interpolate.set_dotted(data, "env.srtmnet.file", "g.h5")
+    interpolate.set_dotted(data, "env.srtmnet-file", "g.h5")
     assert data["a"] == {"b": 2}
     assert data["x"] == {"y": {"z": 3}}
     assert data["n"] == {"k": 4}
-    assert data["env"]["srtmnet.file"] == "g.h5"
+    assert data["env"]["srtmnet-file"] == "g.h5"
     assert data["env"]["srtmnet"] == "/p"
 
     with pytest.raises(TypeError, match="not a mapping"):
         interpolate.set_dotted(data, "a.b.c", 5)
+
+
+def test_set_dotted_merges_mappings():
+    """Mappings deep-merge into existing mappings; other values replace outright."""
+    data = {"a": {"b": {"x": 1, "y": 2}, "l": [1, 2]}}
+    value = {"b": {"y": 3, "z": {"k": 0}}, "l": [9]}
+    interpolate.set_dotted(data, "a", value)
+    assert data == {"a": {"b": {"x": 1, "y": 3, "z": {"k": 0}}, "l": [9]}}
+
+    # The value is copied, not aliased
+    value["b"]["z"]["k"] = 1
+    assert data["a"]["b"]["z"]["k"] == 0
+
+    # None and scalars still replace a mapping outright
+    interpolate.set_dotted(data, "a.b", None)
+    assert data["a"]["b"] is None
+
+
+def test_set_dotted_lists():
+    data = {"a": {"b": [{"c": 1}, None]}, "m": [[1, 2]]}
+    interpolate.set_dotted(data, "a.b[0].c", 9)
+    interpolate.set_dotted(data, "a.b[-1].k", 4)
+    interpolate.set_dotted(data, "m[0][1]", 3)
+    assert data == {"a": {"b": [{"c": 9}, {"k": 4}]}, "m": [[1, 3]]}
+
+    # Lists are never created or extended
+    with pytest.raises(KeyError):
+        interpolate.set_dotted(data, "m[1]", 0)
+    with pytest.raises(TypeError, match="not a list"):
+        interpolate.set_dotted(data, "x[0]", 0)
+    with pytest.raises(TypeError, match="not a mapping"):
+        interpolate.set_dotted(data, "m.k", 0)
 
 
 def test_merge():
@@ -122,6 +165,9 @@ def test_override():
     interpolate.override(box, {"a.b": "500"})
     assert box["a"]["b"] == "500"
 
+    interpolate.override(box, ["--a.none", "[[1, 2]]", "--a.none[0][1]", "3"])
+    assert box["a"]["none"] == [[1, 3]]
+
 
 def test_interpolate():
     box = {
@@ -133,7 +179,7 @@ def test_interpolate():
             "int": "${n}0",
             "rel": "${.c}",
             "c": 7,
-            "env": "${env.srtmnet}/${env.srtmnet.file}",
+            "env": "${env.srtmnet}/${env.srtmnet-file}",
             "lst": ["${dir}", "${n}", {"c": 1, "rel": "${.c}"}],
         },
         "chain": "${s.abs}/y",
@@ -155,12 +201,16 @@ def test_interpolate_errors():
         interpolate.interpolate({"a": "${b}", "b": "${a}"})
     with pytest.raises(KeyError, match="not found"):
         interpolate.interpolate({"a": "${nope}"})
+    with pytest.raises(KeyError, match="not found"):
+        interpolate.interpolate({"a": {"b": 1}, "c": "${a.b.c}"})
+    with pytest.raises(KeyError, match="not found"):
+        interpolate.interpolate({"l": [1], "c": "${l[1]}"})
 
 
-def test_load_base_config_returns_dicts():
+def test_load_base_returns_dicts():
     """The resolved tree is plain dicts/lists and does not mutate overrides."""
     overrides = {"output.dir": "/x"}
-    cfg = load_base_config("vswir", overrides=overrides)
+    cfg = load("vswir", overrides=overrides, interp=True)
     assert overrides == {"output.dir": "/x"}
     assert cfg["forward_model"]["atmosphere"]["lut_path"] == "/x/lut/lut.zarr"
 

@@ -55,6 +55,7 @@ class ModtranConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
+    defaults = "modtran"
 
     model_config = ConfigDict(extra="forbid")
 

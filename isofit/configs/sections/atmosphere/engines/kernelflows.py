@@ -50,6 +50,7 @@ class KernelFlowsConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
+    defaults = "kernelflows"
 
     model_config = ConfigDict(extra="forbid")
 

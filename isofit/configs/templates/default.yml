@@ -11,7 +11,7 @@
 # `${...}` references below.
 #
 # Engine install paths default to the ISOFIT ini via `${env.<key>}`; the `env`
-# section is injected by isofit.configs.loader.load_base_config.
+# section is injected by isofit.configs.loader.load.
 
 default:
   input:
@@ -200,8 +200,8 @@ srtmnet:
         base_dir: ${env.srtmnet}
         sixs_dir: ${env.sixs}
         emulator_batch_size: 4096
-        emulator_file: ${env.srtmnet}/${env.srtmnet.file}
-        emulator_aux_file: ${env.srtmnet}/${env.srtmnet.aux}
+        emulator_file: ${env.srtmnet}/${env.srtmnet-file}
+        emulator_aux_file: ${env.srtmnet}/${env.srtmnet-aux}
         template_file: null
 
 libradtran:
@@ -210,7 +210,7 @@ libradtran:
     atmosphere:
       engine:
         name: libradtran
-        base_dir: ${env.libradtran}/${env.libradtran.version}
+        base_dir: ${env.libradtran}/${env.libradtran-version}
         reptran_band_model: coarse
         # Required by LibRadTranConfig (no model default); set per run.
         kb_alpha_1: null
