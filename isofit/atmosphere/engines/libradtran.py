@@ -88,7 +88,7 @@ class LibRadTranRT(BaseAtmosphere, Writer):
                 f"Using self.config.engine.base_dir for libRadtran path: {self.libradtran}"
             )
         else:
-            self.libradtran = env.path("libradtran", key="libradtran.version")
+            self.libradtran = env.path("libradtran", key="libradtran-version")
             if not self.libradtran.exists():
                 self.libradtran = Path(
                     getenv("LIBRADTRAN_DIR", "<LIBRADTRAN_DIR NOT SET>")

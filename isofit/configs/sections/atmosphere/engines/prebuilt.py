@@ -46,6 +46,7 @@ class PrebuiltConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
+    defaults = "prebuilt"
 
     model_config = ConfigDict(extra="forbid")
 

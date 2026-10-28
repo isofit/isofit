@@ -55,6 +55,7 @@ class LibRadTranConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
+    defaults = "libradtran"
 
     model_config = ConfigDict(extra="forbid")
 

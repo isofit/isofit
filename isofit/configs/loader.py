@@ -1,328 +1,229 @@
 """
-Configuration loader utilities for pyconf.
+Configuration loader utilities.
 
-This module provides functions to load and validate ISOFIT configuration files
-from disk (YAML/JSON) or from Python dictionaries. It handles path expansion
-relative to the configuration file directory and provides backward compatibility
-with legacy configuration loading functions.
+Configs are loaded either from a file on disk or from one of the base configs
+shipped under ``isofit/configs/templates/``. Base configs are referenced by the
+name of a top-level section in one of those files (e.g. ``"default"``,
+``"vswir"``, ``"modtran"``); see :func:`list_bases` for the full index.
+
+Loading resolves ``^^`` inheritance via :mod:`isofit.configs.utils.interpolate`,
+upgrades the result from any legacy schema via :func:`isofit.configs.legacy.convert`,
+then applies overrides and optionally ``${...}`` interpolation. The ISOFIT
+environment (:data:`isofit.data.env`) is exposed under the ``env`` key during
+interpolation so configs may reference e.g. ``${env.srtmnet}``.
 """
 
+import copy
+import functools
 import logging
-import os
 from pathlib import Path
-from typing import Union
-
-import yaml
+from typing import Optional, Union
 
 from isofit.configs import legacy
 from isofit.configs.config import Config
-from isofit.configs.sections.atmosphere.engines import selectByName
 from isofit.configs.utils import interpolate
-from isofit.core import common
 from isofit.data import env
 
 Logger = logging.getLogger(__name__)
+Cache: dict[tuple[Union[str, Path], Optional[str]], dict] = {}
 ConfigsDir = Path(__file__).resolve().parent / "templates"
 
 
-def create_new_config(config_file: Union[str, Path]) -> Config:
+@functools.cache
+def list_bases() -> dict[str, Path]:
     """
-    Load a config file from disk and create a validated Config object.
+    Index the base configs available in :data:`ConfigsDir`.
 
-    This function provides backward compatibility with the legacy
-    configs.create_new_config() function. It reads a YAML or JSON configuration
-    file, expands all relative paths to be relative to the config file's directory,
-    and validates the configuration using Pydantic.
+    Every top-level section of every template file is a base config. Files are
+    scanned in sorted order, so if two files define the same section the first
+    one found wins. The index is computed once and cached; the returned dict is
+    shared, so do not mutate it.
+
+    Returns
+    -------
+    dict[str, pathlib.Path]
+        Mapping of base config name to the template file that defines it.
+
+    Examples
+    --------
+    >>> from isofit.configs.loader import list_bases
+    >>> index = list_bases()
+    >>> index["vswir"].name
+    'vswir.yml'
+    """
+    index = {}
+    files = (p for p in ConfigsDir.glob("*") if p.suffix in {".yaml", ".yml", ".json"})
+    for path in sorted(files):
+        for section in interpolate.read(path).keys():
+            index.setdefault(section, path)
+
+    return index
+
+
+def load(
+    key: Union[str, Path],
+    section: Optional[str] = None,
+    overrides: Optional[dict] = None,
+    interp: bool = False,
+) -> dict:
+    """
+    Load a config dict from a file or a named base config.
+
+    The file (or, for a base config, its section) is read with
+    :func:`isofit.configs.utils.interpolate.load` (resolving ``^^`` inheritance,
+    without interpolation) and upgraded from any legacy schema via
+    :func:`isofit.configs.legacy.convert`; for base configs that result is
+    stored in :data:`Cache` under ``(file, base name)``, while files given by
+    path are re-read on every call. A copy of it then has
+    ``overrides`` applied to ``section``, and if ``interp`` is set its
+    ``${...}`` references are resolved against the full config, so a section
+    may reference values outside itself (e.g. ``${output.dir}`` from within
+    ``forward_model``). During interpolation the ISOFIT environment is
+    temporarily exposed under ``env`` so configs may reference e.g.
+    ``${env.srtmnet}``. Only ``section`` is returned.
 
     Parameters
     ----------
-    config_file : str or Path
-        Path to config file. Must be in JSON or YAML format. Can be absolute
-        or relative to the current working directory.
+    key : str or pathlib.Path
+        Either a path to a config file (.yml, .yaml, or .json) or the name of a
+        base config (see :func:`list_bases`). An existing file takes precedence
+        over a base config of the same name.
+    section : str, optional
+        Dotted path of the subsection to return, e.g. ``"forward_model.surface"``
+        (see :func:`isofit.configs.utils.interpolate.get_dotted`). ``None`` or
+        ``""`` returns the full config.
+    overrides : dict, optional
+        Dotted-key overrides, ``{"dotted.key": value}``, relative to ``section``
+        rather than the full config. A mapping is deep-merged into an existing
+        mapping; any other value replaces the existing one outright (see
+        :func:`isofit.configs.utils.interpolate.override`).
+    interp : bool, default=False
+        Resolve ``${...}`` references before returning.
+
+    Returns
+    -------
+    dict
+        The loaded config, or its ``section``, in the current schema.
+
+    Raises
+    ------
+    ValueError
+        If ``key`` is neither an existing file nor a known base config.
+    KeyError
+        If ``section`` is not in the loaded config, or a ``${...}`` reference
+        cannot be resolved.
+
+    Examples
+    --------
+    >>> from isofit.configs.loader import load
+    >>> config = load("vswir", interp=True)
+    >>> impl = load("vswir", section="implementation", overrides={"n_cores": 4})
+    >>> impl["n_cores"]
+    4
+    """
+    if Path(key).is_file():
+        file = key
+        key = None
+    elif key in (index := list_bases()):
+        file = index[key]
+    else:
+        valid = ", ".join(index)
+        msg = f"Unknown base config {key!r}. Available base configs: {valid}"
+        Logger.error(msg)
+        raise ValueError(msg)
+
+    if (file, key) in Cache:
+        data = copy.deepcopy(Cache[(file, key)])
+    else:
+        # Loading by section is what resolves that section's `^^` inheritance
+        data = interpolate.load(file, section=key, interp=False)
+        data = legacy.convert(data)
+
+        # Only the templates are cached; user files may be rewritten
+        if key:
+            Cache[(file, key)] = copy.deepcopy(data)
+
+    # Overrides are relative to the section
+    sub = interpolate.get_dotted(data, section)
+    interpolate.override(sub, overrides)
+
+    # Interpolations are against the full config
+    if interp:
+        # Temporarily add the ini env for easy interpolation
+        data["env"] = {"modtran": None, **dict(env.items())}
+        interpolate.interpolate(data)
+        data.pop("env", None)
+
+    return sub
+
+
+def create_new_config(file: Union[str, Path], **kwargs) -> Config:
+    """
+    Load a config and validate it into a :class:`~isofit.configs.Config`.
+
+    Legacy loading function, to be deprecated in the config refactor part 2.
+
+    When ``file`` is a path, relative paths in the config (values of keys
+    containing ``file``, ``directory``, or ``path``) are expanded against the
+    config file's directory, not the current working directory. Values that
+    are ``${...}`` references are left for interpolation.
+
+    Parameters
+    ----------
+    file : str or pathlib.Path
+        Path to a config file or the name of a base config; see :func:`load`.
+    **kwargs
+        Passed through to :func:`load` (``section``, ``overrides``, ``interp``).
 
     Returns
     -------
     Config
-        Validated Config object with all paths expanded and all fields validated.
+        The validated config.
 
     Raises
     ------
-    IOError
-        If config file cannot be read or has invalid format (not JSON/YAML).
-    ValidationError
-        If config validation fails due to missing required fields, invalid
-        values, or constraint violations.
+    ValueError
+        If ``file`` is neither an existing file nor a known base config.
+    pydantic.ValidationError
+        If the loaded config fails validation.
 
     Examples
     --------
     >>> from isofit.configs import create_new_config
     >>> config = create_new_config("config.yaml")
-    >>> config.get_config_errors()
-
-    Notes
-    -----
-    All relative file paths in the configuration are expanded relative to the
-    directory containing the config file, not the current working directory.
-    This ensures consistent behavior regardless of where the script is run from.
     """
-    config_file = str(config_file)
-    Logger.info(f"Loading config file: {config_file}")
+    data = load(file, **kwargs)
 
-    try:
-        with open(config_file, "r") as f:
-            config_dict = yaml.safe_load(f)
-    except Exception as e:
-        raise IOError(
-            f"Unexpected configuration file type, only json and yaml supported:\n {e}"
-        )
+    if Path(file).is_file():
+        expand_paths(data, Path(file).resolve().parent)
 
-    # Expand paths relative to config file directory
-    configdir, _ = os.path.split(os.path.abspath(config_file))
-
-    return load_config_dict(config_dict, base_dir=configdir)
+    return Config.model_validate(data)
 
 
-def base_config_name(config_dict: dict) -> str:
+def expand_paths(data: Union[dict, list], root: Path) -> None:
     """
-    Select the base config whose defaults underlie a config dict.
+    Expand relative paths in a config tree against ``root``, in place.
 
-    This is the engine profile in ``default.yml`` matching the atmosphere engine,
-    or ``default`` if the config doesn't name one.
+    Applies to string values of keys containing ``file``, ``directory``, or
+    ``path``. Absolute paths and values starting with a ``${...}`` reference
+    are left unchanged.
 
     Parameters
     ----------
-    config_dict : dict
-        A config dict in the current (non-legacy) schema.
-
-    Returns
-    -------
-    str
-        A name accepted by :func:`load_base_config`.
+    data : dict or list
+        The config node to expand; mutated in place.
+    root : pathlib.Path
+        Directory relative paths are expanded against.
     """
-    forward_model = config_dict.get("forward_model") or {}
-    engine = (forward_model.get("atmosphere") or {}).get("engine")
-
-    if isinstance(engine, dict):
-        name = selectByName(engine)
-        if name in available_base_configs():
-            return name
-
-    return "default"
-
-
-def resolve_config_dict(config_dict: dict, base_dir: str | None = None) -> dict:
-    """
-    Resolve a user config dict into a complete config dict.
-
-    The config is upgraded from any legacy format (see
-    :mod:`isofit.configs.legacy`), then overlaid onto the base config for its
-    engine (see :func:`base_config_name`) so every field not set by the user
-    takes the shipped default. ``${...}`` references are interpolated after the
-    overlay, so defaults such as ``${output.dir}/lut/lut.zarr`` follow the
-    user's values.
-
-    Parameters
-    ----------
-    config_dict : dict
-        User configuration dictionary. Not mutated.
-    base_dir : str, optional
-        Base directory for expanding relative file paths in ``config_dict``.
-        If None, paths are not expanded. By default None.
-
-    Returns
-    -------
-    dict
-        The complete, interpolated config, ready for ``Config.model_validate``.
-    """
-    config_dict = legacy.convert(config_dict)
-
-    if base_dir:
-        config_dict = common.expand_all_paths(config_dict, base_dir)
-
-    name = base_config_name(config_dict)
-    Logger.debug(f"Overlaying config onto base config {name!r}")
-
-    box = load_base_config(name, interp=False)
-    interpolate.merge(box, config_dict)
-    interpolate.interpolate(box)
-    box.pop("env", None)
-
-    return box
-
-
-def load_config_dict(config_dict: dict, base_dir: str | None = None) -> Config:
-    """
-    Load a config from a dictionary.
-
-    Creates a validated Config object from a Python dictionary, optionally
-    expanding relative paths relative to a specified base directory. Fields
-    not set in the dictionary take the defaults of the matching base config;
-    see :func:`resolve_config_dict`.
-
-    Parameters
-    ----------
-    config_dict : dict
-        Configuration dictionary with structure matching Config model schema.
-        Should contain keys like 'input', 'output', 'forward_model', and
-        'implementation'. Legacy formats are accepted.
-    base_dir : str, optional
-        Base directory for expanding relative file paths in the configuration.
-        If None, paths are not expanded and must be absolute. By default None.
-
-    Returns
-    -------
-    Config
-        Validated Config object.
-
-    Raises
-    ------
-    ValidationError
-        If config_dict does not match the expected schema or contains invalid values.
-
-    Examples
-    --------
-    >>> from isofit.configs import load_config_dict
-    >>> config_dict = {
-    ...     "output": {"estimated_reflectance_file": "output/rfl.hdr"},
-    ... }
-    >>> config = load_config_dict(config_dict, base_dir="/path/to/project")
-    >>> config.output.estimated_reflectance_file
-    PosixPath('/path/to/project/output/rfl.hdr')
-
-    Notes
-    -----
-    This function is useful for programmatically constructing configurations
-    or for testing purposes. For loading from files, use create_new_config() instead.
-    """
-    return Config.model_validate(resolve_config_dict(config_dict, base_dir))
-
-
-def _base_config_index() -> dict[str, Path]:
-    """
-    Map each base-config name to the file that defines it.
-
-    Every base config shipped with ISOFIT is a top-level section of one of the
-    ``*.yml`` files in :data:`ConfigsDir`. A single file may define several
-    sections (``default.yml`` holds ``default`` plus the per-engine profiles),
-    and a section name need not match its filename (``aquatic_glint.yml`` defines
-    the ``glint`` section).
-
-    Returns
-    -------
-    dict[str, pathlib.Path]
-        Mapping of section name to the config file that defines it. If the same
-        section name appears in more than one file, the alphabetically-first file
-        wins (deterministic).
-    """
-    index: dict[str, Path] = {}
-    for path in sorted(ConfigsDir.glob("*.yml")):
-        for section in interpolate.read(path).keys():
-            index.setdefault(section, path)
-    return index
-
-
-def available_base_configs() -> list[str]:
-    """
-    List the names accepted by :func:`load_base_config`.
-
-    Returns
-    -------
-    list of str
-        Sorted names of every base config shipped with ISOFIT: the sections of
-        ``default.yml`` (``default``, ``modtran``, ``sixs``, ...) and of the
-        use-case files (``vswir``, ``thermal``, ``glint``, ...).
-    """
-    return sorted(_base_config_index())
-
-
-def load_base_config(
-    name: str, overrides: dict | None = None, interp: bool = True
-) -> dict:
-    """
-    Load one of the base configurations shipped with ISOFIT by name.
-
-    Base configs live in the package's ``isofit/configs/templates/`` directory
-    (:data:`ConfigsDir`). Each is a named top-level section of one of the
-    ``*.yml`` files there:
-
-    - the defaults and per-engine profiles in ``default.yml`` (``"default"``,
-      ``"prebuilt"``, ``"modtran"``, ``"sixs"``, ``"srtmnet"``, ``"libradtran"``,
-      ``"kernelflows"``); and
-    - the use cases (``"vswir"``, ``"thermal"``, ``"simulation"``, ``"glint"``,
-      ``"mcmc"``).
-
-    The config is fully resolved: ``^^`` cross-file inheritance is folded in and
-    ``${...}`` references are interpolated (see
-    :mod:`isofit.configs.utils.interpolate`).
-
-    These configs are templates: they intentionally leave scene-specific inputs
-    (radiance/obs/loc files, instrument noise, ...) unset, so the returned config
-    is not guaranteed to pass :meth:`Config.get_config_errors`. Supply those
-    values with ``overrides`` (or by mutating the returned dict) before validating
-    or running.
-
-    To build a single validated section from a base config, pass ``base`` to
-    the section model instead, e.g. ``ImplementationConfig(base="vswir")``.
-
-    Parameters
-    ----------
-    name : str
-        Base config to load, e.g. ``"default"``, ``"sixs"``, or ``"vswir"``.
-    overrides : dict, optional
-        Mapping of dotted keys to values, applied after inheritance is resolved
-        but before interpolation, so overridden values are visible to ``${...}``
-        references. Keys are dotted paths to nested fields
-        (``{"implementation.n_cores": 4}``) and values are used as-is, so pass
-        already-typed Python objects (``"forward_model.instrument.SNR": 500``,
-        not ``"500"``).
-    interp : bool, default=True
-        Interpolate ``${...}`` references before returning. Disable to overlay
-        further values first (as :func:`resolve_config_dict` does); the
-        injected ``env`` section is kept so references remain resolvable.
-
-    Returns
-    -------
-    dict
-        The resolved, interpolated configuration.
-
-    Raises
-    ------
-    ValueError
-        If ``name`` is not a known base config. The error lists the valid names.
-
-    Examples
-    --------
-    >>> from isofit.configs import load_base_config, load_config_dict
-    >>> cfg = load_base_config("vswir")
-    >>> cfg["forward_model"]["atmosphere"]["engine"]["name"]
-    'srtmnet'
-    >>> # Overlay scene inputs via overrides, then validate/build a Config
-    >>> cfg = load_base_config(
-    ...     "vswir",
-    ...     overrides={
-    ...         "forward_model.surface.surface_file": "surface.mat",
-    ...         "implementation.n_cores": 4,
-    ...     },
-    ... )
-    >>> config = load_config_dict(cfg)
-
-    See Also
-    --------
-    available_base_configs : List the valid names.
-    load_config_dict : Validate a (possibly overlaid) config dict into a Config.
-    """
-    index = _base_config_index()
-    if name not in index:
-        valid = ", ".join(sorted(index))
-        raise ValueError(
-            f"Unknown base config {name!r}. Available base configs: {valid}"
-        )
-
-    path = index[name]
-    Logger.info(f"Loading base config section {name!r} from {path}")
-
-    # Insert the ISOFIT ini environment to make interpolation easy. Copied so
-    # the caller's overrides dict is not mutated
-    overrides = {**(overrides or {}), "env": {"modtran": None, **dict(env.items())}}
-
-    return interpolate.load(str(path), section=name, ctx=overrides, interp=interp)
+    items = enumerate(data) if isinstance(data, list) else data.items()
+    for key, val in items:
+        if isinstance(val, (dict, list)):
+            expand_paths(val, root)
+        elif (
+            isinstance(key, str)
+            and isinstance(val, str)
+            and any(tag in key for tag in ("file", "directory", "path"))
+            and not val.startswith("${")
+            and not Path(val).is_absolute()
+        ):
+            data[key] = str(root / val)

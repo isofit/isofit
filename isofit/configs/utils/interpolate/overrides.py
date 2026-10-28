@@ -118,8 +118,9 @@ def override(box: dict, ctx: Union[click.Context, list[str], dict, None]) -> dic
     (see :func:`~.common.set_dotted`), so ``"forward_model.instrument.SNR"``
     resolves into nested sections, creating any that are missing.
 
-    Each value replaces the existing one outright: overriding a section with a
-    mapping replaces the whole section rather than merging into it.
+    A mapping overriding an existing section is deep-merged into it, keeping
+    the section's other keys; any other value, including lists and ``None``,
+    replaces the existing one outright.
 
     Parameters
     ----------

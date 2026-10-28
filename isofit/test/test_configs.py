@@ -6,8 +6,7 @@ import pytest
 from pydantic import ValidationError
 from scipy.io import savemat
 
-from isofit.configs import Config, create_new_config, legacy, load_config_dict
-from isofit.configs.loader import base_config_name, resolve_config_dict
+from isofit.configs import Config, create_new_config, legacy
 from isofit.configs.sections.atmosphere import AtmosphereConfig
 from isofit.configs.sections.atmosphere.engines.srtmnet import sRTMnetConfig
 from isofit.configs.sections.implementation import ImplementationConfig
@@ -45,6 +44,16 @@ def legacy_config(engine: dict) -> dict:
         },
         "implementation": {"inversion": {"windows": [[400.0, 1000.0]]}},
     }
+
+
+def validate(data: dict) -> Config:
+    """Upgrade a (possibly legacy) config dict and validate it."""
+    return Config.model_validate(legacy.convert(data))
+
+
+def resolve(data: dict) -> dict:
+    """Validate a config dict and dump the complete result, as apply_oe writes it."""
+    return validate(data).model_dump(mode="json")
 
 
 def test_legacy_radiative_transfer():
@@ -132,7 +141,7 @@ def test_legacy_prefers_current_key():
 
 def test_legacy_current_schema_unchanged():
     """Configs already in the current schema pass through untouched."""
-    config = resolve_config_dict(legacy_config({"engine_name": "6s"}))
+    config = resolve(legacy_config({"engine_name": "6s"}))
     assert legacy.convert(config) == config
 
 
@@ -143,27 +152,12 @@ def test_legacy_does_not_mutate_input():
     assert json.dumps(data, sort_keys=True) == snapshot
 
 
-@pytest.mark.parametrize(
-    "engine, expected",
-    [
-        ({"name": "sixs"}, "sixs"),
-        ({"name": "6S"}, "sixs"),
-        ({"name": "sRTMnet"}, "srtmnet"),
-        ({"name": "not-an-engine"}, "default"),
-        (None, "default"),
-    ],
-)
-def test_base_config_name(engine, expected):
-    config = {"forward_model": {"atmosphere": {"engine": engine}}}
-    assert base_config_name(config) == expected
-
-
 def test_legacy_config_loads():
     """
     A sparse legacy config validates: defaults come from the base config, and the
     legacy radiative_transfer section is converted rather than dropped.
     """
-    config = load_config_dict(
+    config = validate(
         legacy_config({"engine_name": "6s", "engine_base_dir": env.sixs, "day": 26})
     )
 
@@ -175,7 +169,7 @@ def test_legacy_config_loads():
     assert atmosphere.lut_grid == {"H2OSTR": [0.5, 1.0, 2.0]}
     assert atmosphere.unknowns.root == {"H2O_ABSCO": 0.01}
 
-    # Defaults from isofit/configs/yamls/default.yml
+    # Defaults from isofit/configs/templates/default.yml
     assert config.implementation.mode == "inversion"
     assert config.implementation.inversion.least_squares_params.method == "trf"
     assert config.forward_model.surface.selection_metric == "Euclidean"
@@ -193,25 +187,25 @@ def test_invalid_lut_grid(lut_grid, match):
     data = legacy_config({"engine_name": "6s"})
     data["forward_model"]["radiative_transfer"]["lut_grid"] = lut_grid
     with pytest.raises(ValidationError, match=match):
-        load_config_dict(data)
+        validate(data)
 
 
 def test_invalid_interpolator_style():
     data = legacy_config({"engine_name": "6s", "interpolator_style": "nds-3"})
     with pytest.raises(ValidationError, match="interpolator_style"):
-        load_config_dict(data)
+        validate(data)
 
 
 def test_windows_required_outside_simulation():
     data = legacy_config({"engine_name": "6s"})
     data["implementation"]["inversion"]["windows"] = []
     with pytest.raises(ValidationError, match="inversion.windows"):
-        load_config_dict(data)
+        validate(data)
 
 
 def test_surface_file_required():
     """Without Surfaces, surface_file must be set (checked by get_config_errors)."""
-    config = load_config_dict(legacy_config({"engine_name": "6s"}))
+    config = validate(legacy_config({"engine_name": "6s"}))
     errors, _ = config.forward_model.surface.get_config_issues()
     assert any("surface_file not specified" in e for e in errors)
     with pytest.raises(AttributeError):
@@ -247,7 +241,7 @@ def test_surface_statevector_mismatch_warns(tmp_path):
             }
         },
     }
-    config = load_config_dict(data)
+    config = validate(data)
 
     errors, warnings = config.forward_model.surface.get_config_issues()
     assert errors == []
@@ -308,7 +302,7 @@ def test_multi_surface_statevector_mismatch_warns(tmp_path):
             },
         },
     }
-    config = load_config_dict(data)
+    config = validate(data)
 
     errors, warnings = config.forward_model.surface.get_config_issues()
     assert errors == []
@@ -337,7 +331,7 @@ def test_unset_statevector_values_match_nan(tmp_path):
         "surface_file": str(mat),
         "statevector": {"SURF_TEMP_K": {"bounds": [250.0, 400.0]}},
     }
-    config = load_config_dict(data)
+    config = validate(data)
 
     assert config.forward_model.surface.get_config_issues() == ([], [])
 
@@ -368,7 +362,7 @@ def test_sub_surface_validation(sub_surface, match):
     data = legacy_config({"engine_name": "6s"})
     data["forward_model"]["surface"] = {"Surfaces": {"bad": sub_surface}}
     with pytest.raises(ValidationError, match=match):
-        load_config_dict(data)
+        validate(data)
 
 
 def test_update_from_subconfig():
@@ -384,7 +378,7 @@ def test_update_from_subconfig():
             }
         },
     }
-    surface = load_config_dict(data).forward_model.surface
+    surface = validate(data).forward_model.surface
     surface.update_from_subconfig(surface.Surfaces["glint_model_surface"])
 
     assert surface.surface_category == "glint_model_surface"
@@ -411,7 +405,7 @@ def test_update_config_for_surface_rt_statevector_elements():
             }
         },
     }
-    config = load_config_dict(data)
+    config = validate(data)
     config.forward_model.atmosphere.statevector_names = ["H2OSTR"]
     for _ in range(2):
         config = update_config_for_surface(config, "glint_model_surface")
@@ -424,7 +418,7 @@ def test_update_config_for_surface_rt_statevector_elements():
 
 def test_defaults_interpolate_after_overlay():
     """Base-config references (e.g. ${output.dir}) resolve against user values."""
-    config = load_config_dict(legacy_config({"engine_name": "6s"}))
+    config = validate(legacy_config({"engine_name": "6s"}))
     assert config.forward_model.atmosphere.lut_path == Path(
         "/tmp/isofit-test-output/lut/lut.zarr"
     )
@@ -432,16 +426,17 @@ def test_defaults_interpolate_after_overlay():
 
 def test_resolve_is_idempotent():
     """Resolving an already-resolved config (e.g. apply_oe output) is a no-op."""
-    once = resolve_config_dict(legacy_config({"engine_name": "6s"}))
+    once = resolve(legacy_config({"engine_name": "6s"}))
     assert "radiative_transfer" not in once["forward_model"]
     assert "env" not in once
-    assert resolve_config_dict(once) == once
+    assert resolve(once) == once
 
 
 def test_resolve_does_not_mutate_input():
-    data = legacy_config({"engine_name": "6s"})
+    data = legacy.convert(legacy_config({"engine_name": "6s"}))
+    data["output"]["estimated_state_file"] = "${output.dir}/state"
     snapshot = json.dumps(data, sort_keys=True)
-    resolve_config_dict(data, base_dir="/tmp")
+    Config.model_validate(data)
     assert json.dumps(data, sort_keys=True) == snapshot
 
 
@@ -504,20 +499,20 @@ def test_instrument_spline_statevector():
         "FWHMSPL_1": element,
     }
 
-    statevector = load_config_dict(data).forward_model.instrument.statevector
+    statevector = validate(data).forward_model.instrument.statevector
     assert statevector.get_element_names() == ["FWHMSPL_1", "GROW_FWHM", "WLSPL_3"]
     assert statevector.WLSPL_3.bounds == [-5.0, 5.0]
 
     data["forward_model"]["instrument"]["statevector"]["WLSPL_3"] = {"bounds": "x"}
     with pytest.raises(ValidationError, match="WLSPL_3"):
-        load_config_dict(data)
+        validate(data)
 
 
 def test_atmosphere_wavelength_file_survives_resolve():
     """An atmosphere-level edit to a resolved config (as wavelength_cal makes) is kept."""
-    once = resolve_config_dict(legacy_config({"engine_name": "6s"}))
+    once = resolve(legacy_config({"engine_name": "6s"}))
     once["forward_model"]["atmosphere"]["wavelength_file"] = Wavelengths
-    config = load_config_dict(once)
+    config = validate(once)
     assert config.forward_model.atmosphere.wavelength_file == Path(Wavelengths)
 
 
@@ -544,8 +539,7 @@ def test_make_atmosphere_config_emulators(tmp_path, monkeypatch, emulator, engin
         sixs_path=str(tmp_path),
         h2o_lut_grid=np.array([0.5, 1.0]),
     )
-    config = resolve_config_dict({"forward_model": {"atmosphere": atmosphere}})
-    validated = AtmosphereConfig.model_validate(config["forward_model"]["atmosphere"])
+    validated = AtmosphereConfig.model_validate(atmosphere)
     assert validated.engine.name == engine
 
 

@@ -61,6 +61,7 @@ class sRTMnetConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
+    defaults = "srtmnet"
 
     model_config = ConfigDict(extra="forbid")
 

@@ -29,7 +29,7 @@ def load_cli(
 
     The CLI commands accept either the name of a base config shipped with ISOFIT
     (e.g. ``vswir``, ``sixs`` — see
-    :func:`isofit.configs.loader.available_base_configs`) or a path to a config
+    :func:`isofit.configs.loader.list_bases`) or a path to a config
     file. An explicit, existing file path always wins; otherwise the argument is
     treated as a base-config name. In both cases CLI ``--dotted.key value``
     overrides carried on ``ctx`` are applied.
@@ -49,10 +49,10 @@ def load_cli(
     dict
         The resolved, interpolated configuration.
     """
-    from isofit.configs.loader import available_base_configs, load_base_config
+    from isofit.configs import loader
 
-    if not Path(config).is_file() and config in available_base_configs():
-        return load_base_config(config, overrides=parse_overrides(ctx))
+    if not Path(config).is_file() and config in loader.list_bases():
+        return loader.load(config, overrides=parse_overrides(ctx), interp=True)
 
     return load(config, section=section, ctx=ctx)
 
@@ -109,10 +109,10 @@ def preview(ctx: click.Context, noflow=False, validate=False, **kwargs: Any) -> 
     Logger.info(yml)
 
     if validate:
-        from isofit.configs import load_config_dict
+        from isofit.configs import Config
 
         try:
-            load_config_dict(box)
+            Config.model_validate(box)
         except Exception as e:
             Logger.error(
                 f"The above configuration encountered the following errors:\n{e}"
@@ -164,10 +164,10 @@ def validate(ctx: click.Context, **kwargs: Any) -> None:
         "Validating the config. If there are no errors, nothing will be printed."
     )
 
-    from isofit.configs import load_config_dict
+    from isofit.configs import Config
 
     try:
-        load_config_dict(box)
+        Config.model_validate(box)
     except Exception as e:
         Logger.error(f"The above configuration encountered the following errors:\n{e}")
     else:
@@ -179,8 +179,8 @@ def list_sections():
     """
     Lists the available base configs
     """
-    from isofit.configs.loader import available_base_configs
+    from isofit.configs.loader import list_bases
 
-    items = "\n- ".join(available_base_configs())
+    items = "\n- ".join(sorted(list_bases()))
 
     Logger.info(f"Available base configs:\n- {items}")
