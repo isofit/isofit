@@ -61,7 +61,7 @@ def load(
 
     if "^^" in box:
         path = Path(config).resolve()
-        box = patch(box, full, base_dir=path.parent, cache={path: full})
+        box = patch(box, full, base_dir=path.parent, cache={path: full}, file=path)
 
     if ctx:
         box = override(box, ctx)

@@ -91,7 +91,7 @@ by `interpolate.load(...)`, `interpolate.read(...)`, etc. works unchanged.
 
 | Module | Contents | Stage |
 |---|---|---|
-| `common.py` | `Loaders`, `read()`, `get_dotted()`, `set_dotted()`, `merge()` | Shared by every stage; imports nothing else from the package |
+| `common.py` | `Loaders`, `read()`, `get_dotted()`, `locate()`, `set_dotted()`, `merge()` | Shared by every stage; imports nothing else from the package |
 | `inherit.py` | `patch()`, `resolve_file()` | 1. `^^` inheritance |
 | `overrides.py` | `parse_overrides()`, `_parse_cli_overrides()`, `override()` | 2. dotted-key overrides |
 | `resolve.py` | `Interp`, `interp()`, `interpolate()` | 3. `${...}` interpolation |
@@ -126,7 +126,7 @@ for these values in configs:
 | `1e-5` (no decimal point) | string; write `1.0e-5` to get a float |
 | `012` | octal int (10) |
 
-### Dict helpers: `get_dotted`, `set_dotted`, `merge`
+### Dict helpers: `get_dotted`, `locate`, `set_dotted`, `merge`
 
 These replace what a wrapper type would otherwise provide.
 
@@ -137,6 +137,10 @@ These replace what a wrapper type would otherwise provide.
   `${env.srtmnet.file}` reach the ini key `srtmnet.file` even though `env` also
   has a plain `srtmnet` key. It raises `KeyError` if nothing matches, including
   an out-of-range index or a key that descends into a scalar.
+- **`locate(data, key)`** resolves the key the same way but returns the path
+  taken, a list of `(container, slot)` steps, instead of the value.
+  `get_dotted` is a thin wrapper around it. `interp()` uses it to find a
+  referenced value's own section and to write the resolved value back.
 - **`set_dotted(data, key, value)`** assigns using the same key resolution. It
   creates missing (or `null`) intermediate sections as dicts, and raises
   `TypeError` when an intermediate exists but is the wrong container (a scalar
@@ -209,8 +213,10 @@ share nested objects.
   raise `KeyError`.
 - Each file is read from disk only once per `patch` tree (`cache`).
 - Circular chains (`A → B → A`) raise `ValueError`. The chain is tracked in
-  `_seen` as `(file, section)` identities. See
-  [Known issues](#known-issues) for a false positive.
+  `_seen` as `(file, section)` identities, where same-file refs use the path of
+  the file that owns them (passed down as `patch(..., file=...)`). Sections
+  with the same name in different files are therefore distinct, and
+  `^^: default` and `^^: this.yml:default` count as the same section.
 
 ### `resolve_file(sect, base_dir, cache)`
 
@@ -267,11 +273,23 @@ clear it first: `--key None --key "{...}"`.
 `interp` resolves every `${...}` in a single string:
 
 - `${a.b.c}` is **absolute** and is looked up in `full` (the whole config) with
-  `get_dotted()`.
+  `locate()`, which follows the same key rules as `get_dotted()` but also
+  returns where the value lives.
 - `${.c}` is **relative** and is looked up in `rel`, the subsection that
   contains the value.
-- If the referenced value is itself a string containing `${`, it is resolved
-  recursively. Circular references raise `ValueError`.
+- The referenced value is resolved **depth-first, in its own context**, before
+  it is substituted:
+  - a string containing `${` is resolved with its *own* section as `rel`, so
+    `${.c}` reached through `${s.v}` means `s.c`;
+  - a list or mapping is fully interpolated first, so `${l}` never comes back
+    as `['${d}']`.
+
+  The resolved value is written back into the config, so each value is resolved
+  once and the result does not depend on key order.
+- Circular references raise `ValueError`, including cycles through containers
+  (`{m: "${s}", s: {a: "${m}"}}`). Values on the current chain are tracked by
+  location (`(container, key)`), not by reference text, so the same `${.c}` in
+  two sections is not mistaken for a cycle.
 - A missing key raises `KeyError`.
 - After substitution, the whole string is passed through `ast.literal_eval`,
   so a fully substituted string can become a typed value:
@@ -288,9 +306,9 @@ c: ${dir}/x    # → "/data/x" (stays a string)
 `interpolate` walks a dict or list recursively and calls `interp()` on every
 string.
 
-- On the first call, `full` defaults to the tree itself. References are
-  therefore resolved against the tree *as it is being rewritten*: a value the
-  walk has already visited is seen in its interpolated form.
+- On the first call, `full` defaults to the tree itself. Because `interp()`
+  resolves referenced values depth-first and writes them back, the walk order
+  does not affect the result.
 - On entering each mapping, `rel` is set to that mapping, which is what makes
   `${.key}` relative to the value's own section.
 - Lists are walked too. Items inherit the enclosing `rel`, and mappings inside
@@ -467,52 +485,15 @@ implementation:
   file using `${env.sixs}` raises `KeyError` unless you pass `env` yourself as
   an override.
 
-## Known issues
-
-These were found while writing this document. Each one was reproduced against
-the current implementation.
-
-1. **False "circular reference" across files with a shared section name.**
-   Same-file references are tracked as `(None, section)` (`inherit.py`, `patch`),
-   regardless of *which* file they belong to. If a user file has
-   `default: {^^: <path>/default.yml:srtmnet}` and `myrun: {^^: default}`,
-   loading `myrun` raises `ValueError: Circular ^^ reference detected for
-   section: 'default'`. The cause is that the shipped `srtmnet` section's own
-   `^^: default` collides with the user file's `default`. The fix is to key
-   same-file identities by the owning file's path, for example
-   `(ref_dir/<file>, sect)`, instead of `None`.
-
-2. **Relative refs reached through an absolute ref can resolve against the
-   wrong section, depending on key order.** When `interp` recurses into a
-   referenced string that is still unresolved, it passes the *original* `rel`
-   (`resolve.py`, `interp`). If the walk has already visited the target, it
-   sees the resolved value and the answer is correct:
-   - `{s: {c: 5, v: "${.c}"}, t: {c: 9, w: "${s.v}"}}` gives `t.w: 5`.
-   - `{t: {c: 9, w: "${s.v}"}, s: {c: 5, v: "${.c}"}}` gives `t.w: 9`.
-
-   The fix is to recurse with the referenced value's parent section as `rel`.
-
-3. **References to containers can come back uninterpolated, depending on key
-   order.** When `${x}` points at a list or mapping, the container is
-   stringified as it currently stands in `full`. Nested values in it are not
-   interpolated first, and whether they have been already depends on walk
-   order:
-   - `{d: /x, l: ["${d}"], m: "${l}"}` gives `m: ['/x']`.
-   - `{m: "${l}", d: /x, l: ["${d}"]}` gives `m: ['${d}']`.
-
-   The same happens for mappings. The fix is to interpolate container values
-   before substituting them, or to resolve references lazily and depth-first.
-   That would also fix issue 2.
-
 ## Testing
 
 Unit tests for the package live in `isofit/test/test_interpolate.py`. They
 cover the dict helpers (including the `env.srtmnet-file` lookup),
-`read`, `^^` precedence, cycles and errors, overrides, interpolation, and the
-`copy` CLI command.
+`read`, `^^` precedence, cycles and errors (including same-named sections
+across files), overrides, interpolation (including key-order independence and
+cycles through containers), and the `copy` CLI command.
 
 End-to-end coverage lives in `isofit/test/test_configs.py`:
 `test_defaults_interpolate_after_overlay`, `test_resolve_is_idempotent`,
 `test_resolve_does_not_mutate_input`, the `test_section_from_base*` tests, and
-`test_example_configs` (every shipped example config resolves). Each item in
-[Known issues](#known-issues) would make a good regression test.
+`test_example_configs` (every shipped example config resolves).

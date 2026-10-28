@@ -10,7 +10,7 @@ Configs are plain nested ``dict`` / ``list`` trees throughout.
 
 The pipeline, run in order by :func:`load`, is split into one module per stage:
 
-- :mod:`.common`    -- :func:`read` plus the dict helpers :func:`get_dotted`,
+- :mod:`.common`    -- :func:`read` plus the dict helpers :func:`get_dotted`, :func:`locate`,
                        :func:`set_dotted`, and :func:`merge`
 - :mod:`.inherit`   -- ``^^`` inheritance (:func:`patch`, :func:`resolve_file`)
 - :mod:`.overrides` -- dotted-key overrides (:func:`parse_overrides`, :func:`override`)
@@ -19,7 +19,7 @@ The pipeline, run in order by :func:`load`, is split into one module per stage:
 - :mod:`.cli`       -- the ``isofit config`` command group
 """
 
-from .common import Loaders, get_dotted, merge, read, set_dotted
+from .common import Loaders, get_dotted, locate, merge, read, set_dotted
 from .inherit import patch, resolve_file
 from .load import load
 from .overrides import override, parse_overrides
