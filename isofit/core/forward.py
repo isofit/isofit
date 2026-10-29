@@ -345,8 +345,9 @@ class ForwardModel:
             geom=geom,
         )
 
-        return self.instrument.sample(
-            x_instrument, self.atmosphere.wl, rdn
+        return (
+            self.instrument.sample(x_instrument, self.atmosphere.wl, rdn)
+            * self.instrument.rcc_factor(x_instrument)
         ) + self.eof_offset(x_instrument)
 
     def calc_atmosphere_quantities(
@@ -723,6 +724,7 @@ class ForwardModel:
         dmeas_dsurface = self.instrument.sample(
             x_instrument, self.atmosphere.wl, drdn_dsurface.T
         ).T
+        dmeas_dsurface *= self.instrument.rcc_factor(x_instrument)[:, None]
 
         # To get the derivative w.r.t. atmosphere
         dmeas_datmosphere = self.dmeas_datmosphere(
@@ -736,6 +738,7 @@ class ForwardModel:
             Ls=Ls_hi,
             meas=meas,
         )
+        dmeas_datmosphere *= self.instrument.rcc_factor(x_instrument)[:, None]
 
         dmeas_dinstrument = self.instrument.dmeas_dinstrument(
             x_instrument, self.atmosphere.wl, rdn_hi
@@ -816,6 +819,8 @@ class ForwardModel:
             Ls=Ls_hi,
             meas=meas,
         )
+        if dmeas_datmosphereb.size:
+            dmeas_datmosphereb *= self.instrument.rcc_factor(x_instrument)[:, None]
 
         # To get derivatives w.r.t. instrument, downsample to instrument wavelengths
         dmeas_dinstrumentb = self.instrument.dmeas_dinstrumentb(
