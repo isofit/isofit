@@ -20,7 +20,6 @@ from isofit.configs import configs
 from isofit.core import instrument, isofit
 from isofit.core.common import envi_header
 from isofit.utils.apply_oe import (
-    INVERSION_WINDOWS,
     RTM_CLEANUP_LIST,
     SUPPORTED_SENSORS,
     UNCORRELATED_RADIOMETRIC_UNCERTAINTY,
@@ -213,13 +212,14 @@ def wavelength_cal(
     ray_temp_dir="/tmp/ray",
     emulator_base=None,
     prebuilt_lut=None,
-    inversion_windows=None,
+    inversion_windows=[],
     wl_state_type="shift",
     spline_indices=[],
     force_with_geo=False,
     start_column=None,
     end_column=None,
     column_interval=1,
+    datestr=None,
 ):
     """\
     Runs a wavelength calibration on an input scene.
@@ -245,7 +245,7 @@ def wavelength_cal(
         Directory to stage multiple outputs, will contain subdirectories
     sensor : str
         The sensor used for acquisition, will be used to set noise and datetime
-        settings
+        settings. For custom sensors, use "custom" (requires datestr) or "NA-YYYYMMDD"
     surface_path : str
         Path to surface model or json dict of surface model configuration
     copy_input_files : bool, default=False
@@ -305,6 +305,12 @@ def wavelength_cal(
         last column.
     column_interval : int, default=1
         Step size over columns; skips, doesn't average. Useful to increase runtime speeds.
+    datestr : str, default=None
+        strptime format matching the start of the radiance filename, e.g.
+        "emit%Y%m%dt%H%M%S", used to determine the acquisition date and time for custom
+        sensors. Required for sensor "custom". Optional for "NA-*" sensors, where the
+        date is otherwise taken from the sensor name ("NA-YYYYMMDD"). Currently ignored
+        for all other sensors.
     """
 
     radiance_meta = envi.open(envi_header(input_radiance)).metadata
@@ -339,11 +345,14 @@ def wavelength_cal(
         multipart_transmittance = True
 
     if sensor not in SUPPORTED_SENSORS:
-        if sensor[:3] != "NA-":
+        if sensor != "custom" and sensor[:3] != "NA-":
             errstr = (
-                f'Argument error: sensor must be one of {SUPPORTED_SENSORS} or "NA-*"'
+                f"Argument error: sensor must be one of {SUPPORTED_SENSORS}, "
+                '"custom" or "NA-*"'
             )
             raise ValueError(errstr)
+    if sensor == "custom" and datestr is None:
+        raise ValueError('Argument error: datestr is required for the "custom" sensor')
 
     if os.path.isdir(working_directory) is False:
         os.mkdir(working_directory)
@@ -410,16 +419,22 @@ def wavelength_cal(
 
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
-    global INVERSION_WINDOWS
-    dt, sensor_inversion_window = tmpl.sensor_name_to_dt(sensor, paths.fid)
-    if sensor_inversion_window is not None:
-        INVERSION_WINDOWS = sensor_inversion_window
+    if datestr is not None and sensor in SUPPORTED_SENSORS:
+        logging.warning(
+            'datestr is currently only used with custom sensors ("custom" or "NA-*"), '
+            f"ignoring for {sensor}"
+        )
+    dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(
+        sensor, paths.fid, datestr
+    )
+    if not inversion_windows:
+        sensor_inversion_windows = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
     if inversion_windows:
         assert all(
             [len(window) == 2 for window in inversion_windows]
         ), "Inversion windows must be in pairs"
-        INVERSION_WINDOWS = inversion_windows
-    logging.info(f"Using inversion windows: {INVERSION_WINDOWS}")
+        sensor_inversion_windows = inversion_windows
+    logging.info(f"Using inversion windows: {sensor_inversion_windows}")
 
     # Collapse data row-wise
     logging.info("Collapsing data row-wise...")
@@ -613,7 +628,7 @@ def wavelength_cal(
             emulator_base=emulator_base,
             uncorrelated_radiometric_uncertainty=uncorrelated_radiometric_uncertainty,
             prebuilt_lut_path=prebuilt_lut,
-            inversion_windows=INVERSION_WINDOWS,
+            inversion_windows=sensor_inversion_windows,
             multipart_transmittance=multipart_transmittance,
             segmentation_size=n_rows,
             multiple_restarts=False,
@@ -766,6 +781,7 @@ def cli_get_wavelength_adjustment(debug_args, profile, **kwargs):
 @click.option("--start_column", type=int, default=None)
 @click.option("--end_column", type=int, default=None)
 @click.option("--column_interval", type=int, default=1)
+@click.option("--datestr", type=str, default=None)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",

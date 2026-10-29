@@ -21,8 +21,16 @@ from isofit.atmosphere.atmosphere import (
     modtran_aot_lowerbound_polynomials,
     modtran_water_upperbound_polynomials,
 )
+from isofit.configs.sections.instrument_config import WORKING_WAVELENGTH_CAL_VARIABLES
 from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
+from isofit.core.instrument import (
+    DefaultEOFPrior,
+    DefaultGROWFWHMPrior,
+    DefaultRCCPrior,
+    DefaultWLSHIFTPrior,
+    DefaultWLSPLPrior,
+)
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.luts.reader import inspect_lut_dimensions
@@ -88,8 +96,11 @@ class Pathnames:
             self.fid = split(input_radiance)[-1][:24]
         elif sensor == "tanager":
             self.fid = split(input_radiance)[-1][:23]
-        elif sensor[:3] == "NA-":
+        elif sensor == "custom" or sensor[:2] == "NA":
+            # Custom sensors ("custom" or "NA") keep the full basename, minus any
+            # trailing _rdn
             self.fid = os.path.splitext(os.path.basename(input_radiance))[0]
+            self.fid = self.fid.removesuffix("_rdn")
 
         logging.info("Flightline ID: %s" % self.fid)
 
@@ -975,7 +986,7 @@ def write_modtran_template(
                         "IEMSCT": "RT_SOLAR_AND_THERMAL",
                         "IMULT": "RT_DISORT",
                         "DISALB": False,
-                        "NSTR": 8,
+                        "NSTR": 8,  # NOTE 8 vs 16 delta(m) effect is reduced when using 2-albedo method
                         "SOLCON": 0.0,
                     },
                     "ATMOSPHERE": {
@@ -1005,10 +1016,11 @@ def write_modtran_template(
                         "GMTIME": gmtime,
                     },
                     "SURFACE": {
-                        "SURFTYPE": "REFL_LAMBER_MODEL",
                         "GNDALT": elevation_km,
                         "NSURF": 1,
-                        "SURFP": {"CSALB": "LAMB_CONST_0_PCT"},
+                        "SALBFL": "",
+                        "SURFTYPE": "REFL_CONSTANT",
+                        "SURREF": 0.0,
                     },
                     "SPECTRAL": {
                         "V1": 340.0,
@@ -1020,7 +1032,11 @@ def write_modtran_template(
                         "FLAGS": "NT A   ",
                         "BMNAME": "p1_2013",
                     },
-                    "FILEOPTIONS": {"NOPRNT": 2, "CKPRNT": True},
+                    "FILEOPTIONS": {
+                        "NOPRNT": 2,
+                        "NOFILE": "FC_TAPE6ONLY",
+                        "CSVPRNT": f"{fid}.csv",
+                    },
                 }
             }
         ]
@@ -1259,6 +1275,12 @@ def get_metadata_from_obs(
     del relative_azimuth
 
     # Make time calculations
+    if np.any((time[valid] < 0) | (time[valid] >= 24)):
+        raise ValueError(
+            f"Bad UTC time value(s) detected in obs input file: ({obs_file}). "
+            f"Times must be within [0-24). Min: {np.min(time[valid])}, Max: {np.max(time[valid])}"
+        )
+
     mean_time = np.mean(time[valid])
     min_time = np.min(time[valid])
     max_time = np.max(time[valid])
@@ -1354,8 +1376,28 @@ def get_metadata_from_loc(
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid
 
 
-def sensor_name_to_dt(sensor: str, fid: str):
-    inversion_window_update = None
+def parse_datestr(fid: str, datestr: str) -> datetime:
+    """Parse a datetime from the start of a flightline ID using a strptime format.
+
+    Args:
+        fid:     flightline ID, e.g. "CHEESEHEAD20190830-26_tile08"
+        datestr: strptime format matching the start of the fid, e.g. "CHEESEHEAD%Y%m%d"
+
+    Returns:
+        datetime parsed from the longest leading portion of fid that matches datestr
+    """
+    for end in range(len(fid), 0, -1):
+        try:
+            return datetime.strptime(fid[:end], datestr)
+        except ValueError:
+            continue
+    raise ValueError(
+        f'Flightline ID "{fid}" does not start with a date matching datestr "{datestr}"'
+    )
+
+
+def get_sensor_metadata_from_fid(sensor: str, fid: str, datestr: str = None):
+    inversion_window_update = []
     if sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
         dt = datetime.strptime(fid[3:], "%Y%m%dt%H%M%S")
@@ -1403,8 +1445,12 @@ def sensor_name_to_dt(sensor: str, fid: str):
     elif sensor == "tanager":
         # parse flightline ID (Tanager assumptions)
         dt = datetime.strptime(fid[:15], "%Y%m%d_%H%M%S")
-    elif sensor[:3] == "NA-":
-        dt = datetime.strptime(sensor[3:], "%Y%m%d")
+    elif sensor == "custom" or sensor[:2] == "NA":
+        # Custom sensors: parse the fid with datestr
+        if datestr is not None:
+            dt = parse_datestr(fid, datestr)
+        else:
+            raise ValueError('datestr is required for the "NA/custom" sensor')
     else:
         raise ValueError(
             "Datetime object could not be obtained. Please check file name of input"
@@ -1510,6 +1556,8 @@ def make_atmosphere_config(
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
     unknowns: dict = {},
+    wavelength_file: str = None,
+    **kwargs,
 ):
     avc = np.sum(
         [
@@ -1799,6 +1847,10 @@ def make_atmosphere_config(
         atmosphere_config["statevector"].keys()
     )
 
+    # Add atmosphere-specific wavelength file if passed
+    if wavelength_file:
+        atmosphere_config["engine"]["wavelength_file"] = wavelength_file
+
     return atmosphere_config
 
 
@@ -1812,6 +1864,7 @@ def make_surface_config(
     max_slope: float = 20.0,
     surface_refractive_index_path: str = None,
     use_background_rfl=False,
+    **kwargs,
 ):
     # Initialize config dict
     surface_config_dict = {
@@ -1905,6 +1958,13 @@ def make_instrument_config(
     use_superpixels: bool = True,
     uncorrelated_radiometric_uncertainty: float = 0.0,
     dn_uncertainty_file: str = None,
+    cal_wavelength_variables: list = [],
+    cal_per_channel_rcc: bool = False,
+    rcc_prior_file: str = None,
+    wlspl_prior_file: str = None,
+    spline_indices: list = [],
+    snr: int = 500,
+    **kwargs,
 ):
     config = {
         "wavelength_file": wavelength_path,
@@ -1925,22 +1985,47 @@ def make_instrument_config(
 
         # Add a state vector element for each column in the EOF file
         eof = np.loadtxt(eof_path)
-        config["statevector"] = {}
+        config.setdefault("statevector", {})
         for idx in range(eof.shape[1]):
             key = "EOF_%i" % (idx + 1)
-            config["statevector"][key] = {
-                "bounds": [-10, 10],
-                "scale": 1,
-                "init": 0,
-                "prior_sigma": 100.0,
-                "prior_mean": 0,
-            }
+            config["statevector"][key] = DefaultRCCPrior._asdict()
+
+    if len(cal_wavelength_variables):
+        # Hard coded check against list
+        assert all(
+            item in WORKING_WAVELENGTH_CAL_VARIABLES
+            for item in cal_wavelength_variables
+        ), (
+            "Wavelength calibration parameter passed into "
+            "build_instrument_configuration not added to the "
+            "global list of validated variables"
+        )
+        config.setdefault("statevector", {})
+        for var in cal_wavelength_variables:
+            if var == "GROW_FWHM":
+                config["statevector"][var] = DefaultGROWFWHMPrior._asdict()
+            elif var == "WL_SHIFT":
+                config["statevector"][var] = DefaultWLSHIFTPrior._asdict()
+            elif var == "WLSPL":
+                for index in spline_indices:
+                    config["statevector"][
+                        f"{var}_{index:03}"
+                    ] = DefaultWLSPLPrior._asdict()
+
+    if cal_per_channel_rcc:
+        config.setdefault("statevector", {})
+        config["statevector"]["PER_WL_RCC"] = DefaultRCCPrior._asdict()
+
+    if rcc_prior_file:
+        config["rcc_prior_file"] = rcc_prior_file
+
+    if wlspl_prior_file:
+        config["wlspl_prior_file"] = wlspl_prior_file
 
     if noise_path is not None:
         config["parametric_noise_file"] = noise_path
-
     else:
-        config["SNR"] = 500
+        config["SNR"] = snr
 
     return config
 
@@ -1952,6 +2037,7 @@ def make_implementation_config(
     n_cores: int = -1,
     debug: bool = False,
     per_pixel_heuristic_prior: bool = False,
+    **kwargs,
 ):
 
     return {
@@ -1972,6 +2058,7 @@ def make_input_config(
     svf_input_path: str = None,
     rdn_factors_path: str = None,
     bgrfl_path: str = None,
+    **kwargs,
 ):
     input_config = {}
     input_config["measured_radiance_file"] = rdn_input_path
@@ -1991,6 +2078,7 @@ def make_output_config(
     state_output_path: str,
     posterior_output_path: str = None,
     rfl_output_path: str = None,
+    **kwargs,
 ):
     output_config = {}
     output_config["estimated_state_file"] = state_output_path

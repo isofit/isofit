@@ -170,6 +170,24 @@ Additionally:
 * If a package needs to added or removed from the toml file, use `uv [add|remove] <package>`. Commit the toml and follow the above.
 * If changing the `requires-python` field of the toml file, manually do so then follow the above to ensure all dependencies are compatible.
 
+## Refreshing the Workflows Cache (for Maintainers)
+
+Some workflows rely on a cache tied to the `dev` branch. When that cache becomes stale, it should be refreshed:
+
+1. Delete the existing `dev` cache from the [cache page](https://github.com/isofit/isofit/actions/caches).
+
+    ![Delete the workflows cache](../images/cache_delete.png)
+
+2. Go to the [Build workflow](https://github.com/isofit/isofit/actions/workflows/build.yml), click "Run workflow", and execute it on the `dev` branch.
+
+    ![Run the workflow on the dev branch](../images/cache_dispatch.png)
+
+3. Wait for the run to finish. The workflow is designed to not trigger the tests so ignore those.
+
+    ![Build cache successful](../images/build_success.png)
+
+4. Rerun any workflows so they pull the updated cache.
+
 ## Contributors
 
 The github maintainers, responsible for handling pull requests, are:
