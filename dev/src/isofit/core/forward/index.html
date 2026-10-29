@@ -6150,7 +6150,12 @@
 <span class="normal">1024</span>
 <span class="normal">1025</span>
 <span class="normal">1026</span>
-<span class="normal">1027</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1027</span>
+<span class="normal">1028</span>
+<span class="normal">1029</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span>
+<span class="normal">1032</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6497,8 +6502,9 @@
             <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
-            <span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rdn</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rdn</span><span class="p">)</span>
+            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">rcc_factor</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">)</span>
         <span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">eof_offset</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calc_atmosphere_quantities</span><span class="p">(</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.calc_atmosphere_quantities"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.calc_atmosphere_quantities" title="Go to docs">[docs]</a></div>
@@ -6875,6 +6881,7 @@
         <span class="n">dmeas_dsurface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
             <span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">drdn_dsurface</span><span class="o">.</span><span class="n">T</span>
         <span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">dmeas_dsurface</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">rcc_factor</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
 
         <span class="c1"># To get the derivative w.r.t. atmosphere</span>
         <span class="n">dmeas_datmosphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmeas_datmosphere</span><span class="p">(</span>
@@ -6888,6 +6895,7 @@
             <span class="n">Ls</span><span class="o">=</span><span class="n">Ls_hi</span><span class="p">,</span>
             <span class="n">meas</span><span class="o">=</span><span class="n">meas</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="n">dmeas_datmosphere</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">rcc_factor</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
 
         <span class="n">dmeas_dinstrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">dmeas_dinstrument</span><span class="p">(</span>
             <span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="n">rdn_hi</span>
@@ -6968,6 +6976,8 @@
             <span class="n">Ls</span><span class="o">=</span><span class="n">Ls_hi</span><span class="p">,</span>
             <span class="n">meas</span><span class="o">=</span><span class="n">meas</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="k">if</span> <span class="n">dmeas_datmosphereb</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="n">dmeas_datmosphereb</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">rcc_factor</span><span class="p">(</span><span class="n">x_instrument</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
 
         <span class="c1"># To get derivatives w.r.t. instrument, downsample to instrument wavelengths</span>
         <span class="n">dmeas_dinstrumentb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">dmeas_dinstrumentb</span><span class="p">(</span>

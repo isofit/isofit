@@ -7109,7 +7109,57 @@
 <span class="normal">2037</span>
 <span class="normal">2038</span>
 <span class="normal">2039</span>
-<span class="normal">2040</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">2040</span>
+<span class="normal">2041</span>
+<span class="normal">2042</span>
+<span class="normal">2043</span>
+<span class="normal">2044</span>
+<span class="normal">2045</span>
+<span class="normal">2046</span>
+<span class="normal">2047</span>
+<span class="normal">2048</span>
+<span class="normal">2049</span>
+<span class="normal">2050</span>
+<span class="normal">2051</span>
+<span class="normal">2052</span>
+<span class="normal">2053</span>
+<span class="normal">2054</span>
+<span class="normal">2055</span>
+<span class="normal">2056</span>
+<span class="normal">2057</span>
+<span class="normal">2058</span>
+<span class="normal">2059</span>
+<span class="normal">2060</span>
+<span class="normal">2061</span>
+<span class="normal">2062</span>
+<span class="normal">2063</span>
+<span class="normal">2064</span>
+<span class="normal">2065</span>
+<span class="normal">2066</span>
+<span class="normal">2067</span>
+<span class="normal">2068</span>
+<span class="normal">2069</span>
+<span class="normal">2070</span>
+<span class="normal">2071</span>
+<span class="normal">2072</span>
+<span class="normal">2073</span>
+<span class="normal">2074</span>
+<span class="normal">2075</span>
+<span class="normal">2076</span>
+<span class="normal">2077</span>
+<span class="normal">2078</span>
+<span class="normal">2079</span>
+<span class="normal">2080</span>
+<span class="normal">2081</span>
+<span class="normal">2082</span>
+<span class="normal">2083</span>
+<span class="normal">2084</span>
+<span class="normal">2085</span>
+<span class="normal">2086</span>
+<span class="normal">2087</span>
+<span class="normal">2088</span>
+<span class="normal">2089</span>
+<span class="normal">2090</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick and Niklas Bohn</span>
 <span class="c1">#</span>
@@ -7132,8 +7182,16 @@
     <span class="n">modtran_aot_lowerbound_polynomials</span><span class="p">,</span>
     <span class="n">modtran_water_upperbound_polynomials</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs.sections.instrument_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">WORKING_WAVELENGTH_CAL_VARIABLES</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">envi_header</span><span class="p">,</span> <span class="n">expand_path</span><span class="p">,</span> <span class="n">json_load_ascii</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.instrument</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DefaultEOFPrior</span><span class="p">,</span>
+    <span class="n">DefaultGROWFWHMPrior</span><span class="p">,</span>
+    <span class="n">DefaultRCCPrior</span><span class="p">,</span>
+    <span class="n">DefaultWLSHIFTPrior</span><span class="p">,</span>
+    <span class="n">DefaultWLSPLPrior</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.multistate</span><span class="w"> </span><span class="kn">import</span> <span class="n">SurfaceMapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">env</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.luts.reader</span><span class="w"> </span><span class="kn">import</span> <span class="n">inspect_lut_dimensions</span>
@@ -8659,6 +8717,8 @@
     <span class="n">to_sensor_zenith_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">to_sun_zenith_lut_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">unknowns</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
+    <span class="n">wavelength_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="n">avc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
         <span class="p">[</span>
@@ -8948,6 +9008,10 @@
         <span class="n">atmosphere_config</span><span class="p">[</span><span class="s2">"statevector"</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
     <span class="p">)</span>
 
+    <span class="c1"># Add atmosphere-specific wavelength file if passed</span>
+    <span class="k">if</span> <span class="n">wavelength_file</span><span class="p">:</span>
+        <span class="n">atmosphere_config</span><span class="p">[</span><span class="s2">"engine"</span><span class="p">][</span><span class="s2">"wavelength_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">wavelength_file</span>
+
     <span class="k">return</span> <span class="n">atmosphere_config</span>
 
 
@@ -8961,6 +9025,7 @@
     <span class="n">max_slope</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
     <span class="n">surface_refractive_index_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">use_background_rfl</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="c1"># Initialize config dict</span>
     <span class="n">surface_config_dict</span> <span class="o">=</span> <span class="p">{</span>
@@ -9054,6 +9119,13 @@
     <span class="n">use_superpixels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">uncorrelated_radiometric_uncertainty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
     <span class="n">dn_uncertainty_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">cal_wavelength_variables</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="n">cal_per_channel_rcc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">rcc_prior_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">wlspl_prior_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">spline_indices</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="n">snr</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">"wavelength_file"</span><span class="p">:</span> <span class="n">wavelength_path</span><span class="p">,</span>
@@ -9074,22 +9146,47 @@
 
         <span class="c1"># Add a state vector element for each column in the EOF file</span>
         <span class="n">eof</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">eof_path</span><span class="p">)</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">"statevector"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"statevector"</span><span class="p">,</span> <span class="p">{})</span>
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">eof</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
             <span class="n">key</span> <span class="o">=</span> <span class="s2">"EOF_</span><span class="si">%i</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">config</span><span class="p">[</span><span class="s2">"statevector"</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">"bounds"</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
-                <span class="s2">"scale"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="s2">"init"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">"prior_sigma"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
-                <span class="s2">"prior_mean"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="p">}</span>
+            <span class="n">config</span><span class="p">[</span><span class="s2">"statevector"</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">DefaultRCCPrior</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cal_wavelength_variables</span><span class="p">):</span>
+        <span class="c1"># Hard coded check against list</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="n">item</span> <span class="ow">in</span> <span class="n">WORKING_WAVELENGTH_CAL_VARIABLES</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">cal_wavelength_variables</span>
+        <span class="p">),</span> <span class="p">(</span>
+            <span class="s2">"Wavelength calibration parameter passed into "</span>
+            <span class="s2">"build_instrument_configuration not added to the "</span>
+            <span class="s2">"global list of validated variables"</span>
+        <span class="p">)</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"statevector"</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">cal_wavelength_variables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">"GROW_FWHM"</span><span class="p">:</span>
+                <span class="n">config</span><span class="p">[</span><span class="s2">"statevector"</span><span class="p">][</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">DefaultGROWFWHMPrior</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">"WL_SHIFT"</span><span class="p">:</span>
+                <span class="n">config</span><span class="p">[</span><span class="s2">"statevector"</span><span class="p">][</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">DefaultWLSHIFTPrior</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">"WLSPL"</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">spline_indices</span><span class="p">:</span>
+                    <span class="n">config</span><span class="p">[</span><span class="s2">"statevector"</span><span class="p">][</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">index</span><span class="si">:</span><span class="s2">03</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="p">]</span> <span class="o">=</span> <span class="n">DefaultWLSPLPrior</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">cal_per_channel_rcc</span><span class="p">:</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"statevector"</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"statevector"</span><span class="p">][</span><span class="s2">"PER_WL_RCC"</span><span class="p">]</span> <span class="o">=</span> <span class="n">DefaultRCCPrior</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">rcc_prior_file</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"rcc_prior_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">rcc_prior_file</span>
+
+    <span class="k">if</span> <span class="n">wlspl_prior_file</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"wlspl_prior_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">wlspl_prior_file</span>
 
     <span class="k">if</span> <span class="n">noise_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">config</span><span class="p">[</span><span class="s2">"parametric_noise_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">noise_path</span>
-
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">"SNR"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">500</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"SNR"</span><span class="p">]</span> <span class="o">=</span> <span class="n">snr</span>
 
     <span class="k">return</span> <span class="n">config</span>
 
@@ -9101,6 +9198,7 @@
     <span class="n">n_cores</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
     <span class="n">debug</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">per_pixel_heuristic_prior</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">):</span>
 
     <span class="k">return</span> <span class="p">{</span>
@@ -9121,6 +9219,7 @@
     <span class="n">svf_input_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rdn_factors_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">bgrfl_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="n">input_config</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">input_config</span><span class="p">[</span><span class="s2">"measured_radiance_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">rdn_input_path</span>
@@ -9140,6 +9239,7 @@
     <span class="n">state_output_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">posterior_output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rfl_output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="n">output_config</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">output_config</span><span class="p">[</span><span class="s2">"estimated_state_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_output_path</span>

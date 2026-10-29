@@ -4991,7 +4991,30 @@
 <span class="normal">190</span>
 <span class="normal">191</span>
 <span class="normal">192</span>
-<span class="normal">193</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5019,6 +5042,8 @@
     <span class="n">StateVectorElementConfig</span><span class="p">,</span>
 <span class="p">)</span>
 
+<span class="n">WORKING_WAVELENGTH_CAL_VARIABLES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"GROW_FWHM"</span><span class="p">,</span> <span class="s2">"WL_SHIFT"</span><span class="p">,</span> <span class="s2">"WLSPL"</span><span class="p">]</span>
+
 
 <span class="k">class</span><span class="w"> </span><span class="nc">InstrumentStateVectorConfig</span><span class="p">(</span><span class="n">StateVectorConfig</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.instrument_config.InstrumentStateVectorConfig"><a href="../../../../../api/isofit/configs/sections/instrument_config/#isofit.configs.sections.instrument_config.InstrumentStateVectorConfig" title="Go to docs">[docs]</a></div>
 <span class="w">    </span><span class="sd">"""</span>
@@ -5042,6 +5067,12 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_WL_SHIFT_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">WL_SHIFT</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_PER_WL_RCC_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PER_WL_RCC</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_WLSPL_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">WLSPL</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_WL_SPACE_type</span> <span class="o">=</span> <span class="n">StateVectorElementConfig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">WL_SPACE</span><span class="p">:</span> <span class="n">StateVectorElementConfig</span> <span class="o">=</span> <span class="kc">None</span>
@@ -5146,6 +5177,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_eof_path_type</span> <span class="o">=</span> <span class="nb">str</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eof_path</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">        </span><span class="sd">"""str: Path to an Empirial Orthogonal Function (EOF) file with one row per instrument channel."""</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rcc_prior_file_type</span> <span class="o">=</span> <span class="nb">str</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rcc_prior_file</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">        </span><span class="sd">"""str: Indicates a .mat file containing a mean vector "mean" </span>
+<span class="sd">        and a covariance matrix "cov" represetnting  a prior over </span>
+<span class="sd">        Radiometric Calibration Coefficients (RCCs) that scale the </span>
+<span class="sd">        measured spectrum.  There is one RCC element for each measured </span>
+<span class="sd">        channel. If not specified, these values are assumed to be unity."""</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wlspl_prior_file_type</span> <span class="o">=</span> <span class="nb">str</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wlspl_prior_file</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">        </span><span class="sd">"""str: Indicates a .mat file containing a mean vector "mean" </span>
+<span class="sd">        and a covariance matrix "cov" represetnting  a prior over </span>
+<span class="sd">        wavelength shift for spline indices. These inform the spline</span>
+<span class="sd">        representation for spectral calibration."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_config_options</span><span class="p">(</span><span class="n">sub_configdic</span><span class="p">)</span>
 
