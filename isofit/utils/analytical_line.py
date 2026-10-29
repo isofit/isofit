@@ -474,6 +474,7 @@ class Worker(object):
 
         self.initializer = initializer
         self.per_pixel_heuristic_prior = config.implementation.per_pixel_heuristic_prior
+        self.aeronet_prior = config.implementation.aeronet_prior
 
     def run_chunks(self, line_breaks: tuple, fill_value: float = -9999.0) -> None:
         """
@@ -612,6 +613,14 @@ class Worker(object):
 
             if self.per_pixel_heuristic_prior:
                 self.fm.update_heuristic_prior_means(x0, geom)
+
+            # AERONET aerosol depth prior update - stash priors in geom
+            # Method is assumed to follow after update_heuristic_prior_means()
+            geom.Sa_atmosphere = self.fm.atmosphere.Sa_cached.copy()
+            geom.Sa_atm_inv_norm = self.fm.atmosphere.Sa_inv_normalized.copy()
+            geom.Sa_atm_inv_sqrt_norm = self.fm.atmosphere.Sa_inv_sqrt_normalized.copy()
+            if self.aeronet_prior:
+                self.fm.update_prior_via_aeronet(geom=geom)
 
             states, unc = invert_analytical(
                 self.fm,

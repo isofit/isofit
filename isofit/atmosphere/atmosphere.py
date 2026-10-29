@@ -135,6 +135,14 @@ class BaseAtmosphere(Reader):
         self.h2o_i = [
             i for i, v in enumerate(self.statevec_names) if v in possible_h2o_names
         ]
+        self.h2o_name = self.statevec_names[self.h2o_i[0]] if self.h2o_i else None
+
+        possible_aerosol_names = ["AOT", "AERFRAC"]
+        self.aerosol_i = [
+            i
+            for i, v in enumerate(self.statevec_names)
+            if any(name in v for name in possible_aerosol_names)
+        ]
 
         # Configure and exit flag
         self.configure_and_exit = self.config.configure_and_exit
@@ -167,6 +175,8 @@ class BaseAtmosphere(Reader):
         )
 
         self.rt_mode = self.config.rt_mode or "transm"
+
+        self.aeronet_prior = full_config.implementation.aeronet_prior
 
         # Use explicitely passed first
         if not any(wl) or not any(fwhm):
@@ -356,6 +366,7 @@ class BaseAtmosphere(Reader):
     def update_heuristic_prior_means(self, x_atmosphere, geom):
         xa = self.prior_mean.copy()
         xa[self.h2o_i] = x_atmosphere[self.h2o_i]
+        xa[self.aerosol_i] = x_atmosphere[self.aerosol_i]
 
         return xa
 
@@ -717,3 +728,33 @@ def modtran_aot_lowerbound_polynomials() -> dict:
     }
 
     return polynomials
+
+
+def aeronet_model(
+    elevation_km: float, aot_min: float = 0.01, aot_max: float = 1.0
+) -> tuple:
+    """
+    Daily average aeronet modeled/converted AOT @ 550 nm, accessed on 2 October 2026 (via 440-870_Angstrom_Exponent).
+    Data were binned by elevation every 200 m, then were modeled using empirically derived relation.
+    The output is a prior mean and standard deviation for AOT-550 with respect to elevation.
+    """
+    try:
+        elevation_m = units.km_to_m(elevation_km)
+    # allow for test data with elevation as None
+    except (TypeError, ValueError):
+        elevation_m = 0.0
+
+    # Define bounds and params of polynomial
+    elevation_m = min(max(elevation_m, 0.0), 6000.0)
+    p_mean = np.array(
+        [-8.79629630e-13, 1.34722222e-08, -7.05687831e-05, 1.51746032e-01]
+    )
+    p_std = np.array([-2.77777778e-14, 4.08333333e-09, -3.81269841e-05, 1.19761905e-01])
+
+    prior_mean = np.polyval(p_mean, elevation_m)
+    prior_sd = np.polyval(p_std, elevation_m)
+
+    # Guard against out of bounds in LUT (allows for prebuilt LUT logic)
+    prior_mean = max(min(prior_mean, aot_max), aot_min)
+
+    return prior_mean, prior_sd

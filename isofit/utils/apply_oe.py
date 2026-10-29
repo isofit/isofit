@@ -114,6 +114,7 @@ def apply_oe(
     eof_path=None,
     terrain_style="dem",
     per_pixel_heuristic_prior=False,
+    aeronet_prior=False,
     datestr=None,
 ):
     """
@@ -262,6 +263,10 @@ def apply_oe(
         with one number per instrument channel.
     terrain_style : str, default=dem
         Flag to set the terrain style.  dem uses provided obs values, flat sets the surface to the spheroid
+    per_pixel_heuristic_prior : bool, default=False
+        Use per-pixel heuristic to define prior mean.
+    aeronet_prior : bool, default=False
+        Define prior mean and sigma for AOT 550 as a function of aeronet climatology. Can be used together with per_pixel_heuristic_prior or by itself.
     datestr : str, default=None
         strptime format matching the start of the radiance filename, e.g.
         "emit%Y%m%dt%H%M%S", used to determine the acquisition date and time for custom
@@ -705,6 +710,8 @@ def apply_oe(
         "terrain_style": terrain_style,
         "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
         "use_background_rfl": use_background_rfl,
+        "elevation_km": mean_elevation_km,
+        "aeronet_prior": aeronet_prior,
     }
     if presolve:
         # write modtran presolve template
@@ -837,11 +844,13 @@ def apply_oe(
         # add aerosol elements from climatology
         aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
             tmpl.load_climatology(
-                paths.aerosol_climatology,
-                mean_latitude,
-                mean_longitude,
-                dt,
+                config_path=paths.aerosol_climatology,
+                latitude=mean_latitude,
+                longitude=mean_longitude,
+                elevation_km=mean_elevation_km,
+                acquisition_datetime=dt,
                 lut_params=lut_params,
+                aeronet_prior=aeronet_prior,
             )
         )
         config_params["aerosol_model_file"] = aerosol_model_path
@@ -1046,6 +1055,7 @@ def apply_oe(
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
 @click.option("--per_pixel_heuristic_prior", is_flag=True, default=False)
+@click.option("--aeronet_prior", is_flag=True, default=False)
 @click.option("--datestr", type=str, default=None)
 @click.option(
     "--debug-args",

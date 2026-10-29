@@ -49,6 +49,7 @@ class Inversion:
         self.per_pixel_heuristic_prior = (
             full_config.implementation.per_pixel_heuristic_prior
         )
+        self.aeronet_prior = full_config.implementation.aeronet_prior
 
         self.windows = config.windows  # Retrieval windows
         self.mode = full_config.implementation.mode
@@ -355,6 +356,14 @@ class Inversion:
             # Saving here will inherit the bounds check that comes before it.
             if self.per_pixel_heuristic_prior:
                 self.fm.update_heuristic_prior_means(x, geom)
+
+            # AERONET aerosol depth prior update - stash priors in geom
+            # Method is assumed to follow after update_heuristic_prior_means()
+            geom.Sa_atmosphere = self.fm.atmosphere.Sa_cached.copy()
+            geom.Sa_atm_inv_norm = self.fm.atmosphere.Sa_inv_normalized.copy()
+            geom.Sa_atm_inv_sqrt_norm = self.fm.atmosphere.Sa_inv_sqrt_normalized.copy()
+            if self.aeronet_prior:
+                self.fm.update_prior_via_aeronet(geom=geom)
 
             # Regardless of anything we did for the heuristic guess, bring the
             # static preseed back into play (only does anything if inds_preseed
