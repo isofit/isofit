@@ -20,8 +20,8 @@ def cli(product, key=None):
         # Check if the given key exists
         if not (sub := env[key]):
             # If it doesn't, check if this key is a subkey of the product
-            # eg. product=srtmnet, key=file, actual=srtmnet.file
-            subkey = f"{product}.{key}"
+            # eg. product=srtmnet, key=file, actual=srtmnet-file
+            subkey = f"{product}-{key}"
             if not (sub := env[subkey]):
                 print(
                     f"The key {key!r} does not exist in the INI nor does the subkey {subkey!r}"

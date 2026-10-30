@@ -229,8 +229,8 @@ class Instrument(NoiseModel):
         self.state_idx = {}
         cat_name = None
 
-        self.config_state_names = config.statevector.get_all_names()
-        for name, element_config in zip(self.config_state_names, config.statevector):
+        elements, self.config_state_names = config.statevector.get_elements()
+        for name, element_config in zip(self.config_state_names, elements):
             (_bounds, _scale, _init, _prior_mean, _prior_sigma) = (
                 element_config.unpack()
             )
@@ -366,7 +366,9 @@ class Instrument(NoiseModel):
             config.statevector.GROW_FWHM is not None
             or config.statevector.WL_SHIFT is not None
             or config.statevector.WL_SPACE is not None
-            or "WLSPL" in list(self.state_idx.keys())
+            or any(
+                name.startswith(("WLSPL", "FWHMSPL")) for name in self.statevec_names
+            )
         ):
             self.wavelengths_fixed = False
 
@@ -581,7 +583,14 @@ class Instrument(NoiseModel):
                 for i, r in enumerate(rdn_hi):
                     ssrf = spectral_response_function(np.arange(-10, 11), 0, fwhm[0])
                     blur = convolve(r, ssrf, mode="same")
-                    resamp.append(interp1d(wl_hi, blur)(wl))
+                    # bounds_error=False/extrapolate so a wavelength calibration
+                    # (WL_SHIFT / WL_SPACE) that nudges the instrument grid a
+                    # fraction of a nm past the RT grid edge doesn't raise.
+                    resamp.append(
+                        interp1d(
+                            wl_hi, blur, bounds_error=False, fill_value="extrapolate"
+                        )(wl)
+                    )
             else:
                 for i, r in enumerate(rdn_hi):
                     r2 = resample_spectrum(r, wl_hi, wl, fwhm)

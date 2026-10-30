@@ -45,6 +45,7 @@ dependencies = [
   "xarray",
   "xxhash >= 1.2.0",
   "zarr >= 3",
+  "pydantic>=2.12.5",
 ]
 
 [project.optional-dependencies]
@@ -94,3 +95,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 path = "isofit/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["isofit"]
