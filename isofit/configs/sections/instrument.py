@@ -17,6 +17,8 @@ from isofit.configs.sections.statevector import (
     StateVectorElementConfig,
 )
 
+WORKING_WAVELENGTH_CAL_VARIABLES = ["GROW_FWHM", "WL_SHIFT", "WLSPL"]
+
 
 class InstrumentStateVectorConfig(StateVectorConfig):
     """
@@ -83,6 +85,12 @@ class InstrumentStateVectorConfig(StateVectorConfig):
     WL_SPACE: Optional[StateVectorElementConfig] = Field(
         description=(
             "Wavelength spacing parameter for adjusting the spectral sampling interval"
+        )
+    )
+    PER_WL_RCC: Optional[StateVectorElementConfig] = Field(
+        description=(
+            "Per-channel Radiometric Calibration Coefficient (RCC) that scales the "
+            "measured spectrum. Expands to one state vector element per channel"
         )
     )
 
@@ -261,6 +269,23 @@ class InstrumentConfig(SectionModel):
         description=(
             "Path to Empirical Orthogonal Function (EOF) file for spectral "
             "radiometric error modeling"
+        )
+    )
+
+    rcc_prior_file: Optional[FilePath] = Field(
+        description=(
+            "Path to a .mat file containing a mean vector ``mean`` and covariance "
+            "matrix ``cov`` representing a prior over the per-channel Radiometric "
+            "Calibration Coefficients (RCCs) that scale the measured spectrum. If "
+            "not given, these are assumed to be unity"
+        )
+    )
+
+    wlspl_prior_file: Optional[FilePath] = Field(
+        description=(
+            "Path to a .mat file containing a mean vector ``mean`` and covariance "
+            "matrix ``cov`` representing a prior over the wavelength shift at the "
+            "spline indices, which inform the spline spectral calibration"
         )
     )
 

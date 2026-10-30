@@ -79,6 +79,10 @@ class StateVectorElementConfig(BaseModel):
         ),
     )
 
+    def unpack(self):
+        """Return ``(bounds, scale, init, prior_mean, prior_sigma)``."""
+        return self.bounds, self.scale, self.init, self.prior_mean, self.prior_sigma
+
 
 class StateVectorConfig(SectionModel, ElementAccessorMixin, StateVectorValueMixin):
     """
