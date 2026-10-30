@@ -22,7 +22,7 @@ from isofit.atmosphere.atmosphere import (
     modtran_water_upperbound_polynomials,
 )
 from isofit.configs import Config
-from isofit.configs.sections.instrument_config import WORKING_WAVELENGTH_CAL_VARIABLES
+from isofit.configs.sections.instrument import WORKING_WAVELENGTH_CAL_VARIABLES
 from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.core.instrument import (
@@ -1873,7 +1873,7 @@ def make_atmosphere_config(
 
     # Add atmosphere-specific wavelength file if passed
     if wavelength_file:
-        atmosphere_config["engine"]["wavelength_file"] = wavelength_file
+        atmosphere_config["wavelength_file"] = wavelength_file
 
     return atmosphere_config
 

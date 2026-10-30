@@ -229,8 +229,8 @@ class Instrument(NoiseModel):
         self.state_idx = {}
         cat_name = None
 
-        self.config_state_names = config.statevector.get_all_names()
-        for name, element_config in zip(self.config_state_names, config.statevector):
+        elements, self.config_state_names = config.statevector.get_elements()
+        for name, element_config in zip(self.config_state_names, elements):
             (_bounds, _scale, _init, _prior_mean, _prior_sigma) = (
                 element_config.unpack()
             )

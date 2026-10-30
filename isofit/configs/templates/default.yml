@@ -101,6 +101,8 @@ default:
       pushbroom_noise_file: null
       nedt_noise_file: null
       eof_path: null
+      rcc_prior_file: null
+      wlspl_prior_file: null
       statevector:
         EOF_1: null
         EOF_2: null
@@ -108,6 +110,7 @@ default:
         GROW_FWHM: null
         WL_SHIFT: null
         WL_SPACE: null
+        PER_WL_RCC: null
 
   implementation:
     mode: inversion
