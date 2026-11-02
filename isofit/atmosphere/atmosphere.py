@@ -300,19 +300,16 @@ class BaseAtmosphere(Reader):
         # Correct solar-reflected radiances for the Earth Sun Distance mismatch
         # between the LUT build date and present data.
         # Also, ensure we are in data that is consistent with rt_mode = "rdn".
-        if self.rt_mode == "transm":
-            for key in self.coupling_terms:
-                if key in self.lut:
+        for key in self.coupling_terms + ["rhoatm"]:
+            if key in self.lut:
+                if self.rt_mode == "transm":
                     self.lut[key] = units.transm_to_rdn(
                         self.lut[key],
                         coszen=self.coszen,
                         solar_irr=self.solar_irr * self.esd_correction,
                     )
-            self.lut["rhoatm"] = units.transm_to_rdn(
-                self.lut["rhoatm"],
-                coszen=self.coszen,
-                solar_irr=self.solar_irr * self.esd_correction,
-            )
+                else:
+                    self.lut[key] = self.lut[key] * self.esd_correction
 
         # Special treatment for PACE OCI
         srf_file = None
