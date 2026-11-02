@@ -428,28 +428,19 @@ class ForwardModel:
                 r, geom, rho_dif_dif=rho_dif_dif
             )
         else:
-            if self.atmosphere.rt_mode == "rdn":
-                L_tot = r["transm_down_dif"]
-            else:
-                L_tot = transm_to_rdn(
-                    r["transm_down_dif"],
-                    geom.coszen,
-                    self.atmosphere.solar_irr,
-                )
+            L_tot = r["transm_down_dif"]
             L_dir_dir = 0
             L_dif_dir = 0
             L_dir_dif = 0
             L_dif_dif = 0
 
-        # Correct solar-reflected radiances for the Earth Sun Distance mismatch
-        # between the LUT build date and present data.
         return (
             r,
-            L_tot * self.atmosphere.esd_correction,
-            L_dir_dir * self.atmosphere.esd_correction,
-            L_dif_dir * self.atmosphere.esd_correction,
-            L_dir_dif * self.atmosphere.esd_correction,
-            L_dif_dif * self.atmosphere.esd_correction,
+            L_tot,
+            L_dir_dir,
+            L_dif_dir,
+            L_dir_dif,
+            L_dif_dif,
         )
 
     def get_L_coupled(self, r: dict, geom: Geometry, rho_dif_dif: np.ndarray = 0):
@@ -473,16 +464,7 @@ class ForwardModel:
         """
 
         # radiances along all optical paths
-        L_coupled = []
-
-        for key in self.atmosphere.coupling_terms:
-            L_coupled.append(
-                transm_to_rdn(
-                    r[key], coszen=geom.coszen, solar_irr=self.atmosphere.solar_irr
-                )
-                if self.atmosphere.rt_mode == "transm"
-                else r[key]
-            )
+        L_coupled = [r[key] for key in self.atmosphere.coupling_terms]
 
         # Topographic shadow mask (0=shadow, 1=sunlit pixel).
         # for now, this is always set to 1.0.
@@ -553,7 +535,7 @@ class ForwardModel:
         Includes topography, background reflectance, and glint.
         """
         # Atmospheric path radiance
-        L_atm = self.atmosphere.get_L_atm(x_atmosphere, geom)
+        L_atm = r["rhoatm"]
 
         # Atmospheric spherical albedo
         s_alb = r["sphalb"]
