@@ -257,8 +257,6 @@ class BaseAtmosphere(Reader):
             **kwargs,
         )
 
-        self.set_esd_correction()
-
         self.get_indices()
 
     def set_esd_correction(self):
@@ -294,7 +292,27 @@ class BaseAtmosphere(Reader):
         Checks for additional postprocessing that may need to be applied to the loaded
         LUT
         """
+
+        self.set_esd_correction()
+
         self.lut = self.couple(self.lut)
+
+        # Correct solar-reflected radiances for the Earth Sun Distance mismatch
+        # between the LUT build date and present data.
+        # Also, ensure we are in data that is consistent with rt_mode = "rdn".
+        if self.rt_mode == "transm":
+            for key in self.coupling_terms:
+                if key in self.lut:
+                    self.lut[key] = units.transm_to_rdn(
+                        self.lut[key],
+                        coszen=self.coszen,
+                        solar_irr=self.solar_irr * self.esd_correction,
+                    )
+            self.lut["rhoatm"] = units.transm_to_rdn(
+                self.lut["rhoatm"],
+                coszen=self.coszen,
+                solar_irr=self.solar_irr * self.esd_correction,
+            )
 
         # Special treatment for PACE OCI
         srf_file = None
@@ -418,24 +436,6 @@ class BaseAtmosphere(Reader):
             )
 
         return self.interpolate(point)
-
-    def get_L_atm(self, x_RT: np.array, geom: Geometry) -> np.array:
-        """Get the interpolated modeled atmospheric path radiance.
-
-        Args:
-            x_RT: radiative-transfer portion of the statevector
-            geom: local geometry conditions for lookup
-
-        Returns:
-            interpolated modeled atmospheric path radiance
-        """
-        r = self.get(x_RT, geom)
-        if self.rt_mode == "rdn":
-            L_atm = r["rhoatm"]
-        else:
-            rho_atm = r["rhoatm"]
-            L_atm = units.transm_to_rdn(rho_atm, geom.coszen, self.solar_irr)
-        return L_atm * self.esd_correction
 
     def get_upward_transm(self, r: dict, geom: Geometry, max_transm: float = 1.05):
         """
