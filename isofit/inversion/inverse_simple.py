@@ -173,7 +173,7 @@ def invert_algebraic(
         L_dir_dif,
         L_dif_dif,
     ) = fm.calc_atmosphere_quantities(x_atmosphere, geom, rho_dif_dif=rho_dif_dif)
-    L_atm = fm.atmosphere.get_L_atm(x_atmosphere, geom)
+    L_atm = rhi["rhoatm"]
     sphalb = rhi["sphalb"]
     Ls = fm.surface.calc_Ls(x_surface, geom)
 
@@ -273,7 +273,7 @@ def invert_analytical(
     )
 
     # Path radiance and spherical albedo
-    L_atm = fm.atmosphere.get_L_atm(x_atmosphere, geom)
+    L_atm = r["rhoatm"]
     s_alb = r["sphalb"]
 
     # Estimation of background radiance (background terms assumed rho_dir_dif ~= rho_dif_dif)
@@ -432,9 +432,7 @@ def invert_simple(fm: ForwardModel, meas: np.array, geom: Geometry):
         # Radiate transfer calculations could take place at high spectral resolution
         # so we upsample the surface reflectance
         rfl_hi = fm.upsample(fm.surface.wl, rfl_est)
-        _, sphalb, _, transup, _ = coeffs
-
-        L_atm = fm.atmosphere.get_L_atm(x_atmosphere, geom)
+        L_atm, sphalb, _, transup, _ = coeffs
         L_tot = fm.calc_atmosphere_quantities(x_atmosphere, geom)[1]
         L_total_without_surface_emission = L_atm + L_tot * rfl_hi / (
             1.0 - sphalb * rfl_hi
