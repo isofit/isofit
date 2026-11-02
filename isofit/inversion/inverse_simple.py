@@ -110,7 +110,10 @@ def heuristic_atmosphere(
                 meas,
                 geom,
             )
-            r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
+
+            # Special case, LUTSurface should not call fit_params here
+            if not fm.is_lut_surface:
+                r = fm.surface.fit_params(r, geom)[fm.idx_surf_rfl]
 
             # Simple linear interpolation
             vals = np.interp(wl[blo:bhi], [wl_lo, wl_hi], [r[blo], r[bhi]])
