@@ -302,8 +302,8 @@ class BaseAtmosphere(Reader):
         # Also, ensure we are in data that is consistent with rt_mode = "rdn".
         # 3c case
         if not self.multipart_transmittance:
-            if self.rt_mode == "transm":
-                for key in ["rhoatm", "transm_down_dif"]:
+            for key in ["rhoatm", "transm_down_dif"]:
+                if self.rt_mode == "transm":
                     self.lut[key] = units.transm_to_rdn(
                         self.lut[key],
                         coszen=self.coszen,
