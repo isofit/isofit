@@ -1557,9 +1557,8 @@ def make_atmosphere_config(
 
     atmosphere_rte = {}
     if vlidort_path is not None:
-        # VLIDORT runs its own executables located under engine_base_dir
-        # (e.g. <engine_base_dir>/MASTERS/emit_radiance.exe).
         atmosphere_rte["engine_base_dir"] = abspath(vlidort_path)
+        atmosphere_rte["irradiance_file"] = irradiance_file
     elif emulator_base is not None:
         atmosphere_rte["emulator_file"] = abspath(emulator_base)
         atmosphere_rte["earth_sun_distance_file"] = earth_sun_distance_path

@@ -12,7 +12,12 @@ import numpy as np
 from ray.util.queue import Queue
 
 from isofit.atmosphere import BaseAtmosphere
-from isofit.core.common import calculate_resample_matrix, combos, resample_spectrum
+from isofit.core.common import (
+    calculate_resample_matrix,
+    combos,
+    load_esd,
+    resample_spectrum,
+)
 from isofit.data import env
 from isofit.luts.writer import Writer
 
@@ -368,6 +373,39 @@ class VLIDORT(BaseAtmosphere, Writer):
         }
 
         return data
+
+    def postSim(self):
+        """
+        Saves the solar irradiance and solar geometry to the LUT. The VLIDORT outputs
+        are solar flux normalized (TS_FLUX_FACTOR = pi / mu0), so the forward model
+        requires solar_irr to convert them to radiance
+
+        Returns
+        -------
+        dict
+            coszen, solzen, and solar_irr resampled to the LUT wavelengths
+        """
+        file = self.config.irradiance_file or env.path(
+            "examples", "20151026_SantaMonica", "data", "prism_optimized_irr.dat"
+        )
+        Logger.info(f"Loading solar irradiance from {file}")
+
+        iwl, irr = np.loadtxt(file, comments="#").T
+        irr = irr / 10.0  # convert from mW/m2/nm to uW/nm/cm2
+
+        # Scale from 1 AU to the Earth-Sun distance of the LUT day of year
+        if self.dayofyear is not None:
+            esd = load_esd()
+            irr = irr / esd[self.dayofyear - 1, 1] ** 2
+
+        # solar_zenith is a LUT dimension, so these are only a scene-wide fallback
+        solzen = float(np.mean(self.lut_grid["solar_zenith"]))
+
+        return {
+            "coszen": np.cos(np.radians(solzen)),
+            "solzen": solzen,
+            "solar_irr": resample_spectrum(irr, iwl, self.wl, self.fwhm),
+        }
 
     def make_cmd(self, point, exe="emit_radiance.exe", out=None):
         file = out or self.sims / self.point_to_filename(point)
