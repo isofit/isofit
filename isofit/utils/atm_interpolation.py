@@ -29,7 +29,7 @@ from scipy.spatial import KDTree
 from spectral.io import envi
 
 from isofit import ray
-from isofit.core.common import envi_header
+from isofit.core.common import envi_header, svd_inv
 from isofit.core.fileio import write_bil_chunk
 
 
@@ -180,7 +180,7 @@ def _run_chunk(
                         W = np.diag(np.ones(n))  # /uv[use, i])
                         y = yv[use, i : i + 1]
                         try:
-                            bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
+                            bhat[i, :] = (svd_inv(X.T @ W @ X) @ X.T @ W @ y).T
                         except:
                             bhat[i, :] = 0
 
@@ -252,9 +252,9 @@ def atm_interpolation(
     Returns:
         None
     """
-    if nneighbors is None:
+    if not nneighbors:
         nneighbors = [400]
-    if gaussian_smoothing_sigma is None:
+    if not gaussian_smoothing_sigma:
         gaussian_smoothing_sigma = [2]
     if n_cores == -1:
         n_cores = multiprocessing.cpu_count()
@@ -273,7 +273,7 @@ def atm_interpolation(
     If no atm_band names are given, 
     will use all bands in reference state file
     """
-    if atm_band_names:
+    if not atm_band_names:
         logging.warning("No band names provided, interpolating all bands")
         atm_band_names = reference_state_img.metadata.get("band names")
         if not atm_band_names:
