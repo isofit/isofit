@@ -144,7 +144,7 @@ def invert_analytical(
     diag_uncert: bool = True,
     outside_ret_const: float = -0.01,
     fill_value: float = -9999.0,
-    enforce_bounds: bool = True,
+    enforce_bounds: bool = False,
 ):
     """Perform an analytical estimate of the conditional MAP estimate for
     a fixed atmosphere.  Based on the "Inner loop" from Susiluoto et al. (2025).
