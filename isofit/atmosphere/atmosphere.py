@@ -303,15 +303,14 @@ class BaseAtmosphere(Reader):
         # 3c case
         if not self.multipart_transmittance:
             if self.rt_mode == "transm":
-                self.lut["transm_down_dif"] = units.transm_to_rdn(
-                    self.lut["transm_down_dif"],
-                    coszen=self.coszen,
-                    solar_irr=self.solar_irr,
-                )
+                for key in ["rhoatm", "transm_down_dif"]:
+                    self.lut[key] = units.transm_to_rdn(
+                        self.lut[key],
+                        coszen=self.coszen,
+                        solar_irr=self.solar_irr,
+                    )
 
-            self.lut["transm_down_dif"] = (
-                self.lut["transm_down_dif"] * self.esd_correction
-            )
+            self.lut[key] = self.lut[key] * self.esd_correction
 
         # 6c case
         else:
