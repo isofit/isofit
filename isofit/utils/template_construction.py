@@ -718,6 +718,7 @@ def build_config(
     n_cores: int = -1,
     surface_category="multicomponent_surface",
     emulator_base: str = None,
+    vlidort_path: str = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
     multiple_restarts: bool = False,
     segmentation_size=400,
@@ -850,6 +851,7 @@ def build_config(
                 co2_lut_grid=co2_lut_grid,
                 elevation_lut_grid=elevation_lut_grid,
                 emulator_base=emulator_base,
+                vlidort_path=vlidort_path,
                 multipart_transmittance=multipart_transmittance,
                 prebuilt_lut_path=prebuilt_lut_path,
                 presolve=presolve,
@@ -1546,6 +1548,7 @@ def make_atmosphere_config(
     co2_lut_grid: np.array = None,
     elevation_lut_grid: np.array = None,
     emulator_base: str = None,
+    vlidort_path: str = None,
     multipart_transmittance: bool = False,
     prebuilt_lut_path: str = None,
     presolve: bool = False,
@@ -1578,7 +1581,9 @@ def make_atmosphere_config(
         else abspath(prebuilt_lut_path)
     )
 
-    if emulator_base is None:
+    if vlidort_path is not None:
+        engine_name = "VLIDORT"
+    elif emulator_base is None:
         engine_name = "modtran"
     elif emulator_base.endswith(".jld2"):
         engine_name = "KernelFlowsGP"
@@ -1605,7 +1610,10 @@ def make_atmosphere_config(
     }
 
     atmosphere_rte = {}
-    if emulator_base is not None:
+    if vlidort_path is not None:
+        atmosphere_rte["engine_base_dir"] = abspath(vlidort_path)
+        atmosphere_rte["irradiance_file"] = irradiance_file
+    elif emulator_base is not None:
         atmosphere_rte["emulator_file"] = abspath(emulator_base)
         atmosphere_rte["earth_sun_distance_file"] = earth_sun_distance_path
         atmosphere_rte["irradiance_file"] = irradiance_file
