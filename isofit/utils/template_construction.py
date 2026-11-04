@@ -66,6 +66,7 @@ class Pathnames:
         subs: bool = False,
         classify_multisurface: bool = False,
         use_background_rfl: bool = False,
+        background_rfl_file: str = None,
         dn_uncertainty_file: str = None,
         eof_path=None,
     ):
@@ -146,9 +147,12 @@ class Pathnames:
         self.surface_working_paths = {}
 
         if use_background_rfl:
-            self.bgrfl_working_path = abspath(
-                join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl"))
-            )
+            if background_rfl_file:
+                self.bgrfl_working_path = background_rfl_file
+            else:
+                self.bgrfl_working_path = abspath(
+                    join(self.data_directory, rdn_fname.replace("_rdn", "_bgrfl"))
+                )
             self.atm_presolve = abspath(
                 join(self.output_directory, rdn_fname.replace("_rdn", "_atm_presolve"))
             )
@@ -261,7 +265,6 @@ class Pathnames:
         )
 
         self.rfl_subs_path = abspath(
-            # join(self.output_directory, self.fid + f"{subs_str}" + "_rfl")
             join(self.output_directory, self.fid + "_subs_rfl")
         )
         self.atm_coeff_path = abspath(
