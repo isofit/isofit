@@ -269,6 +269,7 @@ class CLI(click.Group):
         "interpolate_spectra": "isofit.utils.interpolate_spectra",
         "classify_multicomponent": "isofit.utils.multicomponent_classification",
         "surface_model": "isofit.utils.surface_model",
+        "background_rfl": "isofit.utils.adjacency",
         "plot": "isoplots",
     },
 )
