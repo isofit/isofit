@@ -1075,7 +1075,7 @@ def apply_oe(
 @click.option("-r", "--resources", is_flag=True, default=False)
 @click.option("--retrieve_co2", is_flag=True, default=False)
 @click.option("--use_background_rfl", is_flag=True, default=False)
-@click.option("--backgound_rfl_file", type=str, default=None)
+@click.option("--background_rfl_file", type=str, default=None)
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
 @click.option(

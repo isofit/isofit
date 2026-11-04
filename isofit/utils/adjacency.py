@@ -19,6 +19,7 @@
 #
 import logging
 
+import click
 import numpy as np
 from scipy.ndimage import uniform_filter
 from spectral.io import envi
@@ -106,7 +107,6 @@ def background_reflectance(
     log_file=None,
     chunksize=256,
     use_slic_rfls=True,
-    use_superpixels=True,
     nodata_value=-9999,
 ):
     """Aggregates background reflectance term from the presolve."""
@@ -159,7 +159,7 @@ def background_reflectance(
             isofit_config=config_path,
             segmentation_file=lbl_path,
             isofit_dir=None,
-            atm_file=am_path,
+            atm_file=atm_path,
             atm_sigma=smoothing_sigma,
             output_rfl_file=bgrfl_path,
             n_cores=n_cores,
@@ -205,18 +205,46 @@ def background_reflectance(
 
     del bg_rfl, loc
 
-    # if using superpixels, we aggregate the bg rfl before OE
-    if use_superpixels:
-        extractions(
-            inputfile=bgrfl_path,
-            labels=lbl_path,
-            output=bgrfl_path,
-            chunksize=chunksize,
-            flag=nodata_value,
-            reducer=reducers.band_mean,
-            n_cores=n_cores,
-            loglevel=logging_level,
-            logfile=log_file,
-        )
-
     return
+
+
+@click.command(name="background_rfl")
+@click.argument("input_radiance")
+@click.argument("input_loc")
+@click.argument("input_obs")
+@click.argument("config_path")
+@click.argument("lbl_path")
+@click.argument("atm_path")
+@click.argument("bgrfl_path")
+@click.argument("subs_state_path")
+@click.argument("mean_altitude_km")
+@click.argument("mean_elevation_km")
+@click.option(
+    "--atm_sigma",
+    "-as",
+    type=float,
+    multiple=True,
+    default=[2],
+    help="smoothing sigma for atmospheric interpolation",
+)
+@click.option(
+    "--n_cores",
+    type=int,
+    default=-1,
+    help="number of cores to use for parallel processing (default: all available cores)",
+)
+@click.option("--logging_level", help="logging level", type=str, default="INFO")
+@click.option("--log_file", help="logging file", type=str, default=None)
+@click.option("--chunksize", help="row-wise chunking", type=int, default=256)
+@click.option(
+    "--use_slic_rfls",
+    help="strategy for base reflectance cube",
+    is_flag=True,
+    default=True,
+)
+@click.option(
+    "--nodata_value", help="expected no-data value", type=int, default=-9999.0
+)
+def cli(**kwargs):
+    """Calculate the background reflectance cube"""
+    background_reflectance(**kwargs)
