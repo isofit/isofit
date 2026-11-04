@@ -18,18 +18,19 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 #
 import logging
-import numpy as np
-from spectral.io import envi
-from scipy.ndimage import uniform_filter
 
-from isofit.core.common import envi_header
-from isofit.utils.algebraic_line import algebraic_line
-from isofit.core.forward import ForwardModel
-from isofit.core.units import m_to_km, km_to_m
+import numpy as np
+from scipy.ndimage import uniform_filter
+from spectral.io import envi
+
 from isofit.configs import configs
-from isofit.core.multistate import update_config_for_surface
+from isofit.core.common import envi_header
 from isofit.core.fileio import initialize_output
+from isofit.core.forward import ForwardModel
+from isofit.core.multistate import update_config_for_surface
+from isofit.core.units import km_to_m, m_to_km
 from isofit.utils import extractions, reducers
+from isofit.utils.algebraic_line import algebraic_line
 
 
 def approx_pixel_size(loc, nodata_value=-9999):
@@ -92,14 +93,18 @@ def background_reflectance(
     input_radiance,
     input_loc,
     input_obs,
-    paths,
+    config_path,
+    lbl_path,
+    atm_path,
+    bgrfl_path,
+    subs_state_path,
     mean_altitude_km,
     mean_elevation_km,
-    smoothing_sigma,
-    n_cores,
-    logging_level,
-    log_file,
-    chunksize,
+    smoothing_sigma=[2],
+    n_cores=1,
+    logging_level="INFO",
+    log_file=None,
+    chunksize=256,
     use_slic_rfls=True,
     use_superpixels=True,
     nodata_value=-9999,
@@ -117,7 +122,7 @@ def background_reflectance(
     # We could also think of more custom weighting treatments for borders in future.
     UNIFORM_FILTER_MODE = "nearest"
 
-    conf = configs.create_new_config(paths.h2o_config_path)
+    conf = configs.create_new_config(config_path)
 
     # If using multisurface, we grab the first surface from the list
     # TODO this is the only instance of this, but perhaps a config method
@@ -151,19 +156,19 @@ def background_reflectance(
             rdn_file=input_radiance,
             loc_file=input_loc,
             obs_file=input_obs,
-            isofit_config=paths.h2o_config_path,
-            segmentation_file=paths.lbl_working_path,
+            isofit_config=config_path,
+            segmentation_file=lbl_path,
             isofit_dir=None,
-            atm_file=paths.atm_presolve,
+            atm_file=am_path,
             atm_sigma=smoothing_sigma,
-            output_rfl_file=paths.bgrfl_working_path,
+            output_rfl_file=bgrfl_path,
             n_cores=n_cores,
             logging_level=logging_level,
             log_file=log_file,
         )
-        bg_rfl = envi.open(
-            envi_header(paths.bgrfl_working_path), paths.bgrfl_working_path
-        ).open_memmap(interleave="bip", writable=True)
+        bg_rfl = envi.open(envi_header(bgrfl_path), bgrfl_path).open_memmap(
+            interleave="bip", writable=True
+        )
 
     # else, falls back to weighting the superpixel rfl directly
     else:
@@ -179,20 +184,13 @@ def background_reflectance(
                 "samples": cols,
                 "interleave": "bip",
             },
-            outpath=paths.bgrfl_working_path,
+            outpath=bgrfl_path,
             out_shape=(rows, cols, len(wl)),
             bands=f"{len(wl)}",
             description="Background reflectance for each pixel used in OE inversion",
         )
-        labels = (
-            envi.open(envi_header(paths.lbl_working_path), paths.lbl_working_path)
-            .load()
-            .squeeze()
-            .astype(int)
-        )
-        subs_state = envi.open(
-            envi_header(paths.h2o_subs_path), paths.h2o_subs_path
-        ).load()
+        labels = envi.open(envi_header(lbl_path), lbl_path).load().squeeze().astype(int)
+        subs_state = envi.open(envi_header(subs_state_path), subs_state_path).load()
         bg_rfl = envi.open(envi_header(rfl_output), rfl_output).open_memmap(
             interleave="bip", writable=True
         )
@@ -210,9 +208,9 @@ def background_reflectance(
     # if using superpixels, we aggregate the bg rfl before OE
     if use_superpixels:
         extractions(
-            inputfile=paths.bgrfl_working_path,
-            labels=paths.lbl_working_path,
-            output=paths.bgrfl_subs_path,
+            inputfile=bgrfl_path,
+            labels=lbl_path,
+            output=bgrfl_path,
             chunksize=chunksize,
             flag=nodata_value,
             reducer=reducers.band_mean,
