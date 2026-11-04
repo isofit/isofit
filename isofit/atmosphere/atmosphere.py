@@ -299,7 +299,7 @@ class BaseAtmosphere(Reader):
 
         # Correct solar-reflected radiances for the Earth Sun Distance mismatch
         # between the LUT build date and present data.
-        # Also, ensure we are in data that is consistent with rt_mode = "rdn".
+        # Also, ensure we are in units that are consistent with rt_mode = "rdn".
         post_process_keys = []
         if not self.multipart_transmittance:
             post_process_keys = ["rhoatm", "transm_down_dif"]  # 3c
@@ -313,7 +313,7 @@ class BaseAtmosphere(Reader):
                     coszen=self.coszen,
                     solar_irr=self.solar_irr,
                 )
-            self.lut[key] = self.lut[key] * self.esd_correction
+            self.lut[key].data = self.lut[key].data * self.esd_correction
 
         # Update to rdn mode in case other downstream processes access
         self.rt_mode = "rdn"
