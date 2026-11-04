@@ -345,9 +345,9 @@ class ForwardModel:
             geom=geom,
         )
 
+        meas = self.instrument.sample(x_instrument, self.atmosphere.wl, rdn)
         return (
-            self.instrument.sample(x_instrument, self.atmosphere.wl, rdn)
-            * self.instrument.rcc_factor(x_instrument)
+            meas * self.instrument.rcc_factor(x_instrument, meas)
         ) + self.eof_offset(x_instrument)
 
     def calc_atmosphere_quantities(
@@ -693,6 +693,7 @@ class ForwardModel:
             geom=geom,
         )
         meas = self.instrument.sample(x_instrument, self.atmosphere.wl, rdn_hi)
+        rcc_chain = self.instrument.rcc_chain_factor(x_instrument, meas)[:, None]
 
         # Call derivative of rfl wrt surface state, upsample
         drfl_dsurface_hi = self.upsample(
@@ -724,7 +725,7 @@ class ForwardModel:
         dmeas_dsurface = self.instrument.sample(
             x_instrument, self.atmosphere.wl, drdn_dsurface.T
         ).T
-        dmeas_dsurface *= self.instrument.rcc_factor(x_instrument)[:, None]
+        dmeas_dsurface *= rcc_chain
 
         # To get the derivative w.r.t. atmosphere
         dmeas_datmosphere = self.dmeas_datmosphere(
@@ -738,7 +739,7 @@ class ForwardModel:
             Ls=Ls_hi,
             meas=meas,
         )
-        dmeas_datmosphere *= self.instrument.rcc_factor(x_instrument)[:, None]
+        dmeas_datmosphere *= rcc_chain
 
         dmeas_dinstrument = self.instrument.dmeas_dinstrument(
             x_instrument, self.atmosphere.wl, rdn_hi
@@ -820,7 +821,9 @@ class ForwardModel:
             meas=meas,
         )
         if dmeas_datmosphereb.size:
-            dmeas_datmosphereb *= self.instrument.rcc_factor(x_instrument)[:, None]
+            dmeas_datmosphereb *= self.instrument.rcc_chain_factor(
+                x_instrument, meas
+            )[:, None]
 
         # To get derivatives w.r.t. instrument, downsample to instrument wavelengths
         dmeas_dinstrumentb = self.instrument.dmeas_dinstrumentb(
