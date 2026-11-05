@@ -6135,7 +6135,7 @@
 
         <span class="k">if</span> <span class="s2">"H2O"</span> <span class="ow">in</span> <span class="n">pixel_heuristic_priors</span><span class="p">:</span>
             <span class="n">updates</span><span class="p">[</span><span class="s2">"xa"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">)</span>
-            <span class="n">updates</span><span class="p">[</span><span class="s2">"xa"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_atmosphere</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">])</span>
+            <span class="n">updates</span><span class="p">[</span><span class="s2">"xa"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_atmosphere</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 
         <span class="k">if</span> <span class="s2">"AOT"</span> <span class="ow">in</span> <span class="n">pixel_heuristic_priors</span><span class="p">:</span>
             <span class="n">xa_aot</span><span class="p">,</span> <span class="n">sigma_aot</span> <span class="o">=</span> <span class="n">aeronet_model</span><span class="p">(</span>
