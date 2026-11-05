@@ -24,7 +24,7 @@ import os
 from collections import OrderedDict
 from difflib import SequenceMatcher
 from os.path import expandvars
-from typing import List
+from typing import List, NamedTuple
 
 import numpy as np
 
@@ -44,6 +44,13 @@ eps = 1e-5
 
 # Global variable makes it non-shared mem in ray
 Cache = {"stats": {}}
+
+
+class PriorUpdate(NamedTuple):
+    xa: tuple = (np.array([], dtype=int), np.array([], dtype=float))
+    Sa: tuple = (np.array([], dtype=int), np.array([], dtype=float))
+    Sa_inv: tuple = (np.array([], dtype=int), np.array([], dtype=float))
+    Sa_inv_sqrt: tuple = (np.array([], dtype=int), np.array([], dtype=float))
 
 
 @njit(inline="always")

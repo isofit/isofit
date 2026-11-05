@@ -30,7 +30,7 @@ from types import SimpleNamespace
 import numpy as np
 
 from isofit.configs import Config
-from isofit.core import common, units
+from isofit.core import PriorUpdate, common, units
 from isofit.core.common import json_load_ascii, svd_inv_sqrt
 from isofit.core.geometry import Geometry
 from isofit.luts.reader import Reader
@@ -137,7 +137,7 @@ class BaseAtmosphere(Reader):
         ]
         self.h2o_name = self.statevec_names[self.h2o_i[0]] if self.h2o_i else None
 
-        possible_aerosol_names = ["AOT", "AERFRAC"]
+        possible_aerosol_names = ["AOT", "AERFRAC", "AOD550"]
         self.aerosol_i = [
             i
             for i, v in enumerate(self.statevec_names)
@@ -363,12 +363,28 @@ class BaseAtmosphere(Reader):
             Logger.error(error)
             raise AttributeError(error)
 
-    def update_heuristic_prior_means(self, x_atmosphere, geom):
-        xa = self.prior_mean.copy()
-        xa[self.h2o_i] = x_atmosphere[self.h2o_i]
-        xa[self.aerosol_i] = x_atmosphere[self.aerosol_i]
+    def heuristic_prior_update(self, x_atmosphere, geom, pixel_heuristic_priors):
+        updates = {name: ([], []) for name in PriorUpdate._fields}
 
-        return xa
+        if "H2O" in pixel_heuristic_priors:
+            updates["xa"][0].append(self.h2o_i)
+            updates["xa"][1].append(x_atmosphere[self.h2o_i])
+
+        if "AOD" in pixel_heuristic_priors:
+            xa_aod, sigma_aod = aeronet_model(
+                elevation_km=geom.surface_elevation_km,
+            )
+            i = self.aerosol_i
+            for name, val in (
+                ("xa", xa_aod),
+                ("Sa", sigma_aod**2),
+                ("Sa_inv", 1 / sigma_aod**2),
+                ("Sa_inv_sqrt", 1 / sigma_aod),
+            ):
+                updates[name][0].append(i)
+                updates[name][1].append(val)
+
+        return PriorUpdate(**updates)
 
     def xa(self, x_atmosphere, geom):
         """

@@ -28,6 +28,7 @@ from scipy.signal import convolve
 
 from isofit.core import units
 from isofit.core.common import (
+    PriorUpdate,
     emissive_radiance,
     eps,
     load_wavelen,
@@ -217,6 +218,10 @@ class Instrument:
             or config.statevector.WL_SPACE is not None
         ):
             self.calibration_fixed = False
+
+    def heuristic_prior_update(self, x_surface, geom):
+        """Not implemented"""
+        return PriorUpdate()
 
     def xa(self):
         """Mean of prior distribution, calculated at state x."""

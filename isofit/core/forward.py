@@ -28,7 +28,7 @@ from scipy.io import loadmat
 from scipy.linalg import block_diag
 
 from isofit.atmosphere import Atmosphere
-from isofit.core.common import eps, svd_inv_sqrt
+from isofit.core.common import PriorUpdate, eps, svd_inv_sqrt
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
 from isofit.core.multistate import match_statevector
@@ -165,10 +165,13 @@ class ForwardModel:
             self.calc_rdn_bgrfl = self.calc_rdn_bgrfl_homogeneous
             self.terrain_rereflection = self.terrain_rereflection_homogeneous
 
-        if full_config.implementation.per_pixel_heuristic_prior:
+        self.pixel_heuristic_priors = full_config.implementation.pixel_heuristic_priors
+        if len(self.pixel_heuristic_priors):
             self.xa = self.xa_heuristic
+            self.Sa = self.Sa_heuristic
         else:
             self.xa = self.xa_static
+            self.Sa = self.Sa_static
 
     @staticmethod
     def clip_bounds(x, bounds, inds_free=slice(None), eps=1e-5):
@@ -197,48 +200,52 @@ class ForwardModel:
             x_atmosphere <= (bound_lwr[self.idx_atmosphere] + eps * 2.0)
         )
 
-    def update_heuristic_prior_means(self, x, geom):
-        """Save the pixel-specific prior to the geometry object"""
+    def heuristic_prior_update(self, x, geom):
+        """Get the pixel-specific priors
+        NOTE: This has been developed with **diagonal priors** in mind **only**.
+        If updates to off-diagonals become necessary, we would have to revisit
+        all implementations, particularly the indexing in the PriorUpdate tuple.
+        This is potentially a hassle with the Sa normalization"""
+        xa = self.xa_static(x, geom)
+        Sa, Sa_inv, Sa_inv_sqrt = self.Sa_static(x, geom)
         x_surface, x_atmosphere, x_instrument = self.unpack(x)
-        x_surface = self.surface.update_heuristic_prior_means(x[self.idx_surface], geom)
-        x_atmosphere = self.atmosphere.update_heuristic_prior_means(
-            x[self.idx_atmosphere], geom
-        )
-        # No implimentation for Instrument
 
-        # Should be persist out of this function scope
-        geom.xa = np.concatenate([x_surface, x_atmosphere, x_instrument])
-
-        return
-
-    def update_prior_via_aeronet(self, geom):
-        """Update xa and Sa for atmosphere based on aeronet climatology."""
-        xa_aerosol, sigma_aerosol = self.atmosphere.aeronet_model(
-            elevation_km=geom.surface_elevation_km,
-        )
-
-        geom.Sa_atmosphere[self.aerosol_i, self.aerosol_i] = sigma_aerosol**2
-        Sa_atm_norm = geom.Sa_atmosphere / np.mean(np.diag(geom.Sa_atmosphere))
-        geom.Sa_atm_inv_norm, geom.Sa_atm_inv_sqrt_norm = svd_inv_sqrt(Sa_atm_norm)
-
-        # NOTE: this assumes if not None, that xa aerosol is
-        # already being updated in update_heuristic_prior_means()
-        if geom.xa is None:
-            geom.xa = self.init.copy()
-            geom.xa[self.aerosol_i] = xa_aerosol
-
-        return
-
-    def heuristic_bounds(self, geom):
-        """Save pixel-specific bounds. Currently only implemented for H2O"""
-        # Would like to avoid if statement here
-        low_bound = self.bounds[0]
-        high_bound = self.bounds[1]
-        if self.atmosphere.h2o_i:
-            high_bound[self.idx_atmosphere[self.atmosphere.h2o_i]] = (
-                self.atmosphere.h2o_bounds_polynomial(geom.surface_elevation_km) - eps
+        collected = {name: ([], []) for name in ["xa", "Sa", "Sa_inv", "Sa_inv_sqrt"]}
+        for section, x_section, idx_section in [
+            (self.surface, x_surface, self.idx_surface),
+            (self.atmosphere, x_atmosphere, self.idx_atmosphere),
+            (self.instrument, x_instrument, self.idx_instrument),
+        ]:
+            # Primary function that fetches the section-specific update
+            updates = section.heuristic_prior_update(
+                x_section, geom, self.pixel_heuristic_priors
             )
-        return (low_bound, high_bound)
+            for name, (idx, vals) in updates._asdict().items():
+                idx = np.asarray(idx, dtype=int).reshape(-1)
+                vals = np.asarray(vals, dtype=float).reshape(-1)
+                collected[name][0].append(idx_section[idx])
+                collected[name][1].append(vals)
+
+        update = PriorUpdate(
+            **{
+                name: (np.concatenate(idx_list), np.concatenate(val_list))
+                for name, (idx_list, val_list) in collected.items()
+            }
+        )
+
+        # Copy to new memory address
+        xa = xa.copy()
+        Sa = Sa.copy()
+        Sa_inv = Sa_inv.copy()
+        Sa_inv_sqrt = Sa_inv_sqrt.copy()
+
+        # In the future, off-diagonal updates would require fixing this indexing
+        xa[update.xa[0]] = update.xa[1]
+        Sa[update.Sa[1], update.Sa[1]] = update.Sa[1]
+        Sa_inv[update.Sa[1], update.Sa_inv[1]] = update.Sa_inv[1]
+        Sa_inv_sqrt[update.Sa[1], update.Sa_inv_sqrt[1]] = update.Sa_inv_sqrt[1]
+
+        return xa, Sa, Sa_inv, Sa_inv_sqrt
 
     def xa_heuristic(self, x, geom):
         return geom.xa
@@ -257,7 +264,10 @@ class ForwardModel:
         xa_instrument = self.instrument.xa()
         return np.concatenate((xa_surface, xa_atmosphere, xa_instrument), axis=0)
 
-    def Sa(self, x, geom):
+    def Sa_heuristic(self, x, geom):
+        return geom.Sa, geom.Sa_inv, geom.Sa_inv_sqrt
+
+    def Sa_static(self, x, geom):
         """Calculate the prior covariance of the state vector (the
         concatenation of state vectors for the surface and the atmosphere).
 
@@ -269,26 +279,27 @@ class ForwardModel:
         Sa_surface, Sa_surf_inv_norm, Sa_surf_inv_sqrt_norm = self.surface.Sa(
             x_surface, geom
         )
+        Sa_atmosphere = self.atmosphere.Sa()
         Sa_instrument = self.instrument.Sa()
         Sa_state = block_diag(
-            Sa_surface[:, :], geom.Sa_atmosphere[:, :], Sa_instrument[:, :]
+            Sa_surface[:, :], Sa_atmosphere[:, :], Sa_instrument[:, :]
         )
 
         # per block variance scaling for normalization
         scale_surface = np.sqrt(np.mean(np.diag(Sa_surface[:, :])))
-        scale_atmosphere = np.sqrt(np.mean(np.diag(geom.Sa_atmosphere[:, :])))
+        scale_atmosphere = np.sqrt(np.mean(np.diag(Sa_atmosphere[:, :])))
         scale_instrument = np.sqrt(np.mean(np.diag(Sa_instrument[:, :])))
 
         # Compute the Sa inv and Sa inv sqrt for measurement
         Sa_inv_state = block_diag(
             Sa_surf_inv_norm / scale_surface**2,
-            geom.Sa_atm_inv_norm / scale_atmosphere**2,
+            self.atmosphere.Sa_inv_normalized / scale_atmosphere**2,
             self.instrument.Sa_inv_normalized / scale_instrument**2,
         )
 
         Sa_inv_sqrt_state = block_diag(
             Sa_surf_inv_sqrt_norm / scale_surface,
-            geom.Sa_atm_inv_sqrt_norm / scale_atmosphere,
+            self.atmosphere.Sa_inv_sqrt_normalized / scale_atmosphere,
             self.instrument.Sa_inv_sqrt_normalized / scale_instrument,
         )
 

@@ -18,11 +18,11 @@ from spectral.io import envi
 
 from isofit import __version__
 from isofit.atmosphere.atmosphere import (
+    aeronet_model,
     modtran_aot_lowerbound_polynomials,
     modtran_water_upperbound_polynomials,
 )
 from isofit.core import units
-from isofit.atmosphere.atmosphere import aeronet_model
 from isofit.core.common import envi_header, expand_path, json_load_ascii
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
@@ -724,10 +724,9 @@ def build_config(
     presolve: bool = False,
     terrain_style: str = "flat",
     max_slope: float = 20.0,
-    per_pixel_heuristic_prior: bool = False,
+    pixel_heuristic_priors: list[str] = [],
     use_background_rfl: bool = False,
     elevation_km: float = 0.0,
-    aeronet_prior: bool = False,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -852,7 +851,7 @@ def build_config(
                 presolve=presolve,
                 pressure_elevation=pressure_elevation,
                 retrieve_co2=retrieve_co2,
-                per_pixel_heuristic_prior=per_pixel_heuristic_prior,
+                heuristic_h2o_prior="H2O" in pixel_heuristic_priors,
                 relative_azimuth_lut_grid=relative_azimuth_lut_grid,
                 to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid,
                 to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
@@ -875,7 +874,7 @@ def build_config(
             inversion_windows=inversion_windows,
             n_cores=n_cores,
             debug=debug,
-            per_pixel_heuristic_prior=per_pixel_heuristic_prior,
+            pixel_heuristic_priors=pixel_heuristic_priors,
         ),
         "input": input_config,
         "output": output_config,
@@ -1055,7 +1054,7 @@ def load_climatology(
     acquisition_datetime: datetime,
     lut_params: LUTConfig,
     elevation_km: float = 0.0,
-    aeronet_prior: bool = False,
+    heuristic_aeronet_prior: bool = False,
 ):
     """Load climatology data, based on location and configuration
 
@@ -1066,7 +1065,7 @@ def load_climatology(
         acquisition_datetime: datetime to use for the segment( mean of acquisition suggested)
         lut_params: parameters to use to define lut grid
         elevation_km: determined mean elevation in km for image used for AOT priors
-        aeronet_prior: define prior mean and sigma for AOT 550 as a function of aeronet climatology
+        heuristic_aeronet_prior: define prior mean and sigma for AOT 550 as a function of aeronet climatology
 
     :Returns
         tuple containing:
@@ -1101,7 +1100,7 @@ def load_climatology(
         )
 
         if aerosol_lut is not None:
-            if aeronet_prior:
+            if heuristic_aeronet_prior:
                 init_value, prior_sigma = aeronet_model(
                     elevation_km=elevation_km, aot_min=alr[0], aot_max=alr[1]
                 )
@@ -1567,6 +1566,7 @@ def make_atmosphere_config(
     presolve: bool = False,
     pressure_elevation: bool = False,
     retrieve_co2: bool = False,
+    heuristic_h2o_prior: bool = False,
     per_pixel_heuristic_prior: bool = False,
     relative_azimuth_lut_grid: np.array = None,
     to_sensor_zenith_lut_grid: np.array = None,
@@ -2029,7 +2029,7 @@ def make_implementation_config(
     inversion_windows: list = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     n_cores: int = -1,
     debug: bool = False,
-    per_pixel_heuristic_prior: bool = False,
+    pixel_heuristic_priors: list[str] = [],
 ):
 
     return {
@@ -2037,7 +2037,7 @@ def make_implementation_config(
         "ray_address": ray_ip_head,
         "inversion": {"windows": inversion_windows},
         "n_cores": n_cores,
-        "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
+        "pixel_heuristic_priors": pixel_heuristic_priors,
         "debug_mode": debug,
         "isofit_version": __version__,
     }

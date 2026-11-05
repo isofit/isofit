@@ -24,7 +24,7 @@ from scipy.linalg import block_diag
 
 from isofit.core.common import eps, resample_spectrum, svd_inv_sqrt
 from isofit.data import env
-from isofit.surface.surface import DefaultState
+from isofit.surface.surface import DefaultState, PriorUpdate
 from isofit.surface.surface_multicomp import MultiComponentSurface
 
 DefaultSkyGlintPrior = DefaultState(
@@ -123,13 +123,26 @@ class GlintModelSurface(MultiComponentSurface):
             real_ref_idx[:, 1], real_ref_idx[:, 0], self.wl, self.fwhm
         )
 
-    def update_heuristic_prior_means(self, x_surface, geom):
-        """Update the sun glint prior to match initial guess (x_surface"""
-        mu = MultiComponentSurface.update_heuristic_prior_means(self, x_surface, geom)
-        mu[self.sky_glint_ind] = self.sky_glint_mean
-        mu[self.sun_glint_ind] = x_surface[self.sun_glint_ind]
+    def heuristic_prior_update(self, x_surface, geom, pixel_heuristic_priors):
+        """Get the updates for xa, Sa, Sa_inv, Sa_inv_sqrt.
+        The format follows:
+            xa: (statevec_idx: list[int], update_values: ndarray[float])
+            Sa: (statevec_idx: list[int], update_values: ndarray[float])
+            Sa_inv: (statevec_idx: list[int], update_values: ndarray[float])
+            Sa_inv_sqrt: (statevec_idx: list[int], update_values: ndarray[float])
 
-        return mu
+        NOTE this is only implemented for Sun glint xa here.
+        Would have to be extended for more complex heuristics
+        """
+        if "SUN_GLINT" in pixel_heuristic_priors:
+            return PriorUpdate(
+                xa=(
+                    np.atleast_1d(self.sun_glint_ind),
+                    np.atleast_1d(x_surface[self.sun_glint_ind]),
+                )
+            )
+        else:
+            return PriorUpdate()
 
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x."""
