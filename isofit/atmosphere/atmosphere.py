@@ -31,7 +31,7 @@ import numpy as np
 
 from isofit.configs import Config
 from isofit.core import common, units
-from isofit.core.common import json_load_ascii, svd_inv_sqrt
+from isofit.core.common import PriorUpdate, json_load_ascii, svd_inv_sqrt
 from isofit.core.geometry import Geometry
 from isofit.luts.reader import Reader
 
@@ -134,6 +134,14 @@ class BaseAtmosphere(Reader):
         possible_h2o_names = ["H2OSTR", "h2o"]
         self.h2o_i = [
             i for i, v in enumerate(self.statevec_names) if v in possible_h2o_names
+        ]
+        self.h2o_name = self.statevec_names[self.h2o_i[0]] if self.h2o_i else None
+
+        possible_aerosol_names = ["AOT", "AERFRAC"]
+        self.aerosol_i = [
+            i
+            for i, v in enumerate(self.statevec_names)
+            if any(name in v for name in possible_aerosol_names)
         ]
 
         # Configure and exit flag
@@ -353,11 +361,28 @@ class BaseAtmosphere(Reader):
             Logger.error(error)
             raise AttributeError(error)
 
-    def update_heuristic_prior_means(self, x_atmosphere, geom):
-        xa = self.prior_mean.copy()
-        xa[self.h2o_i] = x_atmosphere[self.h2o_i]
+    def heuristic_prior_update(self, x_atmosphere, geom, pixel_heuristic_priors):
+        updates = {name: ([], []) for name in PriorUpdate._fields}
 
-        return xa
+        if "H2O" in pixel_heuristic_priors:
+            updates["xa"][0].append(self.h2o_i)
+            updates["xa"][1].append(x_atmosphere[self.h2o_i])
+
+        if "AOT" in pixel_heuristic_priors:
+            xa_aot, sigma_aot = aeronet_model(
+                elevation_km=geom.surface_elevation_km,
+            )
+            i = self.aerosol_i
+            for name, val in (
+                ("xa", xa_aot),
+                ("Sa", sigma_aot**2),
+                ("Sa_inv", 1 / sigma_aot**2),
+                ("Sa_inv_sqrt", 1 / sigma_aot),
+            ):
+                updates[name][0].append(i)
+                updates[name][1].append(val)
+
+        return PriorUpdate(**updates)
 
     def xa(self, x_atmosphere, geom):
         """
@@ -652,30 +677,30 @@ def modtran_water_upperbound_polynomials() -> dict:
     # Capping polynomial to not allow negative, or increasing trend, at very high ground altitudes (>6km).
     min_value = 0.25
 
+    def make_poly(c0, c1, c2, c3):
+        def poly(x):
+            if x is None:
+                return None
+
+            x = np.asarray(x)
+            return np.maximum(c0 + c1 * x + c2 * x**2 + c3 * x**3, min_value)
+
+        return poly
+
     polynomials = {
-        "ATM_TROPICAL": lambda x: np.maximum(
-            6.74256 + (-2.37052 * x) + (0.313829 * x**2) + (-0.0159003 * x**3),
-            min_value,
+        "ATM_TROPICAL": make_poly(6.74256, -2.37052, 0.313829, -0.0159003),
+        "ATM_MIDLAT_SUMMER": make_poly(
+            5.350046, -1.839548, 2.296582e-01, -1.020594e-02
         ),
-        "ATM_MIDLAT_SUMMER": lambda x: np.maximum(
-            5.350046 + (-1.839548 * x) + (2.296582e-01 * x**2) + (-1.020594e-02 * x**3),
-            min_value,
+        "ATM_MIDLAT_WINTER": make_poly(
+            1.371226, -0.442087, 4.485325e-02, -1.130163e-03
         ),
-        "ATM_MIDLAT_WINTER": lambda x: np.maximum(
-            1.371226 + (-0.442087 * x) + (4.485325e-02 * x**2) + (-1.130163e-03 * x**3),
-            min_value,
+        "ATM_SUBARC_SUMMER": make_poly(
+            3.121272, -1.171145, 1.704094e-01, -9.701062e-03
         ),
-        "ATM_SUBARC_SUMMER": lambda x: np.maximum(
-            3.121272 + (-1.171145 * x) + (1.704094e-01 * x**2) + (-9.701062e-03 * x**3),
-            min_value,
-        ),
-        "ATM_SUBARC_WINTER": lambda x: np.maximum(
-            0.630406 + (-0.176336 * x) + (8.286409e-03 * x**2) + (8.138824e-04 * x**3),
-            min_value,
-        ),
-        "ATM_US_STANDARD_1976": lambda x: np.maximum(
-            2.869655 + (-1.227473 * x) + (2.039059e-01 * x**2) + (-1.274801e-02 * x**3),
-            min_value,
+        "ATM_SUBARC_WINTER": make_poly(0.630406, -0.176336, 8.286409e-03, 8.138824e-04),
+        "ATM_US_STANDARD_1976": make_poly(
+            2.869655, -1.227473, 2.039059e-01, -1.274801e-02
         ),
     }
 
@@ -689,31 +714,63 @@ def modtran_aot_lowerbound_polynomials() -> dict:
         dict: 3rd degree polynomials to estimate lowerbound of AOT
     """
 
+    def make_poly(c0, c1, c2, c3):
+        def poly(x):
+            if x is None:
+                return None
+
+            x = np.asarray(x)
+            return c0 + c1 * x + c2 * x**2 + c3 * x**3
+
+        return poly
+
     polynomials = {
-        "ATM_TROPICAL": lambda x: 0.042090
-        + (-0.003120 * x)
-        + (4.462979e-18 * x**2)
-        + (-4.260469e-19 * x**3),
-        "ATM_MIDLAT_SUMMER": lambda x: 0.042090
-        + (-0.003120 * x)
-        + (4.462979e-18 * x**2)
-        + (-4.260469e-19 * x**3),
-        "ATM_MIDLAT_WINTER": lambda x: 0.024748
-        + (-0.001654 * x)
-        + (-5.083805e-07 * x**2)
-        + (7.252007e-08 * x**3),
-        "ATM_SUBARC_SUMMER": lambda x: 0.042090
-        + (-0.003120 * x)
-        + (4.462979e-18 * x**2)
-        + (-4.260469e-19 * x**3),
-        "ATM_SUBARC_WINTER": lambda x: 0.024748
-        + (-0.001654 * x)
-        + (-5.083805e-07 * x**2)
-        + (7.252007e-08 * x**3),
-        "ATM_US_STANDARD_1976": lambda x: 0.042090
-        + (-0.003120 * x)
-        + (4.462979e-18 * x**2)
-        + (-4.260469e-19 * x**3),
+        "ATM_TROPICAL": make_poly(0.042090, -0.003120, 4.462979e-18, -4.260469e-19),
+        "ATM_MIDLAT_SUMMER": make_poly(
+            0.042090, -0.003120, 4.462979e-18, -4.260469e-19
+        ),
+        "ATM_MIDLAT_WINTER": make_poly(
+            0.024748, -0.001654, -5.083805e-07, 7.252007e-08
+        ),
+        "ATM_SUBARC_SUMMER": make_poly(
+            0.042090, -0.003120, 4.462979e-18, -4.260469e-19
+        ),
+        "ATM_SUBARC_WINTER": make_poly(
+            0.024748, -0.001654, -5.083805e-07, 7.252007e-08
+        ),
+        "ATM_US_STANDARD_1976": make_poly(
+            0.042090, -0.003120, 4.462979e-18, -4.260469e-19
+        ),
     }
 
     return polynomials
+
+
+def aeronet_model(
+    elevation_km: float, aot_min: float = 0.01, aot_max: float = 1.0
+) -> tuple:
+    """
+    Daily average aeronet modeled/converted AOT @ 550 nm, accessed on 2 October 2026 (via 440-870_Angstrom_Exponent).
+    Data were binned by elevation every 200 m, then were modeled using empirically derived relation.
+    The output is a prior mean and standard deviation for AOT-550 with respect to elevation.
+    """
+    try:
+        elevation_m = units.km_to_m(elevation_km)
+    # allow for test data with elevation as None
+    except (TypeError, ValueError):
+        elevation_m = 0.0
+
+    # Define bounds and params of polynomial
+    elevation_m = min(max(elevation_m, 0.0), 6000.0)
+    p_mean = np.array(
+        [-8.79629630e-13, 1.34722222e-08, -7.05687831e-05, 1.51746032e-01]
+    )
+    p_std = np.array([-2.77777778e-14, 4.08333333e-09, -3.81269841e-05, 1.19761905e-01])
+
+    prior_mean = np.polyval(p_mean, elevation_m)
+    prior_sd = np.polyval(p_std, elevation_m)
+
+    # Guard against out of bounds in LUT (allows for prebuilt LUT logic)
+    prior_mean = max(min(prior_mean, aot_max), aot_min)
+
+    return prior_mean, prior_sd

@@ -113,7 +113,7 @@ def apply_oe(
     use_background_rfl=False,
     eof_path=None,
     terrain_style="dem",
-    per_pixel_heuristic_prior=False,
+    pixel_heuristic_priors=[],
     datestr=None,
 ):
     """
@@ -262,6 +262,11 @@ def apply_oe(
         with one number per instrument channel.
     terrain_style : str, default=dem
         Flag to set the terrain style.  dem uses provided obs values, flat sets the surface to the spheroid
+    pixel_heuristic_priors: bool, default=False
+        List of per-pixel heuristic priors to apply Options:
+            AOT - As a function of aeronet climatology
+            H2O - As a function of band continuum solution
+            SUN_GLINT - As a function of SWIR signal
     datestr : str, default=None
         strptime format matching the start of the radiance filename, e.g.
         "emit%Y%m%dt%H%M%S", used to determine the acquisition date and time for custom
@@ -703,8 +708,9 @@ def apply_oe(
         "multipart_transmittance": multipart_transmittance,
         "segmentation_size": segmentation_size,
         "terrain_style": terrain_style,
-        "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
+        "pixel_heuristic_priors": pixel_heuristic_priors,
         "use_background_rfl": use_background_rfl,
+        "elevation_km": mean_elevation_km,
     }
     if presolve:
         # write modtran presolve template
@@ -837,11 +843,13 @@ def apply_oe(
         # add aerosol elements from climatology
         aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
             tmpl.load_climatology(
-                paths.aerosol_climatology,
-                mean_latitude,
-                mean_longitude,
-                dt,
+                config_path=paths.aerosol_climatology,
+                latitude=mean_latitude,
+                longitude=mean_longitude,
+                elevation_km=mean_elevation_km,
+                acquisition_datetime=dt,
                 lut_params=lut_params,
+                heuristic_aeronet_prior="AOT" in pixel_heuristic_priors,
             )
         )
         config_params["aerosol_model_file"] = aerosol_model_path
@@ -1045,7 +1053,12 @@ def apply_oe(
 @click.option("--use_background_rfl", is_flag=True, default=False)
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
-@click.option("--per_pixel_heuristic_prior", is_flag=True, default=False)
+@click.option(
+    "--pixel_heuristic_priors",
+    "-php",
+    multiple=True,
+    type=click.Choice(["AOT", "H2O", "SUN_GLINT"], case_sensitive=False),
+)
 @click.option("--datestr", type=str, default=None)
 @click.option(
     "--debug-args",

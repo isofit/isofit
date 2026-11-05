@@ -20,24 +20,21 @@
 from __future__ import annotations
 
 import logging
-from collections import namedtuple
+from typing import NamedTuple
 
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.io import loadmat
 
-from isofit.core.common import load_spectrum, load_wavelen
+from isofit.core.common import PriorUpdate, load_spectrum, load_wavelen
 
-DefaultState = namedtuple(
-    "DefaultState",
-    [
-        "bounds",
-        "scale",
-        "prior_mean",
-        "prior_sigma",
-        "init",
-    ],
-)
+
+class DefaultState(NamedTuple):
+    bounds: list[float]
+    scale: float
+    prior_mean: float
+    prior_sigma: float
+    init: float
 
 
 class Surface:
@@ -90,9 +87,15 @@ class Surface:
             p = interp1d(self.rwl, self.rfl, fill_value="extrapolate")
             self.rfl = p(self.wl)
 
-    def update_heuristic_prior_means(self, x_surface, geom):
-        """Don't update any of the reflectance priors. Return xa"""
-        return self.xa(x_surface, geom)
+    def heuristic_prior_update(self, x_surface, geom, pixel_heuristic_priors):
+        """Don't update any of the reflectance priors.
+        Return format follows:
+            xa: (statevec_idx: list[int], update_values: ndarray[float])
+            Sa: (statevec_idx: list[int], update_values: ndarray[float])
+            Sa_inv: (statevec_idx: list[int], update_values: ndarray[float])
+            Sa_inv_sqrt: (statevec_idx: list[int], update_values: ndarray[float])
+        """
+        return PriorUpdate()
 
     def xa(self, x_surface, geom):
         """Mean of prior state vector distribution calculated at state x."""

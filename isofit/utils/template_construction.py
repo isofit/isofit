@@ -18,6 +18,7 @@ from spectral.io import envi
 
 from isofit import __version__
 from isofit.atmosphere.atmosphere import (
+    aeronet_model,
     modtran_aot_lowerbound_polynomials,
     modtran_water_upperbound_polynomials,
 )
@@ -460,19 +461,19 @@ class LUTConfig:
         self.relative_azimuth_spacing = 60
         self.relative_azimuth_spacing_min = 25
 
-        # Units of AOD
+        # Units of AOT
         self.aerosol_0_spacing = 0
         self.aerosol_0_spacing_min = 0
 
-        # Units of AOD
+        # Units of AOT
         self.aerosol_1_spacing = 0
         self.aerosol_1_spacing_min = 0
 
-        # Units of AOD
+        # Units of AOT
         self.aerosol_2_spacing = 0.1
         self.aerosol_2_spacing_min = 0
 
-        # Units of AOD
+        # Units of AOT
         modtran_min_aerosol = modtran_aot_lowerbound_polynomials()[atmosphere_type](0)
         self.aerosol_0_range = [modtran_min_aerosol, 1]
         self.aerosol_1_range = [modtran_min_aerosol, 1]
@@ -731,8 +732,9 @@ def build_config(
     presolve: bool = False,
     terrain_style: str = "flat",
     max_slope: float = 20.0,
-    per_pixel_heuristic_prior: bool = False,
+    pixel_heuristic_priors: list[str] = [],
     use_background_rfl: bool = False,
+    elevation_km: float = 0.0,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -766,6 +768,7 @@ def build_config(
         terrain_style:                        style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
         max_slope:                            maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat
         use_background_rfl:                   flag to determine which surface derivatives to use in OE
+        elevation_km:                         determined mean elevation in km for image used for AOT priors
     """
 
     if use_superpixels:
@@ -855,10 +858,12 @@ def build_config(
                 presolve=presolve,
                 pressure_elevation=pressure_elevation,
                 retrieve_co2=retrieve_co2,
-                per_pixel_heuristic_prior=per_pixel_heuristic_prior,
+                heuristic_h2o_prior="H2O" in pixel_heuristic_priors,
+                heuristic_aeronet_prior="AOT" in pixel_heuristic_priors,
                 relative_azimuth_lut_grid=relative_azimuth_lut_grid,
                 to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid,
                 to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
+                elevation_km=elevation_km,
             ),
             "surface": make_surface_config(
                 surface_class_working_path=paths.surface_class_working_path,
@@ -876,7 +881,7 @@ def build_config(
             inversion_windows=inversion_windows,
             n_cores=n_cores,
             debug=debug,
-            per_pixel_heuristic_prior=per_pixel_heuristic_prior,
+            pixel_heuristic_priors=pixel_heuristic_priors,
         ),
         "input": input_config,
         "output": output_config,
@@ -1055,6 +1060,8 @@ def load_climatology(
     longitude: float,
     acquisition_datetime: datetime,
     lut_params: LUTConfig,
+    elevation_km: float = 0.0,
+    heuristic_aeronet_prior: bool = False,
 ):
     """Load climatology data, based on location and configuration
 
@@ -1064,6 +1071,8 @@ def load_climatology(
         longitude: latitude to set for the segment (mean of acquisition suggested)
         acquisition_datetime: datetime to use for the segment( mean of acquisition suggested)
         lut_params: parameters to use to define lut grid
+        elevation_km: determined mean elevation in km for image used for AOT priors
+        heuristic_aeronet_prior: define prior mean and sigma for AOT 550 as a function of aeronet climatology
 
     :Returns
         tuple containing:
@@ -1098,12 +1107,19 @@ def load_climatology(
         )
 
         if aerosol_lut is not None:
-            init_value = get_aerosol_initial_value(alr[0], alr[1])
+            if heuristic_aeronet_prior:
+                init_value, prior_sigma = aeronet_model(
+                    elevation_km=elevation_km, aot_min=alr[0], aot_max=alr[1]
+                )
+            else:
+                init_value = get_aerosol_initial_value(alr[0], alr[1])
+                prior_sigma = 0.10
+
             aerosol_state_vector["AERFRAC_{}".format(_a)] = {
                 "bounds": [float(alr[0]), float(alr[1])],
                 "scale": 1,
                 "init": float(init_value),
-                "prior_sigma": 0.1,
+                "prior_sigma": float(prior_sigma),
                 "prior_mean": float(init_value),
             }
 
@@ -1119,12 +1135,18 @@ def load_climatology(
     if aot_550_lut is not None:
         aerosol_lut_grid["AOT550"] = aot_550_lut.tolist()
         alr = [aerosol_lut_grid["AOT550"][0], aerosol_lut_grid["AOT550"][-1]]
-        init_value = get_aerosol_initial_value(alr[0], alr[1])
+        if heuristic_aeronet_prior:
+            init_value, prior_sigma = aeronet_model(
+                elevation_km=elevation_km, aot_min=alr[0], aot_max=alr[1]
+            )
+        else:
+            init_value = get_aerosol_initial_value(alr[0], alr[1])
+            prior_sigma = 0.10
         aerosol_state_vector["AOT550"] = {
             "bounds": [float(alr[0]), float(alr[1])],
             "scale": 1,
             "init": float(init_value),
-            "prior_sigma": 0.1,
+            "prior_sigma": float(prior_sigma),
             "prior_mean": float(init_value),
         }
 
@@ -1551,10 +1573,13 @@ def make_atmosphere_config(
     presolve: bool = False,
     pressure_elevation: bool = False,
     retrieve_co2: bool = False,
+    heuristic_h2o_prior: bool = False,
+    heuristic_aeronet_prior: bool = False,
     per_pixel_heuristic_prior: bool = False,
     relative_azimuth_lut_grid: np.array = None,
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
+    elevation_km: float = 0.0,
     unknowns: dict = {},
     wavelength_file: str = None,
     **kwargs,
@@ -1706,7 +1731,14 @@ def make_atmosphere_config(
                     interp_value = template_means[dim_name]
                     source = "scene mean from template"
                 elif dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
-                    interp_value = get_aerosol_initial_value(vmin, vmax)
+                    if heuristic_aeronet_prior:
+                        interp_value, _ = aeronet_model(
+                            elevation_km=elevation_km,
+                            aot_min=vmin,
+                            aot_max=vmax,
+                        )
+                    else:
+                        interp_value = get_aerosol_initial_value(vmin, vmax)
                     source = "aerosol initial value formula"
                 else:
                     interp_value = (vmin + vmax) / 2.0
@@ -1761,7 +1793,7 @@ def make_atmosphere_config(
                         & (lut_grid_points <= upper_bound)
                     ]
 
-                    # We hit this for AOD lower bound all the time,
+                    # We hit this for AOT lower bound all the time,
                     # so leaving as a warning for now
                     if heur_min < vmin or heur_max > vmax:
                         logging.warning(
@@ -1794,7 +1826,14 @@ def make_atmosphere_config(
                         f"invalid value: {heuristic_val}. Treating as interpolation."
                     )
                     if dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
-                        interp_value = get_aerosol_initial_value(vmin, vmax)
+                        if heuristic_aeronet_prior:
+                            interp_value, _ = aeronet_model(
+                                elevation_km=elevation_km,
+                                aot_min=vmin,
+                                aot_max=vmax,
+                            )
+                        else:
+                            interp_value = get_aerosol_initial_value(vmin, vmax)
                     else:
                         interp_value = (vmin + vmax) / 2.0
                     lut_names[dim_name] = {"interp": interp_value}
@@ -2036,8 +2075,7 @@ def make_implementation_config(
     inversion_windows: list = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     n_cores: int = -1,
     debug: bool = False,
-    per_pixel_heuristic_prior: bool = False,
-    **kwargs,
+    pixel_heuristic_priors: list[str] = [],
 ):
 
     return {
@@ -2045,7 +2083,7 @@ def make_implementation_config(
         "ray_address": ray_ip_head,
         "inversion": {"windows": inversion_windows},
         "n_cores": n_cores,
-        "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
+        "pixel_heuristic_priors": pixel_heuristic_priors,
         "debug_mode": debug,
         "isofit_version": __version__,
     }
