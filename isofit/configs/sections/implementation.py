@@ -137,7 +137,7 @@ class ImplementationConfig(SectionModel):
         )
     )
 
-    pixel_heuristic_priors: bool = Field(
+    pixel_heuristic_priors: list = Field(
         default_factory=[],
         description=(
             "Define per-pixel heuristic priors to apply (AOT, H2O, SUN_GLINT)"
