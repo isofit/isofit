@@ -777,7 +777,7 @@ def build_sixs_config(config):
     config.engine = SixSConfig(
         name="sixs",
         base_dir=config.engine.sixs_dir,
-        obs=None,
+        obs_file=None,
         earth_sun_distance_file=None,
         aerosol_model_file=None,
         aerosol_template_file=None,
