@@ -190,9 +190,13 @@ class ForwardModel:
         # Ensure higher altitudes do not go over physical water vapor limit
         # This line protects Jacobian from zeroing out in undefined space.
         if self.atmosphere.h2o_i:
-            high[self.idx_atmosphere[self.atmosphere.h2o_i]] = (
-                self.atmosphere.h2o_bounds_polynomial(geom.surface_elevation_km) - eps
+            modtran_bound = self.atmosphere.h2o_bounds_polynomial(
+                geom.surface_elevation_km
             )
+            h2o_i = self.idx_atmosphere[self.atmosphere.h2o_i]
+            Logger.info(rel_eps[h2o_i])
+            if modtran_bound:
+                high[h2o_i] = modtran_bound - rel_eps[h2o_i]
 
         return np.clip(x[inds_free], a_min=low[inds_free], a_max=high[inds_free])
 
