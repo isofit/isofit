@@ -191,7 +191,7 @@ sixs:
         template_file: null
         aerosol_model_file: null
         aerosol_template_file: null
-        obs: null
+        obs_file: null
         earth_sun_distance_file: null
 
 srtmnet:
