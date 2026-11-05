@@ -366,7 +366,7 @@ class BaseAtmosphere(Reader):
 
         if "H2O" in pixel_heuristic_priors:
             updates["xa"][0].append(self.h2o_i)
-            updates["xa"][1].append(x_atmosphere[self.h2o_i])
+            updates["xa"][1].append(x_atmosphere[self.h2o_i].item())
 
         if "AOT" in pixel_heuristic_priors:
             xa_aot, sigma_aot = aeronet_model(
