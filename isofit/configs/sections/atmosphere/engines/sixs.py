@@ -131,20 +131,25 @@ class SixSConfig(SectionModel):
 
     template_file: Optional[FilePath] = Field(
         description="MODTRAN template file used to populate 6S geometry",
+        alias="tf",
     )
 
     aerosol_model_file: Optional[FilePath] = Field(
         description="Aerosol model file",
+        alias="amf",
     )
 
     aerosol_template_file: Optional[FilePath] = Field(
         description="Aerosol template file",
+        alias="atf",
     )
 
-    obs: Optional[FilePath] = Field(
+    obs_file: Optional[FilePath] = Field(
         description="Path to the 6S observation file with geometry parameters",
+        alias="obs",
     )
 
     earth_sun_distance_file: Optional[FilePath] = Field(
         description="Path to the Earth-Sun distance file for irradiance corrections",
+        alias="esd",
     )

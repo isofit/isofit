@@ -66,7 +66,6 @@ RenamedKeys = {
     "engine_name": "name",
     "engine_base_dir": "base_dir",
     "lut_names": "lut_subset",
-    "obs_file": "obs",
 }
 
 # Per-engine overrides of RenamedKeys
