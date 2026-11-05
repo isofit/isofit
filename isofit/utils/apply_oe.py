@@ -331,6 +331,12 @@ def apply_oe(
             "Input background reflectance file requires the bacground_rfl flag"
         )
 
+    if use_background_rfl and not presolve and not background_rfl_file:
+        raise ValueError(
+            "Background reflectance applied and no file given. "
+            "Presolve must be specified"
+        )
+
     if use_background_rfl and not multipart_transmittance:
         raise ValueError(
             "ApplyOE must use multi-part transmittance to enable heterogeneous background reflectance."
@@ -349,12 +355,6 @@ def apply_oe(
 
     if "NA" in sensor and datestr is None:
         raise ValueError(f"NA sensor must specify --datestr")
-
-    if use_background_rfl and not presolve and not background_rfl_file:
-        raise ValueError(
-            "Background reflectance applied and no file given. "
-            "Presolve must be specified"
-        )
 
     if os.path.isdir(working_directory) is False:
         os.mkdir(working_directory)
