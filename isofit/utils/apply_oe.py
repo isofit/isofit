@@ -264,7 +264,7 @@ def apply_oe(
         Flag to set the terrain style.  dem uses provided obs values, flat sets the surface to the spheroid
     pixel_heuristic_priors: bool, default=False
         List of per-pixel heuristic priors to apply Options:
-            AOD - As a function of aeronet climatology
+            AOT - As a function of aeronet climatology
             H2O - As a function of band continuum solution
             SUN_GLINT - As a function of SWIR signal
     datestr : str, default=None
@@ -849,7 +849,7 @@ def apply_oe(
                 elevation_km=mean_elevation_km,
                 acquisition_datetime=dt,
                 lut_params=lut_params,
-                heuristic_aeronet_prior="AOD" in pixel_heuristic_priors,
+                heuristic_aeronet_prior="AOT" in pixel_heuristic_priors,
             )
         )
         config_params["aerosol_model_file"] = aerosol_model_path
@@ -1057,7 +1057,7 @@ def apply_oe(
     "--pixel_heuristic_priors",
     "-php",
     multiple=True,
-    type=click.Choice(["AOD", "H2O", "SUN_GLINT"], case_sensitive=False),
+    type=click.Choice(["AOT", "H2O", "SUN_GLINT"], case_sensitive=False),
 )
 @click.option("--datestr", type=str, default=None)
 @click.option(

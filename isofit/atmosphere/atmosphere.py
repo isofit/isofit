@@ -137,7 +137,7 @@ class BaseAtmosphere(Reader):
         ]
         self.h2o_name = self.statevec_names[self.h2o_i[0]] if self.h2o_i else None
 
-        possible_aerosol_names = ["AOT", "AERFRAC", "AOD550"]
+        possible_aerosol_names = ["AOT", "AERFRAC", "AOD"]
         self.aerosol_i = [
             i
             for i, v in enumerate(self.statevec_names)
@@ -175,8 +175,6 @@ class BaseAtmosphere(Reader):
         )
 
         self.rt_mode = self.config.rt_mode or "transm"
-
-        self.aeronet_prior = full_config.implementation.aeronet_prior
 
         # Use explicitely passed first
         if not any(wl) or not any(fwhm):
@@ -370,16 +368,16 @@ class BaseAtmosphere(Reader):
             updates["xa"][0].append(self.h2o_i)
             updates["xa"][1].append(x_atmosphere[self.h2o_i])
 
-        if "AOD" in pixel_heuristic_priors:
-            xa_aod, sigma_aod = aeronet_model(
+        if "AOT" in pixel_heuristic_priors:
+            xa_aot, sigma_aot = aeronet_model(
                 elevation_km=geom.surface_elevation_km,
             )
             i = self.aerosol_i
             for name, val in (
-                ("xa", xa_aod),
-                ("Sa", sigma_aod**2),
-                ("Sa_inv", 1 / sigma_aod**2),
-                ("Sa_inv_sqrt", 1 / sigma_aod),
+                ("xa", xa_aot),
+                ("Sa", sigma_aot**2),
+                ("Sa_inv", 1 / sigma_aot**2),
+                ("Sa_inv_sqrt", 1 / sigma_aot),
             ):
                 updates[name][0].append(i)
                 updates[name][1].append(val)
