@@ -123,7 +123,7 @@ default:
     ray_ignore_reinit_error: true
     io_buffer_size: 100
     max_hash_table_size: 50
-    per_pixel_heuristic_prior: false
+    pixel_heuristic_priors: []
     debug_mode: false
     inversion:
       windows: [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]

@@ -137,10 +137,10 @@ class ImplementationConfig(SectionModel):
         )
     )
 
-    per_pixel_heuristic_prior: bool = Field(
+    pixel_heuristic_priors: bool = Field(
+        default_factory=[],
         description=(
-            "Use a per-pixel heuristic prior (True) or an image-wide universal value "
-            "(False). Per-pixel priors adapt to local scene characteristics"
+            "Define per-pixel heuristic priors to apply (AOT, H2O, SUN_GLINT)"
         ),
     )
 
