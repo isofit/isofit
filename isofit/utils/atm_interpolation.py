@@ -29,7 +29,7 @@ from scipy.spatial import KDTree
 from spectral.io import envi
 
 from isofit import ray
-from isofit.core.common import envi_header, svd_inv
+from isofit.core.common import envi_header
 from isofit.core.fileio import write_bil_chunk
 
 
@@ -180,7 +180,7 @@ def _run_chunk(
                         W = np.diag(np.ones(n))  # /uv[use, i])
                         y = yv[use, i : i + 1]
                         try:
-                            bhat[i, :] = (svd_inv(X.T @ W @ X) @ X.T @ W @ y).T
+                            bhat[i, :] = (inv(X.T @ W @ X) @ X.T @ W @ y).T
                         except:
                             bhat[i, :] = 0
 
