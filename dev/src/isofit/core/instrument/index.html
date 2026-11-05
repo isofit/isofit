@@ -4841,6 +4841,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#isofit.core.instrument.Instrument.heuristic_prior_update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        heuristic_prior_update
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#isofit.core.instrument.Instrument.xa" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5773,7 +5784,12 @@
 <span class="normal">696</span>
 <span class="normal">697</span>
 <span class="normal">698</span>
-<span class="normal">699</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span>
+<span class="normal">702</span>
+<span class="normal">703</span>
+<span class="normal">704</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5807,6 +5823,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">PriorUpdate</span><span class="p">,</span>
     <span class="n">emissive_radiance</span><span class="p">,</span>
     <span class="n">eps</span><span class="p">,</span>
     <span class="n">load_wavelen</span><span class="p">,</span>
@@ -6155,6 +6172,10 @@
         <span class="n">init</span> <span class="o">=</span> <span class="n">prior_mean</span>
 
         <span class="k">return</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">init</span><span class="p">,</span> <span class="n">prior_mean</span><span class="p">,</span> <span class="n">prior_cov</span>
+<div class="mkapi-source-link" id="isofit.core.instrument.Instrument.heuristic_prior_update"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.heuristic_prior_update" title="Go to docs">[docs]</a></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">heuristic_prior_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">pixel_heuristic_priors</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Not implemented"""</span>
+        <span class="k">return</span> <span class="n">PriorUpdate</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">xa</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.instrument.Instrument.xa"><a href="../../../../api/isofit/core/instrument/#isofit.core.instrument.Instrument.xa" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">"""Mean of prior distribution, calculated at state x."""</span>

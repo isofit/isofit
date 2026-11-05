@@ -6256,10 +6256,10 @@
         <span class="c1"># add aerosol elements from climatology</span>
         <span class="n">aerosol_state_vector</span><span class="p">,</span> <span class="n">aerosol_lut_grid</span><span class="p">,</span> <span class="n">aerosol_model_path</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">tmpl</span><span class="o">.</span><span class="n">load_climatology</span><span class="p">(</span>
-                <span class="n">paths</span><span class="o">.</span><span class="n">aerosol_climatology</span><span class="p">,</span>
-                <span class="n">mean_latitude</span><span class="p">,</span>
-                <span class="n">mean_longitude</span><span class="p">,</span>
-                <span class="n">dt</span><span class="p">,</span>
+                <span class="n">config_path</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">aerosol_climatology</span><span class="p">,</span>
+                <span class="n">latitude</span><span class="o">=</span><span class="n">mean_latitude</span><span class="p">,</span>
+                <span class="n">longitude</span><span class="o">=</span><span class="n">mean_longitude</span><span class="p">,</span>
+                <span class="n">acquisition_datetime</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
                 <span class="n">lut_params</span><span class="o">=</span><span class="n">lut_params</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>

@@ -1505,10 +1505,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.atmosphere.atmosphere.BaseAtmosphere.update_heuristic_prior_means" class="md-nav__link">
+  <a href="#isofit.atmosphere.atmosphere.BaseAtmosphere.heuristic_prior_update" class="md-nav__link">
     <span class="md-ellipsis">
       
-        update_heuristic_prior_means
+        heuristic_prior_update
       
     </span>
   </a>
@@ -1635,6 +1635,17 @@
     <span class="md-ellipsis">
       
         modtran_aot_lowerbound_polynomials
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.atmosphere.atmosphere.aeronet_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        aeronet_model
       
     </span>
   </a>
@@ -5081,10 +5092,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.atmosphere.atmosphere.BaseAtmosphere.update_heuristic_prior_means" class="md-nav__link">
+  <a href="#isofit.atmosphere.atmosphere.BaseAtmosphere.heuristic_prior_update" class="md-nav__link">
     <span class="md-ellipsis">
       
-        update_heuristic_prior_means
+        heuristic_prior_update
       
     </span>
   </a>
@@ -5211,6 +5222,17 @@
     <span class="md-ellipsis">
       
         modtran_aot_lowerbound_polynomials
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.atmosphere.atmosphere.aeronet_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        aeronet_model
       
     </span>
   </a>
@@ -5388,6 +5410,13 @@ Polynomials as a function of ground altitude (km) to estimate upperbound of wate
  <span class="mkapi-dash">&mdash;</span>
 Polynomials as a function of ground altitude (km) to estimate lowerbound of AOT at 550nm. Generated from MODTRAN.</p>
 </li>
+<li>
+<p><span class="mkapi-item-name"><a href="./#isofit.atmosphere.atmosphere.aeronet_model" title="isofit.atmosphere.atmosphere.aeronet_model">aeronet_model</a></span>
+ <span class="mkapi-dash">&mdash;</span>
+Daily average aeronet modeled/converted AOT @ 550 nm, accessed on 2 October 2026 (via 440-870_Angstrom_Exponent).
+Data were binned by elevation every 200 m, then were modeled using empirically derived relation.
+The output is a prior mean and standard deviation for AOT-550 with respect to elevation.</p>
+</li>
 </ul>
 </div>
 </div>
@@ -5453,7 +5482,7 @@ Retrieves the point indices for keys that source from different locations, such
 as statevector or geom</p>
 </li>
 <li>
-<p><span class="mkapi-item-name"><a href="./#isofit.atmosphere.atmosphere.BaseAtmosphere.update_heuristic_prior_means" title="isofit.atmosphere.atmosphere.BaseAtmosphere.update_heuristic_prior_means">update_heuristic_prior_means</a></span></p>
+<p><span class="mkapi-item-name"><a href="./#isofit.atmosphere.atmosphere.BaseAtmosphere.heuristic_prior_update" title="isofit.atmosphere.atmosphere.BaseAtmosphere.heuristic_prior_update">heuristic_prior_update</a></span></p>
 </li>
 <li>
 <p><span class="mkapi-item-name"><a href="./#isofit.atmosphere.atmosphere.BaseAtmosphere.xa" title="isofit.atmosphere.atmosphere.BaseAtmosphere.xa">xa</a></span>
@@ -5603,19 +5632,19 @@ as statevector or geom</p>
 </ul>
 </div>
 </div>
-<p class="mkapi-object mkapi-page-source" id="isofit.atmosphere.atmosphere.BaseAtmosphere.update_heuristic_prior_means">
+<p class="mkapi-object mkapi-page-source" id="isofit.atmosphere.atmosphere.BaseAtmosphere.heuristic_prior_update">
 <span class="mkapi-object-link">
 <span class="mkapi-parent-toggle" title="Toggle class names">
 <i class="fa-solid fa-square-plus"></i>
 </span>
 
-<a href="../../../../src/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.BaseAtmosphere.update_heuristic_prior_means" title="Go to source">source</a>
+<a href="../../../../src/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.BaseAtmosphere.heuristic_prior_update" title="Go to source">source</a>
 <span class="mkapi-document-toggle" title="Toggle all docs">
 <i class="fa-regular fa-square-minus"></i>
 </span>
 </span><span class="mkapi-object-kind">method</span>
 <span class="mkapi-object-parent">
-<a href="./#isofit.atmosphere.atmosphere.BaseAtmosphere" title="isofit.atmosphere.atmosphere.BaseAtmosphere">BaseAtmosphere</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.atmosphere.atmosphere.BaseAtmosphere.update_heuristic_prior_means" title="isofit.atmosphere.atmosphere.BaseAtmosphere.update_heuristic_prior_means">update_heuristic_prior_means</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x_atmosphere</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-paren">)</span></span>
+<a href="./#isofit.atmosphere.atmosphere.BaseAtmosphere" title="isofit.atmosphere.atmosphere.BaseAtmosphere">BaseAtmosphere</a><span class="mkapi-dot">.</span></span><span class="mkapi-object-name"><a href="./#isofit.atmosphere.atmosphere.BaseAtmosphere.heuristic_prior_update" title="isofit.atmosphere.atmosphere.BaseAtmosphere.heuristic_prior_update">heuristic_prior_update</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">x_atmosphere</span><span class="mkapi-comma">, </span><span class="mkapi-arg">geom</span><span class="mkapi-comma">, </span><span class="mkapi-arg">pixel_heuristic_priors</span><span class="mkapi-paren">)</span></span>
 </p>
 <div class="mkapi-document"></div>
 <p class="mkapi-object mkapi-page-source" id="isofit.atmosphere.atmosphere.BaseAtmosphere.xa">
@@ -6046,6 +6075,22 @@ Dataset with coupled terms</p>
 </li>
 </ul>
 </div>
+</div>
+<p class="mkapi-object mkapi-page-source" id="isofit.atmosphere.atmosphere.aeronet_model">
+<span class="mkapi-object-link">
+
+
+<a href="../../../../src/isofit/atmosphere/atmosphere/#isofit.atmosphere.atmosphere.aeronet_model" title="Go to source">source</a>
+<span class="mkapi-document-toggle" title="Toggle all docs">
+<i class="fa-regular fa-square-minus"></i>
+</span>
+</span>
+<span class="mkapi-object-name"><a href="./#isofit.atmosphere.atmosphere.aeronet_model" title="isofit.atmosphere.atmosphere.aeronet_model">aeronet_model</a></span><span class="mkapi-signature"><span class="mkapi-paren">(</span><span class="mkapi-arg">elevation_km</span><span class="mkapi-colon">: </span><span class="mkapi-ann">float</span><span class="mkapi-comma">, </span><span class="mkapi-arg">aot_min</span><span class="mkapi-colon">: </span><span class="mkapi-ann">float</span><span class="mkapi-equal"> = </span><span class="mkapi-default">0.01</span><span class="mkapi-comma">, </span><span class="mkapi-arg">aot_max</span><span class="mkapi-colon">: </span><span class="mkapi-ann">float</span><span class="mkapi-equal"> = </span><span class="mkapi-default">1.0</span><span class="mkapi-paren">)</span><span class="mkapi-arrow"> → </span><span class="mkapi-return">tuple</span></span>
+</p>
+<div class="mkapi-document">
+<p>Daily average aeronet modeled/converted AOT @ 550 nm, accessed on 2 October 2026 (via 440-870_Angstrom_Exponent).
+Data were binned by elevation every 200 m, then were modeled using empirically derived relation.
+The output is a prior mean and standard deviation for AOT-550 with respect to elevation.</p>
 </div>
 
 

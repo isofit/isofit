@@ -5871,7 +5871,20 @@
 <span class="normal">1081</span>
 <span class="normal">1082</span>
 <span class="normal">1083</span>
-<span class="normal">1084</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1084</span>
+<span class="normal">1085</span>
+<span class="normal">1086</span>
+<span class="normal">1087</span>
+<span class="normal">1088</span>
+<span class="normal">1089</span>
+<span class="normal">1090</span>
+<span class="normal">1091</span>
+<span class="normal">1092</span>
+<span class="normal">1093</span>
+<span class="normal">1094</span>
+<span class="normal">1095</span>
+<span class="normal">1096</span>
+<span class="normal">1097</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: David R Thompson and Philip G. Brodrick</span>
 <span class="c1">#</span>
@@ -5986,7 +5999,7 @@
     <span class="n">use_background_rfl</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">eof_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">terrain_style</span><span class="o">=</span><span class="s2">"dem"</span><span class="p">,</span>
-    <span class="n">per_pixel_heuristic_prior</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">pixel_heuristic_priors</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">datestr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
@@ -6135,6 +6148,11 @@
 <span class="sd">        with one number per instrument channel.</span>
 <span class="sd">    terrain_style : str, default=dem</span>
 <span class="sd">        Flag to set the terrain style.  dem uses provided obs values, flat sets the surface to the spheroid</span>
+<span class="sd">    pixel_heuristic_priors: bool, default=False</span>
+<span class="sd">        List of per-pixel heuristic priors to apply Options:</span>
+<span class="sd">            AOT - As a function of aeronet climatology</span>
+<span class="sd">            H2O - As a function of band continuum solution</span>
+<span class="sd">            SUN_GLINT - As a function of SWIR signal</span>
 <span class="sd">    datestr : str, default=None</span>
 <span class="sd">        strptime format matching the start of the radiance filename, e.g.</span>
 <span class="sd">        "emit%Y%m%dt%H%M%S", used to determine the acquisition date and time for custom</span>
@@ -6576,8 +6594,9 @@
         <span class="s2">"multipart_transmittance"</span><span class="p">:</span> <span class="n">multipart_transmittance</span><span class="p">,</span>
         <span class="s2">"segmentation_size"</span><span class="p">:</span> <span class="n">segmentation_size</span><span class="p">,</span>
         <span class="s2">"terrain_style"</span><span class="p">:</span> <span class="n">terrain_style</span><span class="p">,</span>
-        <span class="s2">"per_pixel_heuristic_prior"</span><span class="p">:</span> <span class="n">per_pixel_heuristic_prior</span><span class="p">,</span>
+        <span class="s2">"pixel_heuristic_priors"</span><span class="p">:</span> <span class="n">pixel_heuristic_priors</span><span class="p">,</span>
         <span class="s2">"use_background_rfl"</span><span class="p">:</span> <span class="n">use_background_rfl</span><span class="p">,</span>
+        <span class="s2">"elevation_km"</span><span class="p">:</span> <span class="n">mean_elevation_km</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">presolve</span><span class="p">:</span>
         <span class="c1"># write modtran presolve template</span>
@@ -6710,11 +6729,13 @@
         <span class="c1"># add aerosol elements from climatology</span>
         <span class="n">aerosol_state_vector</span><span class="p">,</span> <span class="n">aerosol_lut_grid</span><span class="p">,</span> <span class="n">aerosol_model_path</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">tmpl</span><span class="o">.</span><span class="n">load_climatology</span><span class="p">(</span>
-                <span class="n">paths</span><span class="o">.</span><span class="n">aerosol_climatology</span><span class="p">,</span>
-                <span class="n">mean_latitude</span><span class="p">,</span>
-                <span class="n">mean_longitude</span><span class="p">,</span>
-                <span class="n">dt</span><span class="p">,</span>
+                <span class="n">config_path</span><span class="o">=</span><span class="n">paths</span><span class="o">.</span><span class="n">aerosol_climatology</span><span class="p">,</span>
+                <span class="n">latitude</span><span class="o">=</span><span class="n">mean_latitude</span><span class="p">,</span>
+                <span class="n">longitude</span><span class="o">=</span><span class="n">mean_longitude</span><span class="p">,</span>
+                <span class="n">elevation_km</span><span class="o">=</span><span class="n">mean_elevation_km</span><span class="p">,</span>
+                <span class="n">acquisition_datetime</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
                 <span class="n">lut_params</span><span class="o">=</span><span class="n">lut_params</span><span class="p">,</span>
+                <span class="n">heuristic_aeronet_prior</span><span class="o">=</span><span class="s2">"AOT"</span> <span class="ow">in</span> <span class="n">pixel_heuristic_priors</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
         <span class="n">config_params</span><span class="p">[</span><span class="s2">"aerosol_model_file"</span><span class="p">]</span> <span class="o">=</span> <span class="n">aerosol_model_path</span>
@@ -6918,7 +6939,12 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--use_background_rfl"</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--eof_path"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--terrain_style"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"dem"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">"dem"</span><span class="p">,</span> <span class="s2">"flat"</span><span class="p">]))</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--per_pixel_heuristic_prior"</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">"--pixel_heuristic_priors"</span><span class="p">,</span>
+    <span class="s2">"-php"</span><span class="p">,</span>
+    <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">"AOT"</span><span class="p">,</span> <span class="s2">"H2O"</span><span class="p">,</span> <span class="s2">"SUN_GLINT"</span><span class="p">],</span> <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+<span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--datestr"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
     <span class="s2">"--debug-args"</span><span class="p">,</span>

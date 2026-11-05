@@ -5540,8 +5540,7 @@
 <span class="normal">711</span>
 <span class="normal">712</span>
 <span class="normal">713</span>
-<span class="normal">714</span>
-<span class="normal">715</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">714</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6016,7 +6015,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">radiance_correction</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initializer</span> <span class="o">=</span> <span class="n">initializer</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">per_pixel_heuristic_prior</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">per_pixel_heuristic_prior</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_heuristic_priors</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">pixel_heuristic_priors</span>
 <div class="mkapi-source-link" id="isofit.utils.analytical_line.Worker.run_chunks"><a href="../../../../api/isofit/utils/analytical_line/#isofit.utils.analytical_line.Worker.run_chunks" title="Go to docs">[docs]</a></div>
     <span class="k">def</span><span class="w"> </span><span class="nf">run_chunks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line_breaks</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">9999.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -6145,16 +6144,15 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No valid initializer given for AOE algorithm"</span><span class="p">)</span>
 
-            <span class="c1"># Update the bounds and set prior to initial (if that is the run</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_pixel_heuristic_prior</span><span class="p">:</span>
-                <span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">heuristic_bounds</span><span class="p">(</span><span class="n">geom</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">bounds</span>
+            <span class="n">x0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">clip_bounds</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span> <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span>
 
-            <span class="n">x0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">clip_bounds</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_pixel_heuristic_prior</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">update_heuristic_prior_means</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+            <span class="c1"># Update pixel-specific priors based on initial state and others</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_heuristic_priors</span><span class="p">):</span>
+                <span class="p">(</span><span class="n">xa</span><span class="p">,</span> <span class="n">Sa</span><span class="p">,</span> <span class="n">Sa_inv</span><span class="p">,</span> <span class="n">Sa_inv_sqrt</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="o">.</span><span class="n">heuristic_prior_update</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+                <span class="n">geom</span><span class="o">.</span><span class="n">xa</span> <span class="o">=</span> <span class="n">xa</span>
+                <span class="n">geom</span><span class="o">.</span><span class="n">Sa</span> <span class="o">=</span> <span class="n">Sa</span>
+                <span class="n">geom</span><span class="o">.</span><span class="n">Sa_inv</span> <span class="o">=</span> <span class="n">Sa_inv</span>
+                <span class="n">geom</span><span class="o">.</span><span class="n">Sa_inv_sqrt</span> <span class="o">=</span> <span class="n">Sa_inv_sqrt</span>
 
             <span class="n">states</span><span class="p">,</span> <span class="n">unc</span> <span class="o">=</span> <span class="n">invert_analytical</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">fm</span><span class="p">,</span>

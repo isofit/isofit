@@ -4758,21 +4758,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.core.forward.ForwardModel.update_heuristic_prior_means" class="md-nav__link">
+  <a href="#isofit.core.forward.ForwardModel.heuristic_prior_update" class="md-nav__link">
     <span class="md-ellipsis">
       
-        update_heuristic_prior_means
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#isofit.core.forward.ForwardModel.heuristic_bounds" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        heuristic_bounds
+        heuristic_prior_update
       
     </span>
   </a>
@@ -4802,10 +4791,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#isofit.core.forward.ForwardModel.Sa" class="md-nav__link">
+  <a href="#isofit.core.forward.ForwardModel.Sa_heuristic" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sa
+        Sa_heuristic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isofit.core.forward.ForwardModel.Sa_static" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sa_static
       
     </span>
   </a>
@@ -6155,7 +6155,44 @@
 <span class="normal">1029</span>
 <span class="normal">1030</span>
 <span class="normal">1031</span>
-<span class="normal">1032</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1032</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span>
+<span class="normal">1043</span>
+<span class="normal">1044</span>
+<span class="normal">1045</span>
+<span class="normal">1046</span>
+<span class="normal">1047</span>
+<span class="normal">1048</span>
+<span class="normal">1049</span>
+<span class="normal">1050</span>
+<span class="normal">1051</span>
+<span class="normal">1052</span>
+<span class="normal">1053</span>
+<span class="normal">1054</span>
+<span class="normal">1055</span>
+<span class="normal">1056</span>
+<span class="normal">1057</span>
+<span class="normal">1058</span>
+<span class="normal">1059</span>
+<span class="normal">1060</span>
+<span class="normal">1061</span>
+<span class="normal">1062</span>
+<span class="normal">1063</span>
+<span class="normal">1064</span>
+<span class="normal">1065</span>
+<span class="normal">1066</span>
+<span class="normal">1067</span>
+<span class="normal">1068</span>
+<span class="normal">1069</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2018 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6185,7 +6222,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">block_diag</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.atmosphere</span><span class="w"> </span><span class="kn">import</span> <span class="n">Atmosphere</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">eps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">PriorUpdate</span><span class="p">,</span> <span class="n">eps</span><span class="p">,</span> <span class="n">svd_inv_sqrt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geometry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.instrument</span><span class="w"> </span><span class="kn">import</span> <span class="n">Instrument</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.multistate</span><span class="w"> </span><span class="kn">import</span> <span class="n">match_statevector</span>
@@ -6322,13 +6359,15 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn_bgrfl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_rdn_bgrfl_homogeneous</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">terrain_rereflection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">terrain_rereflection_homogeneous</span>
 
-        <span class="k">if</span> <span class="n">full_config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">per_pixel_heuristic_prior</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_heuristic_priors</span> <span class="o">=</span> <span class="n">full_config</span><span class="o">.</span><span class="n">implementation</span><span class="o">.</span><span class="n">pixel_heuristic_priors</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_heuristic_priors</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">xa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xa_heuristic</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Sa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Sa_heuristic</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">xa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xa_static</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">clip_bounds</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">inds_free</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.clip_bounds"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.clip_bounds" title="Go to docs">[docs]</a></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Sa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Sa_static</span>
+<div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.clip_bounds"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.clip_bounds" title="Go to docs">[docs]</a></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clip_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">inds_free</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""Clip state vector against bounds.</span>
 <span class="sd">        eps shifts bounds by epsilon to not pin</span>
 <span class="sd">        boundary returned val at boundary. Used when clipping prior mean.</span>
@@ -6342,6 +6381,16 @@
         <span class="n">low</span><span class="p">[</span><span class="n">check</span><span class="p">]</span> <span class="o">=</span> <span class="n">low</span><span class="p">[</span><span class="n">check</span><span class="p">]</span> <span class="o">+</span> <span class="n">rel_eps</span><span class="p">[</span><span class="n">check</span><span class="p">]</span>
         <span class="n">high</span><span class="p">[</span><span class="n">check</span><span class="p">]</span> <span class="o">=</span> <span class="n">high</span><span class="p">[</span><span class="n">check</span><span class="p">]</span> <span class="o">-</span> <span class="n">rel_eps</span><span class="p">[</span><span class="n">check</span><span class="p">]</span>
 
+        <span class="c1"># Ensure higher altitudes do not go over physical water vapor limit.</span>
+        <span class="c1"># This protects Jacobian from zeroing out in undefined space.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">:</span>
+            <span class="n">modtran_bound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_bounds_polynomial</span><span class="p">(</span>
+                <span class="n">geom</span><span class="o">.</span><span class="n">surface_elevation_km</span>
+            <span class="p">)</span>
+            <span class="n">h2o_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">modtran_bound</span><span class="p">:</span>
+                <span class="n">high</span><span class="p">[</span><span class="n">h2o_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">modtran_bound</span> <span class="o">-</span> <span class="n">rel_eps</span><span class="p">[</span><span class="n">h2o_i</span><span class="p">]</span>
+
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">inds_free</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="n">low</span><span class="p">[</span><span class="n">inds_free</span><span class="p">],</span> <span class="n">a_max</span><span class="o">=</span><span class="n">high</span><span class="p">[</span><span class="n">inds_free</span><span class="p">])</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">out_of_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.out_of_bounds"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.out_of_bounds" title="Go to docs">[docs]</a></div>
@@ -6354,30 +6403,52 @@
             <span class="n">x_atmosphere</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">bound_lwr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">]</span> <span class="o">+</span> <span class="n">eps</span> <span class="o">*</span> <span class="mf">2.0</span><span class="p">)</span>
         <span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">update_heuristic_prior_means</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.update_heuristic_prior_means"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.update_heuristic_prior_means" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">"""Save the pixel-specific prior to the geometry object"""</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">heuristic_prior_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.heuristic_prior_update"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.heuristic_prior_update" title="Go to docs">[docs]</a></div>
+<span class="w">        </span><span class="sd">"""Get the pixel-specific priors</span>
+<span class="sd">        NOTE: This has been developed with **diagonal priors** in mind **only**.</span>
+<span class="sd">        If updates to off-diagonals become necessary, we would have to revisit</span>
+<span class="sd">        all implementations, particularly the indexing in the PriorUpdate tuple.</span>
+<span class="sd">        This is potentially a hassle with the Sa normalization"""</span>
+        <span class="n">xa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xa_static</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
+        <span class="n">Sa</span><span class="p">,</span> <span class="n">Sa_inv</span><span class="p">,</span> <span class="n">Sa_inv_sqrt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Sa_static</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">)</span>
         <span class="n">x_surface</span><span class="p">,</span> <span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">x_instrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">x_surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">update_heuristic_prior_means</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">],</span> <span class="n">geom</span><span class="p">)</span>
-        <span class="n">x_atmosphere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">update_heuristic_prior_means</span><span class="p">(</span>
-            <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">],</span> <span class="n">geom</span>
-        <span class="p">)</span>
-        <span class="c1"># No implimentation for Instrument</span>
 
-        <span class="c1"># Should be persist out of this function scope</span>
-        <span class="n">geom</span><span class="o">.</span><span class="n">xa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">x_surface</span><span class="p">,</span> <span class="n">x_atmosphere</span><span class="p">,</span> <span class="n">x_instrument</span><span class="p">])</span>
-
-        <span class="k">return</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">heuristic_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.heuristic_bounds"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.heuristic_bounds" title="Go to docs">[docs]</a></div>
-<span class="w">        </span><span class="sd">"""Save pixel-specific bounds. Currently only implemented for H2O"""</span>
-        <span class="c1"># Would like to avoid if statement here</span>
-        <span class="n">low_bound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">high_bound</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">:</span>
-            <span class="n">high_bound</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_bounds_polynomial</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">surface_elevation_km</span><span class="p">)</span> <span class="o">-</span> <span class="n">eps</span>
+        <span class="n">collected</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">([],</span> <span class="p">[])</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"xa"</span><span class="p">,</span> <span class="s2">"Sa"</span><span class="p">,</span> <span class="s2">"Sa_inv"</span><span class="p">,</span> <span class="s2">"Sa_inv_sqrt"</span><span class="p">]}</span>
+        <span class="k">for</span> <span class="n">section</span><span class="p">,</span> <span class="n">x_section</span><span class="p">,</span> <span class="n">idx_section</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="p">,</span> <span class="n">x_surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idx_surface</span><span class="p">),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atmosphere</span><span class="p">,</span> <span class="n">x_atmosphere</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idx_atmosphere</span><span class="p">),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span> <span class="n">x_instrument</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idx_instrument</span><span class="p">),</span>
+        <span class="p">]:</span>
+            <span class="c1"># Primary function that fetches the section-specific update</span>
+            <span class="n">updates</span> <span class="o">=</span> <span class="n">section</span><span class="o">.</span><span class="n">heuristic_prior_update</span><span class="p">(</span>
+                <span class="n">x_section</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_heuristic_priors</span>
             <span class="p">)</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">low_bound</span><span class="p">,</span> <span class="n">high_bound</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">vals</span><span class="p">)</span> <span class="ow">in</span> <span class="n">updates</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">collected</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx_section</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+                <span class="n">collected</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+
+        <span class="n">update</span> <span class="o">=</span> <span class="n">PriorUpdate</span><span class="p">(</span>
+            <span class="o">**</span><span class="p">{</span>
+                <span class="n">name</span><span class="p">:</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">idx_list</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">val_list</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">idx_list</span><span class="p">,</span> <span class="n">val_list</span><span class="p">)</span> <span class="ow">in</span> <span class="n">collected</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Copy to new memory address</span>
+        <span class="n">xa</span> <span class="o">=</span> <span class="n">xa</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">Sa</span> <span class="o">=</span> <span class="n">Sa</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">Sa_inv</span> <span class="o">=</span> <span class="n">Sa_inv</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">Sa_inv_sqrt</span> <span class="o">=</span> <span class="n">Sa_inv_sqrt</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># In the future, off-diagonal updates would require fixing this indexing</span>
+        <span class="n">xa</span><span class="p">[</span><span class="n">update</span><span class="o">.</span><span class="n">xa</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">update</span><span class="o">.</span><span class="n">xa</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">Sa</span><span class="p">[</span><span class="n">update</span><span class="o">.</span><span class="n">Sa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">update</span><span class="o">.</span><span class="n">Sa</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">update</span><span class="o">.</span><span class="n">Sa</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">Sa_inv</span><span class="p">[</span><span class="n">update</span><span class="o">.</span><span class="n">Sa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">update</span><span class="o">.</span><span class="n">Sa_inv</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">update</span><span class="o">.</span><span class="n">Sa_inv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">Sa_inv_sqrt</span><span class="p">[</span><span class="n">update</span><span class="o">.</span><span class="n">Sa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">update</span><span class="o">.</span><span class="n">Sa_inv_sqrt</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">update</span><span class="o">.</span><span class="n">Sa_inv_sqrt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">xa</span><span class="p">,</span> <span class="n">Sa</span><span class="p">,</span> <span class="n">Sa_inv</span><span class="p">,</span> <span class="n">Sa_inv_sqrt</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">xa_heuristic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.xa_heuristic"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.xa_heuristic" title="Go to docs">[docs]</a></div>
         <span class="k">return</span> <span class="n">geom</span><span class="o">.</span><span class="n">xa</span>
@@ -6396,7 +6467,10 @@
         <span class="n">xa_instrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">xa</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">xa_surface</span><span class="p">,</span> <span class="n">xa_atmosphere</span><span class="p">,</span> <span class="n">xa_instrument</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">Sa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.Sa"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.Sa" title="Go to docs">[docs]</a></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">Sa_heuristic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.Sa_heuristic"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.Sa_heuristic" title="Go to docs">[docs]</a></div>
+        <span class="k">return</span> <span class="n">geom</span><span class="o">.</span><span class="n">Sa</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">Sa_inv</span><span class="p">,</span> <span class="n">geom</span><span class="o">.</span><span class="n">Sa_inv_sqrt</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">Sa_static</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.core.forward.ForwardModel.Sa_static"><a href="../../../../api/isofit/core/forward/#isofit.core.forward.ForwardModel.Sa_static" title="Go to docs">[docs]</a></div>
 <span class="w">        </span><span class="sd">"""Calculate the prior covariance of the state vector (the</span>
 <span class="sd">        concatenation of state vectors for the surface and the atmosphere).</span>
 

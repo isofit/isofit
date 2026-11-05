@@ -5450,6 +5450,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">least_squares</span><span class="p">,</span> <span class="n">minimize</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize_scalar</span> <span class="k">as</span> <span class="n">min1d</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">isofit.atmosphere.atmosphere</span><span class="w"> </span><span class="kn">import</span> <span class="n">aeronet_model</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">emissive_radiance</span><span class="p">,</span> <span class="n">eps</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">isofit.core.forward</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForwardModel</span>
@@ -5501,28 +5502,26 @@
 
     <span class="n">x_new</span> <span class="o">=</span> <span class="n">x_atmosphere</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
-    <span class="c1"># Band ratio retrieval of H2O.  Depending on the radiative transfer</span>
-    <span class="c1"># model we are using, this state parameter could go by several names.</span>
-    <span class="k">for</span> <span class="n">h2oname</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"H2OSTR"</span><span class="p">,</span> <span class="s2">"h2o"</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">h2oname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">statevec_names</span><span class="p">:</span>
-            <span class="k">continue</span>
+    <span class="c1"># Update aerosol init based on elevation if aeronet prior model is enabled</span>
+    <span class="k">if</span> <span class="s2">"AOD"</span> <span class="ow">in</span> <span class="n">fm</span><span class="o">.</span><span class="n">pixel_heuristic_priors</span> <span class="ow">and</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">aerosol_i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">xa_aerosol</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">aeronet_model</span><span class="p">(</span>
+            <span class="n">elevation_km</span><span class="o">=</span><span class="n">geom</span><span class="o">.</span><span class="n">surface_elevation_km</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">x_new</span><span class="p">[</span><span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">aerosol_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">xa_aerosol</span>
 
-        <span class="c1"># ignore unused names</span>
-        <span class="k">if</span> <span class="n">h2oname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">lut_names</span><span class="p">:</span>
-            <span class="k">continue</span>
-
-        <span class="c1"># find the index in the lookup table associated with water vapor</span>
-        <span class="n">ind_sv</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">statevec_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">h2oname</span><span class="p">)</span>
+    <span class="c1"># Band ratio retrieval of H2O</span>
+    <span class="k">if</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">h2os</span><span class="p">,</span> <span class="n">areas</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
 
         <span class="c1"># We iterate through every possible grid point in the lookup table,</span>
         <span class="c1"># calculating the band ratio that we would see if this were the</span>
         <span class="c1"># atmospheric H2O content.  It assumes that defaults for all other</span>
         <span class="c1"># atmospheric parameters (such as aerosol, if it is there).</span>
-        <span class="k">for</span> <span class="n">h2o</span> <span class="ow">in</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">lut_grid</span><span class="p">[</span><span class="n">h2oname</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">h2o</span> <span class="ow">in</span> <span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">lut_grid</span><span class="p">[</span><span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_name</span><span class="p">]:</span>
+
             <span class="c1"># Get Atmospheric terms at high spectral resolution</span>
-            <span class="n">x_atmosphere_guess</span> <span class="o">=</span> <span class="n">x_atmosphere</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="n">x_atmosphere_guess</span><span class="p">[</span><span class="n">ind_sv</span><span class="p">]</span> <span class="o">=</span> <span class="n">h2o</span>
+            <span class="n">x_atmosphere_guess</span> <span class="o">=</span> <span class="n">x_new</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">x_atmosphere_guess</span><span class="p">[</span><span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">h2o</span>
 
             <span class="c1"># pass in all zeros, as this is ONLY used for Ls, which we will</span>
             <span class="c1"># assume is not present</span>
@@ -5550,7 +5549,8 @@
         <span class="n">p</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">h2os</span><span class="p">,</span> <span class="n">areas</span><span class="p">)</span>
         <span class="n">bounds</span> <span class="o">=</span> <span class="p">(</span><span class="n">h2os</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.001</span><span class="p">,</span> <span class="n">h2os</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.001</span><span class="p">)</span>
         <span class="n">best</span> <span class="o">=</span> <span class="n">min1d</span><span class="p">(</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">p</span><span class="p">(</span><span class="n">h</span><span class="p">)),</span> <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"bounded"</span><span class="p">)</span>
-        <span class="n">x_new</span><span class="p">[</span><span class="n">ind_sv</span><span class="p">]</span> <span class="o">=</span> <span class="n">best</span><span class="o">.</span><span class="n">x</span>
+
+        <span class="n">x_new</span><span class="p">[</span><span class="n">fm</span><span class="o">.</span><span class="n">atmosphere</span><span class="o">.</span><span class="n">h2o_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">best</span><span class="o">.</span><span class="n">x</span>
 
     <span class="k">return</span> <span class="n">x_new</span>
 
