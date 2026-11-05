@@ -53,6 +53,7 @@ class Ini:
         "plots",
         "libradtran",
         "windows",
+        "eradiate",
     ]
 
     # Additional keys with default values
