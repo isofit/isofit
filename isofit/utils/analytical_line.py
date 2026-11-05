@@ -474,7 +474,6 @@ class Worker(object):
 
         self.initializer = initializer
         self.pixel_heuristic_priors = config.implementation.pixel_heuristic_priors
-        self.aeronet_prior = config.implementation.aeronet_prior
 
     def run_chunks(self, line_breaks: tuple, fill_value: float = -9999.0) -> None:
         """
@@ -603,7 +602,7 @@ class Worker(object):
             else:
                 raise ValueError("No valid initializer given for AOE algorithm")
 
-            x0 = self.fm.clip_bounds(x0, self.fm.bounds, eps=eps)
+            x0 = self.fm.clip_bounds(x0, self.fm.bounds, geom=geom, eps=eps)
 
             # Update pixel-specific priors based on initial state and others
             if len(self.pixel_heuristic_priors):

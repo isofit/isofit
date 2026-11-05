@@ -336,7 +336,7 @@ class Inversion:
             x0 = x0[self.inds_free]
 
             x0 = self.fm.clip_bounds(
-                x0, self.fm.bounds, inds_free=self.inds_free, eps=eps
+                x0, self.fm.bounds, geom=geom, inds_free=self.inds_free, eps=eps
             )
 
             # Find the full state vector with bounds checked

@@ -173,8 +173,7 @@ class ForwardModel:
             self.xa = self.xa_static
             self.Sa = self.Sa_static
 
-    @staticmethod
-    def clip_bounds(x, bounds, inds_free=slice(None), eps=1e-5):
+    def clip_bounds(self, x, bounds, geom, inds_free=slice(None), eps=1e-5):
         """Clip state vector against bounds.
         eps shifts bounds by epsilon to not pin
         boundary returned val at boundary. Used when clipping prior mean.
@@ -187,6 +186,13 @@ class ForwardModel:
         rel_eps = np.maximum(0, np.minimum(eps * np.maximum(bounds[1], 1.0), 1))
         low[check] = low[check] + rel_eps[check]
         high[check] = high[check] - rel_eps[check]
+
+        # Ensure higher altitudes do not go over physical water vapor limit
+        # This line protects Jacobian from zeroing out in undefined space.
+        if self.atmosphere.h2o_i:
+            high[self.idx_atmosphere[self.atmosphere.h2o_i]] = (
+                self.atmosphere.h2o_bounds_polynomial(geom.surface_elevation_km) - eps
+            )
 
         return np.clip(x[inds_free], a_min=low[inds_free], a_max=high[inds_free])
 
@@ -241,9 +247,9 @@ class ForwardModel:
 
         # In the future, off-diagonal updates would require fixing this indexing
         xa[update.xa[0]] = update.xa[1]
-        Sa[update.Sa[1], update.Sa[1]] = update.Sa[1]
-        Sa_inv[update.Sa[1], update.Sa_inv[1]] = update.Sa_inv[1]
-        Sa_inv_sqrt[update.Sa[1], update.Sa_inv_sqrt[1]] = update.Sa_inv_sqrt[1]
+        Sa[update.Sa[0], update.Sa[0]] = update.Sa[1]
+        Sa_inv[update.Sa[0], update.Sa_inv[0]] = update.Sa_inv[1]
+        Sa_inv_sqrt[update.Sa[0], update.Sa_inv_sqrt[0]] = update.Sa_inv_sqrt[1]
 
         return xa, Sa, Sa_inv, Sa_inv_sqrt
 
