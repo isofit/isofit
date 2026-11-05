@@ -87,7 +87,7 @@ class Surface:
             p = interp1d(self.rwl, self.rfl, fill_value="extrapolate")
             self.rfl = p(self.wl)
 
-    def heuristic_prior_update(self, x_surface, geom):
+    def heuristic_prior_update(self, x_surface, geom, pixel_heuristic_priors):
         """Don't update any of the reflectance priors.
         Return format follows:
             xa: (statevec_idx: list[int], update_values: ndarray[float])

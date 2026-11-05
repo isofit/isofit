@@ -382,7 +382,7 @@ class Instrument(NoiseModel):
 
         return bounds, scale, init, prior_mean, prior_cov
 
-    def heuristic_prior_update(self, x_surface, geom):
+    def heuristic_prior_update(self, x_surface, geom, pixel_heuristic_priors):
         """Not implemented"""
         return PriorUpdate()
 

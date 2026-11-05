@@ -177,21 +177,6 @@ class MultiComponentSurface(Surface):
 
         return closest
 
-    def heuristic_prior_update(self, x_surface, geom, pixel_heuristic_priors):
-        """Don't update any of the reflectance priors.
-        Return format follows:
-            xa: (statevec_idx: list[int], update_values: ndarray[float])
-            Sa: (statevec_idx: list[int], update_values: ndarray[float])
-            Sa_inv: (statevec_idx: list[int], update_values: ndarray[float])
-            Sa_inv_sqrt: (statevec_idx: list[int], update_values: ndarray[float])
-        """
-        return (
-            ([], []),
-            ([], []),
-            ([], []),
-            ([], []),
-        )
-
     def xa(self, x_surface, geom):
         """Mean of prior distribution, calculated at state x. We find
         the covariance in a normalized space (normalizing by z) and then un-
