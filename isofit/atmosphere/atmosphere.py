@@ -30,8 +30,8 @@ from types import SimpleNamespace
 import numpy as np
 
 from isofit.configs import Config
-from isofit.core import PriorUpdate, common, units
-from isofit.core.common import json_load_ascii, svd_inv_sqrt
+from isofit.core import common, units
+from isofit.core.common import json_load_ascii, svd_inv_sqrt, PriorUpdate
 from isofit.core.geometry import Geometry
 from isofit.luts.reader import Reader
 
