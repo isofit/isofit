@@ -257,9 +257,16 @@ def apply_oe(
     retrieve_co2 : bool, default=False
         Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
     use_background_rfl : bool, default=False
-        Flag to calculate background reflectance based on presolve. Presolve must also be turned on.
+        Flag to calculate background reflectance.
+        This is either performed at run-time using presolve atmospheric solutions (--presolve must be used in this case.
+        Alternatively, the flag is paired with background_rfl_file"
     background_rfl_file: str, default=None
-        Pass in a pre-computed background reflectance file at native, full-pixel resolution
+        Pass in a pre-computed background reflectance file at native, full-pixel resolution.
+        Note: We suggest that reflectance definitions stay consistent between the input background reflectance and the definition used in the run.
+            This means that if terrain = 'flat' and geoid relative reflectance is used, the background reflectance should share that definition.
+            We also suggest that the background reflectance should be the apparent reflectance, i.e., the signal from all photon paths interacting with a surface.
+            This becomes relevant for the glint model, which book-keeps fresnel reflected photons on the water surface separately from water leaving photons.
+            The background reflectance should include both.
     eof_path : str, default=None
         Add 1 or 2 Empirical Orthogonal Functions to the state vector.  File is a 1-2 column text file
         with one number per instrument channel.
@@ -328,7 +335,7 @@ def apply_oe(
 
     if background_rfl_file and not use_background_rfl:
         raise ValueError(
-            "Input background reflectance file requires the bacground_rfl flag"
+            "Input background reflectance file requires the background_rfl flag"
         )
 
     if use_background_rfl and not presolve and not background_rfl_file:
@@ -484,7 +491,7 @@ def apply_oe(
 
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
-    dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(
+    dt, sensor_inversion_windows, pixel_size = tmpl.get_sensor_metadata_from_fid(
         sensor, paths.fid, datestr
     )
     if not sensor_inversion_windows:

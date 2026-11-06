@@ -1400,6 +1400,7 @@ def parse_datestr(fid: str, datestr: str) -> datetime:
 
 
 def get_sensor_metadata_from_fid(sensor: str, fid: str, datestr: str = None):
+    pixel_size = None
     inversion_window_update = []
     if sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
@@ -1424,12 +1425,15 @@ def get_sensor_metadata_from_fid(sensor: str, fid: str, datestr: str = None):
         # parse flightline ID (EMIT assumptions)
         dt = datetime.strptime(fid[:19], "emit%Y%m%dt%H%M%S")
         inversion_window_update = [[350.0, 1325.0], [1435, 1800.0], [1965.0, 2500.0]]
+        pixel_size = 60.0
     elif sensor == "enmap":
         # parse flightline ID (EnMAP assumptions)
         dt = datetime.strptime(fid[:15], "%Y%m%dt%H%M%S")
+        pixel_size = 30.0
     elif sensor == "hyp":
         # parse flightline ID (Hyperion assumptions)
         dt = datetime.strptime(fid[10:17], "%Y%j")
+        pixel_size = 30.0
     elif sensor == "neon":
         # parse flightline ID (NEON assumptions)
         dt = datetime.strptime(fid, "NIS01_%Y%m%d_%H%M%S")
@@ -1439,6 +1443,7 @@ def get_sensor_metadata_from_fid(sensor: str, fid: str, datestr: str = None):
     elif sensor == "prisma":
         # parse flightline ID (PRISMA assumptions)
         dt = datetime.strptime(fid, "%Y%m%d%H%M%S")
+        pixel_size = 30
     elif sensor == "gao":
         # parse flightline ID (GAO/CAO assumptions)
         dt = datetime.strptime(fid[3:-5], "%Y%m%dt%H%M%S")
@@ -1459,7 +1464,7 @@ def get_sensor_metadata_from_fid(sensor: str, fid: str, datestr: str = None):
             "Datetime object could not be obtained. Please check file name of input"
             " data."
         )
-    return dt, inversion_window_update
+    return dt, inversion_window_update, pixel_size
 
 
 def get_wavelengths(

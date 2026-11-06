@@ -101,6 +101,7 @@ def background_reflectance(
     subs_state_path,
     mean_altitude_km,
     mean_elevation_km,
+    pixel_size=None,
     smoothing_sigma=[2],
     n_cores=1,
     logging_level="INFO",
@@ -138,7 +139,8 @@ def background_reflectance(
     # Estimate pixel size and adjacency range in km (pixel size is approx. based on loc file)
     loc = envi.open(envi_header(input_loc), input_loc).open_memmap()
     rows, cols, _ = loc.shape
-    pixel_size = m_to_km(approx_pixel_size(loc=loc, nodata_value=nodata_value))
+    if pixel_size is None:
+        pixel_size = m_to_km(approx_pixel_size(loc=loc, nodata_value=nodata_value))
     adj_range = get_adjacency_range(
         sensor_alt_asl=mean_altitude_km,
         ground_alt_asl=mean_elevation_km,
@@ -219,6 +221,7 @@ def background_reflectance(
 @click.argument("subs_state_path")
 @click.argument("mean_altitude_km")
 @click.argument("mean_elevation_km")
+@click.option("--pixel_size", type=float)
 @click.option(
     "--atm_sigma",
     "-as",
