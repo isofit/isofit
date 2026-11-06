@@ -2,7 +2,11 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
+from scipy.io import savemat
+from scipy.signal import convolve
 
+from isofit.configs.sections.instrument_config import InstrumentConfig
+from isofit.core.common import spectral_response_function
 from isofit.core.instrument import Instrument, NoiseModel, wl_tol
 
 
@@ -193,6 +197,190 @@ def test_eof_offset_single_eof_column():
 
     result = Instrument.eof_offset(inst, x_instrument)
     assert np.allclose(result, 3.0)
+
+
+# rcc_factor / nonlinearity
+
+
+def _nl_inst(n_chan=5, fit_rcc=True, fit_nl=True):
+    """Bare Instrument (no __init__) with optional PER_WL_RCC and NL_ALPHA/NL_BETA."""
+    inst = Instrument.__new__(Instrument)
+    inst.n_chan = n_chan
+    inst.wl_init = np.linspace(400, 2500, n_chan)
+    inst.wavelengths_fixed = True
+    inst.eof = np.array([])
+    inst.dn_mapping = np.linspace(50.0, 150.0, n_chan)
+    inst.fit_rcc = fit_rcc
+    inst.fit_nl = fit_nl
+    inst.state_idx = {}
+    n_state = 0
+    if fit_rcc:
+        inst.state_idx["PER_WL_RCC"] = list(range(n_chan))
+        n_state = n_chan
+    if fit_nl:
+        inst.state_idx["NL_ALPHA"] = [n_state]
+        inst.state_idx["NL_BETA"] = [n_state + 1]
+        n_state += 2
+    inst.n_state = n_state
+
+    rng = np.random.default_rng(0)
+    rcc = rng.uniform(0.9, 1.1, n_chan) if fit_rcc else []
+    nl = [0.05, 200.0] if fit_nl else []
+    x = np.concatenate([rcc, nl])
+    rdn = rng.uniform(0.5, 3.0, n_chan)
+    return inst, x, rdn
+
+
+def _modeled_meas(inst, x, rdn):
+    meas = inst.sample(x, inst.wl_init, rdn)
+    return meas * inst.rcc_factor(x, meas) + inst.eof_offset(x)
+
+
+def test_rcc_factor_is_unity_without_rcc_or_nl():
+    inst, x, rdn = _nl_inst(fit_rcc=False, fit_nl=False)
+    assert np.array_equal(inst.rcc_factor(x, rdn), np.ones(inst.n_chan))
+    assert np.array_equal(inst.rcc_chain_factor(x, rdn), np.ones(inst.n_chan))
+
+
+def test_rcc_factor_nonlinearity():
+    inst, x, rdn = _nl_inst()
+    rcc, alpha, beta = x[: inst.n_chan], x[-2], x[-1]
+    expected = rcc * (1.0 + alpha * np.exp(-rdn * inst.dn_mapping / beta))
+    assert np.allclose(inst.rcc_factor(x, rdn), expected)
+
+
+@pytest.mark.parametrize("fit_rcc", [True, False])
+def test_rcc_chain_factor_matches_finite_difference(fit_rcc):
+    inst, x, rdn = _nl_inst(fit_rcc=fit_rcc)
+    h = 1e-6
+    fd = (_modeled_meas(inst, x, rdn + h) - _modeled_meas(inst, x, rdn - h)) / (2 * h)
+    assert np.allclose(inst.rcc_chain_factor(x, rdn), fd, rtol=1e-6)
+
+
+@pytest.mark.parametrize("fit_rcc", [True, False])
+def test_dmeas_dinstrument_matches_finite_difference(fit_rcc):
+    inst, x, rdn = _nl_inst(fit_rcc=fit_rcc)
+    K = inst.dmeas_dinstrument(x, inst.wl_init, rdn)
+
+    fd = np.zeros_like(K)
+    for i in range(len(x)):
+        h = 1e-6 * max(1.0, abs(x[i]))
+        dx = np.zeros_like(x)
+        dx[i] = h
+        fd[:, i] = (
+            _modeled_meas(inst, x + dx, rdn) - _modeled_meas(inst, x - dx, rdn)
+        ) / (2 * h)
+
+    assert np.allclose(K, fd, rtol=1e-6, atol=1e-12)
+
+
+@pytest.mark.parametrize("fit_rcc", [True, False])
+def test_dmeas_dinstrumentb_propagates_rcc_and_nl(fit_rcc):
+    """Relative calibration columns scale the full modeled signal; spectral unknowns
+    perturb the sampled radiance, which is then propagated through rcc and nl."""
+    inst, x, rdn = _nl_inst(fit_rcc=fit_rcc)
+    n = inst.n_chan
+    inst.unknowns = MagicMock(
+        wavelength_calibration_uncertainty=0.1, stray_srf_uncertainty=0.1
+    )
+    inst.bvec = [f"Cal_Relative_{i}" for i in range(n)]
+    inst.bvec += ["Cal_Spectral", "Cal_Stray_SRF"]
+    inst.cal_spectral_idx, inst.cal_stray_idx = n, n + 1
+
+    Kb = inst.dmeas_dinstrumentb(x, inst.wl_init, rdn)
+    assert Kb.shape == (n, n + 2)
+    assert np.allclose(Kb[:, :n], np.diag(_modeled_meas(inst, x, rdn)))
+
+    h = 1e-6
+    ssrf = spectral_response_function(np.arange(-10, 11), 0, 4)
+    perturbations = {
+        inst.cal_spectral_idx: np.hstack((np.diff(rdn), [0])),
+        inst.cal_stray_idx: convolve(rdn, ssrf, mode="same") - rdn,
+    }
+    for col, d in perturbations.items():
+        fd = (
+            _modeled_meas(inst, x, rdn + h * d) - _modeled_meas(inst, x, rdn - h * d)
+        ) / (2 * h)
+        assert np.allclose(Kb[:, col], fd, rtol=1e-6, atol=1e-12)
+
+
+# __init__ with nonlinearity and RCC prior file
+
+
+def _real_inst(tmp_path, statevector, n_chan=4, rcc_prior=True):
+    wl = np.linspace(400, 2500, n_chan)
+    wl_file = tmp_path / "wl.txt"
+    np.savetxt(wl_file, np.column_stack([wl, np.full(n_chan, 10.0)]))
+    instrument = {
+        "wavelength_file": str(wl_file),
+        "SNR": 300.0,
+        "integrations": 1,
+        "statevector": statevector,
+    }
+    if rcc_prior:
+        prior_file = tmp_path / "rcc_prior.mat"
+        savemat(
+            prior_file,
+            {
+                "cov": np.eye(n_chan) * 0.01,
+                "mean": np.full(n_chan, 1.0),
+                "bounds": np.array([[0.5, 2.0]] * n_chan),
+            },
+        )
+        instrument["rcc_prior_file"] = str(prior_file)
+
+    full_config = MagicMock()
+    full_config.forward_model.instrument = InstrumentConfig(instrument)
+    return Instrument(full_config)
+
+
+_RCC_SV = {
+    "bounds": [0.5, 2.0],
+    "init": 1.0,
+    "prior_mean": 0.0,
+    "prior_sigma": 0.0,
+    "scale": 1.0,
+}
+_ALPHA_SV = {
+    "bounds": [-1.0, 1.0],
+    "init": 0.0,
+    "prior_mean": 0.0,
+    "prior_sigma": 0.2,
+    "scale": 1.0,
+}
+_BETA_SV = {
+    "bounds": [10.0, 20000.0],
+    "init": 1000.0,
+    "prior_mean": 1000.0,
+    "prior_sigma": 1000.0,
+    "scale": 1000.0,
+}
+
+
+def test_rcc_prior_file_only_overrides_rcc_elements(tmp_path):
+    """NL_* sort ahead of PER_WL_RCC, so the prior file must be applied by index."""
+    inst = _real_inst(
+        tmp_path,
+        {"PER_WL_RCC": _RCC_SV, "NL_ALPHA": _ALPHA_SV, "NL_BETA": _BETA_SV},
+    )
+    assert inst.fit_rcc and inst.fit_nl
+
+    rcc_idx = inst.state_idx["PER_WL_RCC"]
+    assert np.allclose(inst.prior_mean[rcc_idx], 1.0)
+    assert np.allclose([inst.bounds[i] for i in rcc_idx], [0.5, 2.0])
+
+    for name, sv in [("NL_ALPHA", _ALPHA_SV), ("NL_BETA", _BETA_SV)]:
+        i = inst.state_idx[name][0]
+        assert np.allclose(inst.bounds[i], sv["bounds"])
+        assert inst.init[i] == sv["init"]
+        assert inst.prior_mean[i] == sv["prior_mean"]
+        assert inst.scale[i] == sv["scale"]
+        assert np.isclose(inst.Sa()[i, i], sv["prior_sigma"] ** 2)
+
+
+def test_nl_alpha_without_beta_raises(tmp_path):
+    with pytest.raises(ValueError, match="NL_ALPHA and NL_BETA"):
+        _real_inst(tmp_path, {"NL_ALPHA": _ALPHA_SV}, rcc_prior=False)
 
 
 # DN_additive_uncertainty (static method)

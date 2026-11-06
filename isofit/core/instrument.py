@@ -200,6 +200,7 @@ class NoiseModel:
 class Instrument(NoiseModel):
 
     fit_rcc = False
+    fit_nl = False
 
     def __init__(self, full_config: Config):
         """A model of the spectrometer instrument, including spectral
@@ -271,18 +272,32 @@ class Instrument(NoiseModel):
         self.prior_mean = np.array(self.prior_mean)
         self.prior_sigma = np.array(self.prior_sigma)
 
+        nl_present = [name in self.state_idx for name in ("NL_ALPHA", "NL_BETA")]
+        if any(nl_present) and not all(nl_present):
+            raise ValueError(
+                "NL_ALPHA and NL_BETA must be specified together in the instrument"
+                " statevector"
+            )
+        self.fit_nl = all(nl_present)
+
         self.n_state = len(self.statevec_names)
         self.integrations = config.integrations
 
         self.eof = np.array([])
         if config.eof_path is not None:
             self.eof = np.loadtxt(config.eof_path)
+    
+        if config.dn_mapping_file is not None:
+            self.dn_mapping = 1.0/np.loadtxt(config.dn_mapping_file)
+        else:
+            self.dn_mapping = 1.0
 
         # Build Sa
         sa = np.zeros((self.n_state, self.n_state))
         for name, idx in self.state_idx.items():
             # Use default values
             sa[np.ix_(idx, idx)] = np.diagflat(np.power(self.prior_sigma[idx], 2))
+
 
         # Overwrite priors based on files
         override_prior_files = {}
@@ -301,11 +316,11 @@ class Instrument(NoiseModel):
                 "instrument indices."
             )
 
-            for i in range(len(idx)):
-                self.bounds[i] = _bounds[i]
-                self.scale[i] = _scale
-                self.init[i] = _init[i]
-                self.prior_mean[i] = _prior_mean[i]
+            for i, j in enumerate(idx):
+                self.bounds[j] = _bounds[i]
+                self.scale[j] = _scale
+                self.init[j] = _init[i]
+                self.prior_mean[j] = _prior_mean[i]
 
             sa[np.ix_(idx, idx)] = _prior_cov
 
@@ -343,7 +358,7 @@ class Instrument(NoiseModel):
 
             if self.unknowns.stray_srf_uncertainty is not None:
                 self.bvec += ["Cal_Stray_SRF"]
-                self.cal_stray_idx = len(self.bval) + 1
+                self.cal_stray_idx = len(self.bval)
                 self.bval = np.hstack([self.bval, self.unknowns.stray_srf_uncertainty])
             if self.unknowns.channelized_radiometric_uncertainty_file is not None:
                 self.channelized_radiometric_uncertainty = np.loadtxt(
@@ -489,13 +504,20 @@ class Instrument(NoiseModel):
             return dmeas_dinstrument
 
         meas = self.sample(x_instrument, wl_hi, rdn_hi)
+        rcc = self.per_wl_rcc(x_instrument)
+        nl, _, dnl_dalpha, dnl_dbeta = self.nonlinearity(x_instrument, meas)
+        chain = self.rcc_chain_factor(x_instrument, meas)[:, None]
 
         for name, idx in self.state_idx.items():
             # Handle analytcal partials first
             if name == "PER_WL_RCC":
-                dmeas_dinstrument[:, idx] = self.dmeas_drcc(meas)
+                dmeas_dinstrument[:, idx] = self.dmeas_drcc(meas * nl)
             elif name == "EOF":
                 dmeas_dinstrument[:, idx] = self.dmeas_deof(x_instrument)
+            elif name == "NL_ALPHA":
+                dmeas_dinstrument[:, idx] = (meas * rcc * dnl_dalpha)[:, None]
+            elif name == "NL_BETA":
+                dmeas_dinstrument[:, idx] = (meas * rcc * dnl_dbeta)[:, None]
             # For others use numerical
             else:
                 meas_perturb = []
@@ -507,7 +529,7 @@ class Instrument(NoiseModel):
                     [self.sample(x, wl_hi, rdn_hi) for x in x_perturb]
                 )
 
-                dmeas_dinstrument[:, idx] = ((meas_perturb - meas) / eps).T
+                dmeas_dinstrument[:, idx] = ((meas_perturb - meas) / eps).T * chain
 
         return dmeas_dinstrument
 
@@ -522,9 +544,10 @@ class Instrument(NoiseModel):
 
         # Uncertainty due to radiometric calibration
         meas = self.sample(x_instrument, wl_hi, rdn_hi)
+        chain = self.rcc_chain_factor(x_instrument, meas)
         dmeas_dinstrument = np.hstack(
             (
-                np.diagflat(meas),
+                np.diagflat(meas * self.rcc_factor(x_instrument, meas)),
                 np.zeros((self.n_chan, len(self.bvec) - len(self.wl_init))),
             )
         )
@@ -532,7 +555,7 @@ class Instrument(NoiseModel):
         # Uncertainty due to spectral calibration
         if self.unknowns:
             if self.unknowns.wavelength_calibration_uncertainty is not None:
-                dmeas_dinstrument[:, self.cal_spectral_idx] = self.sample(
+                dmeas_dinstrument[:, self.cal_spectral_idx] = chain * self.sample(
                     x_instrument, wl_hi, np.hstack((np.diff(rdn_hi), np.array([0])))
                 )
 
@@ -540,7 +563,7 @@ class Instrument(NoiseModel):
             if self.unknowns.stray_srf_uncertainty is not None:
                 ssrf = spectral_response_function(np.arange(-10, 11), 0, 4)
                 blur = convolve(meas, ssrf, mode="same")
-                dmeas_dinstrument[:, self.cal_stray_idx] = blur - meas
+                dmeas_dinstrument[:, self.cal_stray_idx] = chain * (blur - meas)
 
         return dmeas_dinstrument
 
@@ -550,15 +573,41 @@ class Instrument(NoiseModel):
             offset += self.eof[:, i] * x_instrument[i]
         return offset
 
-    def rcc_factor(self, x_instrument):
+    def per_wl_rcc(self, x_instrument):
+        if self.fit_rcc:
+            return x_instrument[self.state_idx["PER_WL_RCC"]]
+        return np.ones_like(self.wl_init)
+
+    def nonlinearity(self, x_instrument, rdn):
+        """Signal-dependent gain nl = 1 + alpha * exp(-dn / beta), with
+        dn = rdn * dn_mapping. Returns nl and its partial derivatives with
+        respect to rdn, alpha, and beta (nl = 1 if NL_ALPHA/NL_BETA are unused).
+        """
+        if not self.fit_nl:
+            zeros = np.zeros_like(rdn)
+            return np.ones_like(rdn), zeros, zeros, zeros
+
+        alpha = x_instrument[self.state_idx["NL_ALPHA"][0]]
+        beta = x_instrument[self.state_idx["NL_BETA"][0]]
+        dn = rdn * self.dn_mapping
+        e = np.exp(-dn / beta)
+        nl = 1.0 + alpha * e
+        dnl_drdn = -alpha * e * self.dn_mapping / beta
+        dnl_dalpha = e
+        dnl_dbeta = alpha * e * dn / beta**2
+        return nl, dnl_drdn, dnl_dalpha, dnl_dbeta
+
+    def rcc_factor(self, x_instrument, rdn):
         """Apply rcc scaling from statevector or
         TODO: rdn_factors file
         """
-        rcc = np.ones_like(self.wl_init)
-        if self.fit_rcc:
-            rcc = x_instrument[self.state_idx["PER_WL_RCC"]]
+        return self.per_wl_rcc(x_instrument) * self.nonlinearity(x_instrument, rdn)[0]
 
-        return rcc
+    def rcc_chain_factor(self, x_instrument, rdn):
+        """Derivative of rdn * rcc_factor(x_instrument, rdn) with respect to rdn,
+        used to propagate Jacobians of the instrument-sampled radiance."""
+        nl, dnl_drdn, _, _ = self.nonlinearity(x_instrument, rdn)
+        return self.per_wl_rcc(x_instrument) * (nl + rdn * dnl_drdn)
 
     def sample(self, x_instrument, wl_hi, rdn_hi):
         """Apply instrument sampling to a radiance spectrum, returning predicted measurement."""

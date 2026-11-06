@@ -61,6 +61,12 @@ class InstrumentStateVectorConfig(StateVectorConfig):
         self._WL_SPACE_type = StateVectorElementConfig
         self.WL_SPACE: StateVectorElementConfig = None
 
+        self._NL_ALPHA_type = StateVectorElementConfig
+        self.NL_ALPHA: StateVectorElementConfig = None
+
+        self._NL_BETA_type = StateVectorElementConfig
+        self.NL_BETA: StateVectorElementConfig = None
+
         assert len(self.get_all_elements()) == len(self._get_nontype_attributes())
 
         self._set_statevector_config_options(sub_configdic)
@@ -137,6 +143,9 @@ class InstrumentConfig(BaseConfigSection):
         """float: We have several ways to define the instrument noise.  The simplest model is based on a single uniform 
         SNR number that is signal-independnet and applied uniformly to all wavelengths"""
 
+        self._dn_mapping_file_type = str
+        self.dn_mapping_file = None
+ 
         self._parametric_noise_file_type = str
         self.parametric_noise_file = None
         """str: We have several ways to define the instrument noise.
