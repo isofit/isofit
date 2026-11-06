@@ -451,5 +451,6 @@ def multicomponent_classification(
 @click.option("--loglevel", default="INFO")
 @click.option("--logfile")
 def cli(**kwargs):
+    """Classify radiance cube based on prior library spectral matchup"""
     multicomponent_classification(**kwargs)
     click.echo("Done")

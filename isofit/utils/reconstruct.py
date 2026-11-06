@@ -83,6 +83,7 @@ def reconstruct_subs(input_subs_path, output_path, lbl_working_path):
 @click.argument("output_path")
 @click.argument("lbl_working_path")
 def cli(**kwargs):
+    """Populate full pixel resolution scene from super-pixel file"""
 
     reconstruct_subs(**kwargs)
     click.echo("Done")
