@@ -329,7 +329,7 @@ class Writer:
             point (np.array): conditions to alter in simulation
             template_only (bool): only write template file and then stop
         """
-        raise NotImplemented("This method must be defined by the subclass")
+        raise NotImplementedError("This method must be defined by the subclass")
 
     def readSim(self, point: np.array):
         """
@@ -338,7 +338,7 @@ class Writer:
         Args:
             point (np.array): conditions to alter in simulation
         """
-        raise NotImplemented(
+        raise NotImplementedError(
             "This method must be defined by the subclass RTE, (TODO) see ISOFIT documentation for more information"
         )
 

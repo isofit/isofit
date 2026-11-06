@@ -5,10 +5,10 @@ from .six_s import SixSRT
 from .sRTMnet import SimulatedModtranRT
 
 Engines = {
-    "KernelFlowsGP": KernelFlowsRT,
+    "kernelflows": KernelFlowsRT,
     "modtran": ModtranRT,
-    "6s": SixSRT,
-    "sRTMnet": SimulatedModtranRT,
-    "LibRadTran": LibRadTranRT,
-    "Prebuilt": None,
+    "sixs": SixSRT,
+    "srtmnet": SimulatedModtranRT,
+    "libradtran": LibRadTranRT,
+    "prebuilt": None,
 }

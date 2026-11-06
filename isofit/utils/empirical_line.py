@@ -29,8 +29,7 @@ from scipy.linalg import inv
 from scipy.spatial import KDTree
 from spectral.io import envi
 
-from isofit import ray
-from isofit.configs import configs
+from isofit import configs, ray
 from isofit.core.common import envi_header
 from isofit.core.fileio import initialize_output, write_bil_chunk
 from isofit.core.instrument import Instrument
@@ -488,7 +487,7 @@ def empirical_line(
     output_metadata["interleave"] = "bil"
     output_metadata["wavelength_unts"] = "Nanometers"
     isofit_version = iconfig.implementation.isofit_version
-    engine_name = iconfig.forward_model.atmosphere.engine_name
+    engine_name = iconfig.forward_model.atmosphere.engine.name
     output_metadata["description"] = (
         f"L2A empirical line per-pixel surface retrieval (segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
     )
