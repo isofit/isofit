@@ -18,18 +18,20 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 #
 import logging
-import numpy as np
-from spectral.io import envi
-from scipy.ndimage import uniform_filter
 
-from isofit.core.common import envi_header
-from isofit.utils.algebraic_line import algebraic_line
-from isofit.core.forward import ForwardModel
-from isofit.core.units import m_to_km, km_to_m
+import click
+import numpy as np
+from scipy.ndimage import uniform_filter
+from spectral.io import envi
+
 from isofit.configs import configs
-from isofit.core.multistate import update_config_for_surface
+from isofit.core.common import envi_header
 from isofit.core.fileio import initialize_output
+from isofit.core.forward import ForwardModel
+from isofit.core.multistate import update_config_for_surface
+from isofit.core.units import km_to_m, m_to_km
 from isofit.utils import extractions, reducers
+from isofit.utils.algebraic_line import algebraic_line
 
 
 def approx_pixel_size(loc, nodata_value=-9999):
@@ -92,16 +94,20 @@ def background_reflectance(
     input_radiance,
     input_loc,
     input_obs,
-    paths,
+    config_path,
+    lbl_path,
+    atm_path,
+    bgrfl_path,
+    subs_state_path,
     mean_altitude_km,
     mean_elevation_km,
-    smoothing_sigma,
-    n_cores,
-    logging_level,
-    log_file,
-    chunksize,
+    pixel_size=None,
+    smoothing_sigma=[2],
+    n_cores=1,
+    logging_level="INFO",
+    log_file=None,
+    chunksize=256,
     use_slic_rfls=True,
-    use_superpixels=True,
     nodata_value=-9999,
 ):
     """Aggregates background reflectance term from the presolve."""
@@ -117,7 +123,7 @@ def background_reflectance(
     # We could also think of more custom weighting treatments for borders in future.
     UNIFORM_FILTER_MODE = "nearest"
 
-    conf = configs.create_new_config(paths.h2o_config_path)
+    conf = configs.create_new_config(config_path)
 
     # If using multisurface, we grab the first surface from the list
     # TODO this is the only instance of this, but perhaps a config method
@@ -133,7 +139,8 @@ def background_reflectance(
     # Estimate pixel size and adjacency range in km (pixel size is approx. based on loc file)
     loc = envi.open(envi_header(input_loc), input_loc).open_memmap()
     rows, cols, _ = loc.shape
-    pixel_size = m_to_km(approx_pixel_size(loc=loc, nodata_value=nodata_value))
+    if pixel_size is None:
+        pixel_size = m_to_km(approx_pixel_size(loc=loc, nodata_value=nodata_value))
     adj_range = get_adjacency_range(
         sensor_alt_asl=mean_altitude_km,
         ground_alt_asl=mean_elevation_km,
@@ -151,19 +158,19 @@ def background_reflectance(
             rdn_file=input_radiance,
             loc_file=input_loc,
             obs_file=input_obs,
-            isofit_config=paths.h2o_config_path,
-            segmentation_file=paths.lbl_working_path,
+            isofit_config=config_path,
+            segmentation_file=lbl_path,
             isofit_dir=None,
-            atm_file=paths.atm_presolve,
+            atm_file=atm_path,
             atm_sigma=smoothing_sigma,
-            output_rfl_file=paths.bgrfl_working_path,
+            output_rfl_file=bgrfl_path,
             n_cores=n_cores,
             logging_level=logging_level,
             log_file=log_file,
         )
-        bg_rfl = envi.open(
-            envi_header(paths.bgrfl_working_path), paths.bgrfl_working_path
-        ).open_memmap(interleave="bip", writable=True)
+        bg_rfl = envi.open(envi_header(bgrfl_path), bgrfl_path).open_memmap(
+            interleave="bip", writable=True
+        )
 
     # else, falls back to weighting the superpixel rfl directly
     else:
@@ -179,20 +186,13 @@ def background_reflectance(
                 "samples": cols,
                 "interleave": "bip",
             },
-            outpath=paths.bgrfl_working_path,
+            outpath=bgrfl_path,
             out_shape=(rows, cols, len(wl)),
             bands=f"{len(wl)}",
             description="Background reflectance for each pixel used in OE inversion",
         )
-        labels = (
-            envi.open(envi_header(paths.lbl_working_path), paths.lbl_working_path)
-            .load()
-            .squeeze()
-            .astype(int)
-        )
-        subs_state = envi.open(
-            envi_header(paths.h2o_subs_path), paths.h2o_subs_path
-        ).load()
+        labels = envi.open(envi_header(lbl_path), lbl_path).load().squeeze().astype(int)
+        subs_state = envi.open(envi_header(subs_state_path), subs_state_path).load()
         bg_rfl = envi.open(envi_header(rfl_output), rfl_output).open_memmap(
             interleave="bip", writable=True
         )
@@ -207,18 +207,47 @@ def background_reflectance(
 
     del bg_rfl, loc
 
-    # if using superpixels, we aggregate the bg rfl before OE
-    if use_superpixels:
-        extractions(
-            inputfile=paths.bgrfl_working_path,
-            labels=paths.lbl_working_path,
-            output=paths.bgrfl_subs_path,
-            chunksize=chunksize,
-            flag=nodata_value,
-            reducer=reducers.band_mean,
-            n_cores=n_cores,
-            loglevel=logging_level,
-            logfile=log_file,
-        )
-
     return
+
+
+@click.command(name="background_rfl")
+@click.argument("input_radiance")
+@click.argument("input_loc")
+@click.argument("input_obs")
+@click.argument("config_path")
+@click.argument("lbl_path")
+@click.argument("atm_path")
+@click.argument("bgrfl_path")
+@click.argument("subs_state_path")
+@click.argument("mean_altitude_km")
+@click.argument("mean_elevation_km")
+@click.option("--pixel_size", type=float)
+@click.option(
+    "--atm_sigma",
+    "-as",
+    type=float,
+    multiple=True,
+    default=[2],
+    help="smoothing sigma for atmospheric interpolation",
+)
+@click.option(
+    "--n_cores",
+    type=int,
+    default=-1,
+    help="number of cores to use for parallel processing (default: all available cores)",
+)
+@click.option("--logging_level", help="logging level", type=str, default="INFO")
+@click.option("--log_file", help="logging file", type=str, default=None)
+@click.option("--chunksize", help="row-wise chunking", type=int, default=256)
+@click.option(
+    "--use_slic_rfls",
+    help="strategy for base reflectance cube",
+    is_flag=True,
+    default=True,
+)
+@click.option(
+    "--nodata_value", help="expected no-data value", type=int, default=-9999.0
+)
+def cli(**kwargs):
+    """Calculate the background reflectance cube"""
+    background_reflectance(**kwargs)
