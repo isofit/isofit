@@ -42,11 +42,8 @@ from isofit.core.multistate import (
     index_spectra_by_surface,
     update_config_for_surface,
 )
-from isofit.inversion.inverse_simple import (
-    invert_algebraic,
-    invert_analytical,
-    invert_simple,
-)
+from isofit.inversion.inverse_analytical import invert_analytical
+from isofit.inversion.inverse_simple import invert_algebraic, invert_simple
 from isofit.utils.atm_interpolation import atm_interpolation
 
 
@@ -552,10 +549,10 @@ class Worker(object):
             # Populate the "background" superpixel
             lbl_idx = int(self.lbl[r, c, 0])
             sub_state = np.zeros(self.fm.nstate)
+
             sub_state[self.fm.idx_surface] = self.subs_state[
                 lbl_idx, 0, self.fm.full_idx
             ][iv_idx]
-
             sub_state[self.fm.idx_atmosphere] = x_atmosphere
             sub_state[self.fm.idx_instrument] = self.subs_state[
                 lbl_idx, 0, self.fm.full_idx

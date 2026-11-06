@@ -470,7 +470,7 @@ def apply_oe(
     paths.stage_files()
     logging.info("...file/directory setup complete")
 
-    remove_bgrfl_file = False
+    remove_bgrfl_file = True
     if use_background_rfl and not presolve and not exists(paths.bgrfl_working_path):
         raise ValueError(
             "Background reflectance can only be computed if presolve is turned on."
@@ -919,7 +919,7 @@ def apply_oe(
                     log_file=log_file,
                     n_cores=n_cores,
                 )
-                remove_bgrfl_file = True
+                remove_bgrfl_file = False
 
         if config_only:
             logging.info("`config_only` enabled, exiting early")
