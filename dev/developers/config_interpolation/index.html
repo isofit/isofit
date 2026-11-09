@@ -1,0 +1,6950 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://isofit.github.io/isofit/dev/developers/config_interpolation/">
+      
+      
+        <link rel="prev" href="../testing/">
+      
+      
+        <link rel="next" href="../../api/isofit/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Config Interpolation - ISOFIT</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../css/mkapi-common.css">
+    
+      <link rel="stylesheet" href="../../css/mkapi-material.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/icons.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Config Interpolation - ISOFIT" />
+<meta property="og:image" content="https://isofit.github.io/isofit/dev/assets/images/social/developers/config_interpolation.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content="https://isofit.github.io/isofit/dev/developers/config_interpolation/" />
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:title" content="Config Interpolation - ISOFIT" />
+<meta property="twitter:image" content="https://isofit.github.io/isofit/dev/assets/images/social/developers/config_interpolation.png" />
+</head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#config-loading-inheritance-interpolation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ISOFIT" class="md-header__button md-logo" aria-label="ISOFIT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ISOFIT
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Config Interpolation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/isofit/isofit/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    isofit/isofit
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ISOFIT" class="md-nav__button md-logo" aria-label="ISOFIT" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ISOFIT
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/isofit/isofit/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    isofit/isofit
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/quickstarts/srtmnet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start (New Users)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/quickstarts/modtran/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MODTRAN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/best_practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Best Practices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extra Downloads
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Extra Downloads
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../extra_downloads/data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../extra_downloads/building_examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Building Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://isofit.github.io/isofit-tutorials" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Information
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Information
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../information/bibliography/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bibliography
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../information/code_of_conduct/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Interpolation
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Interpolation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#config-loading-inheritance-interpolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config Loading, Inheritance &amp; Interpolation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Config Loading, Inheritance &amp; Interpolation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-it-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters-to-isofit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why it matters to ISOFIT
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipeline-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline overview
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#package-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Package layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Components
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#module-level-constants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Module-level constants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#readconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read(config)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dict-helpers-get_dotted-locate-set_dotted-merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dict helpers: get_dotted, locate, set_dotted, merge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loadconfig-sectionnone-ctxnone-interptrue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load(config, section=None, ctx=None, interp=True)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#patchbox-full-inheritance-via" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        patch(box, full, ...): inheritance via ^^
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolve_filesect-base_dir-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resolve_file(sect, base_dir, cache)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parse_overridessource-and-_parse_cli_overridesargs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_overrides(source) and _parse_cli_overrides(args)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overridebox-ctx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        override(box, ctx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interpval-rel-full-resolving-one-string" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interp(val, rel, full): resolving one string
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interpolatebox-fullnone-relnone-walking-the-tree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interpolate(box, full=None, rel=None): walking the tree
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#load_clictx-config-sectionnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_cli(ctx, config, section=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration-with-the-loader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration with the loader
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration with the loader">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list_bases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list_bases()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loadkey-sectionnone-overridesnone-interpfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load(key, section=None, overrides=None, interp=False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create_new_configfile-kwargs-and-sectionmodelbase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        create_new_config(file, **kwargs) and SectionModel(base=...)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-isofit-config-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The isofit config CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#worked-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worked example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gotchas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gotchas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1" id="__nav_9_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_2" id="__nav_9_1_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.atmosphere
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.atmosphere
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/atmosphere/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_2_2" id="__nav_9_1_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.atmosphere.engines
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_9_1_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.atmosphere.engines
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/atmosphere/engines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/atmosphere/engines/kernel_flows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel flows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/atmosphere/engines/libradtran/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Libradtran
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/atmosphere/engines/modtran/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modtran
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/atmosphere/engines/sRTMnet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sRTMnet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/atmosphere/engines/six_s/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Six s
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/atmosphere/atmosphere/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Atmosphere
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_3" id="__nav_9_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.configs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.configs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_3_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_3_2" id="__nav_9_1_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.configs.sections
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_9_1_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.configs.sections
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_3_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_3_2_2" id="__nav_9_1_3_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.configs.sections.atmosphere
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_9_1_3_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_3_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.configs.sections.atmosphere
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/atmosphere/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_3_2_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_3_2_2_2" id="__nav_9_1_3_2_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.configs.sections.atmosphere.engines
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="6" aria-labelledby="__nav_9_1_3_2_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_3_2_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.configs.sections.atmosphere.engines
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/atmosphere/engines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/atmosphere/engines/kernelflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernelflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/atmosphere/engines/libradtran/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Libradtran
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/atmosphere/engines/modtran/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modtran
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/atmosphere/engines/prebuilt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prebuilt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/atmosphere/engines/sixs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sixs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/atmosphere/engines/srtmnet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Srtmnet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/atmosphere/atmosphere/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Atmosphere
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/atmosphere/statevector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Statevector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/forward_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Forward model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Implementation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/instrument/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instrument
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/inversion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inversion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/io/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Io
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/statevector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Statevector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/sections/surface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_3_3" id="__nav_9_1_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.configs.utils
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_9_1_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.configs.utils
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_3_3_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_3_3_2" id="__nav_9_1_3_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.configs.utils.interpolate
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="5" aria-labelledby="__nav_9_1_3_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_3_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.configs.utils.interpolate
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/utils/interpolate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/utils/interpolate/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cli
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/utils/interpolate/common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/utils/interpolate/inherit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inherit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/utils/interpolate/load/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Load
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/utils/interpolate/overrides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overrides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/utils/interpolate/resolve/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resolve
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/utils/accessors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Accessors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/legacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/configs/loader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_4" id="__nav_9_1_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.core
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.core
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/core/common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/core/fileio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fileio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/core/forward/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Forward
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/core/geometry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/core/instrument/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instrument
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/core/isofit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isofit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/core/multistate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multistate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/core/units/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Units
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_5" id="__nav_9_1_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.data
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.data
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_5_2" id="__nav_9_1_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.data.cli
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_9_1_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.data.cli
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/cli/data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/cli/examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/cli/isoplots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isoplots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/cli/libradtran/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Libradtran
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/cli/sixs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sixs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/cli/srtmnet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Srtmnet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/cli/surface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/cli/windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Windows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/build_examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/dev/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/download/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Download
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/ini/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ini
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/shared/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shared
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/data/validate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_6" id="__nav_9_1_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.debug
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.debug
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/debug/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/debug/ray_bypass/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ray bypass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/debug/resource_tracker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resource tracker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_7" id="__nav_9_1_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.inversion
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.inversion
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/inversion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/inversion/inverse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inverse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/inversion/inverse_mcmc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inverse mcmc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/inversion/inverse_simple/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inverse simple
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_8" id="__nav_9_1_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.luts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.luts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/luts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_8_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_8_2" id="__nav_9_1_8_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.luts.stores
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_9_1_8_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_8_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.luts.stores
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/luts/stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/luts/stores/netcdf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Netcdf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/luts/stores/zarr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zarr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/luts/reader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/luts/writer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_9" id="__nav_9_1_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.surface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.surface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/surface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/surface/surface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/surface/surface_glint_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface glint model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/surface/surface_lut/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface lut
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/surface/surface_multicomp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface multicomp
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/surface/surface_thermal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface thermal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_10" id="__nav_9_1_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.test
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.test
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/conftest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conftest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test cli
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_cli_machinery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test cli machinery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test common
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_configs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test configs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_env/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test env
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_fileio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test fileio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_forward/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test forward
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_geometry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_instrument/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test instrument
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_interpolate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test interpolate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_inverse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test inverse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_lut/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test lut
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_ray_bypass/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test ray bypass
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/test/test_template_construction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test template construction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9_1_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_1_11" id="__nav_9_1_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    isofit.utils
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_9_1_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_1_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    isofit.utils
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/adjacency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adjacency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/algebraic_line/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Algebraic line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/analytical_line/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analytical line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/apply_oe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apply oe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/atm_interpolation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Atm interpolation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/convert_6s_to_srtmnet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Convert 6s to srtmnet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/empirical_line/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Empirical line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/ewt_from_reflectance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ewt from reflectance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/extractions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extractions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/generate_noise/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generate noise
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/instrument_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instrument model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/interpolate_spectra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interpolate spectra
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/multicomponent_classification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multicomponent classification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/reconstruct/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/reducers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reducers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/segment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/skyview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Skyview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/surface_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Surface model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/template_construction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Template construction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/isofit/utils/wavelength_cal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wavelength cal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#config-loading-inheritance-interpolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config Loading, Inheritance &amp; Interpolation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Config Loading, Inheritance &amp; Interpolation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-it-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters-to-isofit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why it matters to ISOFIT
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipeline-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline overview
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#package-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Package layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Components
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#module-level-constants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Module-level constants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#readconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read(config)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dict-helpers-get_dotted-locate-set_dotted-merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dict helpers: get_dotted, locate, set_dotted, merge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loadconfig-sectionnone-ctxnone-interptrue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load(config, section=None, ctx=None, interp=True)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#patchbox-full-inheritance-via" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        patch(box, full, ...): inheritance via ^^
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolve_filesect-base_dir-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resolve_file(sect, base_dir, cache)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parse_overridessource-and-_parse_cli_overridesargs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_overrides(source) and _parse_cli_overrides(args)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overridebox-ctx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        override(box, ctx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interpval-rel-full-resolving-one-string" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interp(val, rel, full): resolving one string
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interpolatebox-fullnone-relnone-walking-the-tree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interpolate(box, full=None, rel=None): walking the tree
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#load_clictx-config-sectionnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_cli(ctx, config, section=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration-with-the-loader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration with the loader
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration with the loader">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list_bases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list_bases()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loadkey-sectionnone-overridesnone-interpfalse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load(key, section=None, overrides=None, interp=False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create_new_configfile-kwargs-and-sectionmodelbase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        create_new_config(file, **kwargs) and SectionModel(base=...)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-isofit-config-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The isofit config CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#worked-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worked example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gotchas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gotchas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    About
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../contributing/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Developers
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>Config Interpolation</h1>
+
+<h2 id="config-loading-inheritance-interpolation">Config Loading, Inheritance &amp; Interpolation<a class="headerlink" href="#config-loading-inheritance-interpolation" title="Permanent link">#</a></h2>
+<p>Package: <code>isofit/configs/utils/interpolate/</code>
+CLI: <code>isofit config ...</code></p>
+<h3 id="what-it-is">What it is<a class="headerlink" href="#what-it-is" title="Permanent link">#</a></h3>
+<p>The <code>interpolate</code> package is the <strong>pre-validation layer</strong> of the ISOFIT config system. It
+takes raw YAML/JSON files and turns them into a single, fully resolved plain
+<code>dict</code> <em>before</em> anything is handed to the Pydantic models in
+<code>isofit/configs/sections</code>. Every stage takes and returns ordinary nested
+<code>dict</code> / <code>list</code> trees; there is no wrapper type.</p>
+<p>It adds three capabilities that plain YAML/JSON do not have:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Syntax</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Inheritance</strong></td>
+<td><code>^^: section</code> / <code>^^: file.yml:section</code> / <code>^^: [a, b]</code></td>
+<td>Build a config on top of one or more other configs, same-file or cross-file</td>
+</tr>
+<tr>
+<td><strong>Overrides</strong></td>
+<td><code>--dotted.key value</code> (CLI) or <code>{"dotted.key": value}</code> (Python)</td>
+<td>Change any nested value without editing the file</td>
+</tr>
+<tr>
+<td><strong>Interpolation</strong></td>
+<td><code>${key.path}</code> (absolute) / <code>${.key}</code> (relative)</td>
+<td>Reference other values in the config, e.g. <code>${output.dir}/lut</code></td>
+</tr>
+</tbody>
+</table>
+<p>It also exposes a small <code>click</code> CLI (<code>isofit config preview|copy|validate|list</code>)
+for inspecting and materialising configs.</p>
+<p>The module does <strong>no schema validation</strong>. It only produces a dict. Validation
+is entirely the job of <code>Config.model_validate</code> (via
+<code>isofit.configs.loader.create_new_config</code>).</p>
+<h3 id="why-it-matters-to-isofit">Why it matters to ISOFIT<a class="headerlink" href="#why-it-matters-to-isofit" title="Permanent link">#</a></h3>
+<p>A complete ISOFIT config is large: <code>input</code>, <code>output</code>, <code>forward_model</code>
+(<code>surface</code>, <code>atmosphere</code> + engine, <code>instrument</code>), and <code>implementation</code>, with
+dozens of fields each. Most runs differ from each other in only a handful of
+values. Without this layer every user config would have to repeat every default,
+and every path would have to be written out in full.</p>
+<p>The module makes that manageable:</p>
+<ol>
+<li><strong>One source of truth for defaults.</strong> <code>isofit/configs/templates/default.yml</code>
+   holds a <code>default</code> section that mirrors every Pydantic field. Each RT engine
+   (<code>modtran</code>, <code>sixs</code>, <code>srtmnet</code>, <code>libradtran</code>, <code>kernelflows</code>, <code>prebuilt</code>) is a
+   small section that does <code>^^: default</code> and overrides only the engine block.</li>
+<li><strong>Use-case templates.</strong> <code>vswir.yml</code>, <code>thermal.yml</code>, <code>simulation.yml</code>,
+   <code>aquatic_glint.yml</code>, and <code>mcmc.yml</code> inherit cross-file
+   (<code>^^: default.yml:srtmnet</code>, <code>^^: default.yml:modtran</code>, ...) and set only the
+   retrieval methodology.</li>
+<li><strong>Defaults that follow user values.</strong> Defaults like
+   <code>lut_path: ${output.dir}/lut/lut.zarr</code> are interpolated <em>after</em> the user's
+   config is overlaid, so changing <code>output.dir</code> moves every derived path with it.</li>
+<li><strong>Install paths from the ISOFIT ini.</strong> <code>loader.load</code> injects the
+   <code>isofit.ini</code> environment as an <code>env</code> section, so engine paths are written as
+   <code>${env.sixs}</code>, <code>${env.srtmnet}/${env.srtmnet-file}</code>, and so on, and resolve
+   correctly on every machine.</li>
+<li><strong>Legacy configs get defaults automatically.</strong> Every config loaded through
+   <code>create_new_config</code> / <code>Config(...)</code> (including <code>apply_oe</code> output and old
+   JSON configs) is overlaid onto the matching engine's base config, so missing
+   fields get the shipped defaults.</li>
+</ol>
+<h3 id="pipeline-overview">Pipeline overview<a class="headerlink" href="#pipeline-overview" title="Permanent link">#</a></h3>
+<div class="highlight"><pre><span></span><code>            ┌──────────────┐
+ file ────▶ │   read()     │  YAML/JSON → dict
+            └──────┬───────┘
+                   │  optional: select `section`
+            ┌──────▼───────┐
+            │   patch()    │  fold in `^^` ancestors (recursive, cross-file)
+            └──────┬───────┘     └─ resolve_file() for `file.yml:section`
+            ┌──────▼───────┐
+            │  override()  │  apply dotted-key overrides (CLI / list / dict)
+            └──────┬───────┘     └─ parse_overrides() → _parse_cli_overrides()
+            ┌──────▼───────┐
+            │ interpolate()│  walk tree, resolve every `${...}` via interp()
+            └──────┬───────┘
+                   ▼
+             resolved dict  ──▶  Config.model_validate (Pydantic)
+</code></pre></div>
+<p><code>load()</code> runs these stages in this order, so:</p>
+<ul>
+<li><strong>Inheritance happens first.</strong> Overrides and <code>${}</code> see the merged tree.</li>
+<li><strong>Overrides happen before interpolation.</strong> <code>--output.dir /scratch</code> is
+  reflected in every <code>${output.dir}</code> reference.</li>
+<li><strong>Interpolation happens last</strong> and sees the final values.</li>
+</ul>
+<h3 id="package-layout">Package layout<a class="headerlink" href="#package-layout" title="Permanent link">#</a></h3>
+<p>Each pipeline stage lives in its own module. The package <code>__init__</code> re-exports
+the public functions, so <code>from isofit.configs.utils import interpolate</code> followed
+by <code>interpolate.load(...)</code>, <code>interpolate.read(...)</code>, etc. works unchanged.</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Contents</th>
+<th>Stage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>common.py</code></td>
+<td><code>Loaders</code>, <code>read()</code>, <code>get_dotted()</code>, <code>locate()</code>, <code>set_dotted()</code>, <code>merge()</code></td>
+<td>Shared by every stage; imports nothing else from the package</td>
+</tr>
+<tr>
+<td><code>inherit.py</code></td>
+<td><code>patch()</code>, <code>resolve_file()</code></td>
+<td>1. <code>^^</code> inheritance</td>
+</tr>
+<tr>
+<td><code>overrides.py</code></td>
+<td><code>parse_overrides()</code>, <code>_parse_cli_overrides()</code>, <code>override()</code></td>
+<td>2. dotted-key overrides</td>
+</tr>
+<tr>
+<td><code>resolve.py</code></td>
+<td><code>Interp</code>, <code>interp()</code>, <code>interpolate()</code></td>
+<td>3. <code>${...}</code> interpolation</td>
+</tr>
+<tr>
+<td><code>load.py</code></td>
+<td><code>load()</code></td>
+<td>Entry point that chains the stages above</td>
+</tr>
+<tr>
+<td><code>cli.py</code></td>
+<td><code>load_cli()</code> and the <code>isofit config</code> click group</td>
+<td>CLI wrapper</td>
+</tr>
+</tbody>
+</table>
+<p>The dependency graph is a strict DAG: <code>common</code> ← <code>inherit</code> / <code>overrides</code> /
+<code>resolve</code> ← <code>load</code> ← <code>cli</code>.</p>
+<h3 id="components">Components<a class="headerlink" href="#components" title="Permanent link">#</a></h3>
+<h4 id="module-level-constants">Module-level constants<a class="headerlink" href="#module-level-constants" title="Permanent link">#</a></h4>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Interp</code></td>
+<td>Regex <code>\${([^}]+)}</code> that matches <code>${...}</code> references.</td>
+</tr>
+<tr>
+<td><code>Loaders</code></td>
+<td>Extension → parser map (<code>.yml</code>/<code>.yaml</code> → <code>yaml.safe_load</code>, <code>.json</code> → <code>json.load</code>). It drives both <code>read()</code> and cross-file detection in <code>patch()</code>.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="readconfig"><code>read(config)</code><a class="headerlink" href="#readconfig" title="Permanent link">#</a></h4>
+<p>Loads a single file into a dict, dispatching on its extension. An empty file
+loads as <code>{}</code>. Raises <code>ValueError</code> for unsupported extensions or when the
+file's top level is not a mapping. It is the only function that touches disk,
+apart from <code>resolve_file</code>, which calls <code>read</code>.</p>
+<p>YAML is parsed with PyYAML's <code>safe_load</code>, which follows YAML 1.1. Watch out
+for these values in configs:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Parses as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>yes</code> / <code>no</code> / <code>on</code> / <code>off</code></td>
+<td>bool</td>
+</tr>
+<tr>
+<td><code>1e-5</code> (no decimal point)</td>
+<td>string; write <code>1.0e-5</code> to get a float</td>
+</tr>
+<tr>
+<td><code>012</code></td>
+<td>octal int (10)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="dict-helpers-get_dotted-locate-set_dotted-merge">Dict helpers: <code>get_dotted</code>, <code>locate</code>, <code>set_dotted</code>, <code>merge</code><a class="headerlink" href="#dict-helpers-get_dotted-locate-set_dotted-merge" title="Permanent link">#</a></h4>
+<p>These replace what a wrapper type would otherwise provide.</p>
+<ul>
+<li><strong><code>get_dotted(data, key)</code></strong> looks up <code>"a.b.c"</code> in nested dicts, with <code>[i]</code>
+  indexing into lists: <code>"a.b[1].c"</code>, <code>"a.m[0][1]"</code>, and negative indices such
+  as <code>"a.b[-1]"</code>. A literal key always wins over descending, and each separator
+  is tried as a split point from left to right. That is what lets
+  <code>${env.srtmnet.file}</code> reach the ini key <code>srtmnet.file</code> even though <code>env</code> also
+  has a plain <code>srtmnet</code> key. It raises <code>KeyError</code> if nothing matches, including
+  an out-of-range index or a key that descends into a scalar.</li>
+<li><strong><code>locate(data, key)</code></strong> resolves the key the same way but returns the path
+  taken, a list of <code>(container, slot)</code> steps, instead of the value.
+  <code>get_dotted</code> is a thin wrapper around it. <code>interp()</code> uses it to find a
+  referenced value's own section and to write the resolved value back.</li>
+<li><strong><code>set_dotted(data, key, value)</code></strong> assigns using the same key resolution. It
+  creates missing (or <code>null</code>) intermediate sections as dicts, and raises
+  <code>TypeError</code> when an intermediate exists but is the wrong container (a scalar
+  or list before <code>.</code>, anything but a list before <code>[i]</code>). Lists are never
+  created or extended, so <code>[i]</code> must be in range or <code>KeyError</code> is raised. A
+  mapping assigned onto an existing mapping is deep-merged with <code>merge()</code>;
+  anything else replaces the value. The value is deep-copied.</li>
+<li><strong><code>merge(dst, src)</code></strong> deep-merges <code>src</code> into <code>dst</code> in place, with <code>src</code>
+  winning. Nested mappings are merged key by key. Lists, scalars, and an
+  explicit <code>null</code> replace the value outright. Values from <code>src</code> are
+  deep-copied, so <code>dst</code> never aliases <code>src</code>.</li>
+</ul>
+<h4 id="loadconfig-sectionnone-ctxnone-interptrue"><code>load(config, section=None, ctx=None, interp=True)</code><a class="headerlink" href="#loadconfig-sectionnone-ctxnone-interptrue" title="Permanent link">#</a></h4>
+<p>The main entry point. It runs the full pipeline:</p>
+<ol>
+<li><code>read()</code> the file (kept as <code>full</code>, used to resolve same-file <code>^^</code> refs).</li>
+<li>If <code>section</code> is given, narrow to a copy of <code>full[section]</code>. An unknown
+   section raises <code>KeyError</code> listing the available sections.</li>
+<li>If the result has a <code>^^</code> key, call <code>patch()</code> with <code>base_dir</code> set to the
+   file's directory and a cache seeded with the already-loaded file.</li>
+<li>If <code>ctx</code> is given, call <code>override()</code>.</li>
+<li>If <code>interp</code> is true, call <code>interpolate()</code>.</li>
+</ol>
+<p><code>interp=False</code> is used to get the inherited and overridden tree <em>without</em>
+resolving references, so more values can be overlaid first. See
+<a href="#integration-with-the-loader">Integration with the loader</a>.</p>
+<h4 id="patchbox-full-inheritance-via"><code>patch(box, full, ...)</code>: inheritance via <code>^^</code><a class="headerlink" href="#patchbox-full-inheritance-via" title="Permanent link">#</a></h4>
+<p><code>patch</code> consumes the <code>^^</code> key and merges the referenced sections underneath the
+current one.</p>
+<p><strong>Precedence.</strong> References are applied lowest-priority first in list order, and
+the section's own keys always win:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">A</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">^^</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">B</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">C</span><span class="p p-Indicator">]</span>
+<span class="nt">B</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">^^</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">D</span>
+</code></pre></div>
+<p>The resulting precedence is <strong><code>D &lt; B &lt; C &lt; A</code></strong>.</p>
+<p><strong>Reference forms.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>^^: default</code></td>
+<td>Section <code>default</code> in the same file</td>
+</tr>
+<tr>
+<td><code>^^: [base, extras]</code></td>
+<td>Several sections, merged in order</td>
+</tr>
+<tr>
+<td><code>^^: bases/default.yml:srtmnet</code></td>
+<td>Section <code>srtmnet</code> of another file</td>
+</tr>
+<tr>
+<td><code>^^: ../common.json</code></td>
+<td>The <strong>whole top-level mapping</strong> of another file</td>
+</tr>
+</tbody>
+</table>
+<p>A reference is treated as cross-file when it contains a supported extension
+(<code>.yml</code>, <code>.yaml</code>, <code>.json</code>). Relative file paths resolve against the
+<strong>directory of the file that declares the <code>^^</code></strong>, not the current working
+directory. YAML and JSON can be mixed freely.</p>
+<p><strong>Merging</strong> uses <code>merge()</code>, which is a deep merge. Nested mappings are
+merged key-by-key, and lists and scalars are replaced wholesale. An explicit
+<code>null</code> in the child overrides a parent value. Each referenced section is
+deep-copied before merging, so two sections inheriting the same parent never
+share nested objects.</p>
+<p><strong>Safety.</strong></p>
+<ul>
+<li>Unknown same-file sections raise <code>KeyError</code>.</li>
+<li>Missing files raise <code>FileNotFoundError</code>, and unknown sections in another file
+  raise <code>KeyError</code>.</li>
+<li>Each file is read from disk only once per <code>patch</code> tree (<code>cache</code>).</li>
+<li>Circular chains (<code>A → B → A</code>) raise <code>ValueError</code>. The chain is tracked in
+  <code>_seen</code> as <code>(file, section)</code> identities, where same-file refs use the path of
+  the file that owns them (passed down as <code>patch(..., file=...)</code>). Sections
+  with the same name in different files are therefore distinct, and
+  <code>^^: default</code> and <code>^^: this.yml:default</code> count as the same section.</li>
+</ul>
+<h4 id="resolve_filesect-base_dir-cache"><code>resolve_file(sect, base_dir, cache)</code><a class="headerlink" href="#resolve_filesect-base_dir-cache" title="Permanent link">#</a></h4>
+<p>This helper handles cross-file references. It splits <code>path.yml:section</code> on the
+colon <em>directly after the extension</em>, so colons elsewhere in a path (for
+example a Windows drive letter) are preserved. It then resolves the path,
+loads the file through the cache, and returns:</p>
+<ul>
+<li><code>ref_full</code>: the referenced file's whole config, used for <em>its own</em> same-file
+  <code>^^</code> refs.</li>
+<li><code>ref</code>: the selected section, or the whole file if no <code>:section</code> was given.</li>
+<li><code>ref_dir</code>: the referenced file's directory, used as the base for <em>its</em>
+  cross-file refs.</li>
+<li><code>ident</code>: <code>(abspath, section)</code>, used for cycle detection.</li>
+</ul>
+<p>Because <code>ref_full</code> and <code>ref_dir</code> are passed down, inheritance chains spanning
+several files resolve correctly: each file's references are interpreted
+relative to that file.</p>
+<h4 id="parse_overridessource-and-_parse_cli_overridesargs"><code>parse_overrides(source)</code> and <code>_parse_cli_overrides(args)</code><a class="headerlink" href="#parse_overridessource-and-_parse_cli_overridesargs" title="Permanent link">#</a></h4>
+<p><code>parse_overrides</code> normalises every accepted override shape into one
+<code>{dotted.key: value}</code> dict:</p>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>None</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>dict</code></td>
+<td>returned as-is, with values <strong>not</strong> parsed (<code>{"forward_model.instrument.SNR": 500}</code>)</td>
+</tr>
+<tr>
+<td><code>click.Context</code></td>
+<td>its extra args are parsed with <code>_parse_cli_overrides</code></td>
+</tr>
+<tr>
+<td><code>list[str]</code></td>
+<td>parsed with <code>_parse_cli_overrides</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>_parse_cli_overrides</code> parses CLI tokens:</p>
+<ul>
+<li><code>--key value</code> parses <code>value</code> with <code>ast.literal_eval</code>, so <code>4</code> becomes an int,
+  <code>[1, 2]</code> a list, and <code>True</code> a bool. If that fails, the value is kept as a
+  plain string. A warning is logged only when the value <em>looked like</em> an
+  intended literal (it starts with a bracket, quote, digit, or <code>-</code>) but did not
+  parse.</li>
+<li>A bare <code>--key</code> at the end of the args, or followed by another <code>--flag</code>,
+  becomes <code>True</code>.</li>
+<li>Tokens that don't start with <code>--</code> and aren't consumed as a value are ignored.</li>
+</ul>
+<h4 id="overridebox-ctx"><code>override(box, ctx)</code><a class="headerlink" href="#overridebox-ctx" title="Permanent link">#</a></h4>
+<p>Applies the normalised overrides one at a time with <code>set_dotted()</code>, so
+<code>"forward_model.instrument.SNR"</code> reaches into nested sections and missing
+sections are created. Overriding a section with a mapping deep-merges into it,
+so the section's other keys are kept. Lists and scalars replace the existing
+value outright, and <code>--key None</code> sets <code>None</code>. To replace a whole section,
+clear it first: <code>--key None --key "{...}"</code>.</p>
+<h4 id="interpval-rel-full-resolving-one-string"><code>interp(val, rel, full)</code>: resolving one string<a class="headerlink" href="#interpval-rel-full-resolving-one-string" title="Permanent link">#</a></h4>
+<p><code>interp</code> resolves every <code>${...}</code> in a single string:</p>
+<ul>
+<li><code>${a.b.c}</code> is <strong>absolute</strong> and is looked up in <code>full</code> (the whole config) with
+  <code>locate()</code>, which follows the same key rules as <code>get_dotted()</code> but also
+  returns where the value lives.</li>
+<li><code>${.c}</code> is <strong>relative</strong> and is looked up in <code>rel</code>, the subsection that
+  contains the value.</li>
+<li>The referenced value is resolved <strong>depth-first, in its own context</strong>, before
+  it is substituted:</li>
+<li>a string containing <code>${</code> is resolved with its <em>own</em> section as <code>rel</code>, so
+    <code>${.c}</code> reached through <code>${s.v}</code> means <code>s.c</code>;</li>
+<li>a list or mapping is fully interpolated first, so <code>${l}</code> never comes back
+    as <code>['${d}']</code>.</li>
+</ul>
+<p>The resolved value is written back into the config, so each value is resolved
+  once and the result does not depend on key order.
+- Circular references raise <code>ValueError</code>, including cycles through containers
+  (<code>{m: "${s}", s: {a: "${m}"}}</code>). Values on the current chain are tracked by
+  location (<code>(container, key)</code>), not by reference text, so the same <code>${.c}</code> in
+  two sections is not mistaken for a cycle.
+- A missing key raises <code>KeyError</code>.
+- After substitution, the whole string is passed through <code>ast.literal_eval</code>,
+  so a fully substituted string can become a typed value:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">n</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="nt">a</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${n}</span><span class="w">        </span><span class="c1"># → 4   (int)</span>
+<span class="nt">b</span><span class="p">:</span><span class="w"> </span><span class="s">"${n}0"</span><span class="w">     </span><span class="c1"># → 40  (int, not "40")</span>
+<span class="nt">c</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${dir}/x</span><span class="w">    </span><span class="c1"># → "/data/x" (stays a string)</span>
+</code></pre></div>
+<h4 id="interpolatebox-fullnone-relnone-walking-the-tree"><code>interpolate(box, full=None, rel=None)</code>: walking the tree<a class="headerlink" href="#interpolatebox-fullnone-relnone-walking-the-tree" title="Permanent link">#</a></h4>
+<p><code>interpolate</code> walks a dict or list recursively and calls <code>interp()</code> on every
+string.</p>
+<ul>
+<li>On the first call, <code>full</code> defaults to the tree itself. Because <code>interp()</code>
+  resolves referenced values depth-first and writes them back, the walk order
+  does not affect the result.</li>
+<li>On entering each mapping, <code>rel</code> is set to that mapping, which is what makes
+  <code>${.key}</code> relative to the value's own section.</li>
+<li>Lists are walked too. Items inherit the enclosing <code>rel</code>, and mappings inside
+  lists get their own <code>rel</code>.</li>
+<li>The box is mutated in place and also returned.</li>
+</ul>
+<h4 id="load_clictx-config-sectionnone"><code>load_cli(ctx, config, section=None)</code><a class="headerlink" href="#load_clictx-config-sectionnone" title="Permanent link">#</a></h4>
+<p>This is the shared entry for the CLI commands. <code>config</code> may be either:</p>
+<ul>
+<li>a <strong>path</strong> to a <code>.yml</code>, <code>.yaml</code>, or <code>.json</code> file, which is loaded with
+  <code>load()</code>, or</li>
+<li>the <strong>name of a shipped base config</strong> (<code>vswir</code>, <code>sixs</code>, ...), which is
+  loaded with <code>loader.load(..., interp=True)</code> and gets the <code>env</code> injection.</li>
+</ul>
+<p>An existing file always wins over a base-config name. CLI overrides are
+applied in both cases.</p>
+<h3 id="integration-with-the-loader">Integration with the loader<a class="headerlink" href="#integration-with-the-loader" title="Permanent link">#</a></h3>
+<p><code>isofit/configs/loader.py</code> is the main consumer.</p>
+<h4 id="list_bases"><code>list_bases()</code><a class="headerlink" href="#list_bases" title="Permanent link">#</a></h4>
+<p>Indexes every top-level section of every <code>isofit/configs/templates/*.yml</code>
+file (using <code>interpolate.read</code>), mapping the base config name to its file. The
+first file in sorted order wins on duplicates. The index is cached for the
+life of the process.</p>
+<h4 id="loadkey-sectionnone-overridesnone-interpfalse"><code>load(key, section=None, overrides=None, interp=False)</code><a class="headerlink" href="#loadkey-sectionnone-overridesnone-interpfalse" title="Permanent link">#</a></h4>
+<ol>
+<li>Resolves <code>key</code> to a file: an existing path wins, otherwise it is looked up
+   in <code>list_bases()</code>.</li>
+<li>Calls <code>interpolate.load(file, section=&lt;base name&gt;, interp=False)</code> to resolve
+   <code>^^</code> inheritance, then <code>legacy.convert</code> to upgrade older schemas. The result
+   is cached in <code>loader.Cache</code> under <code>(file, base name)</code>.</li>
+<li>Deep-copies the cached dict and applies <code>overrides</code> to <code>section</code>. Overrides
+   are relative to <code>section</code>, not to the full config.</li>
+<li>If <code>interp</code> is set, adds <code>env</code> (the ISOFIT ini, <code>isofit.data.env</code>) to the
+   <strong>full</strong> config, interpolates it, then removes <code>env</code>. This is what makes
+   <code>${env.sixs}</code> work. Interpolating the full config (rather than only
+   <code>section</code>) lets a section reference values outside itself, e.g.
+   <code>forward_model.atmosphere.lut_path: ${output.dir}/lut/lut.zarr</code>.</li>
+<li>Returns only <code>section</code>.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs.loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">load</span>
+
+<span class="n">cfg</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="s2">"vswir"</span><span class="p">,</span> <span class="n">interp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">overrides</span><span class="o">=</span><span class="p">{</span>
+    <span class="s2">"input.measured_radiance_file"</span><span class="p">:</span> <span class="s2">"rdn.hdr"</span><span class="p">,</span>
+    <span class="s2">"forward_model.surface.surface_file"</span><span class="p">:</span> <span class="s2">"surface.mat"</span><span class="p">,</span>
+    <span class="s2">"implementation.n_cores"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+<span class="p">})</span>
+</code></pre></div>
+<h4 id="create_new_configfile-kwargs-and-sectionmodelbase"><code>create_new_config(file, **kwargs)</code> and <code>SectionModel(base=...)</code><a class="headerlink" href="#create_new_configfile-kwargs-and-sectionmodelbase" title="Permanent link">#</a></h4>
+<p><code>create_new_config</code> calls <code>load(file, **kwargs)</code> and passes the result to
+<code>Config.model_validate</code>. Every <code>SectionModel</code> (including the root <code>Config</code>) has
+a <code>before</code> validator that seeds itself from a base config:
+<code>load(base, section=cls.section, overrides=data, interp=True)</code>. <code>base</code>
+defaults to <code>default</code>, or to the engine's own profile (<code>sixs</code>, <code>modtran</code>, ...)
+for engine sections. The user's values are applied as overrides <strong>before</strong>
+interpolation, which is why <code>lut_path: ${output.dir}/lut/lut.zarr</code> follows the
+<em>user's</em> <code>output.dir</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">isofit.configs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span>
+    <span class="n">base</span><span class="o">=</span><span class="s2">"vswir"</span><span class="p">,</span>
+    <span class="n">forward_model</span><span class="o">=</span><span class="p">{</span><span class="s2">"surface"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"surface_file"</span><span class="p">:</span> <span class="s2">"surface.mat"</span><span class="p">}},</span>
+    <span class="n">implementation</span><span class="o">=</span><span class="p">{</span><span class="s2">"n_cores"</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="the-isofit-config-cli">The <code>isofit config</code> CLI<a class="headerlink" href="#the-isofit-config-cli" title="Permanent link">#</a></h3>
+<p>It is registered in <code>isofit/__main__.py</code> as <code>"config":
+"isofit.configs.utils.interpolate.cli"</code>. Every command accepts a base-config name
+or a file path, plus arbitrary <code>--dotted.key value</code> overrides.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># List shipped base configs</span>
+isofit<span class="w"> </span>config<span class="w"> </span>list
+
+<span class="c1"># Show the fully resolved config (inheritance + overrides + interpolation)</span>
+isofit<span class="w"> </span>config<span class="w"> </span>preview<span class="w"> </span>sixs<span class="w"> </span>--implementation.n_cores<span class="w"> </span><span class="m">4</span>
+isofit<span class="w"> </span>config<span class="w"> </span>preview<span class="w"> </span>my_run.yml<span class="w"> </span>-s<span class="w"> </span>vswir<span class="w"> </span>--noflow
+isofit<span class="w"> </span>config<span class="w"> </span>preview<span class="w"> </span>vswir<span class="w"> </span>--validate<span class="w">        </span><span class="c1"># also run Pydantic validation</span>
+
+<span class="c1"># Materialise a resolved config to a new file (.yml/.yaml/.json)</span>
+isofit<span class="w"> </span>config<span class="w"> </span>copy<span class="w"> </span>vswir<span class="w"> </span>-o<span class="w"> </span>my_vswir.yml<span class="w"> </span>--output.dir<span class="w"> </span>/scratch/run1
+
+<span class="c1"># Validate only (prints nothing on success besides a confirmation)</span>
+isofit<span class="w"> </span>config<span class="w"> </span>validate<span class="w"> </span>my_run.yml<span class="w"> </span>-s<span class="w"> </span>vswir
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Applies to</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-s/--section</code></td>
+<td>preview, copy, validate</td>
+<td>Load only this top-level section (file paths only)</td>
+</tr>
+<tr>
+<td><code>--noflow</code></td>
+<td>preview, copy</td>
+<td>Use block-style YAML lists instead of <code>[a, b]</code></td>
+</tr>
+<tr>
+<td><code>-v/--validate</code></td>
+<td>preview</td>
+<td>Also validate with Pydantic after previewing</td>
+</tr>
+<tr>
+<td><code>-o/--output</code></td>
+<td>copy</td>
+<td>Destination file; the extension picks YAML or JSON</td>
+</tr>
+</tbody>
+</table>
+<p><code>preview</code> is the fastest way to debug a config. It shows exactly what Pydantic
+will receive.</p>
+<h3 id="worked-example">Worked example<a class="headerlink" href="#worked-example" title="Permanent link">#</a></h3>
+<p><code>bases/common.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">shared</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">output</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/data/out</span>
+<span class="w">    </span><span class="nt">reset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">  </span><span class="nt">implementation</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">n_cores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+</code></pre></div>
+<p><code>run.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">base</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">^^</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bases/common.yml:shared</span><span class="w">      </span><span class="c1"># cross-file, relative to run.yml</span>
+<span class="w">  </span><span class="nt">implementation</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">n_cores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w">                     </span><span class="c1"># beats shared's 2</span>
+<span class="nt">child</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">^^</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">base</span><span class="w">                         </span><span class="c1"># same-file; transitively pulls in shared</span>
+<span class="w">  </span><span class="nt">output</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">rfl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${output.dir}/rfl</span><span class="w">         </span><span class="c1"># absolute reference</span>
+<span class="w">    </span><span class="nt">nested</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">a</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">      </span><span class="nt">b</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${.a}</span><span class="w">                     </span><span class="c1"># relative to `nested`</span>
+<span class="w">      </span><span class="nt">lst</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"${output.dir}"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"${implementation.n_cores}"</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="n">load</span><span class="p">(</span><span class="s2">"run.yml"</span><span class="p">,</span> <span class="n">section</span><span class="o">=</span><span class="s2">"child"</span><span class="p">,</span>
+     <span class="n">ctx</span><span class="o">=</span><span class="p">[</span><span class="s2">"--output.dir"</span><span class="p">,</span> <span class="s2">"/scratch"</span><span class="p">,</span> <span class="s2">"--implementation.debug"</span><span class="p">])</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="nt">output</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/scratch</span><span class="w">            </span><span class="c1"># override, applied before interpolation</span>
+<span class="w">  </span><span class="nt">reset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">             </span><span class="c1"># inherited from bases/common.yml</span>
+<span class="w">  </span><span class="nt">rfl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/scratch/rfl</span>
+<span class="w">  </span><span class="nt">nested</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">a</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> b</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> lst</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">/scratch</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">4</span><span class="p p-Indicator">]}</span><span class="w">   </span><span class="c1"># "4" literal-parsed to int</span>
+<span class="nt">implementation</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">n_cores</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">  </span><span class="nt">debug</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">              </span><span class="c1"># bare flag → True</span>
+</code></pre></div>
+<h3 id="gotchas">Gotchas<a class="headerlink" href="#gotchas" title="Permanent link">#</a></h3>
+<ul>
+<li><strong>Quote <code>${...}</code> inside YAML flow sequences.</strong> <code>lst: [${a}, b]</code> is a YAML
+  <em>parse error</em> because <code>{</code> starts a flow mapping. Write
+  <code>lst: ["${a}", b]</code>. A scalar value like <code>key: ${a}/x</code> is fine unquoted.</li>
+<li><strong>Interpolated strings are literal-parsed.</strong> <code>"${major}.${minor}"</code> with
+  <code>1</code>/<code>0</code> becomes the float <code>1.0</code>, and <code>"${n}0"</code> becomes an int. If you need
+  a string, make sure the result can't parse as a Python literal.</li>
+<li><strong>Trailing slashes are not normalised.</strong> <code>default.yml</code> sets
+  <code>output.dir: ./isofit-output/</code>, so <code>${output.dir}/lut/lut.zarr</code> gives
+  <code>./isofit-output//lut/lut.zarr</code>. This is harmless for filesystem paths but
+  visible in <code>preview</code>.</li>
+<li><strong>Dict overrides are not parsed.</strong> <code>{"forward_model.instrument.SNR": "500"}</code>
+  sets the <em>string</em> <code>"500"</code>. Pass real Python objects.</li>
+<li><strong><code>^^</code> replaces lists.</strong> Inheriting does not concatenate lists. The child's
+  list wins entirely.</li>
+<li><strong><code>env</code> exists only for base configs.</strong> <code>${env.*}</code> works when the config is
+  loaded through <code>loader.load(..., interp=True)</code> (or <code>isofit config</code> with a
+  base-config name, or via <code>create_new_config</code> / <code>Config(...)</code>). A raw <code>interpolate.load("my.yml")</code> on a
+  file using <code>${env.sixs}</code> raises <code>KeyError</code> unless you pass <code>env</code> yourself as
+  an override.</li>
+</ul>
+<h3 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">#</a></h3>
+<p>Unit tests for the package live in <code>isofit/test/test_interpolate.py</code>. They
+cover the dict helpers (including the <code>env.srtmnet-file</code> lookup),
+<code>read</code>, <code>^^</code> precedence, cycles and errors (including same-named sections
+across files), overrides, interpolation (including key-order independence and
+cycles through containers), and the <code>copy</code> CLI command.</p>
+<p>End-to-end coverage lives in <code>isofit/test/test_configs.py</code>:
+<code>test_defaults_interpolate_after_overlay</code>, <code>test_resolve_is_idempotent</code>,
+<code>test_resolve_does_not_mutate_input</code>, the <code>test_section_from_base*</code> tests, and
+<code>test_example_configs</code> (every shipped example config resolves).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+      <div class="md-consent" data-md-component="consent" id="__consent" hidden>
+        <div class="md-consent__overlay"></div>
+        <aside class="md-consent__inner">
+          <form class="md-consent__form md-grid md-typeset" name="consent">
+            
+
+
+  
+
+
+<h4>Cookie consent</h4>
+<p>We use cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of our documentation and whether users find what they're searching for. With your consent, you're helping us to make our documentation better.</p>
+<input class="md-toggle" type="checkbox" id="__settings" >
+<div class="md-consent__settings">
+  <ul class="task-list">
+    
+    
+      
+    
+    
+      
+        
+  
+  
+    
+    
+  
+  <li class="task-list-item">
+    <label class="task-list-control">
+      <input type="checkbox" name="github" checked>
+      <span class="task-list-indicator"></span>
+      GitHub
+    </label>
+  </li>
+
+      
+    
+    
+  </ul>
+</div>
+<div class="md-consent__controls">
+  
+    
+      <button class="md-button md-button--primary">Accept</button>
+    
+    
+    
+  
+    
+    
+    
+      <label class="md-button" for="__settings">Manage settings</label>
+    
+  
+</div>
+          </form>
+        </aside>
+      </div>
+      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.expand", "navigation.path"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../../javascript/mkapi.js"></script>
+      
+    
+  </body>
+</html>
