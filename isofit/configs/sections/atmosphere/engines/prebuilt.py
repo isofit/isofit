@@ -1,0 +1,55 @@
+"""
+Prebuilt lookup table engine configuration.
+
+This engine uses pre-computed atmospheric lookup tables without requiring
+any radiative transfer code installation. Useful for rapid processing with
+standard atmospheric conditions.
+"""
+
+from typing import Annotated, Literal
+
+from pydantic import BeforeValidator, ConfigDict, Field
+
+from isofit.configs.base import SectionModel
+
+from . import standardName
+
+
+class PrebuiltConfig(SectionModel):
+    """
+    Prebuilt LUT engine configuration.
+
+    This is the simplest engine option, using pre-computed lookup tables
+    without requiring MODTRAN, 6S, or other RT codes. Suitable for standard
+    atmospheric correction scenarios.
+
+    Examples
+    --------
+    Prebuilt is the engine of the ``default`` base config:
+
+    >>> from isofit.configs.sections.atmosphere.engines import PrebuiltConfig
+    >>> engine = PrebuiltConfig()
+    >>> engine.name
+    'prebuilt'
+
+    Notes
+    -----
+    Prebuilt LUTs are provided with ISOFIT for common sensor/atmosphere
+    combinations. For custom atmospheric conditions or sensors, use a
+    physics-based RT engine (MODTRAN, 6S, etc.) to generate custom LUTs.
+
+    See Also
+    --------
+    ModtranConfig : MODTRAN 6.0 RT engine
+    SixSConfig : 6S RT engine
+    sRTMnetConfig : Machine learning RT emulator
+    """
+
+    section = "forward_model.atmosphere.engine"
+    defaults = "prebuilt"
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: Annotated[Literal["prebuilt"], BeforeValidator(standardName)] = Field(
+        description='Engine identifier. Must be "prebuilt" (case-insensitive)'
+    )

@@ -113,7 +113,7 @@ def download(path=None, overwrite=False, **_):
     print("Building via make")
     build(output / Version)
 
-    env.changeKey("libradtran.version", Version)
+    env.changeKey("libradtran-version", Version)
     env.save()
 
     print(f"Done, now available at: {output}")

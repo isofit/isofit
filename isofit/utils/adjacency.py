@@ -18,18 +18,19 @@
 # Author: Philip G. Brodrick, philip.brodrick@jpl.nasa.gov
 #
 import logging
-import numpy as np
-from spectral.io import envi
-from scipy.ndimage import uniform_filter
 
+import numpy as np
+from scipy.ndimage import uniform_filter
+from spectral.io import envi
+
+from isofit import configs
 from isofit.core.common import envi_header
-from isofit.utils.algebraic_line import algebraic_line
-from isofit.core.forward import ForwardModel
-from isofit.core.units import m_to_km, km_to_m
-from isofit.configs import configs
-from isofit.core.multistate import update_config_for_surface
 from isofit.core.fileio import initialize_output
+from isofit.core.forward import ForwardModel
+from isofit.core.multistate import update_config_for_surface
+from isofit.core.units import km_to_m, m_to_km
 from isofit.utils import extractions, reducers
+from isofit.utils.algebraic_line import algebraic_line
 
 
 def approx_pixel_size(loc, nodata_value=-9999):

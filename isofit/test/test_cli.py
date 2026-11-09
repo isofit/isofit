@@ -93,7 +93,7 @@ def test_apply_oe(files, args, surface):
     ray.shutdown()
     sleep(120)
 
-    emulator = env.path("srtmnet", key="srtmnet.file")
+    emulator = env.path("srtmnet", key="srtmnet-file")
     args = [
         "ang",
         "--presolve",

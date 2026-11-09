@@ -57,9 +57,9 @@ class Ini:
 
     # Additional keys with default values
     _keys: Dict[str, str] = {
-        "srtmnet.file": "",
-        "srtmnet.aux": "",
-        "libradtran.version": "",
+        "srtmnet-file": "",
+        "srtmnet-aux": "",
+        "libradtran-version": "",
     }
 
     def __init__(self) -> None:
@@ -220,6 +220,14 @@ class Ini:
         if self.ini.exists():
             self.config.read(self.ini)
 
+            # Migrate legacy dotted keys, eg. srtmnet.file -> srtmnet-file
+            for name in (self.config.default_section, *self.config.sections()):
+                section = self.config[name]
+                for key in [key for key in section if "." in key]:
+                    value = section.get(key, raw=True)
+                    if self.config.remove_option(name, key):
+                        section[key.replace(".", "-")] = value
+
             # Retrieve the absolute path
             for key in self._dirs:
                 self.changePath(key, self[key])
@@ -237,7 +245,7 @@ class Ini:
                         value.format(**self)
                     )  # Value may need some interpolation
 
-                    if key.startswith("path.") and val.exists():
+                    if key.startswith("path-") and val.exists():
                         # Prepend to take precedence
                         os.environ["PATH"] = str(val) + os.pathsep + os.environ["PATH"]
                 except:
@@ -288,7 +296,12 @@ class Ini:
                 Logger.exception(f"Failed to dump ini to file: {self.ini}")
 
     def path(
-        self, dir: str, *path: List[str], key: str = None, template: bool = False
+        self,
+        dir: str,
+        *path: List[str],
+        key: str = None,
+        template: bool = False,
+        rpe: bool = True,
     ) -> Path:
         """
         Retrieves a path under one of the env directories and validates the path exists.
@@ -305,6 +318,9 @@ class Ini:
         template : bool, default=False
             Returns the path as a template string. The path will still be validated,
             but the return will be "{env.[dir]}/*path", to be used with Ini.replace
+        rpe : bool, default=True
+            Allows raise_path_errors to raise. Set to False to temporarily disable
+            raise_path_errors
 
         Returns
         -------
@@ -319,9 +335,9 @@ class Ini:
         ~/.isofit/data
         >>> env.path("examples", "20171108_Pasadena", "configs", "ang20171108t184227_surface.json")
         ~/.isofit/examples/20171108_Pasadena/configs/ang20171108t184227_surface.json
-        >>> env.path("srtmnet", key="srtmnet.file")
+        >>> env.path("srtmnet", key="srtmnet-file")
         ~/.isofit/srtmnet/sRTMnet_v120.h5
-        >>> env.path("srtmnet", key="srtmnet.aux")
+        >>> env.path("srtmnet", key="srtmnet-aux")
         ~/.isofit/srtmnet/sRTMnet_v120_aux.npz
         """
         self.validate([dir], debug=Logger.debug, error=Logger.error)
@@ -335,7 +351,7 @@ class Ini:
         if key and self[key]:
             path /= self[key]
 
-        if not template and not path.exists():
+        if rpe and not template and not path.exists():
             error = f"The following path does not exist, please verify your installation environment: {path}"
             Logger.error(error)
             if self.raise_path_errors and self.raise_path_errors.lower() in (
