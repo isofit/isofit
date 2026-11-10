@@ -422,7 +422,7 @@ def wavelength_cal(
             'datestr is currently only used with custom sensors ("custom" or "NA-*"), '
             f"ignoring for {sensor}"
         )
-    dt, sensor_inversion_windows, _ = tmpl.get_sensor_metadata_from_fid(
+    dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(
         sensor, paths.fid, datestr
     )
     if not inversion_windows:
