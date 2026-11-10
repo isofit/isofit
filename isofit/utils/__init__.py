@@ -1,4 +1,5 @@
 from .analytical_line import analytical_line
+from .atm_interpolation import atm_interpolation
 from .empirical_line import empirical_line
 from .extractions import extractions
 from .generate_noise import generate_noise

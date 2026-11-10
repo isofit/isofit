@@ -278,6 +278,7 @@ def interpolate_spectra(
 @click.option("--logfile")
 @click.option("--loglevel")
 def cli(**kwargs):
+    """Interpolate wavelength bands that are either no data or Nan."""
 
     interpolate_spectra(**kwargs)
     click.echo("Done")
