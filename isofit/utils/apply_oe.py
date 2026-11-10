@@ -111,6 +111,7 @@ def apply_oe(
     resources=False,
     retrieve_co2=False,
     use_background_rfl=False,
+    background_rfl_file=None,
     eof_path=None,
     terrain_style="dem",
     pixel_heuristic_priors=[],
@@ -256,7 +257,16 @@ def apply_oe(
     retrieve_co2 : bool, default=False
         Flag to retrieve CO2 in the state vector. Only available with emulator at the moment.
     use_background_rfl : bool, default=False
-        Flag to calculate background reflectance based on presolve. Presolve must also be turned on.
+        Flag to calculate background reflectance.
+        This is either performed at run-time using presolve atmospheric solutions (--presolve must be used in this case.
+        Alternatively, the flag is paired with background_rfl_file"
+    background_rfl_file: str, default=None
+        Pass in a pre-computed background reflectance file at native, full-pixel resolution.
+        Note: We suggest that reflectance definitions stay consistent between the input background reflectance and the definition used in the run.
+            This means that if terrain = 'flat' and geoid relative reflectance is used, the background reflectance should share that definition.
+            We also suggest that the background reflectance should be the apparent reflectance, i.e., the signal from all photon paths interacting with a surface.
+            This becomes relevant for the glint model, which book-keeps fresnel reflected photons on the water surface separately from water leaving photons.
+            The background reflectance should include both.
     eof_path : str, default=None
         Add 1 or 2 Empirical Orthogonal Functions to the state vector.  File is a 1-2 column text file
         with one number per instrument channel.
@@ -327,6 +337,17 @@ def apply_oe(
             raise ValueError(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
+
+    if background_rfl_file and not use_background_rfl:
+        raise ValueError(
+            "Input background reflectance file requires the background_rfl flag"
+        )
+
+    if use_background_rfl and not presolve and not background_rfl_file:
+        raise ValueError(
+            "Background reflectance applied and no file given. "
+            "Presolve must be specified"
+        )
 
     if use_background_rfl and not multipart_transmittance:
         raise ValueError(
@@ -463,6 +484,7 @@ def apply_oe(
         subs=True if analytical_line or empirical_line else False,
         classify_multisurface=classify_multisurface,
         use_background_rfl=use_background_rfl,
+        background_rfl_file=background_rfl_file,
         dn_uncertainty_file=dn_uncertainty_file,
         eof_path=eof_path,
     )
@@ -471,10 +493,6 @@ def apply_oe(
     logging.info("...file/directory setup complete")
 
     remove_bgrfl_file = False
-    if use_background_rfl and not presolve and not exists(paths.bgrfl_working_path):
-        raise ValueError(
-            "Background reflectance can only be computed if presolve is turned on."
-        )
 
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
@@ -896,23 +914,23 @@ def apply_oe(
             **config_params,
         )
 
-        if presolve and use_background_rfl:
-            # Only create background reflectance if it doesn't already exist in /data
-            # NOTE this may be useful for our single pixel pytests
-            if not exists(paths.bgrfl_working_path) or (
-                use_superpixels and not exists(paths.bgrfl_subs_path)
-            ):
-                logging.info("Preparing background reflectance...")
+        if use_background_rfl:
+            if not background_rfl_file:
+                # Should never hit the case here where you are computing background
+                # without presolve
                 background_reflectance(
                     input_radiance=input_radiance,
                     input_loc=input_loc,
                     input_obs=input_obs,
-                    paths=paths,
+                    config_path=paths.h2o_config_path,
+                    lbl_path=paths.lbl_working_path,
+                    atm_path=paths.atm_presolve,
+                    bgrfl_path=paths.bgrfl_working_path,
+                    subs_state_path=paths.h2o_subs_path,
                     mean_altitude_km=mean_altitude_km,
                     mean_elevation_km=mean_elevation_km,
                     smoothing_sigma=atm_sigma,
                     use_slic_rfls=True,
-                    use_superpixels=use_superpixels,
                     nodata_value=-9999,
                     chunksize=CHUNKSIZE,
                     logging_level=logging_level,
@@ -920,6 +938,19 @@ def apply_oe(
                     n_cores=n_cores,
                 )
                 remove_bgrfl_file = True
+
+            if use_superpixels:
+                extractions(
+                    inputfile=paths.bgrfl_working_path,
+                    labels=paths.lbl_working_path,
+                    output=paths.bgrfl_subs_path,
+                    chunksize=CHUNKSIZE,
+                    flag=-9999.0,
+                    reducer=reducers.band_mean,
+                    n_cores=n_cores,
+                    loglevel=logging_level,
+                    logfile=log_file,
+                )
 
         if config_only:
             logging.info("`config_only` enabled, exiting early")
@@ -1051,6 +1082,7 @@ def apply_oe(
 @click.option("-r", "--resources", is_flag=True, default=False)
 @click.option("--retrieve_co2", is_flag=True, default=False)
 @click.option("--use_background_rfl", is_flag=True, default=False)
+@click.option("--background_rfl_file", type=str, default=None)
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
 @click.option(
