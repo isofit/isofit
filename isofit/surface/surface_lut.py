@@ -358,41 +358,39 @@ class LUTSurface(Surface):
 
         return t_total_up
 
-    # TODO
-    # The cos_i as a free parameter is not yet implemented into dev-branch.
-    # Leaving this method here for reference when we return to it.
-    # def dcosi_dsurface(
-    #    self,
-    #    x_surface,
-    #    geom,
-    #    rho_dir_dir,
-    #    rho_dif_dir,
-    #    r,
-    #    L_dir_dir,
-    #    L_dif_dir,
-    # ):
-    #    """Partial derivative of TOA radiance with respect to cosi."""
+    def dcosi_dsurface(
+        self,
+        x_surface,
+        geom,
+        rho_dif_dir,
+        transm_down_dir,
+        L_dir_dir,
+        L_dif_dir,
+    ):
+        """Partial derivative of TOA radiance with respect to cosi."""
 
-    # cosi = max(x_surface[self.cos_i_idx], 1e-6)
-    # b = 1.0
-    # t_down_dir = r["transm_down_dir"]
+        cosi = max(x_surface[self.cos_i_idx], 1e-6)
+        b = 1.0
 
-    # Hay's model
-    # A = (b * t_down_dir) / geom.coszen
-    # B = (1.0 - b * t_down_dir) * geom.skyview_factor
-    # denominator = (A * cosi) + B
+        # Hay's model
+        A = (b * transm_down_dir) / geom.coszen
+        B = (1.0 - b * transm_down_dir) * geom.skyview_factor
+        denominator = (A * cosi) + B
 
-    # Direct and diffuse components
-    # d_rdn_dir = (L_dir_dir / cosi) * rho_dir_dir
-    # d_rdn_dif = (L_dif_dir * (A / denominator)) * rho_dif_dir
+        # Direct and diffuse components
+        d_rdn_dir = (L_dir_dir / cosi) * rho_dif_dir  # should this be rho_dir_dir
+        d_rdn_dif = (L_dif_dir * (A / denominator)) * rho_dif_dir
 
-    # return d_rdn_dir + d_rdn_dif
+        return d_rdn_dir + d_rdn_dif
 
     def drdn_dsurface(
         self,
         rho_dif_dir,
         drfl_dsurface,
         dLs_dsurface,
+        x_surface,
+        geom,
+        transm_down_dir,
         s_alb,
         t_total_up,
         L_tot,
@@ -423,6 +421,16 @@ class LUTSurface(Surface):
         drdn_dsurface[:, : self.n_wl] = np.multiply(
             drdn_drfl[:, np.newaxis], drfl_dsurface[:, : self.n_wl]
         )
+
+        if self.cos_i_idx is not None:
+            drdn_dsurface[:, self.cos_i_idx] += self.dcosi_dsurface(
+                x_surface=x_surface,
+                geom=geom,
+                rho_dif_dir=rho_dif_dir,
+                transm_down_dir=transm_down_dir,
+                L_dir_dir=L_dir_dir,
+                L_dif_dir=L_dif_dir,
+            )
 
         # Get the derivative w.r.t. surface emission
         drdn_dLs = np.multiply(self.drdn_dLs(t_total_up)[:, np.newaxis], dLs_dsurface)
