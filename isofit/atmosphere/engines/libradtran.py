@@ -47,7 +47,6 @@ class LibRadTranRT(BaseAtmosphere, Writer):
     libradtran_inp_template = (
         "source solar {path_solar}\n"
         "wavelength {wl_1} {wl_2}\n"
-        "spline {wl_1} {wl_2} {wl_res_out}\n"
         "albedo {albedo}\n"
         "atmosphere_file {libradtran_dir}/data/atmmod/{atmos}.dat\n"
         "umu {cos_vza}\n"
@@ -58,7 +57,7 @@ class LibRadTranRT(BaseAtmosphere, Writer):
         "number_of_streams {nstr}\n"
         "mol_modify O3 {o3_inp} DU\n"
         "mixing_ratio CO2 {co2_inp}\n"
-        "mol_abs_param reptran {band_model}\n"
+        "mol_abs_param {band_model}\n"
         "mol_modify H2O {h2o_mm} MM\n"
         "crs_model rayleigh bodhaine\n"
         "aerosol_default\n"
@@ -74,6 +73,38 @@ class LibRadTranRT(BaseAtmosphere, Writer):
     wl_res_out = 0.5
 
     sh_template = "#!/bin/bash\n" "cd {lrt_bin_dir}\n" "{uvspecs}\n"
+
+    KATO_WL = np.array(
+        [
+            345.136,
+            385.000,
+            429.773,
+            484.863,
+            528.840,
+            544.800,
+            558.050,
+            585.800,
+            615.000,
+            645.850,
+            675.439,
+            694.313,
+            723.531,
+            767.046,
+            817.968,
+            866.714,
+            931.938,
+            1010.320,
+            1119.970,
+            1355.060,
+            1564.700,
+            1789.120,
+            2059.130,
+            2214.330,
+            2638.540,
+            3318.660,
+            3813.210,
+        ]
+    )
 
     def __init__(self, full_config, **kwargs):
         self.config = full_config.forward_model.atmosphere
@@ -118,7 +149,13 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
     def preSim(self):
 
         # define the output wl grid [nm], and stash matrix H
-        self.lrt_wl = np.arange(self.wl_1, self.wl_2 + 1e-5, self.wl_res_out)
+        if "kato" in self.config.engine.band_model.lower():
+            self.wl_1 = self.KATO_WL[0]
+            self.wl_2 = self.KATO_WL[-1]
+            self.lrt_wl = self.KATO_WL
+        else:
+            self.lrt_wl = np.arange(self.wl_1, self.wl_2 + 1e-5, self.wl_res_out)
+
         self.matrix_H = calculate_resample_matrix(self.lrt_wl, self.wl, self.fwhm)
 
         # load static information from MODTRAN template
@@ -322,7 +359,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
                 "wl_2": self.wl_2,
                 "wl_res_out": self.wl_res_out,
                 "path_solar": self.path_solar,
-                "band_model": self.config.engine.reptran_band_model,
+                "band_model": self.config.engine.band_model,
                 "atmos": self.atmosphere_type_lrt,
                 "libradtran_dir": self.libradtran,
                 "nstr": self.nstr,
@@ -431,6 +468,9 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
 
         if self.config.engine.moments_file is not None:
             lrt_run_inp += "aerosol_file moments {moments_file}\n"
+
+        if "kato" not in self.config.engine.band_model.lower():
+            lrt_run_inp += "spline {wl_1} {wl_2} {wl_res_out}\n"
 
         runs = [
             dict(tag="sim1", albedo=0.0, zout=vals["alt"]),
