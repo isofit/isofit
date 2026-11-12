@@ -368,7 +368,12 @@ class ForwardModel:
             L_dif_dir,
             L_dir_dif,
             L_dif_dif,
-        ) = self.calc_atmosphere_quantities(x_atmosphere, geom, rho_dif_dif_hi)
+        ) = self.calc_atmosphere_quantities(
+            x_atmosphere,
+            x_surface,
+            geom,
+            rho_dif_dif_hi,
+        )
 
         # Call surface emission, upsample
         Ls_hi = self.upsample(self.surface.wl, self.calc_Ls(x_surface, geom))
@@ -395,7 +400,11 @@ class ForwardModel:
         ) + self.eof_offset(x_instrument)
 
     def calc_atmosphere_quantities(
-        self, x_atmosphere: np.ndarray, geom: Geometry, rho_dif_dif: np.ndarray = 0
+        self,
+        x_atmosphere: np.ndarray,
+        x_surface: np.ndarray,
+        geom: Geometry,
+        rho_dif_dif: np.ndarray = 0,
     ):
         """Retrieves the atmosphere quantities including the LUT sample (r),
         and the radiances (L). This function handles the hand-off between
@@ -432,7 +441,7 @@ class ForwardModel:
         if self.atmosphere.multipart_transmittance:
             # Get directional radiances
             L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(
-                r, geom, rho_dif_dif=rho_dif_dif
+                r, geom, x_surface, rho_dif_dif=rho_dif_dif
             )
         else:
             if self.atmosphere.rt_mode == "rdn":
@@ -459,7 +468,13 @@ class ForwardModel:
             L_dif_dif * self.atmosphere.esd_correction,
         )
 
-    def get_L_coupled(self, r: dict, geom: Geometry, rho_dif_dif: np.ndarray = 0):
+    def get_L_coupled(
+        self,
+        r: dict,
+        geom: Geometry,
+        x_surface: np.ndarray,
+        rho_dif_dif: np.ndarray = 0,
+    ):
         """Get the interpolated radiance terms on the sun-to-surface-to-sensor path.
         These follow the physics as presented in Guanter (2006), Vermote et al. (1997), and Tanre et al. (1983).
 
@@ -470,6 +485,7 @@ class ForwardModel:
             r:      interpolated radiative transfer quantities from the LUT
             coszen: top-of-atmosphere solar zenith angle
             cos_i:  local solar zenith angle at the surface
+            TODO!!
 
         Returns:
             interpolated radiances along all optical paths:
@@ -499,9 +515,15 @@ class ForwardModel:
         cos_i_bg = geom.coszen
         skyview_factor_bg = 1.0
 
+        # Update cos_i from x surface if present
+        if self.surface.cos_i_idx is not None:
+            cos_i = x_surface[self.surface.cos_i_idx]
+        else:
+            cos_i = geom.cos_i
+
         # Assigning coupled terms, unscaling and rescaling downward direct radiance by local solar zenith angle.
         # Downward diffuse components are scaled by viewable sky fraction (i.e., "ungula" of viewable sky in solid geometry terms).
-        L_dir_dir = L_coupled[0] / geom.coszen * geom.cos_i * b
+        L_dir_dir = L_coupled[0] / geom.coszen * cos_i * b
         L_dir_dif = L_coupled[2] / geom.coszen * cos_i_bg
 
         # Note - we should really be doing the multiplication upstream before convolution - L_dif_dir and L_dif_dif terms are
@@ -509,7 +531,7 @@ class ForwardModel:
         # Correct downward diffuse term for topographic assuming Hay's model (Hay 1979; Richter 1998; Guanter et al., 2009)
         t_down_dir = r["transm_down_dir"]
         L_dif_dir = L_coupled[1] * (
-            (b * t_down_dir * (geom.cos_i / geom.coszen))
+            (b * t_down_dir * (cos_i / geom.coszen))
             + ((1 - b * t_down_dir) * geom.skyview_factor)
         )
         L_dif_dif = L_coupled[3] * (
@@ -716,7 +738,9 @@ class ForwardModel:
             L_dif_dir,
             L_dir_dif,
             L_dif_dif,
-        ) = self.calc_atmosphere_quantities(x_atmosphere, geom, rho_dif_dif_hi)
+        ) = self.calc_atmosphere_quantities(
+            x_atmosphere, x_surface, geom, rho_dif_dif_hi
+        )
 
         # Call surface emission, upsample
         Ls_hi = self.upsample(self.surface.wl, self.calc_Ls(x_surface, geom))
@@ -774,6 +798,7 @@ class ForwardModel:
         dmeas_datmosphere = self.dmeas_datmosphere(
             x_atmosphere,
             x_instrument,
+            x_surface,
             geom,
             rho_dir_dir=rho_dir_dir_hi,
             rho_dif_dir=rho_dif_dir_hi,
@@ -830,7 +855,9 @@ class ForwardModel:
             L_dif_dir,
             L_dir_dif,
             L_dif_dif,
-        ) = self.calc_atmosphere_quantities(x_atmosphere, geom, rho_dif_dif_hi)
+        ) = self.calc_atmosphere_quantities(
+            x_atmosphere, x_surface, geom, rho_dif_dif_hi
+        )
 
         # Call surface emission, upsample
         Ls_hi = self.upsample(self.surface.wl, self.calc_Ls(x_surface, geom))
@@ -855,6 +882,7 @@ class ForwardModel:
         dmeas_datmosphereb = self.dmeas_datmosphereb(
             x_atmosphere,
             x_instrument,
+            x_surface,
             geom=geom,
             rho_dir_dir=rho_dir_dir_hi,
             rho_dif_dir=rho_dif_dir_hi,
@@ -881,6 +909,7 @@ class ForwardModel:
         self,
         x_atmosphere,
         x_instrument,
+        x_surface,
         geom,
         rho_dir_dir,
         rho_dif_dir,
@@ -907,7 +936,9 @@ class ForwardModel:
                 L_dif_dir,
                 L_dir_dif,
                 L_dif_dif,
-            ) = self.calc_atmosphere_quantities(x_atmosphere_perturb, geom, rho_dif_dif)
+            ) = self.calc_atmosphere_quantities(
+                x_atmosphere_perturb, x_surface, geom, rho_dif_dif
+            )
 
             # Surface state is held constant?
             mease = self.instrument.sample(
@@ -939,6 +970,7 @@ class ForwardModel:
         self,
         x_atmosphere,
         x_instrument,
+        x_surface,
         geom,
         rho_dir_dir,
         rho_dif_dir,
@@ -988,7 +1020,7 @@ class ForwardModel:
                         L_dir_dif,
                         L_dif_dif,
                     ) = self.calc_atmosphere_quantities(
-                        x_atmosphere_perturb, geom, rho_dif_dif
+                        x_atmosphere_perturb, x_surface, geom, rho_dif_dif
                     )
 
                     mease = self.instrument.sample(
