@@ -520,7 +520,7 @@ class ForwardModel:
 
         # Update cos_i from x surface if present
         if self.surface.cos_i_idx is not None:
-            cos_i = x_surface[self.surface.cos_i_idx]
+            cos_i = max(1e-6, min(x_surface[self.surface.cos_i_idx], 1.0))
         else:
             cos_i = geom.cos_i
 
