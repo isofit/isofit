@@ -214,7 +214,7 @@ libradtran:
       engine:
         name: libradtran
         base_dir: ${env.libradtran}/${env.libradtran-version}
-        band_model: KATO2
+        band_model: reptran coarse
         # Required by LibRadTranConfig (no model default); set per run.
         kb_alpha_1: null
         kb_alpha_2: null
