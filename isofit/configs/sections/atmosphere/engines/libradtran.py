@@ -70,7 +70,7 @@ class LibRadTranConfig(SectionModel):
     band_model: Literal[
         "reptran coarse", "reptran medium", "reptran fine", "LOWTRAN", "KATO", "KATO2"
     ] = Field(
-        default="reptran coarse",
+        default="KATO2",
         description=(
             "Molecular absorption band model and parameterization. Options: "
             "``reptran coarse`` (15 cm-1), ``reptran medium`` (5 cm-1), "
