@@ -369,10 +369,10 @@ class ForwardModel:
             L_dir_dif,
             L_dif_dif,
         ) = self.calc_atmosphere_quantities(
-            x_atmosphere,
-            x_surface,
-            geom,
-            rho_dif_dif_hi,
+            x_atmosphere=x_atmosphere,
+            x_surface=x_surface,
+            geom=geom,
+            rho_dif_dif=rho_dif_dif_hi,
         )
 
         # Call surface emission, upsample
@@ -419,6 +419,7 @@ class ForwardModel:
 
         Args:
             x_atmosphere: atmosphere portion of the state vector.
+            x_surface: surface portion of the state vector.
             geom: Geometry object for the current observation.
             rho_dif_dif: Apparent surface reflectance for
                 hemispherical-hemispherical photon paths.
@@ -482,10 +483,12 @@ class ForwardModel:
                 where r contains populated separated transmittances
 
         Args:
-            r:      interpolated radiative transfer quantities from the LUT
-            coszen: top-of-atmosphere solar zenith angle
-            cos_i:  local solar zenith angle at the surface
-            TODO!!
+            r:              interpolated radiative transfer quantities from the LUT
+            geom:           Geometry object
+            x_surface:      surface portion of the state vector
+            rho_dif_dif:    Apparent surface reflectance for hemispherical-hemispherical photon paths.
+                            Included here to incorporate surface-atm coupling
+                            following Eq. 11 of Guanter et al., 2009.
 
         Returns:
             interpolated radiances along all optical paths:
@@ -739,7 +742,10 @@ class ForwardModel:
             L_dir_dif,
             L_dif_dif,
         ) = self.calc_atmosphere_quantities(
-            x_atmosphere, x_surface, geom, rho_dif_dif_hi
+            x_atmosphere=x_atmosphere,
+            x_surface=x_surface,
+            geom=geom,
+            rho_dif_dif=rho_dif_dif_hi,
         )
 
         # Call surface emission, upsample
@@ -777,8 +783,12 @@ class ForwardModel:
         # ToDo: Move this to ForwardModel as well?
         drdn_dsurface = self.surface.drdn_dsurface(
             rho_dif_dir=rho_dif_dir_hi,
+            rho_dir_dir=rho_dir_dir_hi,
             drfl_dsurface=drfl_dsurface_hi,
             dLs_dsurface=dLs_dsurface_hi,
+            x_surface=x_surface,
+            geom=geom,
+            transm_down_dir=r["transm_down_dir"],
             s_alb=r["sphalb"],
             t_total_up=self.atmosphere.get_upward_transm(r=r, geom=geom),
             L_tot=L_tot,
@@ -856,7 +866,10 @@ class ForwardModel:
             L_dir_dif,
             L_dif_dif,
         ) = self.calc_atmosphere_quantities(
-            x_atmosphere, x_surface, geom, rho_dif_dif_hi
+            x_atmosphere=x_atmosphere,
+            x_surface=x_surface,
+            geom=geom,
+            rho_dif_dif=rho_dif_dif_hi,
         )
 
         # Call surface emission, upsample
@@ -937,7 +950,10 @@ class ForwardModel:
                 L_dir_dif,
                 L_dif_dif,
             ) = self.calc_atmosphere_quantities(
-                x_atmosphere_perturb, x_surface, geom, rho_dif_dif
+                x_atmosphere=x_atmosphere_perturb,
+                x_surface=x_surface,
+                geom=geom,
+                rho_dif_dif=rho_dif_dif,
             )
 
             # Surface state is held constant?
@@ -945,19 +961,19 @@ class ForwardModel:
                 x_instrument,
                 self.atmosphere.wl,
                 self.calc_rdn(
-                    x_atmosphere_perturb,
-                    rho_dir_dir,
-                    rho_dif_dir,
-                    rho_dir_dif,
-                    rho_dif_dif,
-                    Ls,
-                    L_tot,
-                    L_dir_dir,
-                    L_dif_dir,
-                    L_dir_dif,
-                    L_dif_dif,
-                    r,
-                    geom,
+                    x_atmosphere=x_atmosphere_perturb,
+                    rho_dir_dir=rho_dir_dir,
+                    rho_dif_dir=rho_dif_dir,
+                    rho_dir_dif=rho_dir_dif,
+                    rho_dif_dif=rho_dif_dif,
+                    Ls=Ls,
+                    L_tot=L_tot,
+                    L_dir_dir=L_dir_dir,
+                    L_dif_dir=L_dif_dir,
+                    L_dir_dif=L_dir_dif,
+                    L_dif_dif=L_dif_dif,
+                    r=r,
+                    geom=geom,
                 ),
             )
             K_atmosphere.append((mease - meas) / eps)
@@ -1020,26 +1036,29 @@ class ForwardModel:
                         L_dir_dif,
                         L_dif_dif,
                     ) = self.calc_atmosphere_quantities(
-                        x_atmosphere_perturb, x_surface, geom, rho_dif_dif
+                        x_atmosphere=x_atmosphere_perturb,
+                        x_surface=x_surface,
+                        geom=geom,
+                        rho_dif_dif=rho_dif_dif,
                     )
 
                     mease = self.instrument.sample(
                         x_instrument,
                         self.atmosphere.wl,
                         self.calc_rdn(
-                            x_atmosphere_perturb,
-                            rho_dir_dir,
-                            rho_dif_dir,
-                            rho_dir_dif,
-                            rho_dif_dif,
-                            Ls,
-                            L_tot,
-                            L_dir_dir,
-                            L_dif_dir,
-                            L_dir_dif,
-                            L_dif_dif,
-                            r,
-                            geom,
+                            x_atmosphere=x_atmosphere_perturb,
+                            rho_dir_dir=rho_dir_dir,
+                            rho_dif_dir=rho_dif_dir,
+                            rho_dir_dif=rho_dir_dif,
+                            rho_dif_dif=rho_dif_dif,
+                            Ls=Ls,
+                            L_tot=L_tot,
+                            L_dir_dir=L_dir_dir,
+                            L_dif_dir=L_dif_dir,
+                            L_dir_dif=L_dir_dif,
+                            L_dif_dif=L_dif_dif,
+                            r=r,
+                            geom=geom,
                         ),
                     )
                     Kb_atmosphere.append((mease - meas) / eps)

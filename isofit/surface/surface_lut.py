@@ -363,6 +363,7 @@ class LUTSurface(Surface):
         x_surface,
         geom,
         rho_dif_dir,
+        rho_dir_dir,
         transm_down_dir,
         L_dir_dir,
         L_dif_dir,
@@ -378,7 +379,7 @@ class LUTSurface(Surface):
         denominator = (A * cosi) + B
 
         # Direct and diffuse components
-        d_rdn_dir = (L_dir_dir / cosi) * rho_dif_dir  # should this be rho_dir_dir
+        d_rdn_dir = (L_dir_dir / cosi) * rho_dir_dir
         d_rdn_dif = (L_dif_dir * (A / denominator)) * rho_dif_dir
 
         return d_rdn_dir + d_rdn_dif
@@ -386,6 +387,7 @@ class LUTSurface(Surface):
     def drdn_dsurface(
         self,
         rho_dif_dir,
+        rho_dir_dir,
         drfl_dsurface,
         dLs_dsurface,
         x_surface,
@@ -427,6 +429,7 @@ class LUTSurface(Surface):
                 x_surface=x_surface,
                 geom=geom,
                 rho_dif_dir=rho_dif_dir,
+                rho_dir_dir=rho_dir_dir,
                 transm_down_dir=transm_down_dir,
                 L_dir_dir=L_dir_dir,
                 L_dif_dir=L_dif_dir,
