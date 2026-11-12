@@ -335,7 +335,7 @@ Examples = {
     ),
     "LakeMary": ApplyOEExample(
         name="LakeMary",
-        requires=["sixs", "srtmnet"],
+        requires=["sixs", "srtmnet", "libradtran"],
     ),
     "SeaBASS-PRISM": ApplyOEExample(
         name="SeaBASS_prism_001",

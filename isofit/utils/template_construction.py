@@ -1616,7 +1616,7 @@ def make_atmosphere_config(
         else abspath(prebuilt_lut_path)
     )
 
-    if emulator_base is None:
+    if emulator_base is None and modtran_path is not None:
         if "libradtran" in modtran_path.lower():
             engine_name = "libradtran"
         else:
