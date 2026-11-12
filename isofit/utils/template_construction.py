@@ -1617,7 +1617,10 @@ def make_atmosphere_config(
     )
 
     if emulator_base is None:
-        engine_name = "modtran"
+        if "libradtran" in modtran_path.lower():
+            engine_name = "libradtran"
+        else:
+            engine_name = "modtran"
     elif emulator_base.endswith(".jld2"):
         engine_name = "kernelflows"
     else:
