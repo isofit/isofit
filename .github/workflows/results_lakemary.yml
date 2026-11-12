@@ -47,6 +47,8 @@ jobs:
 
           RUN=$(isofit path examples)/LakeMary/
 
+          export ISOFIT_LAKEMARY_TEST=true
+
           for i in default bgrfl libradtran; do
             $RUN/${i}.sh --log_file results/${i}.log --resources
             isoplots spfit -p $RUN -o results/${i}.png
