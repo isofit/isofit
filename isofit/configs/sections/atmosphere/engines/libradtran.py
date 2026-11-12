@@ -67,13 +67,17 @@ class LibRadTranConfig(SectionModel):
         description="Base path to the LibRadTran installation directory",
     )
 
-    reptran_band_model: Literal["coarse", "medium", "fine"] = Field(
+    band_model: Literal[
+        "reptran coarse", "reptran medium", "reptran fine", "LOWTRAN", "KATO", "KATO2"
+    ] = Field(
+        default="KATO2",
         description=(
-            "REPTRAN correlated-k band model resolution. Options: ``coarse`` "
-            "(15 cm-1, fastest), ``medium`` (5 cm-1), ``fine`` (1 cm-1, most "
-            "accurate but slower)"
+            "Molecular absorption band model and parameterization. Options: "
+            "``reptran coarse`` (15 cm-1), ``reptran medium`` (5 cm-1), "
+            "``reptran fine`` (1 cm-1), ``LOWTRAN`` (3-term fit from SBDART), "
+            "``KATO``, and ``KATO2``."
         ),
-        examples=["coarse", "medium", "fine"],
+        examples=["reptran coarse", "KATO2"],
     )
 
     kb_alpha_1: Optional[float] = Field(
