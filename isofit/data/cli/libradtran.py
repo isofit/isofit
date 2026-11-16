@@ -110,13 +110,16 @@ def download(path=None, overwrite=False, **_):
 
     untar(file, output)
 
-    print("Building via make")
-    build(output / Version)
+    libradtran_path = output / Version
 
+    print("Building via make")
+    build(libradtran_path)
+
+    env.changeKey("libradtran", libradtran_path)
     env.changeKey("libradtran-version", Version)
     env.save()
 
-    print(f"Done, now available at: {output}")
+    print(f"Done, now available at: {libradtran_path}")
 
 
 def validate(path=None, debug=print, error=print, **_):
