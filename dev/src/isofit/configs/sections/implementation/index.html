@@ -5840,7 +5840,20 @@
 <span class="normal">200</span>
 <span class="normal">201</span>
 <span class="normal">202</span>
-<span class="normal">203</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Implementation configuration for ISOFIT.</span>
 
 <span class="sd">This module defines runtime implementation settings including operating mode,</span>
@@ -5909,7 +5922,8 @@
             <span class="s2">"``mcmc_inversion`` uses Markov Chain Monte Carlo sampling for "</span>
             <span class="s2">"uncertainty quantification, ``simulation`` performs forward modeling "</span>
             <span class="s2">"only"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"inversion"</span><span class="p">,</span> <span class="s2">"mcmc_inversion"</span><span class="p">,</span> <span class="s2">"simulation"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">inversion</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">InversionConfig</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5923,14 +5937,16 @@
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Number of CPU cores to use for parallel processing. If None, uses all "</span>
             <span class="s2">"available cores"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">task_inflation_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Submit ``task_inflation_factor * n_cores`` tasks to Ray to improve load "</span>
             <span class="s2">"balancing. Higher values improve CPU utilization but increase overhead"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">ip_head</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5938,18 +5954,21 @@
             <span class="s2">"Ray parameter: IP address and port of the Ray head node for multi-node "</span>
             <span class="s1">'distributed runs (e.g. "192.168.1.1:6379"). Must be specified together '</span>
             <span class="s2">"with ``redis_password``. None runs on a single node"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"192.168.1.1:6379"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">redis_password</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Ray parameter: Redis password for multi-node runs. Must be specified "</span>
             <span class="s2">"together with ``ip_head``"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"5241590000000000"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">ray_include_dashboard</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Ray parameter: Enable the Ray dashboard for monitoring"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Ray parameter: Enable the Ray dashboard for monitoring"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">ray_temp_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5957,6 +5976,7 @@
             <span class="s2">"Ray temporary directory for the object store and logs. Useful on "</span>
             <span class="s2">"multiuser systems to isolate Ray instances"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"/tmp/ray"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">ray_ignore_reinit_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5964,6 +5984,7 @@
             <span class="s2">"Tell Ray to ignore re-initialization errors. Convenient for running "</span>
             <span class="s2">"multiple ISOFIT instances sequentially"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">io_buffer_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5971,12 +5992,14 @@
             <span class="s2">"Size of chunks to read/process/write, in number of spectra. Larger "</span>
             <span class="s2">"values improve I/O efficiency but increase memory usage"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mi">100</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">max_hash_table_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Maximum size of inversion hash tables for caching forward model results"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mi">50</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">pixel_heuristic_priors</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5984,18 +6007,21 @@
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Define per-pixel heuristic priors to apply (AOT, H2O, SUN_GLINT)"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[[]],</span>
     <span class="p">)</span>
 
     <span class="n">debug_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Run in debug mode, which circumvents Ray parallelization for easier "</span>
             <span class="s2">"debugging"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">isofit_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="n">__version__</span><span class="p">,</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">"ISOFIT version used. Automatically set to the current version"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="n">__version__</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"after"</span><span class="p">)</span>

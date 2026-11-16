@@ -5862,7 +5862,23 @@
 <span class="normal">211</span>
 <span class="normal">212</span>
 <span class="normal">213</span>
-<span class="normal">214</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Atmosphere configuration for ISOFIT.</span>
 
 <span class="sd">This module defines atmospheric radiative transfer (RT) configuration including</span>
@@ -5946,7 +5962,7 @@
             <span class="s2">"Optional path to a wavelength file for high-resolution atmospheric "</span>
             <span class="s2">"calculations. If None, the instrument wavelengths are used"</span>
         <span class="p">),</span>
-        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">""</span><span class="p">],</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"wavelengths.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">lut_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5954,10 +5970,12 @@
             <span class="s2">"Path to the lookup table storage. Supports the .zarr format for "</span>
             <span class="s2">"efficient multidimensional array storage"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/lut/lut.zarr"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">sim_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">"Path to the RT simulation output directory"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/lut/sims"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">lut_grid</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5966,7 +5984,13 @@
             <span class="s1">'(e.g. "H2OSTR", "AOT550"), values are the sample points for that '</span>
             <span class="s2">"parameter (at least 2, no duplicates). An empty dict means no LUT "</span>
             <span class="s2">"generation"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">"H2OSTR"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">],</span>
+                <span class="s2">"AOT550"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span>
+            <span class="p">}</span>
+        <span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">lut_subset</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5975,6 +5999,7 @@
             <span class="s2">"of a large pre-computed LUT to be used. An empty dict means the full "</span>
             <span class="s2">"grid is used"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[{}],</span>
     <span class="p">)</span>
 
     <span class="n">rt_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"rdn"</span><span class="p">,</span> <span class="s2">"transm"</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5982,6 +6007,7 @@
             <span class="s2">"Atmospheric radiative transfer mode of LUT simulations: ``transm`` for "</span>
             <span class="s2">"transmittances (standard), ``rdn`` for reflected radiance"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"rdn"</span><span class="p">,</span> <span class="s2">"transm"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">statevector_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5990,6 +6016,7 @@
             <span class="s2">"engine. Determines which atmospheric parameters are optimized during "</span>
             <span class="s2">"inversion"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[[</span><span class="s2">"AOT550"</span><span class="p">,</span> <span class="s2">"H2OSTR"</span><span class="p">]],</span>
     <span class="p">)</span>
 
     <span class="n">statevector</span><span class="p">:</span> <span class="n">AtmosphereStateVectorConfig</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6004,6 +6031,7 @@
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Build/configure the RT engine and exit without running simulations"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">interpolator_style</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"rg"</span><span class="p">,</span> <span class="s2">"mlg"</span><span class="p">,</span> <span class="s2">"mlg_numba"</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6011,20 +6039,24 @@
             <span class="s2">"LUT interpolation style: ``rg`` (RegularGrid), ``mlg`` (multilinear "</span>
             <span class="s2">"grid), or ``mlg_numba``"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"rg"</span><span class="p">,</span> <span class="s2">"mlg"</span><span class="p">,</span> <span class="s2">"mlg_numba"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">wavelength_range</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Optional [min, max] wavelength range to subset the LUT to after load"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[[</span><span class="mf">380.0</span><span class="p">,</span> <span class="mf">2500.0</span><span class="p">]],</span>
     <span class="p">)</span>
 
     <span class="n">multipart_transmittance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">"Apply triple-run diffuse &amp; direct transmittance estimation"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">irradiance_file</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">"Solar irradiance file (used for RT and PACE-OCI SRF handling)"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/irradiance.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">"lut_grid"</span><span class="p">)</span>

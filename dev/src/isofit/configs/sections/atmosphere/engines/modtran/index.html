@@ -5722,7 +5722,13 @@
 <span class="normal"> 99</span>
 <span class="normal">100</span>
 <span class="normal">101</span>
-<span class="normal">102</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">MODTRAN radiative transfer engine configuration.</span>
 
 <span class="sd">MODTRAN is a widely-used atmospheric RT code for visible through thermal infrared</span>
@@ -5784,11 +5790,12 @@
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">"forbid"</span><span class="p">)</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">"modtran"</span><span class="p">],</span> <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">standardName</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s1">'Engine identifier. Must be "modtran" (case-insensitive)'</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">'Engine identifier. Must be "modtran"'</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">base_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DirectoryPath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">"Base path to the MODTRAN installation directory"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"/opt/modtran6.0"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">multipart_transmittance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5796,6 +5803,7 @@
             <span class="s2">"Apply triple-run diffuse &amp; direct transmittance estimation for "</span>
             <span class="s2">"improved accuracy. Increases runtime 3x"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">use_tp7</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5803,6 +5811,7 @@
             <span class="s2">"Write TP7 outputs instead of the default CHN outputs. Only applies "</span>
             <span class="s2">"when ``multipart_transmittance`` is enabled"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">aerosol_template_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5810,12 +5819,14 @@
             <span class="s2">"Path to the aerosol template file defining aerosol optical "</span>
             <span class="s2">"properties and vertical profiles"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"aerosol_template.json"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">aerosol_model_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to the aerosol model file with wavelength-dependent properties"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"aerosol_model.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">template_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5823,6 +5834,7 @@
             <span class="s2">"Path to the MODTRAN input template file (tape5 or JSON format) with "</span>
             <span class="s2">"the base atmospheric configuration"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"modtran_template.json"</span><span class="p">],</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

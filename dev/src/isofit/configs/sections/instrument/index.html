@@ -5994,7 +5994,22 @@
 <span class="normal">332</span>
 <span class="normal">333</span>
 <span class="normal">334</span>
-<span class="normal">335</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Instrument configuration for ISOFIT.</span>
 
 <span class="sd">This module defines instrument model configuration including spectral response,</span>
@@ -6129,35 +6144,40 @@
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to file containing per-channel radiometric uncertainty values "</span>
             <span class="s2">"(e.g. systematic calibration errors that vary by wavelength)"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/channelized_radiometric_uncertainty.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">uncorrelated_radiometric_uncertainty</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Scalar uncorrelated radiometric uncertainty value applied uniformly "</span>
             <span class="s2">"across all channels"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">0.01</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">wavelength_calibration_uncertainty</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Uncertainty in wavelength calibration, in nanometers. Represents "</span>
             <span class="s2">"knowledge of the true spectral registration"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">stray_srf_uncertainty</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Uncertainty in the spectral response function due to stray light or "</span>
             <span class="s2">"out-of-band response"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">0.001</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">dn_uncertainty_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to digital number (DN) uncertainty file for sensor-specific "</span>
             <span class="s2">"uncertainty characterization"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/dn_uncertainty.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
 
@@ -6201,7 +6221,8 @@
     <span class="n">wavelength_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to file containing instrument wavelength centers for each channel"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"wavelengths.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">integrations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6209,6 +6230,7 @@
             <span class="s2">"Number of integrations comprising the measurement. Noise diminishes "</span>
             <span class="s2">"with the square root of this number"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">unknowns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">InstrumentUnknownsConfig</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6223,6 +6245,7 @@
             <span class="s2">"If True, approximate complete spectral resampling by convolution with "</span>
             <span class="s2">"a uniform FWHM. Faster but less accurate"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">statevector</span><span class="p">:</span> <span class="n">InstrumentStateVectorConfig</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6237,6 +6260,7 @@
             <span class="s2">"Uniform signal-independent SNR applied to all wavelengths. Mutually "</span>
             <span class="s2">"exclusive with the other noise models"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">500.0</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">parametric_noise_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6244,6 +6268,7 @@
             <span class="s2">"Path to parametric noise model file (signal and wavelength-dependent "</span>
             <span class="s2">"noise function). Mutually exclusive with the other noise models"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/parametric_noise.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">pushbroom_noise_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6251,21 +6276,24 @@
             <span class="s2">"Path to pushbroom noise model file in ENVI format (2D noise model "</span>
             <span class="s2">"varying by channel and across-track position). Mutually exclusive "</span>
             <span class="s2">"with the other noise models"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/pushbroom_noise.hdr"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">nedt_noise_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to Noise Equivalent Delta Temperature (NEDT) file for thermal "</span>
             <span class="s2">"sensors. Mutually exclusive with the other noise models"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/nedt_noise.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">eof_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to Empirical Orthogonal Function (EOF) file for spectral "</span>
             <span class="s2">"radiometric error modeling"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/eof.mat"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">rcc_prior_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6274,7 +6302,8 @@
             <span class="s2">"matrix ``cov`` representing a prior over the per-channel Radiometric "</span>
             <span class="s2">"Calibration Coefficients (RCCs) that scale the measured spectrum. If "</span>
             <span class="s2">"not given, these are assumed to be unity"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/rcc_prior.mat"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">wlspl_prior_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6282,7 +6311,8 @@
             <span class="s2">"Path to a .mat file containing a mean vector ``mean`` and covariance "</span>
             <span class="s2">"matrix ``cov`` representing a prior over the wavelength shift at the "</span>
             <span class="s2">"spline indices, which inform the spline spectral calibration"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/wlspl_prior.mat"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"after"</span><span class="p">)</span>

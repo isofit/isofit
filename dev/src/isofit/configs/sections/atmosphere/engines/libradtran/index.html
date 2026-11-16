@@ -5754,7 +5754,17 @@
 <span class="normal">131</span>
 <span class="normal">132</span>
 <span class="normal">133</span>
-<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">LibRadTran (Library for Radiative Transfer) engine configuration.</span>
 
 <span class="sd">LibRadTran is a comprehensive open-source RT package supporting UV to</span>
@@ -5816,11 +5826,12 @@
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">"forbid"</span><span class="p">)</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">"libradtran"</span><span class="p">],</span> <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">standardName</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s1">'Engine identifier. Must be ``"libradtran"``'</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">'Engine identifier. Must be ``"libradtran"``'</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">base_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DirectoryPath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">"Base path to the LibRadTran installation directory"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"/opt/libradtran"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">reptran_band_model</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"coarse"</span><span class="p">,</span> <span class="s2">"medium"</span><span class="p">,</span> <span class="s2">"fine"</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5836,35 +5847,40 @@
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"King-Byrne Angstrom parameter (alpha 1) for aerosol wavelength "</span>
             <span class="s2">"dependence. Setting to None uses the default aerosol profile"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">1.3</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">kb_alpha_2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"King-Byrne Angstrom parameter (alpha 2) for aerosol wavelength "</span>
             <span class="s2">"dependence. Setting to None uses the default aerosol profile"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">0.2</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">gg_set</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Constant asymmetry parameter (g) to represent the aerosol phase "</span>
             <span class="s2">"function. Setting to None uses the profile default"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">0.7</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">gg_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to an asymmetry parameter file that overwrites the default "</span>
             <span class="s2">"profile with altitude-dependent values"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"gg_profile.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">tau_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to an aerosol optical depth file that overwrites the default "</span>
             <span class="s2">"profile with altitude-dependent values"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"tau_profile.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">ssa_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5872,10 +5888,12 @@
             <span class="s2">"Path to a single scattering albedo file that overwrites the default "</span>
             <span class="s2">"aerosol absorption properties"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"ssa_profile.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">ssa_scale</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">"Scaling factor applied to the single scattering albedo"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">moments_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -5883,10 +5901,12 @@
             <span class="s2">"Path to a phase function moments file that overwrites the default "</span>
             <span class="s2">"profile"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"moments.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">template_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">"Template file used as the base configuration for libRadtran"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"libradtran_template.json"</span><span class="p">],</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

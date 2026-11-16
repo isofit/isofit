@@ -5691,8 +5691,7 @@
 <span class="normal">68</span>
 <span class="normal">69</span>
 <span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
+<span class="normal">71</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Kernel Flows engine configuration.</span>
 
 <span class="sd">Kernel Flows is a machine learning-based RT emulator providing fast</span>
@@ -5749,20 +5748,19 @@
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">"forbid"</span><span class="p">)</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">"kernelflows"</span><span class="p">],</span> <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">standardName</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s1">'Engine identifier. Must be "kernelflows" or its alias "kf" '</span>
-            <span class="s2">"(case-insensitive)"</span>
-        <span class="p">)</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span><span class="s1">'Engine identifier. Must be "kernelflows" or its alias "kf"'</span><span class="p">)</span>
     <span class="p">)</span>
 
     <span class="n">emulator_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">"Path to the trained Kernel Flows emulator model file"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"kf_emulator.h5"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">template_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to the template configuration file for Kernel Flows parameters"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"modtran_template.json"</span><span class="p">],</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
 

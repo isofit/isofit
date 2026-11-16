@@ -5980,7 +5980,33 @@
 <span class="normal">318</span>
 <span class="normal">319</span>
 <span class="normal">320</span>
-<span class="normal">321</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Input/output file configuration for ISOFIT.</span>
 
 <span class="sd">This module defines Pydantic models for specifying input data files</span>
@@ -6042,11 +6068,13 @@
             <span class="s2">"Input radiance file (.mat, .txt, or ENVI format) containing at-sensor "</span>
             <span class="s2">"radiance measurements for inverse modeling"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/rdn.hdr"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">reference_reflectance_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">alias</span><span class="o">=</span><span class="s2">"rrf"</span><span class="p">,</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">"Input reference reflectance file for radiometric calibration"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/reference_reflectance.hdr"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">reflectance_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6055,6 +6083,7 @@
             <span class="s2">"Input reflectance file for forward modeling (reflectance -&gt; radiance). "</span>
             <span class="s2">"Required when ``implementation.mode`` is 'simulation'"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/rfl.hdr"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">obs_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6063,6 +6092,7 @@
             <span class="s2">"Observation file with viewing and illumination geometry (solar zenith, "</span>
             <span class="s2">"view zenith, relative azimuth angles)"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/obs.hdr"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">glt_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6071,6 +6101,7 @@
             <span class="s2">"Geographic Lookup Table (GLT) file with spatial offset information for "</span>
             <span class="s2">"orthorectified data"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/glt.hdr"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">loc_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6078,6 +6109,7 @@
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Location file with latitude, longitude, and elevation for each pixel"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/loc.hdr"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">background_reflectance_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6086,11 +6118,13 @@
             <span class="s2">"Background reflectance file for spatial inference and contextual "</span>
             <span class="s2">"atmospheric correction"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/background_reflectance.hdr"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">radiometry_correction_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">alias</span><span class="o">=</span><span class="s2">"rcf"</span><span class="p">,</span>
         <span class="n">description</span><span class="o">=</span><span class="s2">"Radiometric correction file for systematic error correction"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/radiometry_correction.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">skyview_factor_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6099,6 +6133,7 @@
             <span class="s2">"Skyview factor file to modulate diffuse radiance contribution based on "</span>
             <span class="s2">"terrain occlusion"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/skyview_factor.hdr"</span><span class="p">],</span>
     <span class="p">)</span>
 
 
@@ -6135,83 +6170,100 @@
 
     <span class="n">section</span> <span class="o">=</span> <span class="s2">"output"</span>
 
-    <span class="nb">dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">"Output directory for ISOFIT"</span><span class="p">)</span>
+    <span class="nb">dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Output directory for ISOFIT"</span><span class="p">,</span> <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"./isofit-output/"</span><span class="p">]</span>
+    <span class="p">)</span>
 
     <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"If True, delete the output directory before starting if it exists. "</span>
             <span class="s2">"Leave False to preserve previous results"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">estimated_state_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Output file for estimated state vector containing optimized parameter "</span>
             <span class="s2">"values for each pixel"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/estimated_state"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">estimated_reflectance_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for estimated Lambertian surface reflectance"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for estimated Lambertian surface reflectance"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/estimated_reflectance"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">estimated_emission_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for estimated emitted radiance (thermal component)"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for estimated emitted radiance (thermal component)"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/estimated_emission"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">modeled_radiance_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Output file for forward-modeled at-sensor radiance using the estimated "</span>
             <span class="s2">"surface and atmosphere"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/modeled_radiance"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">apparent_reflectance_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Output file for apparent surface reflectance (radiance / downwelling "</span>
             <span class="s2">"irradiance) without atmospheric correction"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/apparent_reflectance"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">path_radiance_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for path radiance contribution"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for path radiance contribution"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/path_radiance"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">simulated_measurement_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for simulated at-sensor radiance in simulation mode"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for simulated at-sensor radiance in simulation mode"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/simulated_measurement"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">algebraic_inverse_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for algebraic inverse solution"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for algebraic inverse solution"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/algebraic_inverse"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">atmospheric_coefficients_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Output file for atmospheric optical parameters (aerosol optical depth, "</span>
             <span class="s2">"water vapor, etc.)"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/atmospheric_coefficients"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">radiometry_correction_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for radiometric correction factors"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for radiometric correction factors"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/radiometry_correction"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">spectral_calibration_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for spectral calibration (wavelength corrections)"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for spectral calibration (wavelength corrections)"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/spectral_calibration"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">posterior_uncertainty_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Output file for posterior uncertainty (diagonal of posterior covariance)"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/posterior_uncertainty"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">plot_surface_components</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"If True, generate diagnostic plots of surface components"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"If True, generate diagnostic plots of surface components"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">mcmc_samples_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for MCMC samples when running in mcmc_inversion mode"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Output file for MCMC samples when running in mcmc_inversion mode"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"isofit-output/mcmc_samples"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="c1"># Header metadata (band-name key, ztitle, zrange) for each writable output</span>

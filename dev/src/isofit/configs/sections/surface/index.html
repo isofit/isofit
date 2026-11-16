@@ -6134,7 +6134,29 @@
 <span class="normal">433</span>
 <span class="normal">434</span>
 <span class="normal">435</span>
-<span class="normal">436</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Surface configuration for ISOFIT.</span>
 
 <span class="sd">This module defines surface model configuration including surface type,</span>
@@ -6285,17 +6307,20 @@
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">"allow"</span><span class="p">)</span>
 
     <span class="n">surface_category</span><span class="p">:</span> <span class="n">SurfaceCategory</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Type of surface model for this class"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Type of surface model for this class"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"multicomponent_surface"</span><span class="p">],</span>
     <span class="p">)</span>
     <span class="n">surface_file</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to the surface model file (.mat format) for this class. Need not "</span>
             <span class="s2">"exist at load time, as it may be built later (e.g. by "</span>
             <span class="s2">"``isofit surface_model``)"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"veg_prior.mat"</span><span class="p">],</span>
     <span class="p">)</span>
     <span class="n">surface_int</span><span class="p">:</span> <span class="n">NonNegativeInt</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Value of this class in the surface classification file"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Value of this class in the surface classification file"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
     <span class="p">)</span>
     <span class="n">statevector</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">StateVectorElementConfig</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">,</span>
@@ -6399,11 +6424,13 @@
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Enable multi-surface mode, where different surface models are used "</span>
             <span class="s2">"based on a classification map"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">use_background_rfl</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Use background reflectance for spatial inference"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Use background reflectance for spatial inference"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="c1"># Not a FilePath: the file may be built after the config is written</span>
@@ -6413,26 +6440,36 @@
             <span class="s2">"Path to the surface model file (.mat format) containing reflectance "</span>
             <span class="s2">"priors, basis vectors, and covariance information. Need not exist yet, "</span>
             <span class="s2">"as it may be built later by ``isofit surface_model``"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"surface_priors.mat"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">surface_category</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SurfaceCategory</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Type of surface model to use. Determines which surface class is "</span>
             <span class="s2">"instantiated"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span>
+            <span class="s2">"surface"</span><span class="p">,</span>
+            <span class="s2">"multicomponent_surface"</span><span class="p">,</span>
+            <span class="s2">"glint_model_surface"</span><span class="p">,</span>
+            <span class="s2">"thermal_surface"</span><span class="p">,</span>
+            <span class="s2">"lut_surface"</span><span class="p">,</span>
+        <span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">surface_class_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to surface classification file (ENVI format) for multi-surface mode"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"classification.hdr"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">base_surface_class_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Path to base surface classification file for hierarchical classification"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"base_classification.hdr"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">Surfaces</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">SubSurfaceConfig</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6443,21 +6480,24 @@
     <span class="p">)</span>
 
     <span class="n">wavelength_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FilePath</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Path to wavelength file for surface model spectral sampling"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Path to wavelength file for surface model spectral sampling"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"wavelengths.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">select_on_init</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Force use of the initialization state and never change the surface "</span>
             <span class="s2">"model selection"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">selection_metric</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"Euclidean"</span><span class="p">,</span> <span class="s2">"SGA"</span><span class="p">,</span> <span class="s2">"SpecAngle"</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
             <span class="s2">"Metric for selecting the surface prior component: Euclidean distance, "</span>
             <span class="s2">"SGA (Spectral Gradient Angle), or SpecAngle (spectral angle)"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"Euclidean"</span><span class="p">,</span> <span class="s2">"SGA"</span><span class="p">,</span> <span class="s2">"SpecAngle"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">statevector</span><span class="p">:</span> <span class="n">SurfaceStateVectorConfig</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6469,6 +6509,7 @@
             <span class="s2">"Initial emissivity value for surface temperature estimation. 0.98 is "</span>
             <span class="s2">"recommended by Glynn Hulley for most surfaces"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">0.98</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">terrain_style</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"flat"</span><span class="p">,</span> <span class="s2">"dem"</span><span class="p">,</span> <span class="s2">"solved"</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6476,7 +6517,8 @@
             <span class="s2">"Style of terrain to use in the forward model: 'flat' assumes a level "</span>
             <span class="s2">"surface, 'dem' uses a digital elevation model, 'solved' optimizes "</span>
             <span class="s2">"terrain parameters"</span>
-        <span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"flat"</span><span class="p">,</span> <span class="s2">"dem"</span><span class="p">,</span> <span class="s2">"solved"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">max_slope</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -6484,10 +6526,12 @@
             <span class="s2">"Maximum slope in degrees for LUT calculations. Only relevant for "</span>
             <span class="s2">"terrain_style='dem'"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">90.0</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">refractive_index_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">"Path to refractive index data for water surface modeling"</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Path to refractive index data for water surface modeling"</span><span class="p">,</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"data/refractive_index.txt"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">update_from_subconfig</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subconfig</span><span class="p">:</span> <span class="n">SubSurfaceConfig</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.surface.SurfaceConfig.update_from_subconfig"><a href="../../../../../api/isofit/configs/sections/surface/#isofit.configs.sections.surface.SurfaceConfig.update_from_subconfig" title="Go to docs">[docs]</a></div>

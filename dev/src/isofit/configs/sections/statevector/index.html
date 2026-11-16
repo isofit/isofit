@@ -5763,7 +5763,12 @@
 <span class="normal">112</span>
 <span class="normal">113</span>
 <span class="normal">114</span>
-<span class="normal">115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">State vector configuration models for ISOFIT.</span>
 
 <span class="sd">This module defines the structure of state vector elements used across</span>
@@ -5814,6 +5819,7 @@
             <span class="s2">"Lower and upper bounds for the parameter during optimization. NaN "</span>
             <span class="s2">"bounds leave the parameter unbounded"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]],</span>
     <span class="p">)</span>
     <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
@@ -5821,6 +5827,7 @@
             <span class="s2">"Scale factor for normalizing the parameter during optimization, which "</span>
             <span class="s2">"improves numerical conditioning. NaN means no scaling"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">],</span>
     <span class="p">)</span>
     <span class="n">prior_mean</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
@@ -5828,6 +5835,7 @@
             <span class="s2">"Mean of the prior distribution for this parameter, used in Bayesian "</span>
             <span class="s2">"estimation. NaN means no prior"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3</span><span class="p">],</span>
     <span class="p">)</span>
     <span class="n">prior_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
@@ -5835,6 +5843,7 @@
             <span class="s2">"Standard deviation of the prior distribution for this parameter. NaN "</span>
             <span class="s2">"means no prior"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">],</span>
     <span class="p">)</span>
     <span class="n">init</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
@@ -5842,6 +5851,7 @@
             <span class="s2">"Initial guess for the parameter at the start of optimization. NaN means "</span>
             <span class="s2">"it is determined heuristically"</span>
         <span class="p">),</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="mf">0.25</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">unpack</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.configs.sections.statevector.StateVectorElementConfig.unpack"><a href="../../../../../api/isofit/configs/sections/statevector/#isofit.configs.sections.statevector.StateVectorElementConfig.unpack" title="Go to docs">[docs]</a></div>
