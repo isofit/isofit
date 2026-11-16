@@ -22,27 +22,35 @@ from __future__ import annotations
 import logging
 import os
 
-import eradiate
-import joseki
 import numpy as np
 import xarray as xr
-from eradiate.attrs import AUTO
-from eradiate.experiments import AtmosphereExperiment
-from eradiate.radprops import ParticleProperties, absdb_factory
-from eradiate.rng import SeedState
-from eradiate.scenes.atmosphere import (
-    HeterogeneousAtmosphere,
-    MolecularAtmosphere,
-    ParticleLayer,
-)
-from eradiate.scenes.bsdfs import LambertianBSDF
-from eradiate.scenes.illumination import DirectionalIllumination
-from eradiate.scenes.integrators import PiecewiseVolPathIntegrator
-from eradiate.scenes.measure import MultiDistantMeasure
-from eradiate.scenes.surface import BasicSurface
-from eradiate.spectral import BandSRF, CKDSpectralIndex, SpectralIndex
-from eradiate.units import to_quantity
-from eradiate.units import unit_registry as ureg
+
+# Eradiate is an optional dependency. Raise rather than print the recommendation
+# so isofit.atmosphere.engines can still defer it until the engine is requested
+try:
+    import eradiate
+    import joseki
+    from eradiate.attrs import AUTO
+    from eradiate.experiments import AtmosphereExperiment
+    from eradiate.radprops import ParticleProperties, absdb_factory
+    from eradiate.rng import SeedState
+    from eradiate.scenes.atmosphere import (
+        HeterogeneousAtmosphere,
+        MolecularAtmosphere,
+        ParticleLayer,
+    )
+    from eradiate.scenes.bsdfs import LambertianBSDF
+    from eradiate.scenes.illumination import DirectionalIllumination
+    from eradiate.scenes.integrators import PiecewiseVolPathIntegrator
+    from eradiate.scenes.measure import MultiDistantMeasure
+    from eradiate.scenes.surface import BasicSurface
+    from eradiate.spectral import BandSRF, CKDSpectralIndex, SpectralIndex
+    from eradiate.units import to_quantity
+    from eradiate.units import unit_registry as ureg
+except ImportError as e:
+    from isofit.data.cli.eradiate import print_install
+
+    raise ImportError(print_install()) from e
 
 from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core import units
