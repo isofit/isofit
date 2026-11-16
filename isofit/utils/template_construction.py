@@ -1626,7 +1626,7 @@ def make_atmosphere_config(
             engine_name = "libradtran"
         else:
             engine_name = "modtran"
-    # NOTE because modtran_path is always defined via MODTRAN_DIR 
+    # NOTE because modtran_path is always defined via MODTRAN_DIR
     # this should not be reached; however, it's safe to keep for testing.
     else:
         engine_name = "srtmnet"
