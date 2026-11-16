@@ -123,7 +123,9 @@ class EradiateRT(BaseAtmosphere, Writer):
         """
         self.config = full_config.forward_model.atmosphere
 
-        self.eradiate_mode = self.infer_spectral_mode(self.eradiate_absorption_database)
+        self.eradiate_mode = self.infer_spectral_mode(
+            self.config.engine.eradiate_absorption_database
+        )
 
         self.engine_base_dir = getattr(self.config.engine, "base_dir", None)
         self.sim_path = self.config.sim_path
@@ -140,7 +142,7 @@ class EradiateRT(BaseAtmosphere, Writer):
         # never mutates them in place.
         self._base_thermoprops = self.default_thermoprops()
         self._base_particle_properties = self.load_particle_properties(
-            self.eradiate_particle_properties
+            self.config.engine.eradiate_particle_properties
         )
 
         super().__init__(full_config, wl=wl, fwhm=fwhm, **kwargs)
@@ -150,10 +152,12 @@ class EradiateRT(BaseAtmosphere, Writer):
         """Records engine configuration on the LUT for provenance."""
         self.lut.setAttr("eradiate_mode", self.eradiate_mode)
         self.lut.setAttr(
-            "eradiate_absorption_database", self.eradiate_absorption_database
+            "eradiate_absorption_database",
+            self.config.engine.eradiate_absorption_database,
         )
         self.lut.setAttr(
-            "eradiate_particle_properties", self.config.eradiate_particle_properties
+            "eradiate_particle_properties",
+            self.config.engine.eradiate_particle_properties,
         )
 
         # Not required, but choosing to carry in radiance units
@@ -206,7 +210,9 @@ class EradiateRT(BaseAtmosphere, Writer):
         for albedo in self.albedos:
             self.set_reflectance(exp, albedo)
             results[albedo] = eradiate.run(
-                exp, spp=self.config.eradiate_spp, seed_state=SeedState(seed=seed)
+                exp,
+                spp=self.config.engine.eradiate_spp,
+                seed_state=SeedState(seed=seed),
             )
 
         rfl_1, rfl_2 = self.albedos[1], self.albedos[2]
@@ -424,7 +430,7 @@ class EradiateRT(BaseAtmosphere, Writer):
 
         molecular = MolecularAtmosphere(
             thermoprops=thermoprops,
-            absorption_data=self.config.eradiate_absorption_database,
+            absorption_data=self.config.engine.eradiate_absorption_database,
         )
 
         particle_properties = self._base_particle_properties
