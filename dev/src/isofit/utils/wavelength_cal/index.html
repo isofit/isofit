@@ -6484,7 +6484,9 @@
 <span class="normal">806</span>
 <span class="normal">807</span>
 <span class="normal">808</span>
-<span class="normal">809</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">809</span>
+<span class="normal">810</span>
+<span class="normal">811</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: Philip G. Brodrick</span>
 <span class="c1">#</span>
@@ -7219,6 +7221,7 @@
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli_get_wavelength_adjustment</span><span class="p">(</span><span class="n">debug_args</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.wavelength_cal.cli_get_wavelength_adjustment"><a href="../../../../api/isofit/utils/wavelength_cal/#isofit.utils.wavelength_cal.cli_get_wavelength_adjustment" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""Get the wavelength adjustment based on a previous isofit wavelength_cal run."""</span>
     <span class="k">if</span> <span class="n">debug_args</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">"Arguments to be passed:"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwitems</span><span class="p">():</span>
@@ -7273,6 +7276,7 @@
 <span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--profile"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli_wavelength_cal</span><span class="p">(</span><span class="n">debug_args</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.wavelength_cal.cli_wavelength_cal"><a href="../../../../api/isofit/utils/wavelength_cal/#isofit.utils.wavelength_cal.cli_wavelength_cal" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""Runs a wavelength calibration on an input scene"""</span>
     <span class="k">if</span> <span class="n">debug_args</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">"Arguments to be passed:"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwitems</span><span class="p">():</span>

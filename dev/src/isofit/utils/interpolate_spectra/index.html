@@ -5953,7 +5953,8 @@
 <span class="normal">280</span>
 <span class="normal">281</span>
 <span class="normal">282</span>
-<span class="normal">283</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">283</span>
+<span class="normal">284</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2025 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -6233,6 +6234,7 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--logfile"</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--loglevel"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.interpolate_spectra.cli"><a href="../../../../api/isofit/utils/interpolate_spectra/#isofit.utils.interpolate_spectra.cli" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""Interpolate wavelength bands that are either no data or Nan."""</span>
 
     <span class="n">interpolate_spectra</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">"Done"</span><span class="p">)</span>

@@ -5719,7 +5719,8 @@
 <span class="normal">85</span>
 <span class="normal">86</span>
 <span class="normal">87</span>
-<span class="normal">88</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">88</span>
+<span class="normal">89</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
@@ -5804,6 +5805,7 @@
 <span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"output_path"</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">"lbl_working_path"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.reconstruct.cli"><a href="../../../../api/isofit/utils/reconstruct/#isofit.utils.reconstruct.cli" title="Go to docs">[docs]</a></div>
+<span class="w">    </span><span class="sd">"""Populate full pixel resolution scene from super-pixel file"""</span>
 
     <span class="n">reconstruct_subs</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="n">click</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="s2">"Done"</span><span class="p">)</span>
