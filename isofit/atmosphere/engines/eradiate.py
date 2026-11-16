@@ -48,9 +48,10 @@ try:
     from eradiate.units import to_quantity
     from eradiate.units import unit_registry as ureg
 except ImportError as e:
+    # just doing the import should make the print
     from isofit.data.cli.eradiate import print_install
 
-    raise ImportError(print_install()) from e
+    raise ImportError("eradiate not installed") from e
 
 from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core import units
