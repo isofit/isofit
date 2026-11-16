@@ -43,6 +43,12 @@ default:
     plot_surface_components: false
     mcmc_samples_file: null
 
+  log:
+    file: null
+    level: INFO
+    append: True
+    config: null
+
   forward_model:
     model_discrepancy_file: null
 

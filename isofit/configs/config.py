@@ -13,6 +13,7 @@ from isofit.configs.sections import io
 from isofit.configs.sections.atmosphere import AtmosphereConfig
 from isofit.configs.sections.forward_model import ForwardModelConfig
 from isofit.configs.sections.implementation import ImplementationConfig
+from isofit.configs.sections.pipeline import LogConfig
 
 
 class Config(SectionModel):

@@ -1,0 +1,191 @@
+# Use case: the configs written by apply_oe / template_construction.
+#
+# Captures the static (non-programmatic) values apply_oe writes into its ISOFIT
+# configs, using apply_oe's working-directory layout with `output.dir` as the
+# working directory:
+#   ${output.dir}/input/    staged + superpixel inputs
+#   ${output.dir}/data/     wavelengths, surface model, staged instrument files
+#   ${output.dir}/config/   RT templates and the written ISOFIT configs
+#   ${output.dir}/lut_h2o/  presolve LUT
+#   ${output.dir}/lut_full/ main LUT
+#   ${output.dir}/output/   retrieval products
+#
+# Scene-derived values (LUT grids, statevector bounds/init/prior_mean, aerosol
+# climatology, multisurface `Surfaces`, isofit_version) are still computed by
+# template_construction and are not set here.
+#
+# Sections:
+#   pipeline - Shared by every run
+#   presolve - H2O-only presolve (apply_oe --presolve)
+#   main     - Shared by the main (non-presolve) solves
+#   subs     - Main solve over superpixels (--empirical_line, --analytical_line,
+#              or --use_background_rfl)
+#   full     - Main solve over every pixel
+#
+# Sensor mixins apply apply_oe's hardcoded per-sensor defaults and are layered
+# on top of a run section, e.g. `^^: [full, emit]`.
+
+pipeline:
+  ^^: default.yml:srtmnet
+
+  input:
+    fid: null  # SET: flightline ID, derived from the radiance file name per sensor
+    rdn: null  # SET: at-sensor radiance
+    obs: null  # SET: observation geometry
+    loc: null  # SET: lat/lon/elevation
+
+  output:
+    dir: ./isofit-output/  # apply_oe: working_directory
+
+  log:
+    stage: isofit
+    file: ${output.dir}/${.stage}.log
+    level: INFO
+    append: True
+
+  forward_model:
+    instrument:
+      wavelength_file: ${output.dir}/data/wavelengths.txt
+      integrations: 1
+      # Zeroed by apply_oe when --model_discrepancy_path is given
+      unknowns:
+        uncorrelated_radiometric_uncertainty: 0.01
+      # Used when no parametric noise file is available (see the sensor mixins
+      # or apply_oe --instrument_noise_path)
+      SNR: 500
+
+    surface:
+      multi_surface_flag: false
+      surface_file: ${output.dir}/data/surface.mat
+      surface_category: multicomponent_surface
+      terrain_style: dem
+      max_slope: 20.0
+      use_background_rfl: false
+
+    atmosphere:
+      sim_path: ${output.dir}/lut_full
+      lut_path: ${.sim_path}/lut.zarr  # apply_oe: --prebuilt_lut replaces this
+      # false for .h5 sRTMnet emulators; true for .6c emulators and MODTRAN
+      multipart_transmittance: false
+      irradiance_file: ${env.examples}/20151026_SantaMonica/data/prism_optimized_irr.dat
+      engine:
+        template_file: ${output.dir}/config/${input.fid}_modtran_tpl.json
+      statevector:
+        H2OSTR:
+          scale: 1
+          prior_sigma: 100.0
+      statevector_names: [H2OSTR]
+
+  implementation:
+    n_cores: 1
+    ray_temp_dir: /tmp/ray
+    debug_mode: false
+    pixel_heuristic_priors: []
+    inversion:
+      windows: [[350.0, 1360.0], [1410.0, 1800.0], [1970.0, 2500.0]]
+
+
+presolve:
+  ^^: pipeline
+
+  # With superpixels the presolve instead reads the `subs` inputs and writes
+  # ${output.dir}/output/${input.fid}_subs_h2o
+  output:
+    estimated_state_file: ${output.dir}/output/${input.fid}_h2o
+
+  forward_model:
+    atmosphere:
+      sim_path: ${output.dir}/lut_h2o
+      engine:
+        template_file: ${output.dir}/config/${input.fid}_h2o_tpl.json
+
+
+main:
+  ^^: pipeline
+
+  forward_model:
+    atmosphere:
+      statevector:
+        # Climatology default; with the AOT pixel heuristic prior, prior_sigma
+        # comes from the AERONET model instead
+        AOT550:
+          scale: 1
+          prior_sigma: 0.1
+      statevector_names: [AOT550, H2OSTR]
+
+
+subs:
+  ^^: main
+
+  input:
+    rdn: ${output.dir}/input/${input.fid}_subs_rdn
+    obs: ${output.dir}/input/${input.fid}_subs_obs
+    loc: ${output.dir}/input/${input.fid}_subs_loc
+
+  output:
+    estimated_state_file: ${output.dir}/output/${input.fid}_subs_state
+    estimated_reflectance_file: ${output.dir}/output/${input.fid}_subs_rfl
+    posterior_uncertainty_file: ${output.dir}/output/${input.fid}_subs_uncert
+
+  forward_model:
+    instrument:
+      integrations: 40  # apply_oe: segmentation_size
+
+
+full:
+  ^^: main
+
+  output:
+    estimated_state_file: ${output.dir}/output/${input.fid}_state
+    estimated_reflectance_file: ${output.dir}/output/${input.fid}_rfl
+    posterior_uncertainty_file: ${output.dir}/output/${input.fid}_uncert
+
+
+# ---------------------------------------------------------------------------
+# Sensor mixins: overlays without `^^`, layered on top of a run section.
+# Files under ${output.dir}/data/ are copies apply_oe stages from the noted
+# ISOFIT data file.
+# ---------------------------------------------------------------------------
+
+emit:
+  forward_model:
+    model_discrepancy_file: ${output.dir}/data/model_discrepancy.mat  # emit_model_discrepancy.mat
+    instrument:
+      SNR: null
+      parametric_noise_file: ${env.data}/emit_noise.txt
+      unknowns:
+        channelized_radiometric_uncertainty_file: ${output.dir}/data/channelized_uncertainty.txt  # emit_osf_uncertainty.txt
+      eof_path: ${output.dir}/data/eof.txt  # emit_eofs.txt
+      # One element per EOF column, using apply_oe's DefaultRCCPrior
+      statevector:
+        EOF_1: {bounds: [0.01, 10.0], scale: 1.0, prior_mean: 1.0, prior_sigma: 10.0, init: 1.0}
+        EOF_2: {bounds: [0.01, 10.0], scale: 1.0, prior_mean: 1.0, prior_sigma: 10.0, init: 1.0}
+        EOF_3: {bounds: [0.01, 10.0], scale: 1.0, prior_mean: 1.0, prior_sigma: 10.0, init: 1.0}
+  implementation:
+    inversion:
+      windows: [[350.0, 1325.0], [1435.0, 1800.0], [1965.0, 2500.0]]
+
+av3:
+  implementation:
+    inversion:
+      windows: [[380.0, 1350.0], [1435.0, 1800.0], [1970.0, 2500.0]]
+
+avcl:
+  forward_model:
+    instrument:
+      SNR: null
+      parametric_noise_file: ${env.data}/avirisc_noise.txt
+
+oci:
+  forward_model:
+    instrument:
+      SNR: null
+      parametric_noise_file: ${env.data}/oci/oci_noise.txt
+    atmosphere:
+      irradiance_file: ${env.data}/oci/tsis_f0_0p1.txt
+
+tanager:
+  forward_model:
+    instrument:
+      SNR: null
+      parametric_noise_file: ${env.data}/tanager1_noise_20241016.txt

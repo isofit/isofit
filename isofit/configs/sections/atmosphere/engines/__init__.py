@@ -10,6 +10,8 @@ from typing import Annotated, Union
 
 from pydantic import Discriminator, Tag
 
+from isofit.configs.base import SectionModel
+
 
 def standardName(name: str) -> str:
     """
@@ -55,7 +57,7 @@ def standardName(name: str) -> str:
     return name
 
 
-def selectByName(data: dict) -> str:
+def selectByName(data: dict | SectionModel) -> str:
     """
     Discriminator function to select the config model for a given engine name.
 
@@ -64,8 +66,9 @@ def selectByName(data: dict) -> str:
 
     Parameters
     ----------
-    data : dict
-        Configuration dictionary containing 'name' field.
+    data : dict | SectionModel
+        Configuration dictionary containing 'name' field during validation, or
+        an already-validated engine model instance during serialization.
 
     Returns
     -------
@@ -77,7 +80,11 @@ def selectByName(data: dict) -> str:
     This function is called automatically by Pydantic during validation
     and should not be invoked directly by users.
     """
-    name = data.get("name")
+    if isinstance(data, dict):
+        name = data.get("name")
+    else:
+        name = getattr(data, "name", None)
+
     if isinstance(name, str):
         return standardName(name)
     return name

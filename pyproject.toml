@@ -46,6 +46,7 @@ dependencies = [
   "xxhash >= 1.2.0",
   "zarr >= 3",
   "pydantic>=2.12.5",
+  "rich>=15.0.0",
 ]
 
 [project.optional-dependencies]
