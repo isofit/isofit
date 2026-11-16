@@ -19,6 +19,15 @@ CMD = "eradiate"
 RESOURCES = ["core"]
 
 
+def print_install():
+    """
+    Prints the recommended command to install the optional eradiate dependencies
+    """
+    print("Eradiate is not installed, it is an optional dependency of ISOFIT")
+    print('To install it, run: pip install "isofit[eradiate]"')
+    print("Or if using uv: uv sync --extra eradiate")
+
+
 def installed_version():
     """
     Retrieves the installed Eradiate package version
@@ -48,6 +57,12 @@ def download(path=None, overwrite=False, **_):
         Ignores unused params that may be used by other validate functions. This is to
         maintain compatibility with other functions
     """
+    # Check before preparing the output so an empty directory isn't left behind
+    if installed_version() is None:
+        print("Skipping downloading Eradiate data")
+        print_install()
+        return
+
     print("Downloading Eradiate data")
 
     output = prepare_output(path, env.eradiate, isdir=True, overwrite=overwrite)
@@ -65,7 +80,9 @@ def download(path=None, overwrite=False, **_):
     try:
         from eradiate import asset_manager
     except ImportError as e:
-        print(f"Failed to import Eradiate, please install it before downloading: {e}")
+        # Eradiate may be present without its kernel (mitsuba/drjit)
+        print(f"Failed to import Eradiate: {e}")
+        print_install()
         return
 
     # install_dir is [data_path]/installed/eradiate-v[version]
@@ -201,6 +218,8 @@ def update(check=False, **kwargs):
             download(**kwargs)
         else:
             debug(f"Please download the latest via `isofit download {CMD}`")
+            if installed_version() is None:
+                print_install()
 
 
 @shared.download.command(name=CMD)
