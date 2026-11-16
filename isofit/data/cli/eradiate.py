@@ -7,6 +7,8 @@ import logging
 import os
 from pathlib import Path
 
+import click
+
 from isofit.data import env, shared
 from isofit.data.download import prepare_output
 
@@ -16,9 +18,10 @@ ESSENTIAL = False
 CMD = "eradiate"
 
 # Eradiate resource alias(es) to install, see eradiate/data/resources.yml
-# The "core" alias includes the default absorption database (komodo) used by the
-# ISOFIT eradiate engine, along with the solar irradiance, SRF, and aerosol data
-RESOURCES = ["core"]
+# The "core" alias includes the solar irradiance, SRF, and aerosol data, along
+# with the komodo and monotropa absorption databases. panellus is the absorption
+# database apply_oe configures by default, but is not part of "core"
+RESOURCES = ["core", "panellus"]
 
 
 def print_install():
@@ -100,7 +103,81 @@ def set_data_path(path=None):
     return path
 
 
-def download(path=None, overwrite=False, **_):
+def check_databases(databases, path=None):
+    """
+    Checks that Eradiate absorption databases are installed under the ini
+    eradiate path
+
+    Parameters
+    ----------
+    databases : list[str]
+        Absorption database names, eg. ["panellus"]
+    path : str | None
+        Eradiate data path. If None, defaults to the ini path
+
+    Returns
+    -------
+    list[str]
+        Error messages, one per database that is unknown or not installed. Empty
+        if all are installed
+
+    Raises
+    ------
+    ImportError
+        If Eradiate is not installed
+    """
+    from eradiate import fresolver
+    from eradiate.radprops._absorption import KNOWN_DATABASES
+
+    path = set_data_path(path)
+
+    errors = []
+    for database in databases:
+        if database not in KNOWN_DATABASES:
+            errors.append(
+                f"Unknown Eradiate absorption database {database!r}, must be one of: "
+                f"{', '.join(KNOWN_DATABASES)}"
+            )
+            continue
+
+        try:
+            found = fresolver.resolve(
+                KNOWN_DATABASES[database]["path"], strict=True
+            ).is_dir()
+        except FileNotFoundError:
+            found = False
+
+        if not found:
+            errors.append(
+                f"Eradiate absorption database {database!r} is not installed under "
+                f"{path}. Install it via: isofit download {CMD} --database {database}"
+            )
+
+    return errors
+
+
+def install_databases(databases, path=None):
+    """
+    Installs additional Eradiate absorption databases into an existing
+    installation, without redownloading the rest
+
+    Parameters
+    ----------
+    databases : list[str]
+        Absorption database names, eg. ["tuber"]
+    path : str | None
+        Eradiate data path. If None, defaults to the ini path
+    """
+    from eradiate import asset_manager
+
+    path = set_data_path(path)
+
+    print(f"Installing Eradiate absorption database(s) {list(databases)} to: {path}")
+    asset_manager.install(list(databases), progressbar=True)
+    print("Done")
+
+
+def download(path=None, overwrite=False, database=(), **_):
     """
     Downloads the Eradiate data assets from the Eradiate data registry.
 
@@ -110,6 +187,8 @@ def download(path=None, overwrite=False, **_):
         Path to output as. If None, defaults to the ini path
     overwrite : bool, default=False
         Overwrite an existing installation
+    database : list[str], default=()
+        Additional absorption databases to install alongside RESOURCES
     **_ : dict
         Ignores unused params that may be used by other validate functions. This is to
         maintain compatibility with other functions
@@ -135,7 +214,7 @@ def download(path=None, overwrite=False, **_):
         return
 
     set_data_path(output)
-    asset_manager.install(RESOURCES, progressbar=True)
+    asset_manager.install(RESOURCES + list(database), progressbar=True)
 
     with open(output / "version.txt", "w") as file:
         file.write(installed_version() or "unknown")
@@ -271,6 +350,12 @@ def update(check=False, **kwargs):
 @shared.tag
 @shared.overwrite
 @shared.check
+@click.option(
+    "-d",
+    "--database",
+    multiple=True,
+    help="Additional absorption database to install, eg. tuber. May be repeated",
+)
 def download_cli(**kwargs):
     """\
     Downloads the Eradiate data assets from the Eradiate data registry. Requires the eradiate package to be installed.
@@ -281,9 +366,15 @@ def download_cli(**kwargs):
         - `isofit --path eradiate /path/eradiate download eradiate`: Override the ini file. This will save the provided path for future reference.
         - `isofit download eradiate --path /path/eradiate`: Temporarily set the output location. This will not be saved in the ini and may need to be manually set.
     It is recommended to use the first style so the download path is remembered in the future.
+
+    \b
+    Additional absorption databases can be added to an existing installation via:
+        - `isofit download eradiate --database tuber`
     """
     if kwargs.get("overwrite"):
         download(**kwargs)
+    elif kwargs.get("database") and validate(checkForUpdate=False, **kwargs):
+        install_databases(kwargs["database"], path=kwargs.get("path"))
     else:
         update(**kwargs)
 

@@ -57,8 +57,15 @@ class EradiateConfig(SectionModel):
 
     eradiate_absorption_database: Optional[str] = Field(
         description=(
-            "Eradiate absorption database. Mono (gecko, komodo) or CKD (monotropa, "
-            "mycena, panellus, tuber); the spectral mode is inferred from it"
+            "Eradiate molecular absorption database, which also determines the "
+            "Eradiate spectral mode: "
+            "``gecko`` mono, 0.01 cm^-1 in [250, 300] + [600, 3125] nm and "
+            "0.1 cm^-1 in [300, 600] nm; "
+            "``komodo`` mono, 1 cm^-1 uniform; "
+            "``monotropa`` correlated-k, 100 cm^-1 bins; "
+            "``mycena`` correlated-k, 10 cm^-1 bins; "
+            "``panellus`` correlated-k, 1 cm^-1 bins; "
+            "``tuber`` correlated-k, 0.1 cm^-1 bins"
         ),
         examples=["komodo", "panellus"],
     )
@@ -107,3 +114,35 @@ class EradiateConfig(SectionModel):
     viewaz: Optional[float] = Field(
         description="View azimuth angle in degrees",
     )
+
+    def get_config_issues(self) -> tuple[list[str], list[str]]:
+        """
+        Check that the selected absorption database is installed.
+
+        This runs from :meth:`isofit.configs.Config.get_config_errors` rather
+        than at validation time, as Eradiate is an optional dependency and the
+        data may not have been downloaded yet when the config is loaded.
+
+        Returns
+        -------
+        tuple[list[str], list[str]]
+            Errors and warnings found.
+        """
+        from isofit.data.cli.eradiate import check_databases
+
+        errors, warnings = [], []
+
+        database = self.eradiate_absorption_database
+        if database is None:
+            return errors, warnings
+
+        # Eradiate raises a RuntimeError if its kernel (eradiate-mitsuba) is missing
+        try:
+            errors += check_databases([database])
+        except (ImportError, RuntimeError) as e:
+            warnings.append(
+                "Eradiate could not be imported, skipping the absorption database "
+                f"check: {e}"
+            )
+
+        return errors, warnings

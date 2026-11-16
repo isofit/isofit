@@ -126,6 +126,9 @@ class Config(SectionModel):
         - Simulation mode requires input.reflectance_file to be set
         - The surface checks of :meth:`SurfaceConfig.get_config_issues`, which
           read the surface model files
+        - The atmosphere engine checks, for engines that define
+          ``get_config_issues`` (e.g. :meth:`EradiateConfig.get_config_issues`,
+          which checks the absorption database is installed)
         """
         Logger.info("Checking config sections for configuration issues")
 
@@ -134,6 +137,13 @@ class Config(SectionModel):
 
         if self.forward_model.surface is not None:
             errors, warnings = self.forward_model.surface.get_config_issues()
+
+        # Engines with external data to check (e.g. eradiate databases)
+        engine = self.forward_model.atmosphere.engine
+        if hasattr(engine, "get_config_issues"):
+            engine_errors, engine_warnings = engine.get_config_issues()
+            errors += engine_errors
+            warnings += engine_warnings
 
         # Check inter-section validity
         # 1. Simulation mode requires reflectance_file
