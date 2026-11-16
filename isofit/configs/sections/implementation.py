@@ -67,7 +67,8 @@ class ImplementationConfig(SectionModel):
             "``mcmc_inversion`` uses Markov Chain Monte Carlo sampling for "
             "uncertainty quantification, ``simulation`` performs forward modeling "
             "only"
-        )
+        ),
+        examples=["inversion", "mcmc_inversion", "simulation"],
     )
 
     inversion: Optional[InversionConfig] = Field(
@@ -81,14 +82,16 @@ class ImplementationConfig(SectionModel):
         description=(
             "Number of CPU cores to use for parallel processing. If None, uses all "
             "available cores"
-        )
+        ),
+        examples=[8],
     )
 
     task_inflation_factor: int = Field(
         description=(
             "Submit ``task_inflation_factor * n_cores`` tasks to Ray to improve load "
             "balancing. Higher values improve CPU utilization but increase overhead"
-        )
+        ),
+        examples=[10],
     )
 
     ip_head: Optional[str] = Field(
@@ -96,18 +99,21 @@ class ImplementationConfig(SectionModel):
             "Ray parameter: IP address and port of the Ray head node for multi-node "
             'distributed runs (e.g. "192.168.1.1:6379"). Must be specified together '
             "with ``redis_password``. None runs on a single node"
-        )
+        ),
+        examples=["192.168.1.1:6379"],
     )
 
     redis_password: Optional[str] = Field(
         description=(
             "Ray parameter: Redis password for multi-node runs. Must be specified "
             "together with ``ip_head``"
-        )
+        ),
+        examples=["5241590000000000"],
     )
 
     ray_include_dashboard: bool = Field(
-        description="Ray parameter: Enable the Ray dashboard for monitoring"
+        description="Ray parameter: Enable the Ray dashboard for monitoring",
+        examples=[False],
     )
 
     ray_temp_dir: str = Field(
@@ -115,6 +121,7 @@ class ImplementationConfig(SectionModel):
             "Ray temporary directory for the object store and logs. Useful on "
             "multiuser systems to isolate Ray instances"
         ),
+        examples=["/tmp/ray"],
     )
 
     ray_ignore_reinit_error: bool = Field(
@@ -122,6 +129,7 @@ class ImplementationConfig(SectionModel):
             "Tell Ray to ignore re-initialization errors. Convenient for running "
             "multiple ISOFIT instances sequentially"
         ),
+        examples=[True],
     )
 
     io_buffer_size: int = Field(
@@ -129,12 +137,14 @@ class ImplementationConfig(SectionModel):
             "Size of chunks to read/process/write, in number of spectra. Larger "
             "values improve I/O efficiency but increase memory usage"
         ),
+        examples=[100],
     )
 
     max_hash_table_size: int = Field(
         description=(
             "Maximum size of inversion hash tables for caching forward model results"
-        )
+        ),
+        examples=[50],
     )
 
     pixel_heuristic_priors: list = Field(
@@ -142,18 +152,21 @@ class ImplementationConfig(SectionModel):
         description=(
             "Define per-pixel heuristic priors to apply (AOT, H2O, SUN_GLINT)"
         ),
+        examples=[[]],
     )
 
     debug_mode: bool = Field(
         description=(
             "Run in debug mode, which circumvents Ray parallelization for easier "
             "debugging"
-        )
+        ),
+        examples=[False],
     )
 
     isofit_version: str = Field(
         default=__version__,
         description="ISOFIT version used. Automatically set to the current version",
+        examples=[__version__],
     )
 
     @model_validator(mode="after")

@@ -60,11 +60,13 @@ class InputConfig(SectionModel, ElementAccessorMixin):
             "Input radiance file (.mat, .txt, or ENVI format) containing at-sensor "
             "radiance measurements for inverse modeling"
         ),
+        examples=["data/rdn.hdr"],
     )
 
     reference_reflectance_file: Optional[FilePath] = Field(
         alias="rrf",
         description="Input reference reflectance file for radiometric calibration",
+        examples=["data/reference_reflectance.hdr"],
     )
 
     reflectance_file: Optional[FilePath] = Field(
@@ -73,6 +75,7 @@ class InputConfig(SectionModel, ElementAccessorMixin):
             "Input reflectance file for forward modeling (reflectance -> radiance). "
             "Required when ``implementation.mode`` is 'simulation'"
         ),
+        examples=["data/rfl.hdr"],
     )
 
     obs_file: Optional[FilePath] = Field(
@@ -81,6 +84,7 @@ class InputConfig(SectionModel, ElementAccessorMixin):
             "Observation file with viewing and illumination geometry (solar zenith, "
             "view zenith, relative azimuth angles)"
         ),
+        examples=["data/obs.hdr"],
     )
 
     glt_file: Optional[FilePath] = Field(
@@ -89,6 +93,7 @@ class InputConfig(SectionModel, ElementAccessorMixin):
             "Geographic Lookup Table (GLT) file with spatial offset information for "
             "orthorectified data"
         ),
+        examples=["data/glt.hdr"],
     )
 
     loc_file: Optional[FilePath] = Field(
@@ -96,6 +101,7 @@ class InputConfig(SectionModel, ElementAccessorMixin):
         description=(
             "Location file with latitude, longitude, and elevation for each pixel"
         ),
+        examples=["data/loc.hdr"],
     )
 
     background_reflectance_file: Optional[Path] = Field(
@@ -104,11 +110,13 @@ class InputConfig(SectionModel, ElementAccessorMixin):
             "Background reflectance file for spatial inference and contextual "
             "atmospheric correction"
         ),
+        examples=["data/background_reflectance.hdr"],
     )
 
     radiometry_correction_file: Optional[FilePath] = Field(
         alias="rcf",
         description="Radiometric correction file for systematic error correction",
+        examples=["data/radiometry_correction.txt"],
     )
 
     skyview_factor_file: Optional[FilePath] = Field(
@@ -117,6 +125,7 @@ class InputConfig(SectionModel, ElementAccessorMixin):
             "Skyview factor file to modulate diffuse radiance contribution based on "
             "terrain occlusion"
         ),
+        examples=["data/skyview_factor.hdr"],
     )
 
 
@@ -153,83 +162,100 @@ class OutputConfig(SectionModel):
 
     section = "output"
 
-    dir: Path = Field(description="Output directory for ISOFIT")
+    dir: Path = Field(
+        description="Output directory for ISOFIT", examples=["./isofit-output/"]
+    )
 
     reset: bool = Field(
         description=(
             "If True, delete the output directory before starting if it exists. "
             "Leave False to preserve previous results"
         ),
+        examples=[False],
     )
 
     estimated_state_file: Optional[Path] = Field(
         description=(
             "Output file for estimated state vector containing optimized parameter "
             "values for each pixel"
-        )
+        ),
+        examples=["isofit-output/estimated_state"],
     )
 
     estimated_reflectance_file: Optional[Path] = Field(
-        description="Output file for estimated Lambertian surface reflectance"
+        description="Output file for estimated Lambertian surface reflectance",
+        examples=["isofit-output/estimated_reflectance"],
     )
 
     estimated_emission_file: Optional[Path] = Field(
-        description="Output file for estimated emitted radiance (thermal component)"
+        description="Output file for estimated emitted radiance (thermal component)",
+        examples=["isofit-output/estimated_emission"],
     )
 
     modeled_radiance_file: Optional[Path] = Field(
         description=(
             "Output file for forward-modeled at-sensor radiance using the estimated "
             "surface and atmosphere"
-        )
+        ),
+        examples=["isofit-output/modeled_radiance"],
     )
 
     apparent_reflectance_file: Optional[Path] = Field(
         description=(
             "Output file for apparent surface reflectance (radiance / downwelling "
             "irradiance) without atmospheric correction"
-        )
+        ),
+        examples=["isofit-output/apparent_reflectance"],
     )
 
     path_radiance_file: Optional[Path] = Field(
-        description="Output file for path radiance contribution"
+        description="Output file for path radiance contribution",
+        examples=["isofit-output/path_radiance"],
     )
 
     simulated_measurement_file: Optional[Path] = Field(
-        description="Output file for simulated at-sensor radiance in simulation mode"
+        description="Output file for simulated at-sensor radiance in simulation mode",
+        examples=["isofit-output/simulated_measurement"],
     )
 
     algebraic_inverse_file: Optional[Path] = Field(
-        description="Output file for algebraic inverse solution"
+        description="Output file for algebraic inverse solution",
+        examples=["isofit-output/algebraic_inverse"],
     )
 
     atmospheric_coefficients_file: Optional[Path] = Field(
         description=(
             "Output file for atmospheric optical parameters (aerosol optical depth, "
             "water vapor, etc.)"
-        )
+        ),
+        examples=["isofit-output/atmospheric_coefficients"],
     )
 
     radiometry_correction_file: Optional[Path] = Field(
-        description="Output file for radiometric correction factors"
+        description="Output file for radiometric correction factors",
+        examples=["isofit-output/radiometry_correction"],
     )
 
     spectral_calibration_file: Optional[Path] = Field(
-        description="Output file for spectral calibration (wavelength corrections)"
+        description="Output file for spectral calibration (wavelength corrections)",
+        examples=["isofit-output/spectral_calibration"],
     )
 
     posterior_uncertainty_file: Optional[Path] = Field(
         description=(
             "Output file for posterior uncertainty (diagonal of posterior covariance)"
-        )
+        ),
+        examples=["isofit-output/posterior_uncertainty"],
     )
 
     plot_surface_components: bool = Field(
-        description="If True, generate diagnostic plots of surface components"
+        description="If True, generate diagnostic plots of surface components",
+        examples=[False],
     )
 
     mcmc_samples_file: Optional[Path] = Field(
-        description="Output file for MCMC samples when running in mcmc_inversion mode"
+        description="Output file for MCMC samples when running in mcmc_inversion mode",
+        examples=["isofit-output/mcmc_samples"],
     )
 
     # Header metadata (band-name key, ztitle, zrange) for each writable output

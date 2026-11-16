@@ -65,10 +65,7 @@ class SixSConfig(SectionModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["sixs"], BeforeValidator(standardName)] = Field(
-        description=(
-            'Engine identifier. Accepts "sixs" or "6s" (case-insensitive), '
-            'normalized to "sixs"'
-        )
+        description=('Engine identifier. Accepts "sixs" or "6s"'),
     )
 
     base_dir: Optional[DirectoryPath] = Field(
@@ -76,6 +73,7 @@ class SixSConfig(SectionModel):
             "Base path to the 6S installation directory. The base configs default "
             "this to the ISOFIT ini ``sixs`` path"
         ),
+        examples=["/opt/sixs"],
     )
 
     # The solar/observer geometry parameters below are populated dynamically by
@@ -97,54 +95,67 @@ class SixSConfig(SectionModel):
 
     elev: Optional[float] = Field(
         description="Surface elevation in kilometers (positive)",
+        examples=[0.5],
     )
 
     alt: Optional[float] = Field(
         description="Sensor altitude in kilometers (positive)",
+        examples=[705.0],
     )
 
     solzen: Optional[float] = Field(
         ge=0,
         le=180,
         description="Solar zenith angle in degrees (0-180)",
+        examples=[30.0],
     )
 
     solaz: Optional[float] = Field(
         description="Solar azimuth angle in degrees",
+        examples=[180.0],
     )
 
     viewzen: Optional[float] = Field(
         description="View zenith angle in degrees",
+        examples=[0.0],
     )
 
     viewaz: Optional[float] = Field(
         description="View azimuth angle in degrees",
+        examples=[0.0],
     )
 
     wlinf: Optional[float] = Field(
         description="Shortest wavelength (microns) to run the simulation for",
+        examples=[0.35],
     )
 
     wlsup: Optional[float] = Field(
         description="Longest wavelength (microns) to run the simulation for",
+        examples=[2.5],
     )
 
     template_file: Optional[FilePath] = Field(
         description="MODTRAN template file used to populate 6S geometry",
+        examples=["modtran_template.json"],
     )
 
     aerosol_model_file: Optional[FilePath] = Field(
         description="Aerosol model file",
+        examples=["aerosol_model.txt"],
     )
 
     aerosol_template_file: Optional[FilePath] = Field(
         description="Aerosol template file",
+        examples=["aerosol_template.json"],
     )
 
     obs_file: Optional[FilePath] = Field(
         description="Path to the 6S observation file with geometry parameters",
+        examples=["data/obs.hdr"],
     )
 
     earth_sun_distance_file: Optional[FilePath] = Field(
         description="Path to the Earth-Sun distance file for irradiance corrections",
+        examples=["earth_sun_distance.txt"],
     )

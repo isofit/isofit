@@ -149,17 +149,20 @@ class SubSurfaceConfig(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     surface_category: SurfaceCategory = Field(
-        description="Type of surface model for this class"
+        description="Type of surface model for this class",
+        examples=["multicomponent_surface"],
     )
     surface_file: Path = Field(
         description=(
             "Path to the surface model file (.mat format) for this class. Need not "
             "exist at load time, as it may be built later (e.g. by "
             "``isofit surface_model``)"
-        )
+        ),
+        examples=["veg_prior.mat"],
     )
     surface_int: NonNegativeInt = Field(
-        description="Value of this class in the surface classification file"
+        description="Value of this class in the surface classification file",
+        examples=[1],
     )
     statevector: Dict[str, StateVectorElementConfig] = Field(
         default_factory=dict,
@@ -263,11 +266,13 @@ class SurfaceConfig(SectionModel):
         description=(
             "Enable multi-surface mode, where different surface models are used "
             "based on a classification map"
-        )
+        ),
+        examples=[False],
     )
 
     use_background_rfl: bool = Field(
-        description="Use background reflectance for spatial inference"
+        description="Use background reflectance for spatial inference",
+        examples=[False],
     )
 
     # Not a FilePath: the file may be built after the config is written
@@ -277,26 +282,36 @@ class SurfaceConfig(SectionModel):
             "Path to the surface model file (.mat format) containing reflectance "
             "priors, basis vectors, and covariance information. Need not exist yet, "
             "as it may be built later by ``isofit surface_model``"
-        )
+        ),
+        examples=["surface_priors.mat"],
     )
 
     surface_category: Optional[SurfaceCategory] = Field(
         description=(
             "Type of surface model to use. Determines which surface class is "
             "instantiated"
-        )
+        ),
+        examples=[
+            "surface",
+            "multicomponent_surface",
+            "glint_model_surface",
+            "thermal_surface",
+            "lut_surface",
+        ],
     )
 
     surface_class_file: Optional[FilePath] = Field(
         description=(
             "Path to surface classification file (ENVI format) for multi-surface mode"
-        )
+        ),
+        examples=["classification.hdr"],
     )
 
     base_surface_class_file: Optional[FilePath] = Field(
         description=(
             "Path to base surface classification file for hierarchical classification"
-        )
+        ),
+        examples=["base_classification.hdr"],
     )
 
     Surfaces: Dict[str, SubSurfaceConfig] = Field(
@@ -307,21 +322,24 @@ class SurfaceConfig(SectionModel):
     )
 
     wavelength_file: Optional[FilePath] = Field(
-        description="Path to wavelength file for surface model spectral sampling"
+        description="Path to wavelength file for surface model spectral sampling",
+        examples=["wavelengths.txt"],
     )
 
     select_on_init: bool = Field(
         description=(
             "Force use of the initialization state and never change the surface "
             "model selection"
-        )
+        ),
+        examples=[True],
     )
 
     selection_metric: Literal["Euclidean", "SGA", "SpecAngle"] = Field(
         description=(
             "Metric for selecting the surface prior component: Euclidean distance, "
             "SGA (Spectral Gradient Angle), or SpecAngle (spectral angle)"
-        )
+        ),
+        examples=["Euclidean", "SGA", "SpecAngle"],
     )
 
     statevector: SurfaceStateVectorConfig = Field(
@@ -333,6 +351,7 @@ class SurfaceConfig(SectionModel):
             "Initial emissivity value for surface temperature estimation. 0.98 is "
             "recommended by Glynn Hulley for most surfaces"
         ),
+        examples=[0.98],
     )
 
     terrain_style: Literal["flat", "dem", "solved"] = Field(
@@ -340,7 +359,8 @@ class SurfaceConfig(SectionModel):
             "Style of terrain to use in the forward model: 'flat' assumes a level "
             "surface, 'dem' uses a digital elevation model, 'solved' optimizes "
             "terrain parameters"
-        )
+        ),
+        examples=["flat", "dem", "solved"],
     )
 
     max_slope: float = Field(
@@ -348,10 +368,12 @@ class SurfaceConfig(SectionModel):
             "Maximum slope in degrees for LUT calculations. Only relevant for "
             "terrain_style='dem'"
         ),
+        examples=[90.0],
     )
 
     refractive_index_path: str = Field(
-        description="Path to refractive index data for water surface modeling"
+        description="Path to refractive index data for water surface modeling",
+        examples=["data/refractive_index.txt"],
     )
 
     def update_from_subconfig(self, subconfig: SubSurfaceConfig):

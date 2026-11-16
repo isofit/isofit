@@ -133,35 +133,40 @@ class InstrumentUnknownsConfig(SectionModel):
         description=(
             "Path to file containing per-channel radiometric uncertainty values "
             "(e.g. systematic calibration errors that vary by wavelength)"
-        )
+        ),
+        examples=["data/channelized_radiometric_uncertainty.txt"],
     )
 
     uncorrelated_radiometric_uncertainty: Optional[float] = Field(
         description=(
             "Scalar uncorrelated radiometric uncertainty value applied uniformly "
             "across all channels"
-        )
+        ),
+        examples=[0.01],
     )
 
     wavelength_calibration_uncertainty: Optional[float] = Field(
         description=(
             "Uncertainty in wavelength calibration, in nanometers. Represents "
             "knowledge of the true spectral registration"
-        )
+        ),
+        examples=[0.5],
     )
 
     stray_srf_uncertainty: Optional[float] = Field(
         description=(
             "Uncertainty in the spectral response function due to stray light or "
             "out-of-band response"
-        )
+        ),
+        examples=[0.001],
     )
 
     dn_uncertainty_file: Optional[FilePath] = Field(
         description=(
             "Path to digital number (DN) uncertainty file for sensor-specific "
             "uncertainty characterization"
-        )
+        ),
+        examples=["data/dn_uncertainty.txt"],
     )
 
 
@@ -205,7 +210,8 @@ class InstrumentConfig(SectionModel):
     wavelength_file: Optional[FilePath] = Field(
         description=(
             "Path to file containing instrument wavelength centers for each channel"
-        )
+        ),
+        examples=["wavelengths.txt"],
     )
 
     integrations: Optional[int] = Field(
@@ -213,6 +219,7 @@ class InstrumentConfig(SectionModel):
             "Number of integrations comprising the measurement. Noise diminishes "
             "with the square root of this number"
         ),
+        examples=[1],
     )
 
     unknowns: Optional[InstrumentUnknownsConfig] = Field(
@@ -227,6 +234,7 @@ class InstrumentConfig(SectionModel):
             "If True, approximate complete spectral resampling by convolution with "
             "a uniform FWHM. Faster but less accurate"
         ),
+        examples=[True],
     )
 
     statevector: InstrumentStateVectorConfig = Field(
@@ -241,6 +249,7 @@ class InstrumentConfig(SectionModel):
             "Uniform signal-independent SNR applied to all wavelengths. Mutually "
             "exclusive with the other noise models"
         ),
+        examples=[500.0],
     )
 
     parametric_noise_file: Optional[FilePath] = Field(
@@ -248,6 +257,7 @@ class InstrumentConfig(SectionModel):
             "Path to parametric noise model file (signal and wavelength-dependent "
             "noise function). Mutually exclusive with the other noise models"
         ),
+        examples=["data/parametric_noise.txt"],
     )
 
     pushbroom_noise_file: Optional[FilePath] = Field(
@@ -255,21 +265,24 @@ class InstrumentConfig(SectionModel):
             "Path to pushbroom noise model file in ENVI format (2D noise model "
             "varying by channel and across-track position). Mutually exclusive "
             "with the other noise models"
-        )
+        ),
+        examples=["data/pushbroom_noise.hdr"],
     )
 
     nedt_noise_file: Optional[FilePath] = Field(
         description=(
             "Path to Noise Equivalent Delta Temperature (NEDT) file for thermal "
             "sensors. Mutually exclusive with the other noise models"
-        )
+        ),
+        examples=["data/nedt_noise.txt"],
     )
 
     eof_path: Optional[FilePath] = Field(
         description=(
             "Path to Empirical Orthogonal Function (EOF) file for spectral "
             "radiometric error modeling"
-        )
+        ),
+        examples=["data/eof.mat"],
     )
 
     rcc_prior_file: Optional[FilePath] = Field(
@@ -278,7 +291,8 @@ class InstrumentConfig(SectionModel):
             "matrix ``cov`` representing a prior over the per-channel Radiometric "
             "Calibration Coefficients (RCCs) that scale the measured spectrum. If "
             "not given, these are assumed to be unity"
-        )
+        ),
+        examples=["data/rcc_prior.mat"],
     )
 
     wlspl_prior_file: Optional[FilePath] = Field(
@@ -286,7 +300,8 @@ class InstrumentConfig(SectionModel):
             "Path to a .mat file containing a mean vector ``mean`` and covariance "
             "matrix ``cov`` representing a prior over the wavelength shift at the "
             "spline indices, which inform the spline spectral calibration"
-        )
+        ),
+        examples=["data/wlspl_prior.mat"],
     )
 
     @model_validator(mode="after")

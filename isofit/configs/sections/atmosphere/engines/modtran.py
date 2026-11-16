@@ -60,11 +60,12 @@ class ModtranConfig(SectionModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["modtran"], BeforeValidator(standardName)] = Field(
-        description='Engine identifier. Must be "modtran" (case-insensitive)'
+        description='Engine identifier. Must be "modtran"',
     )
 
     base_dir: Optional[DirectoryPath] = Field(
         description="Base path to the MODTRAN installation directory",
+        examples=["/opt/modtran6.0"],
     )
 
     multipart_transmittance: bool = Field(
@@ -72,6 +73,7 @@ class ModtranConfig(SectionModel):
             "Apply triple-run diffuse & direct transmittance estimation for "
             "improved accuracy. Increases runtime 3x"
         ),
+        examples=[True],
     )
 
     use_tp7: bool = Field(
@@ -79,6 +81,7 @@ class ModtranConfig(SectionModel):
             "Write TP7 outputs instead of the default CHN outputs. Only applies "
             "when ``multipart_transmittance`` is enabled"
         ),
+        examples=[False],
     )
 
     aerosol_template_file: Optional[FilePath] = Field(
@@ -86,12 +89,14 @@ class ModtranConfig(SectionModel):
             "Path to the aerosol template file defining aerosol optical "
             "properties and vertical profiles"
         ),
+        examples=["aerosol_template.json"],
     )
 
     aerosol_model_file: Optional[FilePath] = Field(
         description=(
             "Path to the aerosol model file with wavelength-dependent properties"
         ),
+        examples=["aerosol_model.txt"],
     )
 
     template_file: Optional[FilePath] = Field(
@@ -99,4 +104,5 @@ class ModtranConfig(SectionModel):
             "Path to the MODTRAN input template file (tape5 or JSON format) with "
             "the base atmospheric configuration"
         ),
+        examples=["modtran_template.json"],
     )

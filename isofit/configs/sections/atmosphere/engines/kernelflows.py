@@ -55,18 +55,17 @@ class KernelFlowsConfig(SectionModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["kernelflows"], BeforeValidator(standardName)] = Field(
-        description=(
-            'Engine identifier. Must be "kernelflows" or its alias "kf" '
-            "(case-insensitive)"
-        )
+        description=('Engine identifier. Must be "kernelflows" or its alias "kf"')
     )
 
     emulator_file: Optional[FilePath] = Field(
         description="Path to the trained Kernel Flows emulator model file",
+        examples=["kf_emulator.h5"],
     )
 
     template_file: Optional[FilePath] = Field(
         description=(
             "Path to the template configuration file for Kernel Flows parameters"
         ),
+        examples=["modtran_template.json"],
     )
