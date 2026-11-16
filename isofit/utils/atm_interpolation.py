@@ -21,6 +21,7 @@ import logging
 import multiprocessing
 import time
 
+import click
 import numpy as np
 from scipy.linalg import inv
 from scipy.ndimage import gaussian_filter
@@ -225,7 +226,7 @@ def atm_interpolation(
     input_locations_file: str,
     segmentation_file: str,
     output_atm_file: str,
-    atm_band_names: list,
+    atm_band_names: list = None,
     nneighbors: list = None,
     nodata_value: float = -9999.0,
     loglevel: str = "INFO",
@@ -251,9 +252,9 @@ def atm_interpolation(
     Returns:
         None
     """
-    if nneighbors is None:
+    if not nneighbors:
         nneighbors = [400]
-    if gaussian_smoothing_sigma is None:
+    if not gaussian_smoothing_sigma:
         gaussian_smoothing_sigma = [2]
     if n_cores == -1:
         n_cores = multiprocessing.cpu_count()
@@ -267,6 +268,16 @@ def atm_interpolation(
 
     reference_state_img = envi.open(envi_header(reference_state_file))
     input_locations_img = envi.open(envi_header(input_locations_file))
+
+    """NOTE:
+    If no atm_band names are given, 
+    will use all bands in reference state file
+    """
+    if not atm_band_names:
+        logging.warning("No band names provided, interpolating all bands")
+        atm_band_names = reference_state_img.metadata.get("band names")
+        if not atm_band_names:
+            raise ValueError("No band names provided in function call or input file")
 
     n_input_lines = int(input_locations_img.metadata["lines"])
     n_input_samples = int(input_locations_img.metadata["samples"])
@@ -362,3 +373,32 @@ def atm_interpolation(
 
     atm_img = atm_img.transpose((0, 2, 1))
     write_bil_chunk(atm_img, output_atm_file, 0, atm_img.shape)
+
+
+@click.command(name="atm_interpolation")
+@click.argument("reference_state_file")
+@click.argument("reference_locations_file")
+@click.argument("input_locations_file")
+@click.argument("segmentation_file")
+@click.argument("output_atm_file")
+@click.option("--atm_band_names", "-b", type=str, multiple=True, default=None)
+@click.option("--nneighbors", "-nn", type=int, multiple=True, default=None)
+@click.option("--nodata_value", type=float, default=-9999.0)
+@click.option("--loglevel", type=str, default="INFO")
+@click.option("--logfile", default=None)
+@click.option("--n_cores", type=int, default=-1)
+@click.option("--gaussian_smoothing_sigma", "-s", type=int, multiple=True, default=None)
+def cli(**kwargs):
+    """Execute the atmospheric interpolation algorithm"""
+
+    click.echo("Running atmospheric interpolation")
+
+    atm_interpolation(**kwargs)
+
+    click.echo("Done")
+
+
+if __name__ == "__main__":
+    raise NotImplementedError(
+        "atm_inteprolation.py can not be called this way.  Run as:\n isofit atm_interpolation [ARGS]"
+    )

@@ -733,6 +733,7 @@ def get_wavelength_adjustment(
     is_flag=True,
 )
 def cli_get_wavelength_adjustment(debug_args, profile, **kwargs):
+    """Get the wavelength adjustment based on a previous isofit wavelength_cal run."""
     if debug_args:
         print("Arguments to be passed:")
         for key, value in kwitems():
@@ -787,6 +788,7 @@ def cli_get_wavelength_adjustment(debug_args, profile, **kwargs):
 )
 @click.option("--profile")
 def cli_wavelength_cal(debug_args, profile, **kwargs):
+    """Runs a wavelength calibration on an input scene"""
     if debug_args:
         print("Arguments to be passed:")
         for key, value in kwitems():
