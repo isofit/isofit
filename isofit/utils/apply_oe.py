@@ -710,16 +710,6 @@ def apply_oe(
         "surface_category": surface_category,
         "emulator_base": emulator_base,
         "eradiate": eradiate,
-        # eradiate reads geometry as plain solzen/solaz/viewzen/viewaz/elev/alt
-        # config fields (see EradiateRT.resolve_point) rather than parsing them
-        # out of the MODTRAN-style template file the other engines use, so
-        # thread the same mean scene geometry through for it specifically.
-        "mean_to_sun_zenith": mean_to_sun_zenith,
-        "mean_to_sun_azimuth": mean_to_sun_azimuth,
-        "mean_to_sensor_zenith": mean_to_sensor_zenith,
-        "mean_to_sensor_azimuth": mean_to_sensor_azimuth,
-        "mean_elevation_km": mean_elevation_km,
-        "mean_altitude_km": mean_altitude_km,
         "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
         "prebuilt_lut_path": prebuilt_lut,
         "inversion_windows": sensor_inversion_windows,

@@ -731,12 +731,6 @@ def build_config(
     surface_category="multicomponent_surface",
     emulator_base: str = None,
     eradiate: bool = False,
-    mean_to_sun_zenith: float = None,
-    mean_to_sun_azimuth: float = None,
-    mean_to_sensor_zenith: float = None,
-    mean_to_sensor_azimuth: float = None,
-    mean_elevation_km: float = None,
-    mean_altitude_km: float = None,
     uncorrelated_radiometric_uncertainty: float = 0.0,
     multiple_restarts: bool = False,
     segmentation_size=400,
@@ -873,12 +867,6 @@ def build_config(
                 elevation_lut_grid=elevation_lut_grid,
                 emulator_base=emulator_base,
                 eradiate=eradiate,
-                mean_to_sun_zenith=mean_to_sun_zenith,
-                mean_to_sun_azimuth=mean_to_sun_azimuth,
-                mean_to_sensor_zenith=mean_to_sensor_zenith,
-                mean_to_sensor_azimuth=mean_to_sensor_azimuth,
-                mean_elevation_km=mean_elevation_km,
-                mean_altitude_km=mean_altitude_km,
                 multipart_transmittance=multipart_transmittance,
                 prebuilt_lut_path=prebuilt_lut_path,
                 presolve=presolve,
@@ -1597,12 +1585,6 @@ def make_atmosphere_config(
     elevation_lut_grid: np.array = None,
     emulator_base: str = None,
     eradiate: bool = False,
-    mean_to_sun_zenith: float = None,
-    mean_to_sun_azimuth: float = None,
-    mean_to_sensor_zenith: float = None,
-    mean_to_sensor_azimuth: float = None,
-    mean_elevation_km: float = None,
-    mean_altitude_km: float = None,
     multipart_transmittance: bool = False,
     prebuilt_lut_path: str = None,
     presolve: bool = False,
@@ -1679,17 +1661,6 @@ def make_atmosphere_config(
             "eradiate_particle_properties"
         ] = "govaerts_2021-continental"
         atmosphere_config["engine"]["eradiate_spp"] = 500
-        # EradiateRT.resolve_point reads geometry as plain solzen/solaz/
-        # viewzen/viewaz/elev/alt fields (see BaseAtmosphere.__init__ ->
-        # AtmosphereConfig), not by parsing the MODTRAN-style template file
-        # the other engines use -- populate them directly from the scene's
-        # mean observation geometry.
-        atmosphere_config["engine"]["solzen"] = mean_to_sun_zenith
-        atmosphere_config["engine"]["solaz"] = mean_to_sun_azimuth
-        atmosphere_config["engine"]["viewzen"] = mean_to_sensor_zenith
-        atmosphere_config["engine"]["viewaz"] = mean_to_sensor_azimuth
-        atmosphere_config["engine"]["elev"] = mean_elevation_km
-        atmosphere_config["engine"]["alt"] = mean_altitude_km
 
     atmosphere_rte = {}
     if emulator_base is not None:
@@ -1709,7 +1680,8 @@ def make_atmosphere_config(
                 atmosphere_rte["emulator_aux_file"] = abspath(
                     os.path.splitext(emulator_base)[0] + "_aux.npz"
                 )
-    else:
+    elif not eradiate:
+        # eradiate has no install directory; its schema rejects base_dir
         atmosphere_rte["base_dir"] = modtran_path
     atmosphere_config["engine"].update(atmosphere_rte)
 
