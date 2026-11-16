@@ -3,12 +3,14 @@ Downloads the Eradiate data assets from the Eradiate data registry https://githu
 """
 
 import importlib.metadata
+import logging
 import os
-import sys
 from pathlib import Path
 
 from isofit.data import env, shared
 from isofit.data.download import prepare_output
+
+Logger = logging.getLogger(__name__)
 
 ESSENTIAL = False
 CMD = "eradiate"
@@ -43,6 +45,61 @@ def installed_version():
         return None
 
 
+def set_data_path(path=None):
+    """
+    Points Eradiate's asset manager and file resolver at the ini eradiate path.
+    Eradiate otherwise takes its data path from the ERADIATE_DATA_PATH
+    environment variable when it is first imported, so this is applied after
+    import, and must be called in every process that uses Eradiate (eg. ray
+    workers)
+
+    Parameters
+    ----------
+    path : str | None
+        Eradiate data path. If None, defaults to the ini path
+
+    Returns
+    -------
+    pathlib.Path
+        The data path applied
+    """
+    from eradiate import asset_manager, fresolver
+    from eradiate.config import settings
+
+    path = Path(path or env.eradiate).expanduser().resolve()
+
+    current = os.environ.get("ERADIATE_DATA_PATH")
+    if current and Path(current).expanduser().resolve() != path:
+        Logger.warning(
+            "The environment variable $ERADIATE_DATA_PATH does not match the ISOFIT ini, the INI path will be the one used"
+        )
+        Logger.warning(f"ENV: {current}")
+        Logger.warning(f"INI: {path}")
+
+    # install_dir is [data_path]/installed/eradiate-v[version]
+    old = asset_manager.install_dir
+    if old.parents[1] == path:
+        return path
+
+    settings.set("DATA_PATH", str(path))
+    asset_manager.cache_dir = path / "cached"
+    asset_manager.unpack_dir = path / "unpacked"
+    asset_manager.install_dir = path / "installed" / old.name
+
+    # Creates the directories and reloads the manifest and installed resources
+    asset_manager.__attrs_post_init__()
+
+    # Swap the old install location in place to keep the search order
+    if old in fresolver.paths:
+        fresolver.paths[fresolver.paths.index(old)] = asset_manager.install_dir
+    else:
+        fresolver.append(asset_manager.install_dir)
+
+    Logger.debug(f"Set the Eradiate data path to: {path}")
+
+    return path
+
+
 def download(path=None, overwrite=False, **_):
     """
     Downloads the Eradiate data assets from the Eradiate data registry.
@@ -69,14 +126,6 @@ def download(path=None, overwrite=False, **_):
     if not output:
         return
 
-    # Eradiate reads its data path when it is first imported, so this must be set first
-    if "eradiate" in sys.modules:
-        print(
-            "[x] Eradiate was already imported in this process, the download path cannot be applied. Please retry in a new process"
-        )
-        return
-    os.environ["ERADIATE_DATA_PATH"] = str(output)
-
     try:
         from eradiate import asset_manager
     except ImportError as e:
@@ -85,12 +134,7 @@ def download(path=None, overwrite=False, **_):
         print_install()
         return
 
-    # install_dir is [data_path]/installed/eradiate-v[version]
-    resolved = Path(asset_manager.install_dir).parents[1]
-    if resolved.resolve() != output.resolve():
-        print(f"[x] Eradiate resolved its data path to {resolved}, not {output}")
-        return
-
+    set_data_path(output)
     asset_manager.install(RESOURCES, progressbar=True)
 
     with open(output / "version.txt", "w") as file:

@@ -59,6 +59,7 @@ except ImportError as e:
 from isofit.atmosphere.atmosphere import BaseAtmosphere
 from isofit.core import units
 from isofit.core.common import json_load_ascii
+from isofit.data.cli.eradiate import set_data_path
 from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__name__)
@@ -123,6 +124,9 @@ class EradiateRT(BaseAtmosphere, Writer):
         """
         self.config = full_config.forward_model.atmosphere
 
+        # Eradiate data always come from the ini eradiate path
+        set_data_path()
+
         self.eradiate_mode = self.infer_spectral_mode(
             self.config.engine.eradiate_absorption_database
         )
@@ -186,6 +190,7 @@ class EradiateRT(BaseAtmosphere, Writer):
             dict: LUT variable names to per-wavelength values.
         """
         eradiate.set_mode(self.eradiate_mode)  # per-process; cheap & idempotent
+        set_data_path()  # per-process too; ray workers re-import eradiate
 
         vals = self.resolve_point(point)
 
