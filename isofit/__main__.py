@@ -91,7 +91,7 @@ class CLI(click.Group):
     def __init__(self, *args, lazy_subcommands=None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.lazy = lazy_subcommands or {}
+        self.lazy = dict(sorted((lazy_subcommands or {}).items()))
 
     def main(self, *args, **kwargs):
         """
@@ -249,34 +249,30 @@ class CLI(click.Group):
     cls=CLI,
     add_help_option=False,
     invoke_without_command=True,
-    lazy_subcommands=dict(
-        sorted(
-            {
-                "run": "isofit.core.isofit",
-                "build": "isofit.data.build_examples",
-                "download": "isofit.data.download",
-                "validate": "isofit.data.validate",
-                "path": "isofit.data",
-                "dev": "isofit.data.dev",
-                "apply_oe": "isofit.utils.apply_oe",
-                "skyview": "isofit.utils.skyview",
-                "wavelength_cal": "isofit.utils.wavelength_cal:cli_wavelength_cal",
-                "get_wavelength_adjustment": "isofit.utils.wavelength_cal:cli_get_wavelength_adjustment",
-                "6s_to_srtmnet": "isofit.utils.convert_6s_to_srtmnet",
-                "analytical_line": "isofit.utils.analytical_line",
-                "empirical_line": "isofit.utils.empirical_line",
-                "algebraic_line": "isofit.utils.algebraic_line",
-                "ewt": "isofit.utils.ewt_from_reflectance",
-                "reconstruct_subs": "isofit.utils.reconstruct",
-                "interpolate_spectra": "isofit.utils.interpolate_spectra",
-                "classify_multicomponent": "isofit.utils.multicomponent_classification",
-                "surface_model": "isofit.utils.surface_model",
-                "plot": "isoplots",
-                "config": "isofit.configs.utils.interpolate.cli",
-                "atm_interpolation": "isofit.utils.atm_interpolation",
-            }.items()
-        )
-    ),
+    lazy_subcommands={
+        "run": "isofit.core.isofit",
+        "build": "isofit.data.build_examples",
+        "download": "isofit.data.download",
+        "validate": "isofit.data.validate",
+        "path": "isofit.data",
+        "dev": "isofit.data.dev",
+        "apply_oe": "isofit.utils.apply_oe",
+        "skyview": "isofit.utils.skyview",
+        "wavelength_cal": "isofit.utils.wavelength_cal:cli_wavelength_cal",
+        "get_wavelength_adjustment": "isofit.utils.wavelength_cal:cli_get_wavelength_adjustment",
+        "6s_to_srtmnet": "isofit.utils.convert_6s_to_srtmnet",
+        "analytical_line": "isofit.utils.analytical_line",
+        "empirical_line": "isofit.utils.empirical_line",
+        "algebraic_line": "isofit.utils.algebraic_line",
+        "ewt": "isofit.utils.ewt_from_reflectance",
+        "reconstruct_subs": "isofit.utils.reconstruct",
+        "interpolate_spectra": "isofit.utils.interpolate_spectra",
+        "classify_multicomponent": "isofit.utils.multicomponent_classification",
+        "surface_model": "isofit.utils.surface_model",
+        "plot": "isoplots",
+        "config": "isofit.configs.utils.interpolate.cli",
+        "atm_interpolation": "isofit.utils.atm_interpolation",
+    },
 )
 @click.pass_context
 @click.option("-i", "--ini", help="Override path to an isofit.ini file")
