@@ -272,11 +272,11 @@ class SixSRT(BaseAtmosphere, Writer):
         if "solar_zenith" in vals:
             vals["solzen"] = vals["solar_zenith"]
 
+        # Relative azimuth is clockwise from the view azimuth. As a LUT
+        # dimension it is folded to 0 to 180, which picks one side of the
+        # principal plane
         if "relative_azimuth" in vals:
-            vals["solaz"] = np.minimum(
-                vals["viewaz"] + vals["relative_azimuth"],
-                vals["viewaz"] - vals["relative_azimuth"],
-            )
+            vals["solaz"] = (vals["viewaz"] + vals["relative_azimuth"]) % 360
 
         if self.modtran_emulation:
             if "AERFRAC_2" in vals:

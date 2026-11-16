@@ -221,9 +221,10 @@ class KernelFlowsRT(BaseAtmosphere, Writer):
             logging.info("No observer_zenith default in template")
 
         try:
-            KEYMAPPING[7]["default"] = template["MODTRAN"][0]["MODTRANINPUT"][
-                "GEOMETRY"
-            ]["PARM1"]
+            # the template carries the relative azimuth 0 to 360, fold it to
+            # the 0 to 180 that the LUT dimension uses
+            relaz = template["MODTRAN"][0]["MODTRANINPUT"]["GEOMETRY"]["PARM1"] % 360
+            KEYMAPPING[7]["default"] = min(relaz, 360 - relaz)
         except:
             logging.info("No relative_azimuth default in template")
 

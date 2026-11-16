@@ -357,8 +357,9 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
         # relative azimuth [deg], same as PARM1
         vals["relative_azimuth"] = self.modtran_geom["PARM1"]
 
-        # solar azimuth, 0-360 [deg]
-        vals["saa_deg"] = (vals["vaa_deg"] - vals["relative_azimuth"]) % 360
+        # solar azimuth, 0-360 [deg], relative azimuth is clockwise from the
+        # view azimuth
+        vals["saa_deg"] = (vals["vaa_deg"] + vals["relative_azimuth"]) % 360
 
         # co2 is always populated in MODTRAN template file
         vals["co2_inp"] = self.modtran_atmos["CO2MX"]
@@ -378,7 +379,7 @@ LibRadTran directory not found: {self.libradtran}. Please use one of the followi
             vals["sza_deg"] = vals["solar_zenith"]
 
         if "relative_azimuth" in vals:
-            vals["saa_deg"] = (vals["vaa_deg"] - vals["relative_azimuth"]) % 360
+            vals["saa_deg"] = (vals["vaa_deg"] + vals["relative_azimuth"]) % 360
 
         if "CO2" in vals:
             vals["co2_inp"] = vals["CO2"]

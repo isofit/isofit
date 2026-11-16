@@ -764,13 +764,11 @@ def build_sixs_config(config):
 
     relative_azimuth = data["GEOMETRY"]["PARM1"]
     observer_azimuth = data["GEOMETRY"]["TRUEAZ"]
-    # RT simulations commonly only depend on the relative azimuth,
-    # so we don't care if we do view azimuth + or - relative azimuth.
-    # In addition, sRTMnet was only trained on relative azimuth = 0°,
-    # so providing different values here would have no implications.
-    solar_azimuth = np.minimum(
-        observer_azimuth + relative_azimuth, observer_azimuth - relative_azimuth
-    )
+    # The template's relative azimuth is clockwise from the view azimuth
+    # (0 to 360), so this recovers the scene's solar azimuth. sRTMnet was
+    # only trained on relative azimuth = 0°, so this has no implications
+    # for the emulator itself.
+    solar_azimuth = (observer_azimuth + relative_azimuth) % 360
     solar_zenith = data["GEOMETRY"]["PARM2"]
 
     # Swap the engine out for a 6S engine populated from the MODTRAN template

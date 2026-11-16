@@ -14,6 +14,7 @@ from shutil import copyfile
 import netCDF4 as nc
 import numpy as np
 from scipy.io import loadmat
+from scipy.stats import circmean
 from spectral.io import envi
 
 from isofit import __version__
@@ -1237,11 +1238,13 @@ def get_metadata_from_obs(
             mean_to_sensor_zenith - mean to-sensor zenith for good data
             mean_to_sun_azimuth - mean to-sun-azimuth for good data
             mean_to_sun_zenith - mean to-sun zenith for good data
-            mean_relative_azimuth - mean relative to-sun azimuth for good data
+            mean_relative_azimuth - mean relative to-sun azimuth for good data, clockwise from the to-sensor
+                                    azimuth (0 to 360)
             valid - boolean array indicating which pixels were NOT nodata
             to_sensor_zenith_lut_grid - the to-sensor zenith look up table grid for good data
             to_sun_zenith_lut_grid - the to-sun zenith look up table grid for good data
-            relative_azimuth_lut_grid - the relative to-sun azimuth look up table grid for good data
+            relative_azimuth_lut_grid - the relative to-sun azimuth look up table grid for good data, folded to
+                                        0 to 180
     """
     obs_dataset = envi.open(envi_header(obs_file), obs_file)
     obs = obs_dataset.open_memmap(interleave="bip", writable=False)
@@ -1254,9 +1257,11 @@ def get_metadata_from_obs(
     to_sun_zenith = obs[:, :, 4]
     time = obs[:, :, 9].copy()
 
-    # calculate relative to-sun azimuth
-    delta_phi = np.abs(to_sun_azimuth - to_sensor_azimuth)
-    relative_azimuth = np.minimum(delta_phi, 360 - delta_phi)
+    # calculate relative to-sun azimuth, clockwise from the to-sensor
+    # azimuth (0 to 360). Folded to 0 to 180 only for the LUT grid, which
+    # assumes the RT is symmetric about the principal plane
+    relative_azimuth = (to_sun_azimuth - to_sensor_azimuth) % 360
+    folded_relative_azimuth = np.minimum(relative_azimuth, 360 - relative_azimuth)
 
     use_trim = trim_lines != 0 and valid.shape[0] > trim_lines * 2
     if use_trim:
@@ -1267,11 +1272,12 @@ def get_metadata_from_obs(
     mean_path_km = np.mean(path_km[valid])
     del path_km
 
-    mean_to_sensor_azimuth = np.mean(to_sensor_azimuth[valid]) % 360
-    mean_to_sun_azimuth = np.mean(to_sun_azimuth[valid]) % 360
+    # Azimuths wrap at 360, so average them on the circle
+    mean_to_sensor_azimuth = circmean(to_sensor_azimuth[valid], high=360, low=0)
+    mean_to_sun_azimuth = circmean(to_sun_azimuth[valid], high=360, low=0)
     mean_to_sensor_zenith = np.mean(to_sensor_zenith[valid])
     mean_to_sun_zenith = np.mean(to_sun_zenith[valid])
-    mean_relative_azimuth = np.mean(relative_azimuth[valid])
+    mean_relative_azimuth = circmean(relative_azimuth[valid], high=360, low=0)
 
     # geom_margin = EPS * 2.0
     to_sensor_zenith_lut_grid = lut_params.get_grid_with_data(
@@ -1293,21 +1299,20 @@ def get_metadata_from_obs(
         to_sun_zenith_lut_grid = np.sort(to_sun_zenith_lut_grid)
 
     relative_azimuth_lut_grid = lut_params.get_grid_with_data(
-        relative_azimuth[valid],
+        folded_relative_azimuth[valid],
         lut_params.relative_azimuth_spacing,
         lut_params.relative_azimuth_spacing_min,
     )
 
     if relative_azimuth_lut_grid is not None:
-        relative_azimuth_lut_grid = np.sort(
-            np.array([x % 360 for x in relative_azimuth_lut_grid])
-        )
+        relative_azimuth_lut_grid = np.sort(relative_azimuth_lut_grid)
 
     del to_sensor_azimuth
     del to_sensor_zenith
     del to_sun_azimuth
     del to_sun_zenith
     del relative_azimuth
+    del folded_relative_azimuth
 
     # Make time calculations
     if np.any((time[valid] < 0) | (time[valid] >= 24)):
@@ -1727,7 +1732,12 @@ def make_atmosphere_config(
                 template_means["observer_zenith"] = (
                     180 - geom.get("OBSZEN") if geom.get("OBSZEN") is not None else None
                 )  # Convert from MODTRAN convention
-                template_means["relative_azimuth"] = geom.get("PARM1")
+                # The template carries the signed relative azimuth (0 to 360),
+                # LUT grids carry it folded (0 to 180)
+                parm1 = geom.get("PARM1")
+                template_means["relative_azimuth"] = (
+                    min(parm1 % 360, 360 - parm1 % 360) if parm1 is not None else None
+                )
                 template_means["surface_elevation_km"] = surf.get("GNDALT")
                 template_means["CO2"] = atm.get("CO2MX")
 
