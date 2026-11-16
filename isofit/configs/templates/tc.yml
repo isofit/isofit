@@ -29,6 +29,7 @@ pipeline:
   ^^: default.yml:srtmnet
 
   input:
+    sensor: null
     fid: null  # SET: flightline ID, derived from the radiance file name per sensor
     rdn: null  # SET: at-sensor radiance
     obs: null  # SET: observation geometry

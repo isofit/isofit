@@ -25,6 +25,7 @@ from isofit.configs import legacy
 from isofit.configs.config import Config
 from isofit.configs.utils import interpolate
 from isofit.data import env
+from isofit.retrieval.sensor import derive_fid
 
 Logger = logging.getLogger(__name__)
 Cache: dict[tuple[Path, Optional[str], bool], dict] = {}
@@ -256,6 +257,9 @@ def load(
     sub = interpolate.get_dotted(data, section)
     interpolate.override(sub, overrides)
 
+    # Derived before interpolation so `${input.fid}` references resolve
+    derive_fid(data)
+
     # Interpolations are against the full config
     if interp:
         # Temporarily add the ini env for easy interpolation
@@ -346,7 +350,7 @@ def make_config(data, safe=True, rich=True):
         Logger.error(f"The configuration has {e.error_count()} validation error(s)")
         if rich:
             from isofit.configs.utils.console import errors_table
-            from isofit.utils.retrieval import Console
+            from isofit.retrieval import Console
 
             Console.print(errors_table(e, Config))
         elif not safe:

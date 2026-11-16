@@ -257,7 +257,7 @@ class CLI(click.Group):
         "path": "isofit.data",
         "dev": "isofit.data.dev",
         "apply_oe": "isofit.utils.apply_oe",
-        "retrieval": "isofit.utils.retrieval.cli",
+        "retrieval": "isofit.retrieval.cli",
         "skyview": "isofit.utils.skyview",
         "wavelength_cal": "isofit.utils.wavelength_cal:cli_wavelength_cal",
         "get_wavelength_adjustment": "isofit.utils.wavelength_cal:cli_get_wavelength_adjustment",

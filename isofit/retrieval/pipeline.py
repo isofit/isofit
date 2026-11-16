@@ -34,7 +34,7 @@ import ray
 from rich.progress import Progress
 from spectral.io import envi
 
-from isofit.utils.retrieval import Console, utils
+from isofit.retrieval import Console, utils
 
 Logger = logging.getLogger(__name__)
 
@@ -90,16 +90,6 @@ def setup(config) -> None:
     Logger.info("STAGE: setup")
     Logger.info(f"Config:\n{config.to_yaml()}")
     return
-
-    rows, cols = utils.envi_shape(c.input.radiance_file)
-    for name in ("loc_file", "obs_file"):
-        file = getattr(c.input, name)
-        shape = utils.envi_shape(file)
-        if shape != (rows, cols):
-            raise ValueError(
-                f"input.{name} size is {shape}, which does not match the "
-                f"radiance size: {(rows, cols)}"
-            )
 
     paths.make_directories()
     paths.stage_files()
