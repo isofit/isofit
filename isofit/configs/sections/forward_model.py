@@ -89,4 +89,5 @@ class ForwardModelConfig(SectionModel):
             "model-observation discrepancy. Used to account for forward model "
             "errors during inversion"
         ),
+        examples=["data/model_discrepancy.npy"],
     )

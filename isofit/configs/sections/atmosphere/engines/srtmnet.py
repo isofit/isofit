@@ -66,15 +66,18 @@ class sRTMnetConfig(SectionModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)] = Field(
-        description='Engine identifier. Must be ``"srtmnet"``'
+        description='Engine identifier. Must be ``"srtmnet"``',
+        examples=["srtmnet"],
     )
 
     base_dir: Optional[DirectoryPath] = Field(
         description="Base path to the sRTMnet installation directory",
+        examples=["/opt/srtmnet"],
     )
 
     sixs_dir: Optional[DirectoryPath] = Field(
         description="Path to the 6S installation used to run the surrogate simulations",
+        examples=["/opt/sixs"],
     )
 
     emulator_batch_size: int = Field(
@@ -92,6 +95,7 @@ class sRTMnetConfig(SectionModel):
             "Path to the trained sRTMnet model file. A ``.6c`` model includes CO2 "
             "absorption and requires a CO2-enabled 6S at ``sixs_dir``"
         ),
+        examples=["srtmnet/emulator.h5"],
     )
 
     emulator_aux_file: Optional[FilePath] = Field(
@@ -99,10 +103,12 @@ class sRTMnetConfig(SectionModel):
             "Path to the auxiliary emulator data file (normalization parameters, "
             "etc.)"
         ),
+        examples=["srtmnet/emulator_aux.npz"],
     )
 
     template_file: Optional[FilePath] = Field(
         description="MODTRAN template file used to build the 6S surrogate simulations",
+        examples=["modtran_template.json"],
     )
 
     @model_validator(mode="after")

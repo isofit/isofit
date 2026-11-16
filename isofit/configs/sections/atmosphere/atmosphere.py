@@ -82,7 +82,7 @@ class AtmosphereConfig(SectionModel):
             "Optional path to a wavelength file for high-resolution atmospheric "
             "calculations. If None, the instrument wavelengths are used"
         ),
-        examples=[""],
+        examples=["wavelengths.txt"],
     )
 
     lut_path: Path = Field(
@@ -90,10 +90,12 @@ class AtmosphereConfig(SectionModel):
             "Path to the lookup table storage. Supports the .zarr format for "
             "efficient multidimensional array storage"
         ),
+        examples=["isofit-output/lut/lut.zarr"],
     )
 
     sim_path: Path = Field(
         description="Path to the RT simulation output directory",
+        examples=["isofit-output/lut/sims"],
     )
 
     lut_grid: dict[str, list[float]] = Field(
@@ -102,7 +104,13 @@ class AtmosphereConfig(SectionModel):
             '(e.g. "H2OSTR", "AOT550"), values are the sample points for that '
             "parameter (at least 2, no duplicates). An empty dict means no LUT "
             "generation"
-        )
+        ),
+        examples=[
+            {
+                "H2OSTR": [0.2, 1.0, 2.0, 3.0, 4.0, 5.0],
+                "AOT550": [0.001, 0.25, 0.5, 0.75, 1.0],
+            }
+        ],
     )
 
     lut_subset: dict[str, Any] = Field(
@@ -111,6 +119,7 @@ class AtmosphereConfig(SectionModel):
             "of a large pre-computed LUT to be used. An empty dict means the full "
             "grid is used"
         ),
+        examples=[{}],
     )
 
     rt_mode: Literal["rdn", "transm"] = Field(
@@ -118,6 +127,7 @@ class AtmosphereConfig(SectionModel):
             "Atmospheric radiative transfer mode of LUT simulations: ``transm`` for "
             "transmittances (standard), ``rdn`` for reflected radiance"
         ),
+        examples=["rdn", "transm"],
     )
 
     statevector_names: List[str] = Field(
@@ -126,6 +136,7 @@ class AtmosphereConfig(SectionModel):
             "engine. Determines which atmospheric parameters are optimized during "
             "inversion"
         ),
+        examples=[["AOT550", "H2OSTR"]],
     )
 
     statevector: AtmosphereStateVectorConfig = Field(
@@ -140,6 +151,7 @@ class AtmosphereConfig(SectionModel):
         description=(
             "Build/configure the RT engine and exit without running simulations"
         ),
+        examples=[False],
     )
 
     interpolator_style: Literal["rg", "mlg", "mlg_numba"] = Field(
@@ -147,20 +159,24 @@ class AtmosphereConfig(SectionModel):
             "LUT interpolation style: ``rg`` (RegularGrid), ``mlg`` (multilinear "
             "grid), or ``mlg_numba``"
         ),
+        examples=["rg", "mlg", "mlg_numba"],
     )
 
     wavelength_range: List[float] | None = Field(
         description=(
             "Optional [min, max] wavelength range to subset the LUT to after load"
         ),
+        examples=[[380.0, 2500.0]],
     )
 
     multipart_transmittance: bool = Field(
         description="Apply triple-run diffuse & direct transmittance estimation",
+        examples=[False],
     )
 
     irradiance_file: Path | None = Field(
         description="Solar irradiance file (used for RT and PACE-OCI SRF handling)",
+        examples=["data/irradiance.txt"],
     )
 
     @field_validator("lut_grid")

@@ -60,11 +60,13 @@ class LibRadTranConfig(SectionModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["libradtran"], BeforeValidator(standardName)] = Field(
-        description='Engine identifier. Must be ``"libradtran"``'
+        description='Engine identifier. Must be ``"libradtran"``',
+        examples=["libradtran"],
     )
 
     base_dir: Optional[DirectoryPath] = Field(
         description="Base path to the LibRadTran installation directory",
+        examples=["/opt/libradtran"],
     )
 
     reptran_band_model: Literal["coarse", "medium", "fine"] = Field(
@@ -80,35 +82,40 @@ class LibRadTranConfig(SectionModel):
         description=(
             "King-Byrne Angstrom parameter (alpha 1) for aerosol wavelength "
             "dependence. Setting to None uses the default aerosol profile"
-        )
+        ),
+        examples=[1.3],
     )
 
     kb_alpha_2: Optional[float] = Field(
         description=(
             "King-Byrne Angstrom parameter (alpha 2) for aerosol wavelength "
             "dependence. Setting to None uses the default aerosol profile"
-        )
+        ),
+        examples=[0.2],
     )
 
     gg_set: Optional[float] = Field(
         description=(
             "Constant asymmetry parameter (g) to represent the aerosol phase "
             "function. Setting to None uses the profile default"
-        )
+        ),
+        examples=[0.7],
     )
 
     gg_file: Optional[Path] = Field(
         description=(
             "Path to an asymmetry parameter file that overwrites the default "
             "profile with altitude-dependent values"
-        )
+        ),
+        examples=["gg_profile.txt"],
     )
 
     tau_file: Optional[Path] = Field(
         description=(
             "Path to an aerosol optical depth file that overwrites the default "
             "profile with altitude-dependent values"
-        )
+        ),
+        examples=["tau_profile.txt"],
     )
 
     ssa_file: Optional[Path] = Field(
@@ -116,10 +123,12 @@ class LibRadTranConfig(SectionModel):
             "Path to a single scattering albedo file that overwrites the default "
             "aerosol absorption properties"
         ),
+        examples=["ssa_profile.txt"],
     )
 
     ssa_scale: Optional[float] = Field(
         description="Scaling factor applied to the single scattering albedo",
+        examples=[1.0],
     )
 
     moments_file: Optional[Path] = Field(
@@ -127,8 +136,10 @@ class LibRadTranConfig(SectionModel):
             "Path to a phase function moments file that overwrites the default "
             "profile"
         ),
+        examples=["moments.txt"],
     )
 
     template_file: Optional[FilePath] = Field(
         description="Template file used as the base configuration for libRadtran",
+        examples=["libradtran_template.json"],
     )

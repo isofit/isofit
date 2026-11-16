@@ -49,6 +49,7 @@ class StateVectorElementConfig(BaseModel):
             "Lower and upper bounds for the parameter during optimization. NaN "
             "bounds leave the parameter unbounded"
         ),
+        examples=[[0.0, 1.0]],
     )
     scale: float = Field(
         default=np.nan,
@@ -56,6 +57,7 @@ class StateVectorElementConfig(BaseModel):
             "Scale factor for normalizing the parameter during optimization, which "
             "improves numerical conditioning. NaN means no scaling"
         ),
+        examples=[0.5],
     )
     prior_mean: float = Field(
         default=np.nan,
@@ -63,6 +65,7 @@ class StateVectorElementConfig(BaseModel):
             "Mean of the prior distribution for this parameter, used in Bayesian "
             "estimation. NaN means no prior"
         ),
+        examples=[0.3],
     )
     prior_sigma: float = Field(
         default=np.nan,
@@ -70,6 +73,7 @@ class StateVectorElementConfig(BaseModel):
             "Standard deviation of the prior distribution for this parameter. NaN "
             "means no prior"
         ),
+        examples=[0.1],
     )
     init: float = Field(
         default=np.nan,
@@ -77,6 +81,7 @@ class StateVectorElementConfig(BaseModel):
             "Initial guess for the parameter at the start of optimization. NaN means "
             "it is determined heuristically"
         ),
+        examples=[0.25],
     )
 
     def unpack(self):

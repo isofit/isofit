@@ -51,5 +51,6 @@ class PrebuiltConfig(SectionModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["prebuilt"], BeforeValidator(standardName)] = Field(
-        description='Engine identifier. Must be "prebuilt" (case-insensitive)'
+        description='Engine identifier. Must be "prebuilt" (case-insensitive)',
+        examples=["prebuilt"],
     )

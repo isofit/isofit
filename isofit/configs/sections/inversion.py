@@ -38,7 +38,8 @@ class McmcConfig(SectionModel):
         description=(
             "Number of MCMC iterations to run. More iterations improve convergence "
             "but increase runtime"
-        )
+        ),
+        examples=[10000, 20000],
     )
 
     burnin: int = Field(
@@ -46,27 +47,33 @@ class McmcConfig(SectionModel):
             "Number of burn-in iterations to discard before collecting samples. "
             "Should be long enough for the chain to reach its stationary "
             "distribution"
-        )
+        ),
+        examples=[200, 2000],
     )
 
     regularizer: float = Field(
         description=(
             "Regularization parameter added to the covariance matrix for numerical "
             "stability"
-        )
+        ),
+        examples=[0.001],
     )
 
     proposal_scaling: float = Field(
         description=(
             "Scaling factor for the MCMC proposal distribution. Smaller values lead "
             "to a higher acceptance rate but slower mixing"
-        )
+        ),
+        examples=[0.01, 0.005],
     )
 
-    verbose: bool = Field(description="Enable verbose output during MCMC sampling")
+    verbose: bool = Field(
+        description="Enable verbose output during MCMC sampling", examples=[True]
+    )
 
     restart_every: int = Field(
-        description="Restart the MCMC chain every N iterations to improve exploration"
+        description="Restart the MCMC chain every N iterations to improve exploration",
+        examples=[2000],
     )
 
 
@@ -98,7 +105,8 @@ class LeastSquaresConfig(SectionModel):
         description=(
             "Optimization method to use. Options: ``trf`` (Trust Region "
             "Reflective), ``dogbox``, or ``lm`` (Levenberg-Marquardt)"
-        )
+        ),
+        examples=["trf", "dogbox", "lm"],
     )
 
     max_nfev: int = Field(
@@ -106,6 +114,7 @@ class LeastSquaresConfig(SectionModel):
             "Maximum number of forward model evaluations before termination. Lower "
             "values speed up processing but may terminate before convergence"
         ),
+        examples=[20],
     )
 
     xtol: Optional[float] = Field(
@@ -113,27 +122,31 @@ class LeastSquaresConfig(SectionModel):
             "Tolerance for termination by change of independent variables. If "
             "None, uses the scipy default"
         ),
+        examples=[1e-8],
     )
 
     ftol: float = Field(
         description=(
             "Tolerance for termination by change of cost function. Smaller values "
             "require tighter convergence"
-        )
+        ),
+        examples=[0.01],
     )
 
     gtol: Optional[float] = Field(
         description=(
             "Tolerance for termination by norm of gradient. If None, uses the scipy "
             "default"
-        )
+        ),
+        examples=[1e-8],
     )
 
     tr_solver: Optional[Literal["exact", "lsmr"]] = Field(
         description=(
             "Method for solving trust-region subproblems. ``lsmr`` is faster for "
             "large problems"
-        )
+        ),
+        examples=["exact", "lsmr"],
     )
 
     def get_config_options_as_dict(self):
@@ -196,6 +209,7 @@ class InversionConfig(SectionModel):
             "min < max). Only wavelengths within these windows are used in the "
             "cost function. If None, uses all available wavelengths"
         ),
+        examples=[[[380.0, 1325.0], [1435.0, 1770.0], [1965.0, 2500.0]]],
     )
 
     cressie_map_confidence: bool = Field(
@@ -203,6 +217,7 @@ class InversionConfig(SectionModel):
             "Use N. Cressie's alternate S_hat definition for more "
             "statistically-consistent posterior confidence intervals"
         ),
+        examples=[False],
     )
 
     mcmc: McmcConfig = Field(
@@ -214,6 +229,7 @@ class InversionConfig(SectionModel):
 
     integration_grid: dict = Field(
         description="Grid of inversion points for ``mode='grid'`` (advanced usage)",
+        examples=[{}],
     )
 
     priors_in_initial_guess: bool = Field(
@@ -221,6 +237,7 @@ class InversionConfig(SectionModel):
             "Use surface priors outside inversion windows during initial guess "
             "calculation. Improves initial guess quality"
         ),
+        examples=[True],
     )
 
     inversion_grid_as_preseed: bool = Field(
@@ -228,6 +245,7 @@ class InversionConfig(SectionModel):
             "Treat the inversion grid as seeds for optimization (True) or as fixed "
             "points to evaluate (False)"
         ),
+        examples=[False],
     )
 
     least_squares_params: LeastSquaresConfig = Field(

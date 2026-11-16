@@ -58,15 +58,18 @@ class KernelFlowsConfig(SectionModel):
         description=(
             'Engine identifier. Must be "kernelflows" or its alias "kf" '
             "(case-insensitive)"
-        )
+        ),
+        examples=["kernelflows", "kf"],
     )
 
     emulator_file: Optional[FilePath] = Field(
         description="Path to the trained Kernel Flows emulator model file",
+        examples=["kf_emulator.h5"],
     )
 
     template_file: Optional[FilePath] = Field(
         description=(
             "Path to the template configuration file for Kernel Flows parameters"
         ),
+        examples=["modtran_template.json"],
     )
