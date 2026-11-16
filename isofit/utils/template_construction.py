@@ -1616,13 +1616,16 @@ def make_atmosphere_config(
         else abspath(prebuilt_lut_path)
     )
 
-    if modtran_path is not None:
+    if emulator_base is not None:
+        if emulator_base.endswith(".jld2"):
+            engine_name = "kernelflows"
+        else:
+            engine_name = "srtmnet"
+    elif modtran_path is not None:
         if "libradtran" in modtran_path.lower():
             engine_name = "libradtran"
         else:
             engine_name = "modtran"
-    elif emulator_base is not None and emulator_base.endswith(".jld2"):
-        engine_name = "kernelflows"
     else:
         engine_name = "srtmnet"
 
