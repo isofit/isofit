@@ -6,18 +6,10 @@ thermal infrared wavelengths. This module configures LibRadTran for
 ISOFIT atmospheric correction.
 """
 
-from os import getenv
 from pathlib import Path
 from typing import Annotated, Literal, Optional
 
-from pydantic import (
-    BeforeValidator,
-    ConfigDict,
-    DirectoryPath,
-    Field,
-    FilePath,
-    model_validator,
-)
+from pydantic import BeforeValidator, ConfigDict, DirectoryPath, Field, FilePath
 
 from isofit.configs.base import SectionModel
 
@@ -157,14 +149,3 @@ class LibRadTranConfig(SectionModel):
         description="Template file used as the base configuration for libRadtran",
         examples=["libradtran_template.json"],
     )
-
-    @model_validator(mode="after")
-    def set_kato2_for_lake_mary_test(self) -> "LibRadTranConfig":
-        """
-        TODO:
-        Hack to allow for unit tests until we have the ability to change configs via apply_oe flags.
-        """
-        if getenv("ISOFIT_LAKEMARY_TEST"):
-            self.band_model = "KATO2"
-
-        return self
