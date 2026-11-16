@@ -55,11 +55,7 @@ class KernelFlowsConfig(SectionModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["kernelflows"], BeforeValidator(standardName)] = Field(
-        description=(
-            'Engine identifier. Must be "kernelflows" or its alias "kf" '
-            "(case-insensitive)"
-        ),
-        examples=["kernelflows", "kf"],
+        description=('Engine identifier. Must be "kernelflows" or its alias "kf"')
     )
 
     emulator_file: Optional[FilePath] = Field(

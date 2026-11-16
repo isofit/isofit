@@ -60,8 +60,7 @@ class ModtranConfig(SectionModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["modtran"], BeforeValidator(standardName)] = Field(
-        description='Engine identifier. Must be "modtran" (case-insensitive)',
-        examples=["modtran"],
+        description='Engine identifier. Must be "modtran"',
     )
 
     base_dir: Optional[DirectoryPath] = Field(

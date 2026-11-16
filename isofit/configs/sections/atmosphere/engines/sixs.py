@@ -65,11 +65,7 @@ class SixSConfig(SectionModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Annotated[Literal["sixs"], BeforeValidator(standardName)] = Field(
-        description=(
-            'Engine identifier. Accepts "sixs" or "6s" (case-insensitive), '
-            'normalized to "sixs"'
-        ),
-        examples=["sixs"],
+        description=('Engine identifier. Accepts "sixs" or "6s"'),
     )
 
     base_dir: Optional[DirectoryPath] = Field(

@@ -61,7 +61,6 @@ class LibRadTranConfig(SectionModel):
 
     name: Annotated[Literal["libradtran"], BeforeValidator(standardName)] = Field(
         description='Engine identifier. Must be ``"libradtran"``',
-        examples=["libradtran"],
     )
 
     base_dir: Optional[DirectoryPath] = Field(

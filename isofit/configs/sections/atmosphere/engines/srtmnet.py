@@ -67,7 +67,6 @@ class sRTMnetConfig(SectionModel):
 
     name: Annotated[Literal["srtmnet"], BeforeValidator(standardName)] = Field(
         description='Engine identifier. Must be ``"srtmnet"``',
-        examples=["srtmnet"],
     )
 
     base_dir: Optional[DirectoryPath] = Field(
