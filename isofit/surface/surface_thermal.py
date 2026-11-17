@@ -150,8 +150,12 @@ class ThermalSurface(MultiComponentSurface):
     def drdn_dsurface(
         self,
         rho_dif_dir,
+        rho_dir_dir,
         drfl_dsurface,
         dLs_dsurface,
+        x_surface,
+        geom,
+        transm_down_dir,
         s_alb,
         t_total_up,
         L_tot,
