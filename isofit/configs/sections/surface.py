@@ -69,7 +69,9 @@ def statevector_mismatches(
 
             # Allow for dynamic assignment from lut_surface
             item = configured[name]
-            value = item.get(key, np.nan) if isinstance(item, dict) else getattr(item, key)
+            value = (
+                item.get(key, np.nan) if isinstance(item, dict) else getattr(item, key)
+            )
 
             if not np.allclose(value, stored, equal_nan=True):
                 mismatch.append(f"{name}: {key} ({file})")

@@ -1067,7 +1067,9 @@ def apply_oe(
 @click.option("--retrieve_co2", is_flag=True, default=False)
 @click.option("--use_background_rfl", is_flag=True, default=False)
 @click.option("--eof_path", default=None)
-@click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat", "solved"]))
+@click.option(
+    "--terrain_style", default="dem", type=click.Choice(["dem", "flat", "solved"])
+)
 @click.option(
     "--pixel_heuristic_priors",
     "-php",
