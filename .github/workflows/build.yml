@@ -115,13 +115,6 @@ jobs:
         run: |
           uv sync --extra plots
 
-      - name: Install additional dependencies for ubuntu
-        if: steps.cache-extras.outputs.cache-hit == 'true' && steps.rebuild.outputs.rebuild != 'true'
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libnetcdf-dev netcdf-bin
-
       - name: Check for Updates
         if: steps.cache-extras.outputs.cache-hit == 'true' && steps.rebuild.outputs.rebuild != 'true'
         shell: bash
@@ -147,6 +140,13 @@ jobs:
             echo ":white_check_mark: $MSG" >> $GITHUB_STEP_SUMMARY
             echo "$MSG"
           fi
+
+      - name: Install additional dependencies
+        if: steps.cache-extras.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnetcdf-dev netcdf-bin
 
       - name: Download Extras
         if: steps.cache-extras.outputs.cache-hit != 'true'
