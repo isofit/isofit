@@ -213,7 +213,7 @@ libradtran:
     atmosphere:
       engine:
         name: libradtran
-        base_dir: ${env.libradtran}/${env.libradtran-version}
+        base_dir: ${env.libradtran}
         band_model: reptran coarse
         # Required by LibRadTranConfig (no model default); set per run.
         kb_alpha_1: null
