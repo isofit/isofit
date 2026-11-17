@@ -60,6 +60,9 @@ class Surface:
         self.wl = None
         self.fwhm = None
 
+        # Used for solved terrain style
+        self.cos_i_idx = None
+
         # 1st Priority: use the wavelength file
         if config.wavelength_file is not None:
             self.wl, self.fwhm = load_wavelen(config.wavelength_file)
