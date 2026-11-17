@@ -59,7 +59,7 @@ def test_custom_sensor_output_names(tmp_path, monkeypatch, radiance_name, sensor
     ],
 )
 def test_custom_sensor_datestr(sensor, fid, datestr, expected):
-    dt, _ = get_sensor_metadata_from_fid(sensor, fid, datestr)
+    dt, *_ = get_sensor_metadata_from_fid(sensor, fid, datestr)
     assert dt == expected
 
 
