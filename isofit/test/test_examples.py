@@ -120,7 +120,7 @@ def test_wavelength_cal(args, kwargs, monkeypatch):
     runner = CliRunner()
 
     kwargs_flat = [item for k, v in kwargs.items() for item in (f"--{k}", v)]
-    kwargs_flat += ["--emulator_base", str(Path(env.srtmnet) / env["srtmnet.file"])]
+    kwargs_flat += ["--emulator_base", str(Path(env.srtmnet) / env["srtmnet-file"])]
     result = runner.invoke(
         cli, ["wavelength_cal"] + list(args) + kwargs_flat, catch_exceptions=False
     )

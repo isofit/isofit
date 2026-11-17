@@ -18,11 +18,21 @@ from spectral.io import envi
 
 from isofit import __version__
 from isofit.atmosphere.atmosphere import (
+    aeronet_model,
     modtran_aot_lowerbound_polynomials,
     modtran_water_upperbound_polynomials,
 )
+from isofit.configs import Config
+from isofit.configs.sections.instrument import WORKING_WAVELENGTH_CAL_VARIABLES
 from isofit.core import units
 from isofit.core.common import envi_header, expand_path, json_load_ascii
+from isofit.core.instrument import (
+    DefaultEOFPrior,
+    DefaultGROWFWHMPrior,
+    DefaultRCCPrior,
+    DefaultWLSHIFTPrior,
+    DefaultWLSPLPrior,
+)
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.luts.reader import inspect_lut_dimensions
@@ -88,8 +98,11 @@ class Pathnames:
             self.fid = split(input_radiance)[-1][:24]
         elif sensor == "tanager":
             self.fid = split(input_radiance)[-1][:23]
-        elif sensor[:3] == "NA-":
+        elif sensor == "custom" or sensor[:2] == "NA":
+            # Custom sensors ("custom" or "NA") keep the full basename, minus any
+            # trailing _rdn
             self.fid = os.path.splitext(os.path.basename(input_radiance))[0]
+            self.fid = self.fid.removesuffix("_rdn")
 
         logging.info("Flightline ID: %s" % self.fid)
 
@@ -456,19 +469,19 @@ class LUTConfig:
         self.relative_azimuth_spacing = 60
         self.relative_azimuth_spacing_min = 25
 
-        # Units of AOD
+        # Units of AOT
         self.aerosol_0_spacing = 0
         self.aerosol_0_spacing_min = 0
 
-        # Units of AOD
+        # Units of AOT
         self.aerosol_1_spacing = 0
         self.aerosol_1_spacing_min = 0
 
-        # Units of AOD
+        # Units of AOT
         self.aerosol_2_spacing = 0.1
         self.aerosol_2_spacing_min = 0
 
-        # Units of AOD
+        # Units of AOT
         modtran_min_aerosol = modtran_aot_lowerbound_polynomials()[atmosphere_type](0)
         self.aerosol_0_range = [modtran_min_aerosol, 1]
         self.aerosol_1_range = [modtran_min_aerosol, 1]
@@ -699,6 +712,16 @@ def check_surface_model(
         )
 
 
+def _validate_config(config: dict) -> dict:
+    """Validate the assembled config dict with Pydantic (raising early if
+    invalid), which fills unset fields from the base configs, and return the
+    complete config as a JSON-ready dict for writing to disk.
+    """
+    validated = Config.model_validate(config)
+    validated.get_config_errors()
+    return validated.model_dump(mode="json")
+
+
 def build_config(
     paths: Pathnames,
     h2o_lut_grid: np.array = None,
@@ -727,8 +750,10 @@ def build_config(
     presolve: bool = False,
     terrain_style: str = "flat",
     max_slope: float = 20.0,
-    per_pixel_heuristic_prior: bool = False,
+    pixel_heuristic_priors: list[str] = [],
     use_background_rfl: bool = False,
+    elevation_km: float = 0.0,
+    libradtran_band_model: str = None,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -762,6 +787,8 @@ def build_config(
         terrain_style:                        style of terrain to use in the forward model - options are 'flat', 'dem', 'solved'
         max_slope:                            maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat
         use_background_rfl:                   flag to determine which surface derivatives to use in OE
+        elevation_km:                         determined mean elevation in km for image used for AOT priors
+        libradtran_band_model:                overrides the default band model in libradtran config
     """
 
     if use_superpixels:
@@ -854,10 +881,13 @@ def build_config(
                 presolve=presolve,
                 pressure_elevation=pressure_elevation,
                 retrieve_co2=retrieve_co2,
-                per_pixel_heuristic_prior=per_pixel_heuristic_prior,
+                heuristic_h2o_prior="H2O" in pixel_heuristic_priors,
+                heuristic_aeronet_prior="AOT" in pixel_heuristic_priors,
                 relative_azimuth_lut_grid=relative_azimuth_lut_grid,
                 to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid,
                 to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
+                elevation_km=elevation_km,
+                libradtran_band_model=libradtran_band_model,
             ),
             "surface": make_surface_config(
                 surface_class_working_path=paths.surface_class_working_path,
@@ -875,7 +905,7 @@ def build_config(
             inversion_windows=inversion_windows,
             n_cores=n_cores,
             debug=debug,
-            per_pixel_heuristic_prior=per_pixel_heuristic_prior,
+            pixel_heuristic_priors=pixel_heuristic_priors,
         ),
         "input": input_config,
         "output": output_config,
@@ -885,6 +915,8 @@ def build_config(
         config["forward_model"][
             "model_discrepancy_file"
         ] = paths.model_discrepancy_working_path
+
+    config = _validate_config(config)
 
     # write main config file
     with open(paths.isofit_full_config_path, "w") as fout:
@@ -919,7 +951,7 @@ def get_aerosol_initial_value(range_min: float, range_max: float) -> float:
 
 
 def get_lut_subset(vals):
-    """Populate lut_names for the appropriate style of subsetting
+    """Populate lut_subset for the appropriate style of subsetting
 
     Args:
         vals: the values to use for subsetting (list, array, or dict)
@@ -985,7 +1017,7 @@ def write_modtran_template(
                         "IEMSCT": "RT_SOLAR_AND_THERMAL",
                         "IMULT": "RT_DISORT",
                         "DISALB": False,
-                        "NSTR": 8,
+                        "NSTR": 8,  # NOTE 8 vs 16 delta(m) effect is reduced when using 2-albedo method
                         "SOLCON": 0.0,
                     },
                     "ATMOSPHERE": {
@@ -1015,10 +1047,11 @@ def write_modtran_template(
                         "GMTIME": gmtime,
                     },
                     "SURFACE": {
-                        "SURFTYPE": "REFL_LAMBER_MODEL",
                         "GNDALT": elevation_km,
                         "NSURF": 1,
-                        "SURFP": {"CSALB": "LAMB_CONST_0_PCT"},
+                        "SALBFL": "",
+                        "SURFTYPE": "REFL_CONSTANT",
+                        "SURREF": 0.0,
                     },
                     "SPECTRAL": {
                         "V1": 340.0,
@@ -1030,7 +1063,11 @@ def write_modtran_template(
                         "FLAGS": "NT A   ",
                         "BMNAME": "p1_2013",
                     },
-                    "FILEOPTIONS": {"NOPRNT": 2, "CKPRNT": True},
+                    "FILEOPTIONS": {
+                        "NOPRNT": 2,
+                        "NOFILE": "FC_TAPE6ONLY",
+                        "CSVPRNT": f"{fid}.csv",
+                    },
                 }
             }
         ]
@@ -1049,6 +1086,8 @@ def load_climatology(
     longitude: float,
     acquisition_datetime: datetime,
     lut_params: LUTConfig,
+    elevation_km: float = 0.0,
+    heuristic_aeronet_prior: bool = False,
 ):
     """Load climatology data, based on location and configuration
 
@@ -1058,6 +1097,8 @@ def load_climatology(
         longitude: latitude to set for the segment (mean of acquisition suggested)
         acquisition_datetime: datetime to use for the segment( mean of acquisition suggested)
         lut_params: parameters to use to define lut grid
+        elevation_km: determined mean elevation in km for image used for AOT priors
+        heuristic_aeronet_prior: define prior mean and sigma for AOT 550 as a function of aeronet climatology
 
     :Returns
         tuple containing:
@@ -1092,12 +1133,19 @@ def load_climatology(
         )
 
         if aerosol_lut is not None:
-            init_value = get_aerosol_initial_value(alr[0], alr[1])
+            if heuristic_aeronet_prior:
+                init_value, prior_sigma = aeronet_model(
+                    elevation_km=elevation_km, aot_min=alr[0], aot_max=alr[1]
+                )
+            else:
+                init_value = get_aerosol_initial_value(alr[0], alr[1])
+                prior_sigma = 0.10
+
             aerosol_state_vector["AERFRAC_{}".format(_a)] = {
                 "bounds": [float(alr[0]), float(alr[1])],
                 "scale": 1,
                 "init": float(init_value),
-                "prior_sigma": 0.1,
+                "prior_sigma": float(prior_sigma),
                 "prior_mean": float(init_value),
             }
 
@@ -1113,12 +1161,18 @@ def load_climatology(
     if aot_550_lut is not None:
         aerosol_lut_grid["AOT550"] = aot_550_lut.tolist()
         alr = [aerosol_lut_grid["AOT550"][0], aerosol_lut_grid["AOT550"][-1]]
-        init_value = get_aerosol_initial_value(alr[0], alr[1])
+        if heuristic_aeronet_prior:
+            init_value, prior_sigma = aeronet_model(
+                elevation_km=elevation_km, aot_min=alr[0], aot_max=alr[1]
+            )
+        else:
+            init_value = get_aerosol_initial_value(alr[0], alr[1])
+            prior_sigma = 0.10
         aerosol_state_vector["AOT550"] = {
             "bounds": [float(alr[0]), float(alr[1])],
             "scale": 1,
             "init": float(init_value),
-            "prior_sigma": 0.1,
+            "prior_sigma": float(prior_sigma),
             "prior_mean": float(init_value),
         }
 
@@ -1370,7 +1424,27 @@ def get_metadata_from_loc(
     return mean_latitude, mean_longitude, mean_elevation_km, elevation_lut_grid
 
 
-def get_sensor_metadata_from_fid(sensor: str, fid: str):
+def parse_datestr(fid: str, datestr: str) -> datetime:
+    """Parse a datetime from the start of a flightline ID using a strptime format.
+
+    Args:
+        fid:     flightline ID, e.g. "CHEESEHEAD20190830-26_tile08"
+        datestr: strptime format matching the start of the fid, e.g. "CHEESEHEAD%Y%m%d"
+
+    Returns:
+        datetime parsed from the longest leading portion of fid that matches datestr
+    """
+    for end in range(len(fid), 0, -1):
+        try:
+            return datetime.strptime(fid[:end], datestr)
+        except ValueError:
+            continue
+    raise ValueError(
+        f'Flightline ID "{fid}" does not start with a date matching datestr "{datestr}"'
+    )
+
+
+def get_sensor_metadata_from_fid(sensor: str, fid: str, datestr: str = None):
     inversion_window_update = []
     if sensor == "ang":
         # parse flightline ID (AVIRIS-NG assumptions)
@@ -1419,8 +1493,12 @@ def get_sensor_metadata_from_fid(sensor: str, fid: str):
     elif sensor == "tanager":
         # parse flightline ID (Tanager assumptions)
         dt = datetime.strptime(fid[:15], "%Y%m%d_%H%M%S")
-    elif sensor[:3] == "NA-":
-        dt = datetime.strptime(sensor[3:], "%Y%m%d")
+    elif sensor == "custom" or sensor[:2] == "NA":
+        # Custom sensors: parse the fid with datestr
+        if datestr is not None:
+            dt = parse_datestr(fid, datestr)
+        else:
+            raise ValueError('datestr is required for the "NA/custom" sensor')
     else:
         raise ValueError(
             "Datetime object could not be obtained. Please check file name of input"
@@ -1521,11 +1599,17 @@ def make_atmosphere_config(
     presolve: bool = False,
     pressure_elevation: bool = False,
     retrieve_co2: bool = False,
+    heuristic_h2o_prior: bool = False,
+    heuristic_aeronet_prior: bool = False,
     per_pixel_heuristic_prior: bool = False,
     relative_azimuth_lut_grid: np.array = None,
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
+    elevation_km: float = 0.0,
+    libradtran_band_model: str = None,
     unknowns: dict = {},
+    wavelength_file: str = None,
+    **kwargs,
 ):
     avc = np.sum(
         [
@@ -1546,22 +1630,29 @@ def make_atmosphere_config(
         else abspath(prebuilt_lut_path)
     )
 
-    if emulator_base is None:
-        engine_name = "modtran"
-    elif emulator_base.endswith(".jld2"):
-        engine_name = "KernelFlowsGP"
+    if emulator_base is not None:
+        if emulator_base.endswith(".jld2"):
+            engine_name = "kernelflows"
+        else:
+            engine_name = "srtmnet"
+    elif modtran_path is not None:
+        if "libradtran" in modtran_path.lower():
+            engine_name = "libradtran"
+        else:
+            engine_name = "modtran"
+    # NOTE because modtran_path is always defined via MODTRAN_DIR
+    # this should not be reached; however, it's safe to keep for testing.
     else:
-        engine_name = "sRTMnet"
+        engine_name = "srtmnet"
 
+    # Engine-level fields are nested under "engine" (a discriminated union keyed
+    # on "name"); atmosphere-level fields (sim_path, lut_path, multipart, ...)
+    # live at the top level of the atmosphere config.
     atmosphere_config = {
-        "engine": {
-            "engine_name": engine_name,
-            "multipart_transmittance": multipart_transmittance,
-            "sim_path": lut_dir,
-            "lut_path": lut_path,
-            "aerosol_template_file": aerosol_tpl_path,
-            "template_file": modtran_template_path,
-        },
+        "engine": {"name": engine_name, "template_file": modtran_template_path},
+        "sim_path": lut_dir,
+        "lut_path": lut_path,
+        "multipart_transmittance": multipart_transmittance,
         "statevector": {},
         "lut_grid": {},
         # Previously configured an H2O_ABSCO, but a value effectively turns off
@@ -1572,24 +1663,38 @@ def make_atmosphere_config(
         "unknowns": unknowns,
     }
 
+    # aerosol_template_file/earth_sun_distance_file only exist on the
+    # modtran/sixs engine schemas; srtmnet and kernelflows reject unknown keys.
+    if engine_name in ("modtran", "sixs"):
+        atmosphere_config["engine"]["aerosol_template_file"] = aerosol_tpl_path
+
     atmosphere_rte = {}
     if emulator_base is not None:
         atmosphere_rte["emulator_file"] = abspath(emulator_base)
-        atmosphere_rte["earth_sun_distance_file"] = earth_sun_distance_path
-        atmosphere_rte["irradiance_file"] = irradiance_file
-        atmosphere_rte["engine_base_dir"] = sixs_path
-        if multipart_transmittance:
-            atmosphere_rte["emulator_aux_file"] = abspath(emulator_base)
-        else:
-            atmosphere_rte["emulator_aux_file"] = abspath(
-                os.path.splitext(emulator_base)[0] + "_aux.npz"
-            )
+        if engine_name == "sixs":
+            atmosphere_rte["earth_sun_distance_file"] = earth_sun_distance_path
+        atmosphere_config["irradiance_file"] = irradiance_file
+        # sixs_dir/emulator_aux_file only exist on the srtmnet engine schema;
+        # kernelflows rejects unknown keys
+        if engine_name == "srtmnet":
+            # The 6S install used for the surrogate simulations, not the
+            # sRTMnet ``base_dir``
+            atmosphere_rte["sixs_dir"] = sixs_path
+            if multipart_transmittance:
+                atmosphere_rte["emulator_aux_file"] = abspath(emulator_base)
+            else:
+                atmosphere_rte["emulator_aux_file"] = abspath(
+                    os.path.splitext(emulator_base)[0] + "_aux.npz"
+                )
     else:
-        atmosphere_rte["engine_base_dir"] = modtran_path
+        atmosphere_rte["base_dir"] = modtran_path
     atmosphere_config["engine"].update(atmosphere_rte)
 
-    if aerosol_model_file is None:
+    if aerosol_model_file is not None and engine_name in ("modtran", "sixs"):
         atmosphere_config["engine"]["aerosol_model_file"] = aerosol_model_file
+
+    if engine_name == "libradtran":
+        atmosphere_config["engine"]["band_model"] = libradtran_band_model
 
     # First, build the general lut grid
     lut_grid = {
@@ -1621,7 +1726,7 @@ def make_atmosphere_config(
         # Should only modify H2OSTR and surface_elevation_km
         bounds_check(lut_grid, emulator_base, modify=True)
 
-    lut_names = {}
+    lut_subset = {}
     if prebuilt_lut_path is not None:
         prebuilt_dimensions = inspect_lut_dimensions(prebuilt_lut_path)
 
@@ -1674,7 +1779,14 @@ def make_atmosphere_config(
                     interp_value = template_means[dim_name]
                     source = "scene mean from template"
                 elif dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
-                    interp_value = get_aerosol_initial_value(vmin, vmax)
+                    if heuristic_aeronet_prior:
+                        interp_value, _ = aeronet_model(
+                            elevation_km=elevation_km,
+                            aot_min=vmin,
+                            aot_max=vmax,
+                        )
+                    else:
+                        interp_value = get_aerosol_initial_value(vmin, vmax)
                     source = "aerosol initial value formula"
                 else:
                     interp_value = (vmin + vmax) / 2.0
@@ -1684,7 +1796,7 @@ def make_atmosphere_config(
                     f"Variable '{dim_name}' is present in prebuilt LUT but not "
                     f"in heuristic. Will interpolate to {interp_value:.4f} ({source})"
                 )
-                lut_names[dim_name] = {"interp": interp_value}
+                lut_subset[dim_name] = {"interp": interp_value}
 
             # Dimension in both LUT and heuristic === subset
             else:
@@ -1692,7 +1804,7 @@ def make_atmosphere_config(
 
                 # Skip if already formatted as a dict
                 if isinstance(heuristic_val, dict):
-                    lut_names[dim_name] = (
+                    lut_subset[dim_name] = (
                         heuristic_val.copy()
                     )  # Copy to avoid shared references
                     continue
@@ -1729,7 +1841,7 @@ def make_atmosphere_config(
                         & (lut_grid_points <= upper_bound)
                     ]
 
-                    # We hit this for AOD lower bound all the time,
+                    # We hit this for AOT lower bound all the time,
                     # so leaving as a warning for now
                     if heur_min < vmin or heur_max > vmax:
                         logging.warning(
@@ -1750,7 +1862,7 @@ def make_atmosphere_config(
                     gte_val = float(subset_points[0])
                     lte_val = float(subset_points[-1])
 
-                    lut_names[dim_name] = {
+                    lut_subset[dim_name] = {
                         "gte": gte_val,
                         "lte": lte_val,
                         "encompass": True,
@@ -1762,22 +1874,27 @@ def make_atmosphere_config(
                         f"invalid value: {heuristic_val}. Treating as interpolation."
                     )
                     if dim_name.startswith("AOT") or dim_name.startswith("AERFRAC"):
-                        interp_value = get_aerosol_initial_value(vmin, vmax)
+                        if heuristic_aeronet_prior:
+                            interp_value, _ = aeronet_model(
+                                elevation_km=elevation_km,
+                                aot_min=vmin,
+                                aot_max=vmax,
+                            )
+                        else:
+                            interp_value = get_aerosol_initial_value(vmin, vmax)
                     else:
                         interp_value = (vmin + vmax) / 2.0
-                    lut_names[dim_name] = {"interp": interp_value}
+                    lut_subset[dim_name] = {"interp": interp_value}
 
     atmosphere_config["lut_grid"].update(lut_grid)
 
-    # Set up lut_names for subsetting
+    # Set up lut_subset for subsetting
     if prebuilt_lut_path is not None:
-        # lut_names was already built during reconciliation above
-        atmosphere_config["engine"]["lut_names"] = lut_names
+        # lut_subset was already built during reconciliation above
+        atmosphere_config["lut_subset"] = lut_subset
     else:
-        # For new LUTs being built, lut_names should be None (use all points)
-        atmosphere_config["engine"]["lut_names"] = {
-            key: None for key in lut_grid.keys()
-        }
+        # For new LUTs being built, lut_subset should be None (use all points)
+        atmosphere_config["lut_subset"] = {key: None for key in lut_grid.keys()}
 
     # Now do statevector
     statekeys = ["H2OSTR"]
@@ -1811,9 +1928,13 @@ def make_atmosphere_config(
         atmosphere_config["statevector"].update(aerosol_state_vector)
 
     # Atmosphere RT engine should know about our whole LUT grid and all of our statevectors, so copy them in
-    atmosphere_config["engine"]["statevector_names"] = list(
+    atmosphere_config["statevector_names"] = list(
         atmosphere_config["statevector"].keys()
     )
+
+    # Add atmosphere-specific wavelength file if passed
+    if wavelength_file:
+        atmosphere_config["wavelength_file"] = wavelength_file
 
     return atmosphere_config
 
@@ -1828,6 +1949,7 @@ def make_surface_config(
     max_slope: float = 20.0,
     surface_refractive_index_path: str = None,
     use_background_rfl=False,
+    **kwargs,
 ):
     # Initialize config dict
     surface_config_dict = {
@@ -1921,6 +2043,13 @@ def make_instrument_config(
     use_superpixels: bool = True,
     uncorrelated_radiometric_uncertainty: float = 0.0,
     dn_uncertainty_file: str = None,
+    cal_wavelength_variables: list = [],
+    cal_per_channel_rcc: bool = False,
+    rcc_prior_file: str = None,
+    wlspl_prior_file: str = None,
+    spline_indices: list = [],
+    snr: int = 500,
+    **kwargs,
 ):
     config = {
         "wavelength_file": wavelength_path,
@@ -1941,22 +2070,47 @@ def make_instrument_config(
 
         # Add a state vector element for each column in the EOF file
         eof = np.loadtxt(eof_path)
-        config["statevector"] = {}
+        config.setdefault("statevector", {})
         for idx in range(eof.shape[1]):
             key = "EOF_%i" % (idx + 1)
-            config["statevector"][key] = {
-                "bounds": [-10, 10],
-                "scale": 1,
-                "init": 0,
-                "prior_sigma": 100.0,
-                "prior_mean": 0,
-            }
+            config["statevector"][key] = DefaultRCCPrior._asdict()
+
+    if len(cal_wavelength_variables):
+        # Hard coded check against list
+        assert all(
+            item in WORKING_WAVELENGTH_CAL_VARIABLES
+            for item in cal_wavelength_variables
+        ), (
+            "Wavelength calibration parameter passed into "
+            "build_instrument_configuration not added to the "
+            "global list of validated variables"
+        )
+        config.setdefault("statevector", {})
+        for var in cal_wavelength_variables:
+            if var == "GROW_FWHM":
+                config["statevector"][var] = DefaultGROWFWHMPrior._asdict()
+            elif var == "WL_SHIFT":
+                config["statevector"][var] = DefaultWLSHIFTPrior._asdict()
+            elif var == "WLSPL":
+                for index in spline_indices:
+                    config["statevector"][
+                        f"{var}_{index:03}"
+                    ] = DefaultWLSPLPrior._asdict()
+
+    if cal_per_channel_rcc:
+        config.setdefault("statevector", {})
+        config["statevector"]["PER_WL_RCC"] = DefaultRCCPrior._asdict()
+
+    if rcc_prior_file:
+        config["rcc_prior_file"] = rcc_prior_file
+
+    if wlspl_prior_file:
+        config["wlspl_prior_file"] = wlspl_prior_file
 
     if noise_path is not None:
         config["parametric_noise_file"] = noise_path
-
     else:
-        config["SNR"] = 500
+        config["SNR"] = snr
 
     return config
 
@@ -1967,7 +2121,7 @@ def make_implementation_config(
     inversion_windows: list = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]],
     n_cores: int = -1,
     debug: bool = False,
-    per_pixel_heuristic_prior: bool = False,
+    pixel_heuristic_priors: list[str] = [],
 ):
 
     return {
@@ -1975,7 +2129,7 @@ def make_implementation_config(
         "ray_address": ray_ip_head,
         "inversion": {"windows": inversion_windows},
         "n_cores": n_cores,
-        "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
+        "pixel_heuristic_priors": pixel_heuristic_priors,
         "debug_mode": debug,
         "isofit_version": __version__,
     }
@@ -1989,6 +2143,7 @@ def make_input_config(
     rdn_factors_path: str = None,
     bgrfl_path: str = None,
     bgtopo_path: str = None,
+    **kwargs,
 ):
     input_config = {}
     input_config["measured_radiance_file"] = rdn_input_path
@@ -2010,6 +2165,7 @@ def make_output_config(
     state_output_path: str,
     posterior_output_path: str = None,
     rfl_output_path: str = None,
+    **kwargs,
 ):
     output_config = {}
     output_config["estimated_state_file"] = state_output_path

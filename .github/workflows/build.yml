@@ -141,6 +141,13 @@ jobs:
             echo "$MSG"
           fi
 
+      - name: Install additional dependencies [libradtran]
+        if: steps.cache-extras.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnetcdf-dev netcdf-bin libgsl-dev
+
       - name: Download Extras
         if: steps.cache-extras.outputs.cache-hit != 'true'
         shell: bash

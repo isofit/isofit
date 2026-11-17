@@ -15,6 +15,13 @@ jobs:
   main:
     runs-on: ubuntu-latest
     steps:
+      - name: Install additional dependencies [libradtran]
+        if: steps.cache-extras.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnetcdf-dev netcdf-bin libgsl-dev
+
       - name: Cached Extras
         id: cache-extras
         uses: actions/cache/restore@v4
@@ -47,7 +54,7 @@ jobs:
 
           RUN=$(isofit path examples)/LakeMary/
 
-          for i in default bgrfl; do
+          for i in default bgrfl libradtran; do
             $RUN/${i}.sh --log_file results/${i}.log --resources
             isoplots spfit -p $RUN -o results/${i}.png
             isoplots resources results/${i}.resources.jsonl -o results/${i}.resources.html -l results/${i}.log --relative --png --debug

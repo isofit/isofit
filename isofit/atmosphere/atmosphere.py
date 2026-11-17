@@ -31,7 +31,7 @@ import numpy as np
 
 from isofit.configs import Config
 from isofit.core import common, units
-from isofit.core.common import json_load_ascii, svd_inv_sqrt
+from isofit.core.common import PriorUpdate, json_load_ascii, svd_inv_sqrt
 from isofit.core.geometry import Geometry
 from isofit.luts.reader import Reader
 
@@ -135,11 +135,19 @@ class BaseAtmosphere(Reader):
         self.h2o_i = [
             i for i, v in enumerate(self.statevec_names) if v in possible_h2o_names
         ]
+        self.h2o_name = self.statevec_names[self.h2o_i[0]] if self.h2o_i else None
+
+        possible_aerosol_names = ["AOT", "AERFRAC"]
+        self.aerosol_i = [
+            i
+            for i, v in enumerate(self.statevec_names)
+            if any(name in v for name in possible_aerosol_names)
+        ]
 
         # Configure and exit flag
         self.configure_and_exit = self.config.configure_and_exit
 
-        self.engine_base_dir = self.config.engine_base_dir
+        self.engine_base_dir = getattr(self.config.engine, "base_dir", None)
         self.sim_path = self.config.sim_path
         self.multipart_transmittance = self.config.multipart_transmittance
 
@@ -157,10 +165,7 @@ class BaseAtmosphere(Reader):
         #     )
 
         # TODO: overwrite_interpolator not hooked up. Check if we even want this override
-        self.interpolator_style = (
-            self.config.interpolator_style
-            or full_config.forward_model.instrument.get("interpolator_style")
-        )
+        self.interpolator_style = self.config.interpolator_style
 
         self.multipart_transmittance = (
             full_config.forward_model.atmosphere.multipart_transmittance
@@ -174,7 +179,7 @@ class BaseAtmosphere(Reader):
                 self.config.wavelength_file
                 or full_config.forward_model.instrument.wavelength_file
             )
-            if os.path.exists(self.wavelength_file):
+            if self.wavelength_file and os.path.exists(self.wavelength_file):
                 Logger.info(f"Loading from wavelength_file: {self.wavelength_file}")
                 wl, fwhm = common.load_wavelen(self.wavelength_file)
 
@@ -218,10 +223,9 @@ class BaseAtmosphere(Reader):
         # Used both to tag a LUT at build time and to reconcile a
         # prebuilt LUT's build date against the current scene date.
         self.dayofyear = None
-        if self.config.template_file:
-            modtran_input = json_load_ascii(self.config.template_file)["MODTRAN"][0][
-                "MODTRANINPUT"
-            ]
+        template_file = getattr(self.config.engine, "template_file", None)
+        if template_file:
+            modtran_input = json_load_ascii(template_file)["MODTRAN"][0]["MODTRANINPUT"]
             self.atmosphere_type = modtran_input["ATMOSPHERE"].get(
                 "M1", "ATM_MIDLAT_SUMMER"
             )
@@ -249,7 +253,7 @@ class BaseAtmosphere(Reader):
         self.alldim = {}
         super().__init__(
             build_interpolators=build_interpolators,
-            lut_subset=self.config.lut_names,
+            lut_subset=self.config.lut_subset,
             **kwargs,
         )
 
@@ -294,9 +298,10 @@ class BaseAtmosphere(Reader):
 
         # Special treatment for PACE OCI
         srf_file = None
-        irr_file = Path(self.config.irradiance_file)
-        if irr_file.stem == "tsis_f0_0p1":
-            srf_file = irr_file.parent / "pace_oci_rsr.nc"
+        if self.config.irradiance_file is not None:
+            irr_file = Path(self.config.irradiance_file)
+            if irr_file.stem == "tsis_f0_0p1":
+                srf_file = irr_file.parent / "pace_oci_rsr.nc"
 
         if (
             not len(self.wl) == len(self.lut.wl)
@@ -353,11 +358,28 @@ class BaseAtmosphere(Reader):
             Logger.error(error)
             raise AttributeError(error)
 
-    def update_heuristic_prior_means(self, x_atmosphere, geom):
-        xa = self.prior_mean.copy()
-        xa[self.h2o_i] = x_atmosphere[self.h2o_i]
+    def heuristic_prior_update(self, x_atmosphere, geom, pixel_heuristic_priors):
+        updates = {name: ([], []) for name in PriorUpdate._fields}
 
-        return xa
+        if "H2O" in pixel_heuristic_priors:
+            updates["xa"][0].append(self.h2o_i)
+            updates["xa"][1].append(x_atmosphere[self.h2o_i].item())
+
+        if "AOT" in pixel_heuristic_priors:
+            xa_aot, sigma_aot = aeronet_model(
+                elevation_km=geom.surface_elevation_km,
+            )
+            i = self.aerosol_i
+            for name, val in (
+                ("xa", xa_aot),
+                ("Sa", sigma_aot**2),
+                ("Sa_inv", 1 / sigma_aot**2),
+                ("Sa_inv_sqrt", 1 / sigma_aot),
+            ):
+                updates[name][0].append(i)
+                updates[name][1].append(val)
+
+        return PriorUpdate(**updates)
 
     def xa(self, x_atmosphere, geom):
         """
@@ -469,6 +491,7 @@ class BaseAtmosphere(Reader):
         rfl_2: float, defaults=0.5
             surface reflectance for case 2 of the MODTRAN output
 
+
         Returns
         -------
         data: dict
@@ -511,47 +534,59 @@ class BaseAtmosphere(Reader):
         # This includes direct + diffuse down, but only direct up transmittance
         L_toa_1 = case_1["grnd_rflt"]
 
-        # Transforming back to at-surface radiance
-        # Since L_toa_dir_1 and L_toa_1 only contain direct upward transmittance,
-        # we can safely divide by transm_up_dir without needing transm_up_dif
-        # Direct at-surface radiance for case 1 (only direct down transmittance)
-        L_down_dir_1 = L_toa_dir_1 / rfl_1 / transm_up_dir
-        # Total at-surface radiance for case 1 (direct + diffuse down transmittance)
-        L_down_1 = L_toa_1 / rfl_1 / transm_up_dir
+        # MODTRAN-TP7 files especially flood this with divide by zero errors but can mostly be ignored
+        with np.errstate(divide="ignore", invalid="ignore"):
 
-        # Total at-surface radiance for case 2 (direct + diffuse down transmittance)
-        L_down_2 = case_2["grnd_rflt"] / rfl_2 / transm_up_dir
+            # Transforming back to at-surface radiance
+            # Since L_toa_dir_1 and L_toa_1 only contain direct upward transmittance,
+            # we can safely divide by transm_up_dir without needing transm_up_dif
+            # Direct at-surface radiance for case 1 (only direct down transmittance)
+            L_down_dir_1 = L_toa_dir_1 / rfl_1 / transm_up_dir
+            # Total at-surface radiance for case 1 (direct + diffuse down transmittance)
+            L_down_1 = L_toa_1 / rfl_1 / transm_up_dir
 
-        # Atmospheric path radiance for case 1
-        L_path_1 = case_1["path_rdn"]
-        # Atmospheric path radiance for case 2
-        L_path_2 = case_2["path_rdn"]
+            # Total at-surface radiance for case 2 (direct + diffuse down transmittance)
+            L_down_2 = case_2["grnd_rflt"] / rfl_2 / transm_up_dir
 
-        # Total reflected radiance at surface (before upward atmospheric transmission) for case 1
-        L_surf_1 = rfl_1 * L_down_1
-        # Total reflected radiance at surface (before upward atmospheric transmission) for case 2
-        L_surf_2 = rfl_2 * L_down_2
-        # Atmospheric path radiance for non-reflective surface (case 0)
-        L_path_0 = ((L_surf_2 * L_path_1) - (L_surf_1 * L_path_2)) / (
-            L_surf_2 - L_surf_1
-        )
+            # Atmospheric path radiance for case 1
+            L_path_1 = case_1["path_rdn"]
+            # Atmospheric path radiance for case 2
+            L_path_2 = case_2["path_rdn"]
 
-        # Diffuse upward transmittance
-        transm_up_dif = (L_path_1 - L_path_0) / L_surf_1
+            # Total reflected radiance at surface (before upward atmospheric transmission) for case 1
+            L_surf_1 = rfl_1 * L_down_1
+            # Total reflected radiance at surface (before upward atmospheric transmission) for case 2
+            L_surf_2 = rfl_2 * L_down_2
+            # Atmospheric path radiance for non-reflective surface (case 0)
+            L_path_0 = ((L_surf_2 * L_path_1) - (L_surf_1 * L_path_2)) / (
+                L_surf_2 - L_surf_1
+            )
 
-        # Spherical albedo
-        salb = (L_down_1 - L_down_2) / (L_surf_1 - L_surf_2)
+            # Diffuse upward transmittance
+            transm_up_dif = (L_path_1 - L_path_0) / L_surf_1
 
-        # Total at-surface radiance for non-reflective surface (case 0)
-        # Only add contribution from atmospheric spherical albedo
-        L_down_0 = L_down_1 * (1 - rfl_1 * salb)
-        # Diffuse at-surface radiance for non-reflective surface (case 0)
-        L_down_dif_0 = L_down_0 - L_down_dir_1
+            # Spherical albedo
+            salb_num = L_down_1 - L_down_2
+            salb_denom = L_surf_1 - L_surf_2
+            salb = salb_num / salb_denom
 
-        # Direct downward transmittance
-        transm_down_dir = L_down_dir_1 / widths / L_solar
-        # Diffuse downward transmittance
-        transm_down_dif = L_down_dif_0 / widths / L_solar
+            # Compute rhoatm always so both tp7 and chn match
+            case_0["rhoatm"] = L_path_0 / L_solar / widths
+
+            # Total at-surface radiance for non-reflective surface (case 0)
+            # Only add contribution from atmospheric spherical albedo
+            L_down_0 = L_down_1 * (1 - rfl_1 * salb)
+            # Diffuse at-surface radiance for non-reflective surface (case 0)
+            L_down_dif_0 = L_down_0 - L_down_dir_1
+
+            # Direct downward transmittance
+            transm_down_dir = L_down_dir_1 / widths / L_solar
+            # Diffuse downward transmittance
+            transm_down_dif = L_down_dif_0 / widths / L_solar
+
+            # Clean up transm_up_dif and sphalb cases for very small downward transmittance
+            transm_up_dif[(transm_down_dir + transm_down_dif) < 0.001] = 0.0
+            salb[(transm_down_dir + transm_down_dif) < 0.001] = 0.0
 
         # Return some keys from the first part plus the new calculated keys
         pass_forward = [
@@ -639,30 +674,30 @@ def modtran_water_upperbound_polynomials() -> dict:
     # Capping polynomial to not allow negative, or increasing trend, at very high ground altitudes (>6km).
     min_value = 0.25
 
+    def make_poly(c0, c1, c2, c3):
+        def poly(x):
+            if x is None:
+                return None
+
+            x = np.asarray(x)
+            return np.maximum(c0 + c1 * x + c2 * x**2 + c3 * x**3, min_value)
+
+        return poly
+
     polynomials = {
-        "ATM_TROPICAL": lambda x: np.maximum(
-            6.74256 + (-2.37052 * x) + (0.313829 * x**2) + (-0.0159003 * x**3),
-            min_value,
+        "ATM_TROPICAL": make_poly(6.74256, -2.37052, 0.313829, -0.0159003),
+        "ATM_MIDLAT_SUMMER": make_poly(
+            5.350046, -1.839548, 2.296582e-01, -1.020594e-02
         ),
-        "ATM_MIDLAT_SUMMER": lambda x: np.maximum(
-            5.350046 + (-1.839548 * x) + (2.296582e-01 * x**2) + (-1.020594e-02 * x**3),
-            min_value,
+        "ATM_MIDLAT_WINTER": make_poly(
+            1.371226, -0.442087, 4.485325e-02, -1.130163e-03
         ),
-        "ATM_MIDLAT_WINTER": lambda x: np.maximum(
-            1.371226 + (-0.442087 * x) + (4.485325e-02 * x**2) + (-1.130163e-03 * x**3),
-            min_value,
+        "ATM_SUBARC_SUMMER": make_poly(
+            3.121272, -1.171145, 1.704094e-01, -9.701062e-03
         ),
-        "ATM_SUBARC_SUMMER": lambda x: np.maximum(
-            3.121272 + (-1.171145 * x) + (1.704094e-01 * x**2) + (-9.701062e-03 * x**3),
-            min_value,
-        ),
-        "ATM_SUBARC_WINTER": lambda x: np.maximum(
-            0.630406 + (-0.176336 * x) + (8.286409e-03 * x**2) + (8.138824e-04 * x**3),
-            min_value,
-        ),
-        "ATM_US_STANDARD_1976": lambda x: np.maximum(
-            2.869655 + (-1.227473 * x) + (2.039059e-01 * x**2) + (-1.274801e-02 * x**3),
-            min_value,
+        "ATM_SUBARC_WINTER": make_poly(0.630406, -0.176336, 8.286409e-03, 8.138824e-04),
+        "ATM_US_STANDARD_1976": make_poly(
+            2.869655, -1.227473, 2.039059e-01, -1.274801e-02
         ),
     }
 
@@ -676,31 +711,63 @@ def modtran_aot_lowerbound_polynomials() -> dict:
         dict: 3rd degree polynomials to estimate lowerbound of AOT
     """
 
+    def make_poly(c0, c1, c2, c3):
+        def poly(x):
+            if x is None:
+                return None
+
+            x = np.asarray(x)
+            return c0 + c1 * x + c2 * x**2 + c3 * x**3
+
+        return poly
+
     polynomials = {
-        "ATM_TROPICAL": lambda x: 0.042090
-        + (-0.003120 * x)
-        + (4.462979e-18 * x**2)
-        + (-4.260469e-19 * x**3),
-        "ATM_MIDLAT_SUMMER": lambda x: 0.042090
-        + (-0.003120 * x)
-        + (4.462979e-18 * x**2)
-        + (-4.260469e-19 * x**3),
-        "ATM_MIDLAT_WINTER": lambda x: 0.024748
-        + (-0.001654 * x)
-        + (-5.083805e-07 * x**2)
-        + (7.252007e-08 * x**3),
-        "ATM_SUBARC_SUMMER": lambda x: 0.042090
-        + (-0.003120 * x)
-        + (4.462979e-18 * x**2)
-        + (-4.260469e-19 * x**3),
-        "ATM_SUBARC_WINTER": lambda x: 0.024748
-        + (-0.001654 * x)
-        + (-5.083805e-07 * x**2)
-        + (7.252007e-08 * x**3),
-        "ATM_US_STANDARD_1976": lambda x: 0.042090
-        + (-0.003120 * x)
-        + (4.462979e-18 * x**2)
-        + (-4.260469e-19 * x**3),
+        "ATM_TROPICAL": make_poly(0.042090, -0.003120, 4.462979e-18, -4.260469e-19),
+        "ATM_MIDLAT_SUMMER": make_poly(
+            0.042090, -0.003120, 4.462979e-18, -4.260469e-19
+        ),
+        "ATM_MIDLAT_WINTER": make_poly(
+            0.024748, -0.001654, -5.083805e-07, 7.252007e-08
+        ),
+        "ATM_SUBARC_SUMMER": make_poly(
+            0.042090, -0.003120, 4.462979e-18, -4.260469e-19
+        ),
+        "ATM_SUBARC_WINTER": make_poly(
+            0.024748, -0.001654, -5.083805e-07, 7.252007e-08
+        ),
+        "ATM_US_STANDARD_1976": make_poly(
+            0.042090, -0.003120, 4.462979e-18, -4.260469e-19
+        ),
     }
 
     return polynomials
+
+
+def aeronet_model(
+    elevation_km: float, aot_min: float = 0.01, aot_max: float = 1.0
+) -> tuple:
+    """
+    Daily average aeronet modeled/converted AOT @ 550 nm, accessed on 2 October 2026 (via 440-870_Angstrom_Exponent).
+    Data were binned by elevation every 200 m, then were modeled using empirically derived relation.
+    The output is a prior mean and standard deviation for AOT-550 with respect to elevation.
+    """
+    try:
+        elevation_m = units.km_to_m(elevation_km)
+    # allow for test data with elevation as None
+    except (TypeError, ValueError):
+        elevation_m = 0.0
+
+    # Define bounds and params of polynomial
+    elevation_m = min(max(elevation_m, 0.0), 6000.0)
+    p_mean = np.array(
+        [-8.79629630e-13, 1.34722222e-08, -7.05687831e-05, 1.51746032e-01]
+    )
+    p_std = np.array([-2.77777778e-14, 4.08333333e-09, -3.81269841e-05, 1.19761905e-01])
+
+    prior_mean = np.polyval(p_mean, elevation_m)
+    prior_sd = np.polyval(p_std, elevation_m)
+
+    # Guard against out of bounds in LUT (allows for prebuilt LUT logic)
+    prior_mean = max(min(prior_mean, aot_max), aot_min)
+
+    return prior_mean, prior_sd

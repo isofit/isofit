@@ -1,0 +1,28 @@
+# Use case: MCMC inversion for posterior uncertainty quantification.
+#
+# Same forward model and retrieval setup as the standard VSWIR workflow, but the
+# posterior is sampled with Markov-Chain Monte Carlo instead of a single
+# least-squares optimum. Slower, but yields full posterior samples for rigorous
+# uncertainty estimation.
+#
+# Inherits the entire vswir.yml use case (which itself inherits the
+# sRTMnet engine profile from default.yml) and overrides only the implementation
+# mode and MCMC sampler settings. Load with:
+#   interpolate.load("mcmc.yml")
+
+mcmc:
+  ^^: vswir.yml:vswir
+
+  output:
+    mcmc_samples_file: ${output.dir}/mcmc_samples
+
+  implementation:
+    mode: mcmc_inversion
+    inversion:
+      mcmc:
+        iterations: 10000
+        burnin: 2000
+        regularizer: 0.001
+        proposal_scaling: 0.01
+        verbose: true
+        restart_every: 2000

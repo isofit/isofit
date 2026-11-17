@@ -2,8 +2,7 @@
 Downloads LibRadTran from https://www.libradtran.org/download/libRadtran-2.0.6.tar.gz
 """
 
-import os
-import platform
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -113,7 +112,12 @@ def download(path=None, overwrite=False, **_):
     print("Building via make")
     build(output / Version)
 
-    env.changeKey("libradtran.version", Version)
+    version_dir = output / Version
+    for dir in version_dir.iterdir():
+        shutil.move(str(dir), str(output))
+    version_dir.rmdir()
+
+    env.changeKey("libradtran-version", Version)
     env.save()
 
     print(f"Done, now available at: {output}")

@@ -30,8 +30,7 @@ import click
 import numpy as np
 from spectral.io import envi
 
-from isofit import ray
-from isofit.configs import configs
+from isofit import configs, ray
 from isofit.core.common import envi_header, eps, load_esd, load_spectrum, load_wavelen
 from isofit.core.fileio import initialize_output, write_bil_chunk
 from isofit.core.forward import ForwardModel
@@ -107,7 +106,7 @@ def analytical_line(
     wl_init, fwhm_init = load_wavelen(config.forward_model.instrument.wavelength_file)
 
     # Set up input file paths
-    subs_state_file = config.output.estimated_state_file
+    subs_state_file = str(config.output.estimated_state_file)
     subs_loc_file = config.input.loc_file
 
     # Rename files
@@ -198,7 +197,7 @@ def analytical_line(
     ]
     bbl = "{" + ",".join([f"{x}" for x in outside_ret_windows]) + "}"
     num_bands = len(full_idx_surf_rfl)
-    engine_name = config.forward_model.atmosphere.engine_name
+    engine_name = config.forward_model.atmosphere.engine.name
     isofit_version = config.implementation.isofit_version
     rfl_output = initialize_output(
         output_metadata,
@@ -473,7 +472,7 @@ class Worker(object):
             self.radiance_correction = None
 
         self.initializer = initializer
-        self.per_pixel_heuristic_prior = config.implementation.per_pixel_heuristic_prior
+        self.pixel_heuristic_priors = config.implementation.pixel_heuristic_priors
 
     def run_chunks(self, line_breaks: tuple, fill_value: float = -9999.0) -> None:
         """
@@ -602,16 +601,15 @@ class Worker(object):
             else:
                 raise ValueError("No valid initializer given for AOE algorithm")
 
-            # Update the bounds and set prior to initial (if that is the run
-            if self.per_pixel_heuristic_prior:
-                bounds = self.fm.heuristic_bounds(geom)
-            else:
-                bounds = self.fm.bounds
+            x0 = self.fm.clip_bounds(x0, self.fm.bounds, geom=geom, eps=eps)
 
-            x0 = self.fm.clip_bounds(x0, bounds, eps=eps)
-
-            if self.per_pixel_heuristic_prior:
-                self.fm.update_heuristic_prior_means(x0, geom)
+            # Update pixel-specific priors based on initial state and others
+            if len(self.pixel_heuristic_priors):
+                (xa, Sa, Sa_inv, Sa_inv_sqrt) = self.fm.heuristic_prior_update(x0, geom)
+                geom.xa = xa
+                geom.Sa = Sa
+                geom.Sa_inv = Sa_inv
+                geom.Sa_inv_sqrt = Sa_inv_sqrt
 
             states, unc = invert_analytical(
                 self.fm,

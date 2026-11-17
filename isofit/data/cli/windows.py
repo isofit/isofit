@@ -46,7 +46,7 @@ def download_mingw(path=None, tag="latest", overwrite=False, **_):
         "You may need to add it to your PATH environment variable, ISOFIT will also do this automatically at runtime"
     )
 
-    env.changeKey("path.mingw", "{windows}/MinGW64/bin")
+    env.changeKey("path-mingw", "{windows}/MinGW64/bin")
     env.save()
     env.load()
 
@@ -84,7 +84,7 @@ def download_portable_git(path=None, overwrite=False, **_):
     except Exception:
         pass
 
-    env.changeKey("path.git", "{windows}/PortableGit/bin")
+    env.changeKey("path-git", "{windows}/PortableGit/bin")
     env.save()
     env.load()
 

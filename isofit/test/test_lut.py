@@ -22,7 +22,7 @@
 
 import pytest
 
-from isofit.configs import configs
+from isofit import configs
 from isofit.atmosphere.engines import ModtranRT
 
 

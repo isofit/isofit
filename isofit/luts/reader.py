@@ -117,7 +117,7 @@ def subsetting(ds, subset):
         for key in missing:
             Logger.error(f"- {key}")
         raise AttributeError(
-            f"Subset dictionary (engine.lut_names) is missing keys that are present in the LUT dimensions {set(ds.coords)}: {missing=}"
+            f"Subset dictionary (atmosphere.lut_subset) is missing keys that are present in the LUT dimensions {set(ds.coords)}: {missing=}"
         )
 
     # Operations to perform
@@ -469,7 +469,7 @@ class Reader:
             Logger.info("No LUT provided, attempting to build it")
 
             if not hasattr(self, "write"):
-                raise NotImplemented(
+                raise NotImplementedError(
                     "This object did not inherit the LUT Writer class and therefore cannot write a LUT, please use a defined engine instead"
                 )
 
@@ -584,9 +584,9 @@ class Reader:
         keys = {key for key in ds if "wl" in ds[key].dims} - {"fwhm"}
 
         kwargs |= {
-            "wl": ds.wl,
-            "wl2": wl,
-            "fwhm2": fwhm,
+            "wl": np.asarray(ds.wl),
+            "wl2": np.asarray(wl),
+            "fwhm2": np.asarray(fwhm),
         }
 
         conv_ds = xr.apply_ufunc(

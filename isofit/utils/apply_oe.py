@@ -114,7 +114,9 @@ def apply_oe(
     use_background_rfl=False,
     eof_path=None,
     terrain_style="dem",
-    per_pixel_heuristic_prior=False,
+    pixel_heuristic_priors=[],
+    datestr=None,
+    libradtran_band_model=None,
 ):
     """
     Applies OE over a flightline using an atmospheric radiative transfer engine. This executes
@@ -141,7 +143,7 @@ def apply_oe(
         Directory to stage multiple outputs, will contain subdirectories
     sensor : str
         The sensor used for acquisition, will be used to set noise and datetime
-        settings
+        settings. For custom sensors, use "custom" (requires datestr) or "NA-YYYYMMDD"
     surface_path : str
         Path to surface model or json dict of surface model configuration
     copy_input_files : bool, default=False
@@ -262,6 +264,19 @@ def apply_oe(
         with one number per instrument channel.
     terrain_style : str, default=dem
         Flag to set the terrain style.  dem uses provided obs values, flat sets the surface to the spheroid
+    pixel_heuristic_priors: bool, default=False
+        List of per-pixel heuristic priors to apply Options:
+            AOT - As a function of aeronet climatology
+            H2O - As a function of band continuum solution
+            SUN_GLINT - As a function of SWIR signal
+    datestr : str, default=None
+        strptime format matching the start of the radiance filename, e.g.
+        "emit%Y%m%dt%H%M%S", used to determine the acquisition date and time for custom
+        sensors. Required for sensor "custom". Optional for "NA-*" sensors, where the
+        date is otherwise taken from the sensor name ("NA-YYYYMMDD"). Currently ignored
+        for all other sensors.
+    libradtran_band_model: str, default=None
+        Provide a band model override to the libradtran atmospheric radiative transfer model.
 
     References
     ----------
@@ -298,11 +313,14 @@ def apply_oe(
         multipart_transmittance = True
 
     if sensor not in SUPPORTED_SENSORS:
-        if sensor[:3] != "NA-":
+        if sensor != "custom" and sensor[:2] != "NA":
             errstr = (
-                f'Argument error: sensor must be one of {SUPPORTED_SENSORS} or "NA-*"'
+                f"Argument error: sensor must be one of {SUPPORTED_SENSORS}, "
+                'or "NA*"'
             )
             raise ValueError(errstr)
+    if sensor == "custom" and datestr is None:
+        raise ValueError('Argument error: datestr is required for the "custom" sensor')
 
     if num_neighbors is not None and len(num_neighbors) > 1:
         if not analytical_line:
@@ -326,6 +344,12 @@ def apply_oe(
         raise ValueError(
             f"Invalid atmosphere_type '{atmosphere_type}'. Must be one of: {keys}"
         )
+
+    if datestr is not None and sensor in SUPPORTED_SENSORS:
+        raise ValueError(f'datestr is currently only used with custom sensors ("NA")')
+
+    if "NA" in sensor and datestr is None:
+        raise ValueError(f"NA sensor must specify --datestr")
 
     if os.path.isdir(working_directory) is False:
         os.mkdir(working_directory)
@@ -458,7 +482,9 @@ def apply_oe(
 
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
-    dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(sensor, paths.fid)
+    dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(
+        sensor, paths.fid, datestr
+    )
     if not sensor_inversion_windows:
         sensor_inversion_windows = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
 
@@ -686,8 +712,10 @@ def apply_oe(
         "multipart_transmittance": multipart_transmittance,
         "segmentation_size": segmentation_size,
         "terrain_style": terrain_style,
-        "per_pixel_heuristic_prior": per_pixel_heuristic_prior,
+        "pixel_heuristic_priors": pixel_heuristic_priors,
         "use_background_rfl": use_background_rfl,
+        "elevation_km": mean_elevation_km,
+        "libradtran_band_model": libradtran_band_model,
     }
     if presolve:
         # write modtran presolve template
@@ -820,11 +848,13 @@ def apply_oe(
         # add aerosol elements from climatology
         aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
             tmpl.load_climatology(
-                paths.aerosol_climatology,
-                mean_latitude,
-                mean_longitude,
-                dt,
+                config_path=paths.aerosol_climatology,
+                latitude=mean_latitude,
+                longitude=mean_longitude,
+                elevation_km=mean_elevation_km,
+                acquisition_datetime=dt,
                 lut_params=lut_params,
+                heuristic_aeronet_prior="AOT" in pixel_heuristic_priors,
             )
         )
         config_params["aerosol_model_file"] = aerosol_model_path
@@ -951,6 +981,7 @@ def apply_oe(
                 paths.loc_working_path,
                 paths.obs_working_path,
                 working_directory,
+                segmentation_file=paths.lbl_working_path,
                 output_rfl_file=paths.rfl_working_path,
                 output_unc_file=paths.uncert_working_path,
                 skyview_factor_file=paths.svf_working_path,
@@ -1030,12 +1061,19 @@ def apply_oe(
 @click.option("--use_background_rfl", is_flag=True, default=False)
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
-@click.option("--per_pixel_heuristic_prior", is_flag=True, default=False)
+@click.option(
+    "--pixel_heuristic_priors",
+    "-php",
+    multiple=True,
+    type=click.Choice(["AOT", "H2O", "SUN_GLINT"], case_sensitive=False),
+)
+@click.option("--datestr", type=str, default=None)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
+@click.option("--libradtran_band_model", default=None)
 @click.option("--profile")
 def cli(debug_args, profile, **kwargs):
     if debug_args:

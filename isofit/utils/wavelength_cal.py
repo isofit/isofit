@@ -16,7 +16,7 @@ import ray
 from spectral.io import envi
 
 import isofit.utils.template_construction as tmpl
-from isofit.configs import configs
+from isofit import configs
 from isofit.core import instrument, isofit
 from isofit.core.common import envi_header
 from isofit.utils.apply_oe import (
@@ -38,9 +38,7 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
     n = np.ones(len(x))
     D = np.c_[n, x, w]
     np.savetxt(hi_res_wavlengths, D, fmt="%8.6f")
-    config["forward_model"]["atmosphere"]["engine"][
-        "wavelength_file"
-    ] = hi_res_wavlengths
+    config["forward_model"]["atmosphere"]["wavelength_file"] = hi_res_wavlengths
 
     # Flag case where spline_indices is empty and using spline
     if not spline_indices and (
@@ -49,7 +47,7 @@ def add_wavelength_elements(config_path, state_type="shift", spline_indices=[]):
         errstr = "Spline state given, but no indices provided"
         raise ValueError(errstr)
 
-    config["forward_model"]["instrument"]["calibration_fixed"] = False
+    # Instrument derives calibration_fixed from the statevector elements below
     if state_type == "shift":
         config["forward_model"]["instrument"]["statevector"] = {
             "GROW_FWHM": {
@@ -219,6 +217,7 @@ def wavelength_cal(
     start_column=None,
     end_column=None,
     column_interval=1,
+    datestr=None,
 ):
     """\
     Runs a wavelength calibration on an input scene.
@@ -244,7 +243,7 @@ def wavelength_cal(
         Directory to stage multiple outputs, will contain subdirectories
     sensor : str
         The sensor used for acquisition, will be used to set noise and datetime
-        settings
+        settings. For custom sensors, use "custom" (requires datestr) or "NA-YYYYMMDD"
     surface_path : str
         Path to surface model or json dict of surface model configuration
     copy_input_files : bool, default=False
@@ -304,6 +303,12 @@ def wavelength_cal(
         last column.
     column_interval : int, default=1
         Step size over columns; skips, doesn't average. Useful to increase runtime speeds.
+    datestr : str, default=None
+        strptime format matching the start of the radiance filename, e.g.
+        "emit%Y%m%dt%H%M%S", used to determine the acquisition date and time for custom
+        sensors. Required for sensor "custom". Optional for "NA-*" sensors, where the
+        date is otherwise taken from the sensor name ("NA-YYYYMMDD"). Currently ignored
+        for all other sensors.
     """
 
     radiance_meta = envi.open(envi_header(input_radiance)).metadata
@@ -338,11 +343,14 @@ def wavelength_cal(
         multipart_transmittance = True
 
     if sensor not in SUPPORTED_SENSORS:
-        if sensor[:3] != "NA-":
+        if sensor != "custom" and sensor[:3] != "NA-":
             errstr = (
-                f'Argument error: sensor must be one of {SUPPORTED_SENSORS} or "NA-*"'
+                f"Argument error: sensor must be one of {SUPPORTED_SENSORS}, "
+                '"custom" or "NA-*"'
             )
             raise ValueError(errstr)
+    if sensor == "custom" and datestr is None:
+        raise ValueError('Argument error: datestr is required for the "custom" sensor')
 
     if os.path.isdir(working_directory) is False:
         os.mkdir(working_directory)
@@ -409,7 +417,14 @@ def wavelength_cal(
 
     # Based on the sensor type, get appropriate year/month/day info from initial condition.
     # We'll adjust for line length and UTC day overrun later
-    dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(sensor, paths.fid)
+    if datestr is not None and sensor in SUPPORTED_SENSORS:
+        logging.warning(
+            'datestr is currently only used with custom sensors ("custom" or "NA-*"), '
+            f"ignoring for {sensor}"
+        )
+    dt, sensor_inversion_windows = tmpl.get_sensor_metadata_from_fid(
+        sensor, paths.fid, datestr
+    )
     if not inversion_windows:
         sensor_inversion_windows = [[350.0, 1360.0], [1410, 1800.0], [1970.0, 2500.0]]
     if inversion_windows:
@@ -595,10 +610,10 @@ def wavelength_cal(
         # add aerosol elements from climatology
         aerosol_state_vector, aerosol_lut_grid, aerosol_model_path = (
             tmpl.load_climatology(
-                paths.aerosol_climatology,
-                mean_latitude,
-                mean_longitude,
-                dt,
+                config_path=paths.aerosol_climatology,
+                latitude=mean_latitude,
+                longitude=mean_longitude,
+                acquisition_datetime=dt,
                 lut_params=lut_params,
             )
         )
@@ -667,13 +682,13 @@ def get_wavelength_adjustment(
     logging.info("Getting wavelength adjustment...")
 
     # Load the instrument object
-    config = configs.load_config(config_file)
+    config = configs.create_new_config(config_file)
     instrument = instrument.Instrument(config)
 
     # Load the statevector - we could do this by loading the forward
     # model and the indicies, but in case the LUT is large, we're
     # shortcutting here
-    state_ds = envi.open(envi_header(config["output"]["estimated_state_file"]))
+    state_ds = envi.open(envi_header(config.output.estimated_state_file))
     state_possible_names = ["GRWO_FWHM", "FWHMSPL", "WL_SPACE", "WL_SHIFT", "WLSPL"]
     band_names = list(state_ds.metadata["band names"])
     instrument_idx = np.array(
@@ -718,6 +733,7 @@ def get_wavelength_adjustment(
     is_flag=True,
 )
 def cli_get_wavelength_adjustment(debug_args, profile, **kwargs):
+    """Get the wavelength adjustment based on a previous isofit wavelength_cal run."""
     if debug_args:
         print("Arguments to be passed:")
         for key, value in kwitems():
@@ -764,6 +780,7 @@ def cli_get_wavelength_adjustment(debug_args, profile, **kwargs):
 @click.option("--start_column", type=int, default=None)
 @click.option("--end_column", type=int, default=None)
 @click.option("--column_interval", type=int, default=1)
+@click.option("--datestr", type=str, default=None)
 @click.option(
     "--debug-args",
     help="Prints the arguments list without executing the command",
@@ -771,6 +788,7 @@ def cli_get_wavelength_adjustment(debug_args, profile, **kwargs):
 )
 @click.option("--profile")
 def cli_wavelength_cal(debug_args, profile, **kwargs):
+    """Runs a wavelength calibration on an input scene"""
     if debug_args:
         print("Arguments to be passed:")
         for key, value in kwitems():

@@ -28,7 +28,7 @@ from scipy.io import loadmat
 from scipy.linalg import block_diag
 
 from isofit.atmosphere import Atmosphere
-from isofit.core.common import eps
+from isofit.core.common import PriorUpdate, eps, svd_inv_sqrt
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
 from isofit.core.multistate import match_statevector
@@ -165,13 +165,15 @@ class ForwardModel:
             self.calc_rdn_bgrfl = self.calc_rdn_bgrfl_homogeneous
             self.terrain_rereflection = self.terrain_rereflection_homogeneous
 
-        if full_config.implementation.per_pixel_heuristic_prior:
+        self.pixel_heuristic_priors = full_config.implementation.pixel_heuristic_priors
+        if len(self.pixel_heuristic_priors):
             self.xa = self.xa_heuristic
+            self.Sa = self.Sa_heuristic
         else:
             self.xa = self.xa_static
+            self.Sa = self.Sa_static
 
-    @staticmethod
-    def clip_bounds(x, bounds, inds_free=slice(None), eps=1e-5):
+    def clip_bounds(self, x, bounds, geom, inds_free=slice(None), eps=1e-5):
         """Clip state vector against bounds.
         eps shifts bounds by epsilon to not pin
         boundary returned val at boundary. Used when clipping prior mean.
@@ -185,6 +187,16 @@ class ForwardModel:
         low[check] = low[check] + rel_eps[check]
         high[check] = high[check] - rel_eps[check]
 
+        # Ensure higher altitudes do not go over physical water vapor limit.
+        # This protects Jacobian from zeroing out in undefined space.
+        if self.atmosphere.h2o_i:
+            modtran_bound = self.atmosphere.h2o_bounds_polynomial(
+                geom.surface_elevation_km
+            )
+            h2o_i = self.idx_atmosphere[self.atmosphere.h2o_i]
+            if modtran_bound:
+                high[h2o_i] = modtran_bound - rel_eps[h2o_i]
+
         return np.clip(x[inds_free], a_min=low[inds_free], a_max=high[inds_free])
 
     def out_of_bounds(self, x):
@@ -197,30 +209,52 @@ class ForwardModel:
             x_atmosphere <= (bound_lwr[self.idx_atmosphere] + eps * 2.0)
         )
 
-    def update_heuristic_prior_means(self, x, geom):
-        """Save the pixel-specific prior to the geometry object"""
+    def heuristic_prior_update(self, x, geom):
+        """Get the pixel-specific priors
+        NOTE: This has been developed with **diagonal priors** in mind **only**.
+        If updates to off-diagonals become necessary, we would have to revisit
+        all implementations, particularly the indexing in the PriorUpdate tuple.
+        This is potentially a hassle with the Sa normalization"""
+        xa = self.xa_static(x, geom)
+        Sa, Sa_inv, Sa_inv_sqrt = self.Sa_static(x, geom)
         x_surface, x_atmosphere, x_instrument = self.unpack(x)
-        x_surface = self.surface.update_heuristic_prior_means(x[self.idx_surface], geom)
-        x_atmosphere = self.atmosphere.update_heuristic_prior_means(
-            x[self.idx_atmosphere], geom
-        )
-        # No implimentation for Instrument
 
-        # Should be persist out of this function scope
-        geom.xa = np.concatenate([x_surface, x_atmosphere, x_instrument])
-
-        return
-
-    def heuristic_bounds(self, geom):
-        """Save pixel-specific bounds. Currently only implemented for H2O"""
-        # Would like to avoid if statement here
-        low_bound = self.bounds[0]
-        high_bound = self.bounds[1]
-        if self.atmosphere.h2o_i:
-            high_bound[self.idx_atmosphere[self.atmosphere.h2o_i]] = (
-                self.atmosphere.h2o_bounds_polynomial(geom.surface_elevation_km) - eps
+        collected = {name: ([], []) for name in ["xa", "Sa", "Sa_inv", "Sa_inv_sqrt"]}
+        for section, x_section, idx_section in [
+            (self.surface, x_surface, self.idx_surface),
+            (self.atmosphere, x_atmosphere, self.idx_atmosphere),
+            (self.instrument, x_instrument, self.idx_instrument),
+        ]:
+            # Primary function that fetches the section-specific update
+            updates = section.heuristic_prior_update(
+                x_section, geom, self.pixel_heuristic_priors
             )
-        return (low_bound, high_bound)
+            for name, (idx, vals) in updates._asdict().items():
+                idx = np.asarray(idx, dtype=int).reshape(-1)
+                vals = np.asarray(vals, dtype=float).reshape(-1)
+                collected[name][0].append(idx_section[idx])
+                collected[name][1].append(vals)
+
+        update = PriorUpdate(
+            **{
+                name: (np.concatenate(idx_list), np.concatenate(val_list))
+                for name, (idx_list, val_list) in collected.items()
+            }
+        )
+
+        # Copy to new memory address
+        xa = xa.copy()
+        Sa = Sa.copy()
+        Sa_inv = Sa_inv.copy()
+        Sa_inv_sqrt = Sa_inv_sqrt.copy()
+
+        # In the future, off-diagonal updates would require fixing this indexing
+        xa[update.xa[0]] = update.xa[1]
+        Sa[update.Sa[0], update.Sa[0]] = update.Sa[1]
+        Sa_inv[update.Sa[0], update.Sa_inv[0]] = update.Sa_inv[1]
+        Sa_inv_sqrt[update.Sa[0], update.Sa_inv_sqrt[0]] = update.Sa_inv_sqrt[1]
+
+        return xa, Sa, Sa_inv, Sa_inv_sqrt
 
     def xa_heuristic(self, x, geom):
         return geom.xa
@@ -239,7 +273,10 @@ class ForwardModel:
         xa_instrument = self.instrument.xa()
         return np.concatenate((xa_surface, xa_atmosphere, xa_instrument), axis=0)
 
-    def Sa(self, x, geom):
+    def Sa_heuristic(self, x, geom):
+        return geom.Sa, geom.Sa_inv, geom.Sa_inv_sqrt
+
+    def Sa_static(self, x, geom):
         """Calculate the prior covariance of the state vector (the
         concatenation of state vectors for the surface and the atmosphere).
 
@@ -345,8 +382,9 @@ class ForwardModel:
             geom=geom,
         )
 
-        return self.instrument.sample(
-            x_instrument, self.atmosphere.wl, rdn
+        return (
+            self.instrument.sample(x_instrument, self.atmosphere.wl, rdn)
+            * self.instrument.rcc_factor(x_instrument)
         ) + self.eof_offset(x_instrument)
 
     def calc_atmosphere_quantities(
@@ -666,7 +704,7 @@ class ForwardModel:
         # Call surface emission, upsample
         Ls_hi = self.upsample(self.surface.wl, self.calc_Ls(x_surface, geom))
 
-        rdn = self.calc_rdn(
+        rdn_hi = self.calc_rdn(
             x_atmosphere,
             rho_dir_dir=rho_dir_dir_hi,
             rho_dif_dir=rho_dif_dir_hi,
@@ -681,6 +719,7 @@ class ForwardModel:
             r=r,
             geom=geom,
         )
+        meas = self.instrument.sample(x_instrument, self.atmosphere.wl, rdn_hi)
 
         # Call derivative of rfl wrt surface state, upsample
         drfl_dsurface_hi = self.upsample(
@@ -692,18 +731,6 @@ class ForwardModel:
         dLs_dsurface_hi = self.upsample(
             self.surface.wl, self.surface.dLs_dsurface(x_surface, geom).T
         ).T
-
-        # To get the derivative w.r.t. atmosphere
-        drdn_datmosphere = self.drdn_datmosphere(
-            x_atmosphere,
-            geom,
-            rho_dir_dir=rho_dir_dir_hi,
-            rho_dif_dir=rho_dif_dir_hi,
-            rho_dir_dif=rho_dir_dif_hi,
-            rho_dif_dif=rho_dif_dif_hi,
-            Ls=Ls_hi,
-            rdn=rdn,
-        )
 
         # To get the derivative w.r.t. Surface
         # ToDo: Move this to ForwardModel as well?
@@ -724,11 +751,24 @@ class ForwardModel:
         dmeas_dsurface = self.instrument.sample(
             x_instrument, self.atmosphere.wl, drdn_dsurface.T
         ).T
-        dmeas_datmosphere = self.instrument.sample(
-            x_instrument, self.atmosphere.wl, drdn_datmosphere.T
-        ).T
+        dmeas_dsurface *= self.instrument.rcc_factor(x_instrument)[:, None]
+
+        # To get the derivative w.r.t. atmosphere
+        dmeas_datmosphere = self.dmeas_datmosphere(
+            x_atmosphere,
+            x_instrument,
+            geom,
+            rho_dir_dir=rho_dir_dir_hi,
+            rho_dif_dir=rho_dif_dir_hi,
+            rho_dir_dif=rho_dir_dif_hi,
+            rho_dif_dif=rho_dif_dif_hi,
+            Ls=Ls_hi,
+            meas=meas,
+        )
+        dmeas_datmosphere *= self.instrument.rcc_factor(x_instrument)[:, None]
+
         dmeas_dinstrument = self.instrument.dmeas_dinstrument(
-            x_instrument, self.atmosphere.wl, rdn
+            x_instrument, self.atmosphere.wl, rdn_hi
         )
 
         # Put it all together
@@ -778,7 +818,7 @@ class ForwardModel:
         # Call surface emission, upsample
         Ls_hi = self.upsample(self.surface.wl, self.calc_Ls(x_surface, geom))
 
-        rdn = self.calc_rdn(
+        rdn_hi = self.calc_rdn(
             x_atmosphere,
             rho_dir_dir=rho_dir_dir_hi,
             rho_dif_dir=rho_dif_dir_hi,
@@ -793,24 +833,25 @@ class ForwardModel:
             r=r,
             geom=geom,
         )
+        meas = self.instrument.sample(x_instrument, self.atmosphere.wl, rdn_hi)
 
-        drdn_datmosphereb = self.drdn_datmosphereb(
+        dmeas_datmosphereb = self.dmeas_datmosphereb(
             x_atmosphere,
+            x_instrument,
             geom=geom,
             rho_dir_dir=rho_dir_dir_hi,
             rho_dif_dir=rho_dif_dir_hi,
             rho_dir_dif=rho_dir_dif_hi,
             rho_dif_dif=rho_dif_dif_hi,
             Ls=Ls_hi,
-            rdn=rdn,
+            meas=meas,
         )
+        if dmeas_datmosphereb.size:
+            dmeas_datmosphereb *= self.instrument.rcc_factor(x_instrument)[:, None]
 
         # To get derivatives w.r.t. instrument, downsample to instrument wavelengths
-        dmeas_datmosphereb = self.instrument.sample(
-            x_instrument, self.atmosphere.wl, drdn_datmosphereb.T
-        ).T
         dmeas_dinstrumentb = self.instrument.dmeas_dinstrumentb(
-            x_instrument, self.atmosphere.wl, rdn
+            x_instrument, self.atmosphere.wl, rdn_hi
         )
 
         # Put it together
@@ -819,16 +860,17 @@ class ForwardModel:
         Kb[:, self.instrument_b_inds] = dmeas_dinstrumentb
         return Kb
 
-    def drdn_datmosphere(
+    def dmeas_datmosphere(
         self,
         x_atmosphere,
+        x_instrument,
         geom,
         rho_dir_dir,
         rho_dif_dir,
         rho_dir_dif,
         rho_dif_dif,
         Ls,
-        rdn,
+        meas,
     ):
         """Derivative of estimated radiance w.r.t. atmosphere statevector elements.
         We use a numerical approach to approximate datmosphere with a constant surface
@@ -851,37 +893,42 @@ class ForwardModel:
             ) = self.calc_atmosphere_quantities(x_atmosphere_perturb, geom, rho_dif_dif)
 
             # Surface state is held constant?
-            rdne = self.calc_rdn(
-                x_atmosphere_perturb,
-                rho_dir_dir,
-                rho_dif_dir,
-                rho_dir_dif,
-                rho_dif_dif,
-                Ls,
-                L_tot,
-                L_dir_dir,
-                L_dif_dir,
-                L_dir_dif,
-                L_dif_dif,
-                r,
-                geom,
+            mease = self.instrument.sample(
+                x_instrument,
+                self.atmosphere.wl,
+                self.calc_rdn(
+                    x_atmosphere_perturb,
+                    rho_dir_dir,
+                    rho_dif_dir,
+                    rho_dir_dif,
+                    rho_dif_dif,
+                    Ls,
+                    L_tot,
+                    L_dir_dir,
+                    L_dif_dir,
+                    L_dir_dif,
+                    L_dif_dif,
+                    r,
+                    geom,
+                ),
             )
-            K_atmosphere.append((rdne - rdn) / eps)
+            K_atmosphere.append((mease - meas) / eps)
 
         K_atmosphere = np.array(K_atmosphere).T
 
         return K_atmosphere
 
-    def drdn_datmosphereb(
+    def dmeas_datmosphereb(
         self,
         x_atmosphere,
+        x_instrument,
         geom,
         rho_dir_dir,
         rho_dif_dir,
         rho_dir_dif,
         rho_dif_dif,
         Ls,
-        rdn,
+        meas,
     ):
         """Derivative of estimated rdn w.r.t. H2O_ABSCO
 
@@ -891,7 +938,7 @@ class ForwardModel:
         (which is very unlikely though).
         """
         if len(self.atmosphere.bvec) == 0:
-            Kb_atmosphere = np.zeros((0, len(self.atmosphere.wl)))
+            Kb_atmosphere = np.zeros((0, self.n_meas))
 
         # ToDo: might require modification in case more unknowns are added
         # The following statement captures the case that H2O is not part
@@ -927,22 +974,26 @@ class ForwardModel:
                         x_atmosphere_perturb, geom, rho_dif_dif
                     )
 
-                    rdne = self.calc_rdn(
-                        x_atmosphere_perturb,
-                        rho_dir_dir,
-                        rho_dif_dir,
-                        rho_dir_dif,
-                        rho_dif_dif,
-                        Ls,
-                        L_tot,
-                        L_dir_dir,
-                        L_dif_dir,
-                        L_dir_dif,
-                        L_dif_dif,
-                        r,
-                        geom,
+                    mease = self.instrument.sample(
+                        x_instrument,
+                        self.atmosphere.wl,
+                        self.calc_rdn(
+                            x_atmosphere_perturb,
+                            rho_dir_dir,
+                            rho_dif_dir,
+                            rho_dir_dif,
+                            rho_dif_dif,
+                            Ls,
+                            L_tot,
+                            L_dir_dir,
+                            L_dif_dir,
+                            L_dir_dif,
+                            L_dif_dif,
+                            r,
+                            geom,
+                        ),
                     )
-                    Kb_atmosphere.append((rdne - rdn) / eps)
+                    Kb_atmosphere.append((mease - meas) / eps)
 
         Kb_atmosphere = np.array(Kb_atmosphere).T
 

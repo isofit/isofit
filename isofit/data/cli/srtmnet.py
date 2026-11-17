@@ -85,13 +85,13 @@ def download(path=None, tag="latest", overwrite=False, **_):
     file = f"sRTMnet_{version}.h5"
     download_file(f"{URL}/{file}", output / file)
 
-    env.changeKey("srtmnet.file", file)
+    env.changeKey("srtmnet-file", file)
 
     print("Retrieving aux.npz")
     file = f"sRTMnet_{version}_aux.npz"
     download_file(f"{URL}/{file}", output / file)
 
-    env.changeKey("srtmnet.aux", file)
+    env.changeKey("srtmnet-aux", file)
     env.save(diff_only=True)
 
     print(f"Done, now available at: {output}")
@@ -166,8 +166,8 @@ def detectInstalled(path: str = None):
         try:
             # Just retrieve the first of each extension
             # This may be inaccurate if multiple installs are in one directory
-            env.changeKey("srtmnet.file", next(path.glob("*.h5")).name)
-            env.changeKey("srtmnet.aux", next(path.glob("*.npz")).name)
+            env.changeKey("srtmnet-file", next(path.glob("*.h5")).name)
+            env.changeKey("srtmnet-aux", next(path.glob("*.npz")).name)
             env.save()
         except:
             pass
@@ -244,11 +244,11 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
     workflows will never detect updates.
     """
     missing = False
-    if not env["srtmnet.file"]:
+    if not env["srtmnet-file"]:
         error("[x] sRTMnet file is not set in the ini, version unknown")
         missing = True
 
-    if not env["srtmnet.aux"]:
+    if not env["srtmnet-aux"]:
         error("[x] sRTMnet aux is not set in the ini, version unknown")
         missing = True
 
@@ -260,16 +260,16 @@ def isUpToDate(path=None, tag="latest", debug=print, error=print, **_):
 
     if path is None:
         # If the paths do not exist, env.path() will report that
-        model = env.path("srtmnet", key="srtmnet.file")
-        aux = env.path("srtmnet", key="srtmnet.aux")
+        model = env.path("srtmnet", key="srtmnet-file")
+        aux = env.path("srtmnet", key="srtmnet-aux")
 
         if not model.exists() or not aux.exists():
             error("[x] Missing the above")
             return False
     else:
         path = Path(path)
-        model = path / env["srtmnet.file"]
-        aux = path / env["srtmnet.aux"]
+        model = path / env["srtmnet-file"]
+        aux = path / env["srtmnet-aux"]
 
     debug(f"Checking for updates for sRTMnet on path: {model}")
 

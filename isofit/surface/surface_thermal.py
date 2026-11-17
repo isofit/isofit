@@ -53,17 +53,16 @@ class ThermalSurface(MultiComponentSurface):
         # self.surface_T_prior_mean_degK = config.statevector.SURF_TEMP_K.get(
         #     "prior_mean"
         # )
-        # New syntax from config object:
-        self.init.extend([config.statevector.SURF_TEMP_K.get("init")])
-        self.scale.extend([config.statevector.SURF_TEMP_K.get("scale")])
-        self.bounds.extend([config.statevector.SURF_TEMP_K.get("bounds")])
+        # New syntax from config object. SURF_TEMP_K is optional in the config,
+        # so fall back to the module-level default when it is not provided.
+        surf_temp = config.statevector.SURF_TEMP_K or DefaultSurfTempKPrior
 
-        self.surface_T_prior_mean_degK = config.statevector.SURF_TEMP_K.get(
-            "prior_mean"
-        )
-        self.surface_T_prior_sigma_degK = config.statevector.SURF_TEMP_K.get(
-            "prior_sigma"
-        )
+        self.init.extend([surf_temp.init])
+        self.scale.extend([surf_temp.scale])
+        self.bounds.extend([surf_temp.bounds])
+
+        self.surface_T_prior_mean_degK = surf_temp.prior_mean
+        self.surface_T_prior_sigma_degK = surf_temp.prior_sigma
 
         self.idx_surface = np.arange(len(self.statevec_names))
         self.surf_temp_ind = len(self.statevec_names) - 1

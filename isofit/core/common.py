@@ -24,7 +24,7 @@ import os
 from collections import OrderedDict
 from difflib import SequenceMatcher
 from os.path import expandvars
-from typing import List
+from typing import List, NamedTuple
 
 import numpy as np
 
@@ -44,6 +44,13 @@ eps = 1e-5
 
 # Global variable makes it non-shared mem in ray
 Cache = {"stats": {}}
+
+
+class PriorUpdate(NamedTuple):
+    xa: tuple = (np.array([], dtype=int), np.array([], dtype=float))
+    Sa: tuple = (np.array([], dtype=int), np.array([], dtype=float))
+    Sa_inv: tuple = (np.array([], dtype=int), np.array([], dtype=float))
+    Sa_inv_sqrt: tuple = (np.array([], dtype=int), np.array([], dtype=float))
 
 
 @njit(inline="always")
@@ -807,7 +814,7 @@ def load_spectrum(spectrum_file: str) -> (np.array, np.array):
         return spectrum, None
 
 
-def spectral_response_function(response_range: np.array, mu: float, sigma: float):
+def spectral_response_function(response_range: np.ndarray, mu: float, sigma: float):
     """Calculate the spectral response function.
 
     Args:
@@ -888,6 +895,9 @@ def envi_header(inputpath):
         str: the header file associated with the input reference.
 
     """
+    # Config paths now arrive as pathlib.Path objects; coerce to str so the
+    # extension/concatenation logic below works regardless of input type.
+    inputpath = str(inputpath)
     if (
         os.path.splitext(inputpath)[-1] == ".img"
         or os.path.splitext(inputpath)[-1] == ".dat"

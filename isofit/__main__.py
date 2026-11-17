@@ -91,7 +91,7 @@ class CLI(click.Group):
     def __init__(self, *args, lazy_subcommands=None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.lazy = lazy_subcommands or {}
+        self.lazy = dict(sorted((lazy_subcommands or {}).items()))
 
     def main(self, *args, **kwargs):
         """
@@ -270,6 +270,8 @@ class CLI(click.Group):
         "classify_multicomponent": "isofit.utils.multicomponent_classification",
         "surface_model": "isofit.utils.surface_model",
         "plot": "isoplots",
+        "config": "isofit.configs.utils.interpolate.cli",
+        "atm_interpolation": "isofit.utils.atm_interpolation",
     },
 )
 @click.pass_context

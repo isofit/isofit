@@ -28,8 +28,7 @@ import click
 import numpy as np
 from spectral.io import envi
 
-from isofit import ray
-from isofit.configs import configs
+from isofit import configs, ray
 from isofit.core.common import envi_header, load_esd, load_spectrum
 from isofit.core.fileio import write_bil_chunk
 from isofit.core.forward import ForwardModel
@@ -99,7 +98,7 @@ def algebraic_line(
     config = configs.create_new_config(file)
     config.forward_model.instrument.integrations = 1
 
-    subs_state_file = config.output.estimated_state_file
+    subs_state_file = str(config.output.estimated_state_file)
     subs_loc_file = config.input.loc_file
 
     if (
