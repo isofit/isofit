@@ -332,8 +332,11 @@ def apply_oe(
             )
 
     if surface_category == "lut_surface" and (analytical_line or empirical_line):
+        raise ValueError("Analytical line method is not supported for lut_surface.")
+
+    if surface_category != "lut_surface" and terrain_style == "solved":
         raise ValueError(
-            "Analytical line method does not work for LUT surface at this time."
+            "Terrain style is only supported for surface category lut_surface."
         )
 
     if use_background_rfl and not multipart_transmittance:
