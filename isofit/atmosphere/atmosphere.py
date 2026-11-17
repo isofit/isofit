@@ -615,15 +615,17 @@ class BaseAtmosphere(Reader):
 
         Parameters
         ----------
-        ds: xr.Dataset
-            Dataset to process on
+        ds: xr.Dataset or dict
+            Dataset to process on. A plain dict of arrays keyed the same way is
+            also accepted, which lets an engine couple its own terms at build
+            time instead of relying on this being called at load time
         inplace: bool, default=True
             Insert the coupled terms in-place to the original Dataset. If False, copy the
             Dataset first
 
         Returns
         -------
-        ds: xr.Dataset
+        ds: xr.Dataset or dict
             Dataset with coupled terms
         """
         terms = {
@@ -633,13 +635,14 @@ class BaseAtmosphere(Reader):
             "dif-dif": ("transm_down_dif", "transm_up_dif"),
         }
 
-        # Detect if coupling needs to occur first
-        data = ds.get(list(terms))
+        # Detect if coupling needs to occur first. Tested one term at a time
+        # rather than via Dataset.get so that an engine building its terms
+        # up-front can pass a plain dict of arrays (see eradiate.py)
         calc = False
-        if data is None:
+        if any(term not in ds for term in terms):
             # Not all keys exist
             calc = "missing"
-        elif not bool(data.any().to_array().all()):
+        elif not all(bool(np.any(ds[term])) for term in terms):
             # If any key is empty
             calc = "empty"
 

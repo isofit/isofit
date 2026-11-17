@@ -234,3 +234,22 @@ kernelflows:
         name: kernelflows
         emulator_file: null
         template_file: null
+
+eradiate:
+  ^^: default
+  forward_model:
+    atmosphere:
+      engine:
+        name: eradiate
+        eradiate_absorption_database: komodo
+        eradiate_particle_properties: govaerts_2021-continental
+        eradiate_spp: 1000
+        eradiate_progress: false
+        template_file: null
+        elev: null
+        alt: null
+        solzen: null
+        solaz: null
+        viewzen: null
+        viewaz: null
+

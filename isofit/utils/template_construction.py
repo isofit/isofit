@@ -730,6 +730,7 @@ def build_config(
     n_cores: int = -1,
     surface_category="multicomponent_surface",
     emulator_base: str = None,
+    eradiate: bool = False,
     uncorrelated_radiometric_uncertainty: float = 0.0,
     multiple_restarts: bool = False,
     segmentation_size=400,
@@ -767,6 +768,7 @@ def build_config(
         n_cores:                              the number of cores to use during processing
         surface_category:                     type of surface to use
         emulator_base:                        the basename of the emulator, if used
+        eradiate:                             if true, use the eradiate RT engine instead of MODTRAN/an emulator
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
         multiple_restarts:                    if true, use multiple restarts
         segmentation_size:                    image segmentation size if empirical line is used
@@ -864,6 +866,7 @@ def build_config(
                 co2_lut_grid=co2_lut_grid,
                 elevation_lut_grid=elevation_lut_grid,
                 emulator_base=emulator_base,
+                eradiate=eradiate,
                 multipart_transmittance=multipart_transmittance,
                 prebuilt_lut_path=prebuilt_lut_path,
                 presolve=presolve,
@@ -1581,6 +1584,7 @@ def make_atmosphere_config(
     co2_lut_grid: np.array = None,
     elevation_lut_grid: np.array = None,
     emulator_base: str = None,
+    eradiate: bool = False,
     multipart_transmittance: bool = False,
     prebuilt_lut_path: str = None,
     presolve: bool = False,
@@ -1616,7 +1620,9 @@ def make_atmosphere_config(
         else abspath(prebuilt_lut_path)
     )
 
-    if emulator_base is None:
+    if eradiate:
+        engine_name = "eradiate"
+    elif emulator_base is None:
         engine_name = "modtran"
     elif emulator_base.endswith(".jld2"):
         engine_name = "kernelflows"
@@ -1649,6 +1655,13 @@ def make_atmosphere_config(
     if engine_name in ("modtran", "sixs"):
         atmosphere_config["engine"]["aerosol_template_file"] = aerosol_tpl_path
 
+    if eradiate:
+        atmosphere_config["engine"]["eradiate_absorption_database"] = "panellus"
+        atmosphere_config["engine"][
+            "eradiate_particle_properties"
+        ] = "govaerts_2021-continental"
+        atmosphere_config["engine"]["eradiate_spp"] = 500
+
     atmosphere_rte = {}
     if emulator_base is not None:
         atmosphere_rte["emulator_file"] = abspath(emulator_base)
@@ -1667,7 +1680,8 @@ def make_atmosphere_config(
                 atmosphere_rte["emulator_aux_file"] = abspath(
                     os.path.splitext(emulator_base)[0] + "_aux.npz"
                 )
-    else:
+    elif not eradiate:
+        # eradiate has no install directory; its schema rejects base_dir
         atmosphere_rte["base_dir"] = modtran_path
     atmosphere_config["engine"].update(atmosphere_rte)
 
