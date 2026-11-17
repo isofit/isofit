@@ -175,7 +175,12 @@ def invert_algebraic(
         L_dif_dir,
         L_dir_dif,
         L_dif_dif,
-    ) = fm.calc_atmosphere_quantities(x_atmosphere, geom, rho_dif_dif=rho_dif_dif)
+    ) = fm.calc_atmosphere_quantities(
+        x_atmosphere=x_atmosphere,
+        x_surface=x_surface,
+        geom=geom,
+        rho_dif_dif=rho_dif_dif,
+    )
     L_atm = fm.atmosphere.get_L_atm(x_atmosphere, geom)
     sphalb = rhi["sphalb"]
     Ls = fm.surface.calc_Ls(x_surface, geom)
@@ -272,7 +277,12 @@ def invert_analytical(
 
     # Get all the atmosphere quantities
     r, L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = (
-        fm.calc_atmosphere_quantities(x_atmosphere, geom, rho_dif_dif=rho_dif_dif)
+        fm.calc_atmosphere_quantities(
+            x_atmosphere=x_atmosphere,
+            x_surface=x_surface,
+            geom=geom,
+            rho_dif_dif=rho_dif_dif,
+        )
     )
 
     # Path radiance and spherical albedo
@@ -438,7 +448,9 @@ def invert_simple(fm: ForwardModel, meas: np.array, geom: Geometry):
         _, sphalb, _, transup, _ = coeffs
 
         L_atm = fm.atmosphere.get_L_atm(x_atmosphere, geom)
-        L_tot = fm.calc_atmosphere_quantities(x_atmosphere, geom)[1]
+        L_tot = fm.calc_atmosphere_quantities(
+            x_atmosphere=x_atmosphere, x_surface=x_surface, geom=geom
+        )[1]
         L_total_without_surface_emission = L_atm + L_tot * rfl_hi / (
             1.0 - sphalb * rfl_hi
         )
