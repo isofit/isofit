@@ -5893,12 +5893,15 @@
 <span class="normal">204</span>
 <span class="normal">205</span>
 <span class="normal">206</span>
-<span class="normal">207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">Downloads LibRadTran from https://www.libradtran.org/download/libRadtran-2.0.6.tar.gz</span>
 <span class="sd">"""</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
@@ -6007,6 +6010,11 @@
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">"Building via make"</span><span class="p">)</span>
     <span class="n">build</span><span class="p">(</span><span class="n">output</span> <span class="o">/</span> <span class="n">Version</span><span class="p">)</span>
+
+    <span class="n">version_dir</span> <span class="o">=</span> <span class="n">output</span> <span class="o">/</span> <span class="n">Version</span>
+    <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="n">version_dir</span><span class="o">.</span><span class="n">iterdir</span><span class="p">():</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">dir</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">output</span><span class="p">))</span>
+    <span class="n">version_dir</span><span class="o">.</span><span class="n">rmdir</span><span class="p">()</span>
 
     <span class="n">env</span><span class="o">.</span><span class="n">changeKey</span><span class="p">(</span><span class="s2">"libradtran-version"</span><span class="p">,</span> <span class="n">Version</span><span class="p">)</span>
     <span class="n">env</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>

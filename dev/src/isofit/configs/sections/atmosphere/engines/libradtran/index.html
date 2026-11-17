@@ -5764,7 +5764,14 @@
 <span class="normal">141</span>
 <span class="normal">142</span>
 <span class="normal">143</span>
-<span class="normal">144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="sd">"""</span>
 <span class="sd">LibRadTran (Library for Radiative Transfer) engine configuration.</span>
 
 <span class="sd">LibRadTran is a comprehensive open-source RT package supporting UV to</span>
@@ -5806,8 +5813,8 @@
 <span class="sd">    -----</span>
 <span class="sd">    LibRadTran is freely available from: http://www.libradtran.org/</span>
 
-<span class="sd">    The REPTRAN band model provides efficient correlated-k absorption</span>
-<span class="sd">    calculations. Only the "coarse" band model is currently supported by</span>
+<span class="sd">    The REPTRAN band model provides efficient absorption calculations.</span>
+<span class="sd">    Only the "coarse" REPTRAN band model is currently supported by</span>
 <span class="sd">    ``isofit download libradtran``; the "medium" and "fine" models must be</span>
 <span class="sd">    obtained separately from the LibRadTran website.</span>
 
@@ -5834,13 +5841,20 @@
         <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"/opt/libradtran"</span><span class="p">],</span>
     <span class="p">)</span>
 
-    <span class="n">reptran_band_model</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"coarse"</span><span class="p">,</span> <span class="s2">"medium"</span><span class="p">,</span> <span class="s2">"fine"</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+    <span class="n">band_model</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span>
+        <span class="s2">"reptran coarse"</span><span class="p">,</span> <span class="s2">"reptran medium"</span><span class="p">,</span> <span class="s2">"reptran fine"</span><span class="p">,</span> <span class="s2">"LOWTRAN"</span><span class="p">,</span> <span class="s2">"KATO"</span><span class="p">,</span> <span class="s2">"KATO2"</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">"reptran coarse"</span><span class="p">,</span>
         <span class="n">description</span><span class="o">=</span><span class="p">(</span>
-            <span class="s2">"REPTRAN correlated-k band model resolution. Options: ``coarse`` "</span>
-            <span class="s2">"(15 cm-1, fastest), ``medium`` (5 cm-1), ``fine`` (1 cm-1, most "</span>
-            <span class="s2">"accurate but slower)"</span>
+            <span class="s2">"Molecular absorption band model and parameterization. Options: "</span>
+            <span class="s2">"``reptran coarse`` (15 cm-1), ``reptran medium`` (5 cm-1), "</span>
+            <span class="s2">"``reptran fine`` (1 cm-1), ``LOWTRAN`` (3-term fit from SBDART), "</span>
+            <span class="s2">"``KATO``, and ``KATO2``. "</span>
+            <span class="s2">"Please note it is not advised to use kato or kato2 in imaging spectroscopy retrievals, "</span>
+            <span class="s2">"and these options are present only for efficient unit testing."</span>
+            <span class="s2">"The default ``reptran coarse`` (or finer) is recommended for band_model."</span>
         <span class="p">),</span>
-        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"coarse"</span><span class="p">,</span> <span class="s2">"medium"</span><span class="p">,</span> <span class="s2">"fine"</span><span class="p">],</span>
+        <span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s2">"reptran coarse"</span><span class="p">,</span> <span class="s2">"KATO2"</span><span class="p">],</span>
     <span class="p">)</span>
 
     <span class="n">kb_alpha_1</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>

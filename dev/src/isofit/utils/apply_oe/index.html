@@ -6728,7 +6728,12 @@
 <span class="normal">1094</span>
 <span class="normal">1095</span>
 <span class="normal">1096</span>
-<span class="normal">1097</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
+<span class="normal">1097</span>
+<span class="normal">1098</span>
+<span class="normal">1099</span>
+<span class="normal">1100</span>
+<span class="normal">1101</span>
+<span class="normal">1102</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="ch">#! /usr/bin/env python3</span>
 <span class="c1">#</span>
 <span class="c1"># Authors: David R Thompson and Philip G. Brodrick</span>
 <span class="c1">#</span>
@@ -6845,6 +6850,7 @@
     <span class="n">terrain_style</span><span class="o">=</span><span class="s2">"dem"</span><span class="p">,</span>
     <span class="n">pixel_heuristic_priors</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">datestr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">libradtran_band_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Applies OE over a flightline using an atmospheric radiative transfer engine. This executes</span>
@@ -7003,6 +7009,8 @@
 <span class="sd">        sensors. Required for sensor "custom". Optional for "NA-*" sensors, where the</span>
 <span class="sd">        date is otherwise taken from the sensor name ("NA-YYYYMMDD"). Currently ignored</span>
 <span class="sd">        for all other sensors.</span>
+<span class="sd">    libradtran_band_model: str, default=None</span>
+<span class="sd">        Provide a band model override to the libradtran atmospheric radiative transfer model.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -7441,6 +7449,7 @@
         <span class="s2">"pixel_heuristic_priors"</span><span class="p">:</span> <span class="n">pixel_heuristic_priors</span><span class="p">,</span>
         <span class="s2">"use_background_rfl"</span><span class="p">:</span> <span class="n">use_background_rfl</span><span class="p">,</span>
         <span class="s2">"elevation_km"</span><span class="p">:</span> <span class="n">mean_elevation_km</span><span class="p">,</span>
+        <span class="s2">"libradtran_band_model"</span><span class="p">:</span> <span class="n">libradtran_band_model</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">presolve</span><span class="p">:</span>
         <span class="c1"># write modtran presolve template</span>
@@ -7795,6 +7804,7 @@
     <span class="n">help</span><span class="o">=</span><span class="s2">"Prints the arguments list without executing the command"</span><span class="p">,</span>
     <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--libradtran_band_model"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">"--profile"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="n">debug_args</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.utils.apply_oe.cli"><a href="../../../../api/isofit/utils/apply_oe/#isofit.utils.apply_oe.cli" title="Go to docs">[docs]</a></div>
     <span class="k">if</span> <span class="n">debug_args</span><span class="p">:</span>

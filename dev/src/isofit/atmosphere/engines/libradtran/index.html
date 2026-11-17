@@ -6155,7 +6155,47 @@
 <span class="normal">471</span>
 <span class="normal">472</span>
 <span class="normal">473</span>
-<span class="normal">474</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="c1">#</span>
 <span class="c1">#  Copyright 2019 California Institute of Technology</span>
 <span class="c1">#</span>
 <span class="c1">#  Licensed under the Apache License, Version 2.0 (the "License");</span>
@@ -6204,7 +6244,6 @@
     <span class="n">libradtran_inp_template</span> <span class="o">=</span> <span class="p">(</span>
         <span class="s2">"source solar </span><span class="si">{path_solar}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="s2">"wavelength </span><span class="si">{wl_1}</span><span class="s2"> </span><span class="si">{wl_2}</span><span class="se">\n</span><span class="s2">"</span>
-        <span class="s2">"spline </span><span class="si">{wl_1}</span><span class="s2"> </span><span class="si">{wl_2}</span><span class="s2"> </span><span class="si">{wl_res_out}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="s2">"albedo </span><span class="si">{albedo}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="s2">"atmosphere_file </span><span class="si">{libradtran_dir}</span><span class="s2">/data/atmmod/</span><span class="si">{atmos}</span><span class="s2">.dat</span><span class="se">\n</span><span class="s2">"</span>
         <span class="s2">"umu </span><span class="si">{cos_vza}</span><span class="se">\n</span><span class="s2">"</span>
@@ -6215,7 +6254,7 @@
         <span class="s2">"number_of_streams </span><span class="si">{nstr}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="s2">"mol_modify O3 </span><span class="si">{o3_inp}</span><span class="s2"> DU</span><span class="se">\n</span><span class="s2">"</span>
         <span class="s2">"mixing_ratio CO2 </span><span class="si">{co2_inp}</span><span class="se">\n</span><span class="s2">"</span>
-        <span class="s2">"mol_abs_param reptran </span><span class="si">{band_model}</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="s2">"mol_abs_param </span><span class="si">{band_model}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="s2">"mol_modify H2O </span><span class="si">{h2o_mm}</span><span class="s2"> MM</span><span class="se">\n</span><span class="s2">"</span>
         <span class="s2">"crs_model rayleigh bodhaine</span><span class="se">\n</span><span class="s2">"</span>
         <span class="s2">"aerosol_default</span><span class="se">\n</span><span class="s2">"</span>
@@ -6231,6 +6270,38 @@
     <span class="n">wl_res_out</span> <span class="o">=</span> <span class="mf">0.5</span>
 
     <span class="n">sh_template</span> <span class="o">=</span> <span class="s2">"#!/bin/bash</span><span class="se">\n</span><span class="s2">"</span> <span class="s2">"cd </span><span class="si">{lrt_bin_dir}</span><span class="se">\n</span><span class="s2">"</span> <span class="s2">"</span><span class="si">{uvspecs}</span><span class="se">\n</span><span class="s2">"</span>
+
+    <span class="n">KATO_WL</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="mf">345.136</span><span class="p">,</span>
+            <span class="mf">385.000</span><span class="p">,</span>
+            <span class="mf">429.773</span><span class="p">,</span>
+            <span class="mf">484.863</span><span class="p">,</span>
+            <span class="mf">528.840</span><span class="p">,</span>
+            <span class="mf">544.800</span><span class="p">,</span>
+            <span class="mf">558.050</span><span class="p">,</span>
+            <span class="mf">585.800</span><span class="p">,</span>
+            <span class="mf">615.000</span><span class="p">,</span>
+            <span class="mf">645.850</span><span class="p">,</span>
+            <span class="mf">675.439</span><span class="p">,</span>
+            <span class="mf">694.313</span><span class="p">,</span>
+            <span class="mf">723.531</span><span class="p">,</span>
+            <span class="mf">767.046</span><span class="p">,</span>
+            <span class="mf">817.968</span><span class="p">,</span>
+            <span class="mf">866.714</span><span class="p">,</span>
+            <span class="mf">931.938</span><span class="p">,</span>
+            <span class="mf">1010.320</span><span class="p">,</span>
+            <span class="mf">1119.970</span><span class="p">,</span>
+            <span class="mf">1355.060</span><span class="p">,</span>
+            <span class="mf">1564.700</span><span class="p">,</span>
+            <span class="mf">1789.120</span><span class="p">,</span>
+            <span class="mf">2059.130</span><span class="p">,</span>
+            <span class="mf">2214.330</span><span class="p">,</span>
+            <span class="mf">2638.540</span><span class="p">,</span>
+            <span class="mf">3318.660</span><span class="p">,</span>
+            <span class="mf">3813.210</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_config</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">full_config</span><span class="o">.</span><span class="n">forward_model</span><span class="o">.</span><span class="n">atmosphere</span>
@@ -6275,7 +6346,13 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">preSim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><div class="mkapi-source-link" id="isofit.atmosphere.engines.libradtran.LibRadTranRT.preSim"><a href="../../../../../api/isofit/atmosphere/engines/libradtran/#isofit.atmosphere.engines.libradtran.LibRadTranRT.preSim" title="Go to docs">[docs]</a></div>
 
         <span class="c1"># define the output wl grid [nm], and stash matrix H</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lrt_wl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_2</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_res_out</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"kato"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">band_model</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wl_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">KATO_WL</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wl_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">KATO_WL</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lrt_wl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">KATO_WL</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lrt_wl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wl_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_2</span> <span class="o">+</span> <span class="mf">1e-5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_res_out</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">matrix_H</span> <span class="o">=</span> <span class="n">calculate_resample_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lrt_wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwhm</span><span class="p">)</span>
 
         <span class="c1"># load static information from MODTRAN template</span>
@@ -6479,7 +6556,7 @@
                 <span class="s2">"wl_2"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_2</span><span class="p">,</span>
                 <span class="s2">"wl_res_out"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">wl_res_out</span><span class="p">,</span>
                 <span class="s2">"path_solar"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_solar</span><span class="p">,</span>
-                <span class="s2">"band_model"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">reptran_band_model</span><span class="p">,</span>
+                <span class="s2">"band_model"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">band_model</span><span class="p">,</span>
                 <span class="s2">"atmos"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">atmosphere_type_lrt</span><span class="p">,</span>
                 <span class="s2">"libradtran_dir"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">libradtran</span><span class="p">,</span>
                 <span class="s2">"nstr"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nstr</span><span class="p">,</span>
@@ -6588,6 +6665,9 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">moments_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">lrt_run_inp</span> <span class="o">+=</span> <span class="s2">"aerosol_file moments </span><span class="si">{moments_file}</span><span class="se">\n</span><span class="s2">"</span>
+
+        <span class="k">if</span> <span class="s2">"kato"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">band_model</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="n">lrt_run_inp</span> <span class="o">+=</span> <span class="s2">"spline </span><span class="si">{wl_1}</span><span class="s2"> </span><span class="si">{wl_2}</span><span class="s2"> </span><span class="si">{wl_res_out}</span><span class="se">\n</span><span class="s2">"</span>
 
         <span class="n">runs</span> <span class="o">=</span> <span class="p">[</span>
             <span class="nb">dict</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">"sim1"</span><span class="p">,</span> <span class="n">albedo</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">zout</span><span class="o">=</span><span class="n">vals</span><span class="p">[</span><span class="s2">"alt"</span><span class="p">]),</span>
