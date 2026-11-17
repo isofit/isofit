@@ -30,7 +30,6 @@ from isofit.core.fileio import initialize_output
 from isofit.core.forward import ForwardModel
 from isofit.core.multistate import update_config_for_surface
 from isofit.core.units import km_to_m, m_to_km
-from isofit.utils import extractions, reducers
 from isofit.utils.algebraic_line import algebraic_line
 
 
@@ -106,7 +105,6 @@ def background_reflectance(
     n_cores=1,
     logging_level="INFO",
     log_file=None,
-    chunksize=256,
     use_slic_rfls=True,
     nodata_value=-9999,
 ):
@@ -238,7 +236,6 @@ def background_reflectance(
 )
 @click.option("--logging_level", help="logging level", type=str, default="INFO")
 @click.option("--log_file", help="logging file", type=str, default=None)
-@click.option("--chunksize", help="row-wise chunking", type=int, default=256)
 @click.option(
     "--use_slic_rfls",
     help="strategy for base reflectance cube",
