@@ -40,8 +40,8 @@ class LibRadTranConfig(SectionModel):
     -----
     LibRadTran is freely available from: http://www.libradtran.org/
 
-    The REPTRAN band model provides efficient correlated-k absorption
-    calculations. Only the "coarse" band model is currently supported by
+    The REPTRAN band model provides efficient absorption calculations.
+    Only the "coarse" REPTRAN band model is currently supported by
     ``isofit download libradtran``; the "medium" and "fine" models must be
     obtained separately from the LibRadTran website.
 
@@ -68,13 +68,20 @@ class LibRadTranConfig(SectionModel):
         examples=["/opt/libradtran"],
     )
 
-    reptran_band_model: Literal["coarse", "medium", "fine"] = Field(
+    band_model: Literal[
+        "reptran coarse", "reptran medium", "reptran fine", "LOWTRAN", "KATO", "KATO2"
+    ] = Field(
+        default="reptran coarse",
         description=(
-            "REPTRAN correlated-k band model resolution. Options: ``coarse`` "
-            "(15 cm-1, fastest), ``medium`` (5 cm-1), ``fine`` (1 cm-1, most "
-            "accurate but slower)"
+            "Molecular absorption band model and parameterization. Options: "
+            "``reptran coarse`` (15 cm-1), ``reptran medium`` (5 cm-1), "
+            "``reptran fine`` (1 cm-1), ``LOWTRAN`` (3-term fit from SBDART), "
+            "``KATO``, and ``KATO2``. "
+            "Please note it is not advised to use kato or kato2 in imaging spectroscopy retrievals, "
+            "and these options are present only for efficient unit testing."
+            "The default ``reptran coarse`` (or finer) is recommended for band_model."
         ),
-        examples=["coarse", "medium", "fine"],
+        examples=["reptran coarse", "KATO2"],
     )
 
     kb_alpha_1: Optional[float] = Field(

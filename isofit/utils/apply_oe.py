@@ -115,6 +115,7 @@ def apply_oe(
     terrain_style="dem",
     pixel_heuristic_priors=[],
     datestr=None,
+    libradtran_band_model=None,
 ):
     """
     Applies OE over a flightline using an atmospheric radiative transfer engine. This executes
@@ -273,6 +274,8 @@ def apply_oe(
         sensors. Required for sensor "custom". Optional for "NA-*" sensors, where the
         date is otherwise taken from the sensor name ("NA-YYYYMMDD"). Currently ignored
         for all other sensors.
+    libradtran_band_model: str, default=None
+        Provide a band model override to the libradtran atmospheric radiative transfer model.
 
     References
     ----------
@@ -711,6 +714,7 @@ def apply_oe(
         "pixel_heuristic_priors": pixel_heuristic_priors,
         "use_background_rfl": use_background_rfl,
         "elevation_km": mean_elevation_km,
+        "libradtran_band_model": libradtran_band_model,
     }
     if presolve:
         # write modtran presolve template
@@ -1065,6 +1069,7 @@ def apply_oe(
     help="Prints the arguments list without executing the command",
     is_flag=True,
 )
+@click.option("--libradtran_band_model", default=None)
 @click.option("--profile")
 def cli(debug_args, profile, **kwargs):
     if debug_args:

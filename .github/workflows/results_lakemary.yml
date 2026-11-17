@@ -47,7 +47,7 @@ jobs:
 
           RUN=$(isofit path examples)/LakeMary/
 
-          for i in default bgrfl; do
+          for i in default bgrfl libradtran; do
             $RUN/${i}.sh --log_file results/${i}.log --resources
             isoplots spfit -p $RUN -o results/${i}.png
             isoplots resources results/${i}.resources.jsonl -o results/${i}.resources.html -l results/${i}.log --relative --png --debug

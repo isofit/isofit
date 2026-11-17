@@ -746,6 +746,7 @@ def build_config(
     pixel_heuristic_priors: list[str] = [],
     use_background_rfl: bool = False,
     elevation_km: float = 0.0,
+    libradtran_band_model: str = None,
 ) -> None:
     """Write an isofit config file for the main solve, using the specified pathnames and all given info
 
@@ -780,6 +781,7 @@ def build_config(
         max_slope:                            maximum terrain slope, used to inform minimum cos_i if terrain_style is not flat
         use_background_rfl:                   flag to determine which surface derivatives to use in OE
         elevation_km:                         determined mean elevation in km for image used for AOT priors
+        libradtran_band_model:                overrides the default band model in libradtran config
     """
 
     if use_superpixels:
@@ -875,6 +877,7 @@ def build_config(
                 to_sensor_zenith_lut_grid=to_sensor_zenith_lut_grid,
                 to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
                 elevation_km=elevation_km,
+                libradtran_band_model=libradtran_band_model,
             ),
             "surface": make_surface_config(
                 surface_class_working_path=paths.surface_class_working_path,
@@ -1593,6 +1596,7 @@ def make_atmosphere_config(
     to_sensor_zenith_lut_grid: np.array = None,
     to_sun_zenith_lut_grid: np.array = None,
     elevation_km: float = 0.0,
+    libradtran_band_model: str = None,
     unknowns: dict = {},
     wavelength_file: str = None,
     **kwargs,
@@ -1616,10 +1620,18 @@ def make_atmosphere_config(
         else abspath(prebuilt_lut_path)
     )
 
-    if emulator_base is None:
-        engine_name = "modtran"
-    elif emulator_base.endswith(".jld2"):
-        engine_name = "kernelflows"
+    if emulator_base is not None:
+        if emulator_base.endswith(".jld2"):
+            engine_name = "kernelflows"
+        else:
+            engine_name = "srtmnet"
+    elif modtran_path is not None:
+        if "libradtran" in modtran_path.lower():
+            engine_name = "libradtran"
+        else:
+            engine_name = "modtran"
+    # NOTE because modtran_path is always defined via MODTRAN_DIR
+    # this should not be reached; however, it's safe to keep for testing.
     else:
         engine_name = "srtmnet"
 
@@ -1627,10 +1639,7 @@ def make_atmosphere_config(
     # on "name"); atmosphere-level fields (sim_path, lut_path, multipart, ...)
     # live at the top level of the atmosphere config.
     atmosphere_config = {
-        "engine": {
-            "name": engine_name,
-            "template_file": modtran_template_path,
-        },
+        "engine": {"name": engine_name, "template_file": modtran_template_path},
         "sim_path": lut_dir,
         "lut_path": lut_path,
         "multipart_transmittance": multipart_transmittance,
@@ -1673,6 +1682,9 @@ def make_atmosphere_config(
 
     if aerosol_model_file is not None and engine_name in ("modtran", "sixs"):
         atmosphere_config["engine"]["aerosol_model_file"] = aerosol_model_file
+
+    if engine_name == "libradtran":
+        atmosphere_config["engine"]["band_model"] = libradtran_band_model
 
     # First, build the general lut grid
     lut_grid = {
