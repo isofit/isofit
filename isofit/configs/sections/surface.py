@@ -66,7 +66,11 @@ def statevector_mismatches(
                 stored = np.reshape(values, (-1, 2))[i]
             else:
                 stored = np.ravel(values)[i]
-            value = getattr(configured[name], key)
+
+            # Allow for dynamic assignment from lut_surface
+            item = configured[name]
+            value = item.get(key, np.nan) if isinstance(item, dict) else getattr(item, key)
+
             if not np.allclose(value, stored, equal_nan=True):
                 mismatch.append(f"{name}: {key} ({file})")
 
@@ -110,6 +114,9 @@ class SurfaceStateVectorConfig(StateVectorConfig):
     """
 
     section = "forward_model.surface.statevector"
+
+    # Allow for dynamic assignment from lut_surface
+    model_config = ConfigDict(extra="allow")
 
     SURF_TEMP_K: Optional[StateVectorElementConfig] = Field(
         description=(
@@ -305,6 +312,13 @@ class SurfaceConfig(SectionModel):
             "Path to surface classification file (ENVI format) for multi-surface mode"
         ),
         examples=["classification.hdr"],
+    )
+
+    surface_lut_file: Optional[FilePath] = Field(
+        description=(
+            "Path to NetCDF Look-Up Table (LUT) that contains reflectance(s) with respect to surface state variables."
+        ),
+        examples=["surface_lut.nc"],
     )
 
     base_surface_class_file: Optional[FilePath] = Field(

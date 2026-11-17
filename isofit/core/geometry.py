@@ -144,14 +144,17 @@ class Geometry:
             if self.terrain_style == "flat":
                 self.cos_i = self.coszen
 
-            # Set min cosi (which is at max slope facing away from sun)
-            self.min_cosi = max(
-                0,
-                np.sin(np.arccos(self.coszen))
-                * np.sin(np.radians(self.max_slope))
-                * np.cos(np.radians(180))
-                + self.coszen * np.cos(np.radians(self.max_slope)),
-            )
+            if self.terrain_style != "solved":
+                # Set min cosi (which is at max slope facing away from sun)
+                self.min_cosi = max(
+                    0,
+                    np.sin(np.arccos(self.coszen))
+                    * np.sin(np.radians(self.max_slope))
+                    * np.cos(np.radians(180))
+                    + self.coszen * np.cos(np.radians(self.max_slope)),
+                )
+            else:
+                self.min_cosi = 1e-6
 
             # Check bounds
             self.coszen = max(self.min_cosi, min(self.coszen, 1.0))
