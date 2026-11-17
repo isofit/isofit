@@ -31,6 +31,7 @@ try:
     import eradiate
     import joseki
     from eradiate.attrs import AUTO
+    from eradiate.config import ProgressLevel, settings
     from eradiate.experiments import AtmosphereExperiment
     from eradiate.radprops import ParticleProperties, absdb_factory
     from eradiate.rng import SeedState
@@ -126,6 +127,7 @@ class EradiateRT(BaseAtmosphere, Writer):
 
         # Eradiate data always come from the ini eradiate path
         set_data_path()
+        self.set_progress(self.config.engine.eradiate_progress)
 
         self.eradiate_mode = self.infer_spectral_mode(
             self.config.engine.eradiate_absorption_database
@@ -149,8 +151,11 @@ class EradiateRT(BaseAtmosphere, Writer):
             self.config.engine.eradiate_particle_properties
         )
 
+        # Terms readSim computes and SRF-averages. Set before super().__init__,
+        # which builds the LUT and so already calls readSim
+        self.output_terms = list(self.lut_keys.alldim) + ["solar_irr"]
+
         super().__init__(full_config, wl=wl, fwhm=fwhm, **kwargs)
-        self.output_terms = self.lut_keys.keys() + ["solar_irr"]
 
     def preSim(self):
         """Records engine configuration on the LUT for provenance."""
@@ -191,6 +196,7 @@ class EradiateRT(BaseAtmosphere, Writer):
         """
         eradiate.set_mode(self.eradiate_mode)  # per-process; cheap & idempotent
         set_data_path()  # per-process too; ray workers re-import eradiate
+        self.set_progress(self.config.engine.eradiate_progress)
 
         vals = self.resolve_point(point)
 
@@ -594,6 +600,18 @@ class EradiateRT(BaseAtmosphere, Writer):
         """
         is_ckd = "CKD" in type(absdb_factory.create(database)).__name__
         return "ckd" if is_ckd else "mono"
+
+    @staticmethod
+    def set_progress(show: bool):
+        """Turns eradiate's progress bars on or off. Eradiate reads this
+        setting on every run, so it can be changed after import, but it must
+        be set in each process (eg. ray workers).
+
+        Args:
+            show: Show the spectral loop and kernel progress bars.
+        """
+        level = ProgressLevel.KERNEL if show else ProgressLevel.NONE
+        settings.set("PROGRESS", level)
 
     @classmethod
     def default_thermoprops(cls):

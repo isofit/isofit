@@ -81,6 +81,13 @@ class EradiateConfig(SectionModel):
         examples=[500, 1000],
     )
 
+    eradiate_progress: bool = Field(
+        description=(
+            "Show Eradiate's progress bars (e.g. the per-simulation spectral loop). "
+            "Off by default to keep them out of the logs"
+        ),
+    )
+
     template_file: Optional[FilePath] = Field(
         description=(
             "MODTRAN template file used for fallback geometry and gas/aerosol values"
