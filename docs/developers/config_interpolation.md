@@ -36,14 +36,18 @@ and every path would have to be written out in full.
 
 The module makes that manageable:
 
-1. **One source of truth for defaults.** `isofit/configs/templates/default.yml`
-   holds a `default` section that mirrors every Pydantic field. Each RT engine
+1. **One source of truth for defaults.**
+   `isofit/configs/templates/bases/default.yml` holds a `default` section that
+   mirrors every Pydantic field, using the prebuilt engine. Each RT engine
    (`modtran`, `sixs`, `srtmnet`, `libradtran`, `kernelflows`, `prebuilt`) is a
-   small section that does `^^: default` and overrides only the engine block.
-2. **Use-case templates.** `vswir.yml`, `thermal.yml`, `simulation.yml`,
-   `aquatic_glint.yml`, and `mcmc.yml` inherit cross-file
-   (`^^: default.yml:srtmnet`, `^^: default.yml:modtran`, ...) and set only the
-   retrieval methodology.
+   mixin in `templates/mixins/engines.yml` that sets only the engine block, and
+   replaces the engine of whatever it is layered on.
+2. **Use-case templates.** The bases `vswir.yml`, `thermal.yml`,
+   `simulation.yml`, `aquatic_glint.yml`, and `mcmc.yml` inherit `default`
+   plus an engine mixin
+   (`^^: [default.yml:default, ../mixins/engines.yml:srtmnet]`, ...) and set
+   only the retrieval methodology. Any base can switch engines by layering
+   another engine mixin, e.g. `load("vswir", mixin="sixs")`.
 3. **Defaults that follow user values.** Defaults like
    `lut_path: ${output.dir}/lut/lut.zarr` are interpolated *after* the user's
    config is overlaid, so changing `output.dir` moves every derived path with it.
@@ -53,8 +57,8 @@ The module makes that manageable:
    correctly on every machine.
 5. **Legacy configs get defaults automatically.** Every config loaded through
    `create_new_config` / `Config(...)` (including `apply_oe` output and old
-   JSON configs) is overlaid onto the matching engine's base config, so missing
-   fields get the shipped defaults.
+   JSON configs) is overlaid onto `default` plus the matching engine mixin, so
+   missing fields get the shipped defaults.
 
 ## Pipeline overview
 
@@ -192,7 +196,7 @@ The resulting precedence is **`D < B < C < A`**.
 |---|---|
 | `^^: default` | Section `default` in the same file |
 | `^^: [base, extras]` | Several sections, merged in order |
-| `^^: bases/default.yml:srtmnet` | Section `srtmnet` of another file |
+| `^^: ../mixins/engines.yml:srtmnet` | Section `srtmnet` of another file |
 | `^^: ../common.json` | The **whole top-level mapping** of another file |
 
 A reference is treated as cross-file when it contains a supported extension
@@ -368,10 +372,11 @@ cfg = load("vswir", interp=True, overrides={
 
 `create_new_config` calls `load(file, **kwargs)` and passes the result to
 `Config.model_validate`. Every `SectionModel` (including the root `Config`) has
-a `before` validator that seeds itself from a base config:
-`load(base, section=cls.section, overrides=data, interp=True)`. `base`
-defaults to `default`, or to the engine's own profile (`sixs`, `modtran`, ...)
-for engine sections. The user's values are applied as overrides **before**
+a `before` validator that seeds itself from a base config with mixins layered
+on top: `load(base, section=cls.section, overrides=data, mixin=mixin,
+interp=True)`. `base` defaults to `default`, and `mixin` to none, except that
+engine sections always layer their own engine mixin (`sixs`, `modtran`, ...)
+first. The user's values are applied as overrides **before**
 interpolation, which is why `lut_path: ${output.dir}/lut/lut.zarr` follows the
 *user's* `output.dir`.
 
