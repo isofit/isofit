@@ -9,9 +9,10 @@
 # the solar+thermal spectral range). Load with:
 #   interpolate.load("thermal.yml")
 
+# Thermal-infrared retrieval of reflectance, emissivity, and surface temperature
+# with MODTRAN
 thermal:
   ^^: [default.yml:default, ../mixins/engines.yml:modtran]
-  description: Thermal-infrared retrieval of reflectance, emissivity, and surface temperature with MODTRAN
 
   input:
     measured_radiance_file: null  # SET: at-sensor TIR radiance

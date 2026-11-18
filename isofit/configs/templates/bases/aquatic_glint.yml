@@ -8,9 +8,9 @@
 # Inherits defaults from default.yml + the sRTMnet engine mixin. Load with:
 #   interpolate.load("aquatic_glint.yml")
 
+# Aquatic retrieval jointly estimating sky and sun glint over water
 glint:
   ^^: [default.yml:default, ../mixins/engines.yml:srtmnet]
-  description: Aquatic retrieval jointly estimating sky and sun glint over water
 
   input:
     measured_radiance_file: null  # SET: at-sensor radiance over water

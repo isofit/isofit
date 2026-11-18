@@ -45,7 +45,7 @@ from isofit.configs.utils import interpolate
 from isofit.configs.utils.console import errors_table
 
 # A top-level key of a YAML template, e.g. `vswir:`
-TopLevel = re.compile(r"^([A-Za-z_][\w-]*)\s*:")
+TopLevel = loader.TopLevel
 
 Styles = {"base": "cyan", "mixin": "green"}
 
@@ -193,7 +193,7 @@ def entries() -> list[Entry]:
                     line=line,
                     start=start,
                     source=text,
-                    description=data.get("description"),
+                    description=loader.describe(name),
                     inherits=inherits,
                 )
             )

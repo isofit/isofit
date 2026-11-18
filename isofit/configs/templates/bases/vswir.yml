@@ -11,9 +11,9 @@
 # Before running, fill in the scene-specific inputs marked `# SET:` below
 # (radiance/obs/loc files, instrument wavelengths + noise, surface model).
 
+# Standard VSWIR surface reflectance retrieval with sRTMnet
 vswir:
   ^^: [default.yml:default, ../mixins/engines.yml:srtmnet]
-  description: Standard VSWIR surface reflectance retrieval with sRTMnet
 
   input:
     measured_radiance_file: null  # SET: at-sensor radiance (.hdr/ENVI, .mat, .txt)

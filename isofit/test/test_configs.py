@@ -8,6 +8,7 @@ from scipy.io import savemat
 
 from isofit.configs import Config, create_new_config, legacy
 from isofit.configs.sections.atmosphere import AtmosphereConfig
+from isofit.configs.sections.atmosphere.engines.sixs import SixSConfig
 from isofit.configs.sections.atmosphere.engines.srtmnet import sRTMnetConfig
 from isofit.configs.sections.implementation import ImplementationConfig
 from isofit.configs.sections.inversion import InversionConfig
@@ -169,7 +170,7 @@ def test_legacy_config_loads():
     assert atmosphere.lut_grid == {"H2OSTR": [0.5, 1.0, 2.0]}
     assert atmosphere.unknowns.root == {"H2O_ABSCO": 0.01}
 
-    # Defaults from isofit/configs/templates/default.yml
+    # Defaults from isofit/configs/templates/bases/default.yml
     assert config.implementation.mode == "inversion"
     assert config.implementation.inversion.least_squares_params.method == "trf"
     assert config.forward_model.surface.selection_metric == "Euclidean"
@@ -591,3 +592,34 @@ def test_example_configs(path, monkeypatch):
 
     config = create_new_config(file)
     config.get_config_errors()
+
+
+@pytest.mark.parametrize(
+    "engine", ["prebuilt", "sixs", "srtmnet", "libradtran", "kernelflows", "modtran"]
+)
+def test_engine_mixins_switch(engine):
+    """An engine mixin replaces the engine of the base, keeping only its fields."""
+    from isofit.configs.legacy import engine_fields
+    from isofit.configs.loader import load
+
+    for base in ("vswir", "thermal", "pipeline"):
+        atmosphere = load(base, mixin=engine)["forward_model"]["atmosphere"]
+        assert atmosphere["engine"]["name"] == engine
+        assert set(atmosphere["engine"]) <= engine_fields()[engine]
+
+
+def test_engine_mixin_keeps_base_settings():
+    """Values a base sets on its engine carry over to the new engine's fields."""
+    from isofit.configs.loader import load
+
+    engine = load("pipeline", mixin="sixs")["forward_model"]["atmosphere"]["engine"]
+    assert (
+        engine["template_file"] == "${output.dir}/config/${input.fid}_modtran_tpl.json"
+    )
+    assert engine["base_dir"] == "${env.sixs}"
+
+
+def test_section_from_base_mixin():
+    """Engine sections layer their engine mixin; others take mixin=."""
+    assert SixSConfig().base_dir == Path(env.sixs)
+    assert AtmosphereConfig(base="vswir", mixin="sixs").engine.name == "sixs"

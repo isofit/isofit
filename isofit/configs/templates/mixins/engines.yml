@@ -9,16 +9,17 @@
 # isofit.configs.loader.merge_layer). Engine install paths default to the ISOFIT
 # ini via `${env.<key>}`.
 
+# Prebuilt LUT engine, requiring no radiative transfer code (the `default`
+# engine)
 prebuilt:
-  description: Prebuilt LUT engine, requiring no radiative transfer code (the `default` engine)
   forward_model:
     atmosphere:
       engine:
         name: prebuilt
 
 
+# MODTRAN radiative transfer engine
 modtran:
-  description: MODTRAN radiative transfer engine
   forward_model:
     atmosphere:
       engine:
@@ -31,8 +32,8 @@ modtran:
         template_file: null
 
 
+# 6S radiative transfer engine
 sixs:
-  description: 6S radiative transfer engine
   forward_model:
     atmosphere:
       engine:
@@ -55,8 +56,8 @@ sixs:
         earth_sun_distance_file: null
 
 
+# sRTMnet emulator (6S-based)
 srtmnet:
-  description: sRTMnet emulator (6S-based)
   forward_model:
     atmosphere:
       engine:
@@ -69,8 +70,8 @@ srtmnet:
         template_file: null
 
 
+# libRadtran radiative transfer engine
 libradtran:
-  description: libRadtran radiative transfer engine
   forward_model:
     atmosphere:
       engine:
@@ -89,8 +90,8 @@ libradtran:
         template_file: null
 
 
+# KernelFlows Gaussian process emulator
 kernelflows:
-  description: KernelFlows Gaussian process emulator
   forward_model:
     atmosphere:
       engine:

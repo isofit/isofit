@@ -41,9 +41,9 @@
 # defaults and are layered on top of a run section, e.g.
 # `^^: [full, ../mixins/sensors.yml:emit]`.
 
+# apply_oe-equivalent retrieval pipeline run by `isofit retrieval`
 pipeline:
   ^^: [default.yml:default, ../mixins/engines.yml:srtmnet]
-  description: apply_oe-equivalent retrieval pipeline run by `isofit retrieval`
 
   input:
     sensor: null
@@ -188,9 +188,9 @@ pipeline:
       windows: [[350.0, 1360.0], [1410.0, 1800.0], [1970.0, 2500.0]]
 
 
+# H2O-only presolve inversion, layered after `full` or `subs`
 presolve:
   ^^: pipeline
-  description: H2O-only presolve inversion, layered after `full` or `subs`
 
   # Layered after `full` or `subs`, so only the presolve state is written, and
   # without the background reflectance it is used to estimate
@@ -211,9 +211,9 @@ presolve:
       use_background_rfl: false
 
 
+# Shared settings of the main (non-presolve) inversions
 main:
   ^^: pipeline
-  description: Shared settings of the main (non-presolve) inversions
 
   forward_model:
     atmosphere:
@@ -226,12 +226,12 @@ main:
       statevector_names: [AOT550, H2OSTR]
 
 
-# The files written by `pipeline`'s stages that an inversion over superpixels
-# or over every pixel reads. A file whose producing stage is unused is unset
-# when the ISOFIT config is written (see solve.Optional)
+# Main inversion over the superpixels
 subs:
   ^^: main
-  description: Main inversion over the superpixels
+  # The files written by `pipeline`'s stages that an inversion over superpixels
+  # or over every pixel reads. A file whose producing stage is unused is unset
+  # when the ISOFIT config is written (see solve.Optional)
 
   input:
     rdn: ${segment.rdn}
@@ -253,9 +253,9 @@ subs:
       base_surface_class_file: ${surface.classes}
 
 
+# Main inversion over every pixel
 full:
   ^^: main
-  description: Main inversion over every pixel
 
   input:
     rdn: ${preprocess.rdn}

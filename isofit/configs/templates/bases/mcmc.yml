@@ -10,9 +10,10 @@
 # mode and MCMC sampler settings. Load with:
 #   interpolate.load("mcmc.yml")
 
+# VSWIR retrieval sampling the posterior with MCMC for uncertainty
+# quantification
 mcmc:
   ^^: vswir.yml:vswir
-  description: VSWIR retrieval sampling the posterior with MCMC for uncertainty quantification
 
   output:
     mcmc_samples_file: ${output.dir}/mcmc_samples

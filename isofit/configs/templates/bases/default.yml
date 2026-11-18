@@ -10,8 +10,8 @@
 # Paths default to the ISOFIT ini via `${env.<key>}`; the `env` section is
 # injected by isofit.configs.loader.load.
 
+# Complete set of defaults for every config section, using a prebuilt LUT
 default:
-  description: Complete set of defaults for every config section, using a prebuilt LUT
   input:
     sensor: null
     fid: null

@@ -6,8 +6,8 @@
 # Files under ${output.dir}/data/ are copies the setup stage makes of the
 # matching `setup` source file.
 
+# EMIT instrument noise, uncertainty, model discrepancy, EOFs, and windows
 emit:
-  description: EMIT instrument noise, uncertainty, model discrepancy, EOFs, and windows
   setup:
     channelized_uncertainty_file: ${env.data}/emit_osf_uncertainty.txt
     model_discrepancy_file: ${env.data}/emit_model_discrepancy.mat
@@ -30,23 +30,23 @@ emit:
       windows: [[350.0, 1325.0], [1435.0, 1800.0], [1965.0, 2500.0]]
 
 
+# AVIRIS-3 inversion windows
 av3:
-  description: AVIRIS-3 inversion windows
   implementation:
     inversion:
       windows: [[380.0, 1350.0], [1435.0, 1800.0], [1970.0, 2500.0]]
 
 
+# AVIRIS-Classic instrument noise
 avcl:
-  description: AVIRIS-Classic instrument noise
   forward_model:
     instrument:
       SNR: null
       parametric_noise_file: ${env.data}/avirisc_noise.txt
 
 
+# PACE OCI instrument noise and solar irradiance
 oci:
-  description: PACE OCI instrument noise and solar irradiance
   forward_model:
     instrument:
       SNR: null
@@ -55,8 +55,8 @@ oci:
       irradiance_file: ${env.data}/oci/tsis_f0_0p1.txt
 
 
+# Tanager-1 instrument noise
 tanager:
-  description: Tanager-1 instrument noise
   forward_model:
     instrument:
       SNR: null

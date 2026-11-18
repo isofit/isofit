@@ -10,9 +10,9 @@
 # Inherits defaults from default.yml + the sRTMnet engine mixin. Load with:
 #   interpolate.load("simulation.yml")
 
+# Forward simulation of at-sensor radiance from a surface reflectance
 simulation:
   ^^: [default.yml:default, ../mixins/engines.yml:srtmnet]
-  description: Forward simulation of at-sensor radiance from a surface reflectance
 
   input:
     reflectance_file: null        # SET: surface reflectance to forward-model (required)

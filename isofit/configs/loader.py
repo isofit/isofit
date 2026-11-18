@@ -10,9 +10,8 @@ shipped under ``isofit/configs/templates/``, which are split into:
   ``sensors.yml``) and layered on top of a base; see :func:`list_mixins`
 
 Both are referenced by the name of a top-level section in one of their files
-(e.g. ``"default"``, ``"vswir"``, ``"emit"``). Each section carries a
-``description`` of its purpose (see :func:`describe`), which is dropped when the
-section is loaded.
+(e.g. ``"default"``, ``"vswir"``, ``"emit"``). Each section is described by
+the comment directly above it (see :func:`describe`).
 
 Loading resolves ``^^`` inheritance via :mod:`isofit.configs.utils.interpolate`,
 upgrades the result from any legacy schema via :func:`isofit.configs.legacy.convert`,
@@ -24,6 +23,7 @@ interpolation so configs may reference e.g. ``${env.srtmnet}``.
 import copy
 import functools
 import logging
+import re
 from pathlib import Path
 from typing import Optional, Union
 
@@ -41,6 +41,9 @@ Cache: dict[tuple[Path, Optional[str], bool], dict] = {}
 ConfigsDir = Path(__file__).resolve().parent / "templates"
 BasesDir = ConfigsDir / "bases"
 MixinsDir = ConfigsDir / "mixins"
+
+# A top-level key of a YAML file, e.g. `vswir:`
+TopLevel = re.compile(r"^([A-Za-z_][\w-]*)\s*:")
 
 
 def index_sections(directory: Path) -> dict[str, Path]:
@@ -119,7 +122,15 @@ def list_mixins() -> dict[str, Path]:
 
 def describe(ref: Union[str, Path]) -> Optional[str]:
     """
-    Get the ``description`` of a config section.
+    Get the description of a config section: the comment directly above its
+    key in a YAML file, e.g.::
+
+        # Tanager-1 instrument noise
+        tanager:
+          ...
+
+    A comment separated from the key by a blank line (e.g. a file's header) is
+    not a description. A multi-line comment is joined into one line.
 
     Parameters
     ----------
@@ -129,7 +140,8 @@ def describe(ref: Union[str, Path]) -> Optional[str]:
     Returns
     -------
     str or None
-        The section's own ``description``, or ``None`` if it has none.
+        The section's description, or ``None`` if it has none (including any
+        whole file, or JSON section).
 
     Examples
     --------
@@ -138,12 +150,32 @@ def describe(ref: Union[str, Path]) -> Optional[str]:
     'Tanager-1 instrument noise'
     """
     file, section = resolve(ref)
+    if section is None:
+        return None
 
-    data = interpolate.read(file)
-    if section:
-        data = data.get(section) or {}
+    return descriptions(file).get(section)
 
-    return data.get("description")
+
+@functools.cache
+def descriptions(file: Path) -> dict[str, str]:
+    """
+    Read the description of each top-level section of a YAML file, from the
+    comment directly above its key (see :func:`describe`). Cached per file.
+    """
+    if file.suffix.lower() not in (".yml", ".yaml"):
+        return {}
+
+    found, comment = {}, []
+    for line in file.read_text().splitlines():
+        if line.startswith("#"):
+            comment.append(line.lstrip("#").strip())
+            continue
+
+        if (key := TopLevel.match(line)) and comment:
+            found[key[1]] = " ".join(text for text in comment if text)
+        comment = []
+
+    return found
 
 
 def resolve(ref: Union[str, Path]) -> tuple[Path, Optional[str]]:
@@ -258,9 +290,6 @@ def load_layer(ref: Union[str, Path], inherit: bool = True) -> dict:
             data = data[section]
         data = copy.deepcopy(data)
         data.pop("^^", None)
-
-    # Metadata of the template, not config; see `describe`
-    data.pop("description", None)
 
     data = legacy.convert(data)
 
