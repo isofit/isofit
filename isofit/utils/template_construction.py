@@ -8,7 +8,7 @@ import json
 import logging
 import os
 from datetime import datetime
-from os.path import abspath, exists, join
+from os.path import abspath, exists, join, split
 from shutil import copyfile
 
 import netCDF4 as nc
@@ -36,7 +36,6 @@ from isofit.core.instrument import (
 from isofit.core.multistate import SurfaceMapping
 from isofit.data import env
 from isofit.luts.reader import inspect_lut_dimensions
-from isofit.retrieval.sensor import flightline_id
 from isofit.utils.surface_model import surface_model
 
 
@@ -70,7 +69,41 @@ class Pathnames:
         dn_uncertainty_file: str = None,
         eof_path=None,
     ):
-        self.fid = flightline_id(sensor, input_radiance)
+        # Determine FID based on sensor name
+        if sensor == "ang":
+            self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "av3":
+            self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "av4":
+            self.fid = split(input_radiance)[-1][:-8]
+        elif sensor == "av5":
+            self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "avcl":
+            self.fid = split(input_radiance)[-1][:16]
+        elif sensor == "emit":
+            self.fid = split(input_radiance)[-1][:19]
+        elif sensor == "enmap":
+            self.fid = split(input_radiance)[-1].split("_")[5]
+        elif sensor == "hyp":
+            self.fid = split(input_radiance)[-1][:22]
+        elif sensor == "neon":
+            self.fid = split(input_radiance)[-1][:21]
+        elif sensor == "prism":
+            self.fid = split(input_radiance)[-1][:18]
+        elif sensor == "prisma":
+            self.fid = input_radiance.split("/")[-1].split("_")[1]
+        elif sensor == "gao":
+            self.fid = split(input_radiance)[-1][:23]
+        elif sensor == "oci":
+            self.fid = split(input_radiance)[-1][:24]
+        elif sensor == "tanager":
+            self.fid = split(input_radiance)[-1][:23]
+        elif sensor == "custom" or sensor[:2] == "NA":
+            # Custom sensors ("custom" or "NA") keep the full basename, minus any
+            # trailing _rdn
+            self.fid = os.path.splitext(os.path.basename(input_radiance))[0]
+            self.fid = self.fid.removesuffix("_rdn")
+
         logging.info("Flightline ID: %s" % self.fid)
 
         # Names from inputs
