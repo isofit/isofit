@@ -199,24 +199,47 @@ def list_sections():
     "-m", "--mixin", multiple=True, help="Mixins to layer on top of NAME, in order"
 )
 @Section
-@click.option("--raw", is_flag=True, help="Show ${...} references unresolved")
+@click.option("--raw", is_flag=True, help="Show and save ${...} references unresolved")
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Save the composed config to a .yml, .yaml, or .json file",
+)
 def browse(
     ctx: click.Context,
     name: Optional[str],
     mixin: tuple[str, ...],
     section: Optional[str],
     raw: bool,
+    output: Optional[Path],
 ):
     """
     Browse the base configs and mixins
 
-    With no NAME, interactively browse them: select a number or name to show
-    it, or a base followed by mixins (e.g. `pipeline + emit`) to show the
-    composed config. With NAME, show that base or mixin.
+    With no NAME, interactively browse them with single-key buttons:
 
-    Given mixins, a section, --raw, or extra `--dotted.key value` overrides,
-    NAME is instead the base of a composed config: shows what each mixin
-    changes, validates the result, and shows the full config.
+    \b
+      c  compose: choose a base to start composing, or show the active
+         composition
+      d  diff: show a table of what each mixin and override changes
+      m  mixin: layer mixins on top of the composition
+      o  override: set overrides, applied after the mixins, by line numbers of
+         the shown composition (e.g. 12 or 12-15) or as `dotted.key value`
+      u  undo: remove a mixin or override, the last added by default
+      r  reset: discard the composition
+      s  save: write the composition to a .yml, .yaml, or .json file
+      v  view: show a base or mixin
+      l  list: show every base and mixin
+      q  quit
+
+    With NAME, show that base or mixin.
+
+    Given mixins, a section, --raw, --output, or extra `--dotted.key value`
+    overrides, NAME is instead the base of a composed config: shows what each
+    mixin and override changes, validates the result, and shows the full
+    config. With --output, the full config (not only the section) is also
+    saved to that file.
     """
     from isofit.configs.utils import browser
 
@@ -227,7 +250,7 @@ def browse(
 
     items = browser.entries()
     overrides = parse_overrides(ctx)
-    if not (mixin or section or raw or overrides):
+    if not (mixin or section or raw or output or overrides):
         if entry := browser.find(items, name):
             return console.print(browser.details(entry))
         raise click.BadParameter(f"Unknown base or mixin {name!r}", param_hint="NAME")
@@ -243,3 +266,11 @@ def browse(
         base, mixin, overrides=overrides, section=section, interp=not raw
     )
     console.print(view)
+
+    if output:
+        try:
+            written = browser.save(output, base, mixin, overrides, interp=not raw)
+        except (KeyError, ValueError, OSError) as e:
+            console.print(f"[red]Not saved: {e}[/]")
+            raise click.exceptions.Exit(1)
+        console.print(f"[green]✔ Saved to [bold]{written}[/][/]")
