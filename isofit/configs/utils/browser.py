@@ -19,6 +19,7 @@ them into an interactive session driven by single-key buttons (see
 import copy
 import difflib
 import json
+import logging
 import os
 import re
 import sys
@@ -52,6 +53,7 @@ Styles = {"base": "cyan", "mixin": "green"}
 Buttons = {
     "c": "compose",
     "d": "diff",
+    "i": "interpolate",
     "m": "mixin",
     "o": "override",
     "u": "undo",
@@ -63,7 +65,7 @@ Buttons = {
 }
 
 # Buttons that only apply while a config is being composed
-Composing = ("d", "m", "o", "u", "r", "s")
+Composing = ("d", "i", "m", "o", "u", "r", "s")
 
 # The formats :func:`save` writes, by file extension
 Formats = (".yml", ".yaml", ".json")
@@ -625,12 +627,167 @@ def changes_table(
     )
 
 
+def references(
+    base: str,
+    mixins: Optional[list[str]] = None,
+    overrides: Optional[dict] = None,
+    section: Optional[str] = None,
+) -> list[tuple[str, str, Any]]:
+    """
+    Resolve each ``${...}`` reference of a composed config on its own.
+
+    Every value holding a reference is interpolated against the full config,
+    with the ISOFIT environment exposed under ``env`` as :func:`loader.load`
+    does, independently of the others, so one unresolvable reference does not
+    hide what the rest become. References to keys that are unset are noted, as
+    the value will change once they are set (e.g. ``${input.fid}`` within a
+    file name).
+
+    Parameters
+    ----------
+    base : str
+        A config reference for the base; see :func:`loader.resolve`.
+    mixins : list[str], optional
+        Config references layered on top of ``base``, in order.
+    overrides : dict, optional
+        Dotted-key overrides applied last.
+    section : str, optional
+        Dotted path of a section to only resolve the references within.
+
+    Returns
+    -------
+    list[tuple[str, str, Any, list[str]]]
+        The dotted key, the value as written, the value it resolves to (or the
+        exception if it does not resolve), and the referenced keys that are
+        unset (``null``), in config order.
+    """
+    from isofit.data import env
+
+    raw = loader.load(base, mixin=list(mixins or []), overrides=overrides)
+    prefix = tuple(section.split(".")) if section else ()
+
+    def resolve(item, parent, data):
+        try:
+            return interpolate.interp(item, parent, data)
+        except (KeyError, ValueError) as e:
+            return e
+
+    found = []
+    for path, value in flatten(raw).items():
+        if path[: len(prefix)] != prefix:
+            continue
+
+        # Containers are flattened to their leaves, except lists
+        values = enumerate(value) if isinstance(value, list) else [(None, value)]
+        for index, item in values:
+            if not (isinstance(item, str) and interpolate.Interp.search(item)):
+                continue
+
+            key = ".".join(map(str, path)) + (f"[{index}]" if index is not None else "")
+            data = copy.deepcopy(raw)
+            data["env"] = {"modtran": None, **dict(env.items())}
+            resolved = resolve(item, lookup(data, path[:-1]), data)
+
+            # The references that resolve to null, so set to "None" in a string
+            unset = []
+            if not isinstance(resolved, Exception):
+                for ref in interpolate.Interp.findall(item):
+                    data = copy.deepcopy(raw)
+                    data["env"] = {"modtran": None, **dict(env.items())}
+                    value = resolve(f"${{{ref}}}", lookup(data, path[:-1]), data)
+                    if value is None:
+                        unset.append(ref.lstrip("."))
+
+            found.append((key, item, resolved, unset))
+
+    return found
+
+
+def references_table(
+    base: str,
+    mixins: Optional[list[str]] = None,
+    overrides: Optional[dict] = None,
+    section: Optional[str] = None,
+) -> Union[Panel, Text]:
+    """
+    Render a preview of what each ``${...}`` reference of a composed config
+    resolves to (see :func:`references`): a row per reference with its key,
+    the value as written, and the resolved value, or why it does not resolve.
+
+    Parameters
+    ----------
+    base : str
+        A config reference for the base; see :func:`loader.resolve`.
+    mixins : list[str], optional
+        Config references layered on top of ``base``, in order.
+    overrides : dict, optional
+        Dotted-key overrides applied last.
+    section : str, optional
+        Dotted path of a section to only show the references within.
+
+    Returns
+    -------
+    rich.panel.Panel or rich.text.Text
+        The table, or a note if there are no references.
+    """
+    # Errors are shown in the table rather than logged
+    logging.disable(logging.ERROR)
+    try:
+        found = references(base, mixins, overrides, section)
+    finally:
+        logging.disable(logging.NOTSET)
+
+    if not found:
+        return Text(f"No ${{...}} references in {base}", style="dim")
+
+    table = Table(box=box.SIMPLE_HEAD, expand=True, header_style="bold")
+    table.add_column("Key", style="bold", ratio=3, overflow="fold")
+    table.add_column("Written", ratio=3, overflow="fold")
+    table.add_column("Resolves to", ratio=4, overflow="fold")
+
+    failed = pending = 0
+    for key, written, resolved, unset in found:
+        if isinstance(resolved, Exception):
+            failed += 1
+            reason = str(resolved).strip("'\"")
+            table.add_row(key, show(written), Text(f"✘ {reason}", style="red"))
+            continue
+
+        value = show(resolved)
+        if unset:
+            pending += 1
+            names = ", ".join(unset)
+            value.append(
+                f"\n⚠ until {names} {'is' if len(unset) == 1 else 'are'} set",
+                style="yellow",
+            )
+        table.add_row(key, show(written), value)
+
+    count = f"{len(found)} reference{'s' if len(found) != 1 else ''}"
+    if pending:
+        count += f", [yellow]{pending} pending unset keys[/]"
+    if failed:
+        count += f", [red]{failed} unresolved[/]"
+
+    title = " + ".join([base, *(mixins or [])])
+    if overrides:
+        title += f" + {len(overrides)} override{'s' if len(overrides) > 1 else ''}"
+
+    return Panel(
+        table,
+        title=f"[bold]Interpolation[/] [dim]{escape(title)}[/]",
+        subtitle=f"{section + ' · ' if section else ''}{count}",
+        border_style="yellow",
+        box=box.ROUNDED,
+    )
+
+
 def compose(
     base: str,
     mixins: Optional[list[str]] = None,
     overrides: Optional[dict] = None,
     section: Optional[str] = None,
-    interp: bool = True,
+    interp: bool = False,
 ) -> Group:
     """
     Render the full config of a base with mixins layered on top.
@@ -651,9 +808,10 @@ def compose(
     section : str, optional
         Dotted path of the subsection to show, e.g. ``"forward_model"``. The
         whole config is still validated.
-    interp : bool, default=True
-        Show the config with ``${...}`` references resolved. Validation is
-        always of the resolved config.
+    interp : bool, default=False
+        Show the config with ``${...}`` references resolved, rather than as
+        written (see :func:`references_table` to preview what they resolve
+        to). Validation is always of the resolved config.
 
     Returns
     -------
@@ -747,7 +905,8 @@ def compose(
         Panel(
             source,
             title=f"[bold]{title}[/]",
-            subtitle=section or ("interpolated" if interp and not error else "raw"),
+            subtitle=section
+            or ("interpolated" if interp and not error else "as written"),
             border_style="cyan",
             box=box.ROUNDED,
         ),
@@ -1067,15 +1226,9 @@ class Session:
         return text
 
     def show(self) -> None:
-        """Print the active composition, and index its lines by key."""
+        """Print the active composition, as written, and index its lines by key."""
         self.console.print(compose(self.base, self.mixins, overrides=self.overrides))
-        try:
-            data = loader.load(
-                self.base, mixin=self.mixins, overrides=self.overrides, interp=True
-            )
-        except (KeyError, ValueError):
-            # Shown raw, as interpolation failed
-            data = loader.load(self.base, mixin=self.mixins, overrides=self.overrides)
+        data = loader.load(self.base, mixin=self.mixins, overrides=self.overrides)
         self.lines = keylines(dump(data))
 
     def keys(self, choice: str) -> Optional[list[str]]:
@@ -1133,6 +1286,29 @@ class Session:
     def diff(self) -> None:
         """Show the table of what each mixin and override changes."""
         self.console.print(changes_table(self.base, self.mixins, self.overrides))
+
+    def interpolate(self) -> None:
+        """
+        Preview what each ``${...}`` reference of the composition resolves to,
+        optionally within a section.
+        """
+        section = (
+            self.ask(
+                "[bold yellow]Section[/] [dim](e.g. [yellow]forward_model.atmosphere[/], "
+                "blank for the whole config)[/]"
+            )
+            or None
+        )
+        if section:
+            raw = loader.load(self.base, mixin=self.mixins, overrides=self.overrides)
+            if lookup(raw, tuple(section.split("."))) is Unset:
+                return self.console.print(
+                    f"[red]Section {section!r} is not in the config[/]"
+                )
+
+        self.console.print(
+            references_table(self.base, self.mixins, self.overrides, section=section)
+        )
 
     def compose(self) -> None:
         """
@@ -1332,6 +1508,8 @@ def browse(console: Optional[Console] = None) -> None:
       show the active composition with :func:`compose`
     - ``d`` diff: show what each mixin and override changes with
       :func:`changes_table`
+    - ``i`` interpolate: preview what each ``${...}`` reference resolves to
+      with :func:`references_table`, optionally within a section
     - ``m`` mixin: layer mixins on top of the composition
     - ``o`` override: set overrides, applied after the mixins, by line
       numbers of the shown composition or as dotted keys
@@ -1341,7 +1519,7 @@ def browse(console: Optional[Console] = None) -> None:
     - ``v`` view: show a base or mixin with :func:`details`
     - ``l`` list: show every base and mixin again
 
-    ``d``, ``m``, ``o``, ``u``, ``r``, and ``s`` only apply while composing.
+    ``d``, ``i``, ``m``, ``o``, ``u``, ``r``, and ``s`` only apply while composing.
 
     Parameters
     ----------

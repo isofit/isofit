@@ -199,7 +199,13 @@ def list_sections():
     "-m", "--mixin", multiple=True, help="Mixins to layer on top of NAME, in order"
 )
 @Section
-@click.option("--raw", is_flag=True, help="Show and save ${...} references unresolved")
+@click.option(
+    "-i",
+    "--interpolate",
+    is_flag=True,
+    help="Also preview what each ${...} reference resolves to",
+)
+@click.option("--raw", is_flag=True, help="Save ${...} references unresolved")
 @click.option(
     "-o",
     "--output",
@@ -211,6 +217,7 @@ def browse(
     name: Optional[str],
     mixin: tuple[str, ...],
     section: Optional[str],
+    interpolate: bool,
     raw: bool,
     output: Optional[Path],
 ):
@@ -223,6 +230,7 @@ def browse(
       c  compose: choose a base to start composing, or show the active
          composition
       d  diff: show a table of what each mixin and override changes
+      i  interpolate: preview what each ${...} reference resolves to
       m  mixin: layer mixins on top of the composition
       o  override: set overrides, applied after the mixins, by line numbers of
          the shown composition (e.g. 12 or 12-15) or as `dotted.key value`
@@ -235,11 +243,12 @@ def browse(
 
     With NAME, show that base or mixin.
 
-    Given mixins, a section, --raw, --output, or extra `--dotted.key value`
-    overrides, NAME is instead the base of a composed config: shows what each
-    mixin and override changes, validates the result, and shows the full
-    config. With --output, the full config (not only the section) is also
-    saved to that file.
+    Given mixins, a section, --interpolate, --raw, --output, or extra
+    `--dotted.key value` overrides, NAME is instead the base of a composed
+    config: shows what each mixin and override changes, validates the result,
+    and shows the full config as written. With --interpolate, also previews
+    what each ${...} reference resolves to. With --output, the full config (not
+    only the section) is also saved to that file, interpolated unless --raw.
     """
     from isofit.configs.utils import browser
 
@@ -250,7 +259,7 @@ def browse(
 
     items = browser.entries()
     overrides = parse_overrides(ctx)
-    if not (mixin or section or raw or output or overrides):
+    if not (mixin or section or interpolate or raw or output or overrides):
         if entry := browser.find(items, name):
             return console.print(browser.details(entry))
         raise click.BadParameter(f"Unknown base or mixin {name!r}", param_hint="NAME")
@@ -262,10 +271,9 @@ def browse(
         console.print(str(e))
         raise click.exceptions.Exit(2)
 
-    view = browser.compose(
-        base, mixin, overrides=overrides, section=section, interp=not raw
-    )
-    console.print(view)
+    console.print(browser.compose(base, mixin, overrides=overrides, section=section))
+    if interpolate:
+        console.print(browser.references_table(base, mixin, overrides, section=section))
 
     if output:
         try:
