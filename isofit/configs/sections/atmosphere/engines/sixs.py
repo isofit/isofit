@@ -5,6 +5,7 @@
 This module configures 6S for ISOFIT atmospheric correction.
 """
 
+from pathlib import Path
 from typing import Annotated, Literal, Optional
 
 from pydantic import BeforeValidator, ConfigDict, DirectoryPath, Field, FilePath
@@ -23,12 +24,11 @@ class SixSConfig(SectionModel):
 
     Examples
     --------
-    The ``sixs`` base config defaults ``base_dir`` to the ISOFIT ini ``sixs``
+    The ``sixs`` engine mixin defaults ``base_dir`` to the ISOFIT ini ``sixs``
     path and leaves the geometry unset:
 
     >>> from isofit.configs.sections.atmosphere.engines import SixSConfig
     >>> sixs = SixSConfig(
-    ...     base="sixs",
     ...     day=172,
     ...     month=6,
     ...     elev=0.5,
@@ -60,7 +60,7 @@ class SixSConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
-    defaults = "sixs"
+    mixins = ("sixs",)
 
     model_config = ConfigDict(extra="forbid")
 
@@ -135,7 +135,8 @@ class SixSConfig(SectionModel):
         examples=[2.5],
     )
 
-    template_file: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval pipeline may create it
+    template_file: Optional[Path] = Field(
         description="MODTRAN template file used to populate 6S geometry",
         examples=["modtran_template.json"],
     )

@@ -1,10 +1,18 @@
 """
 Configuration loader utilities.
 
-Configs are loaded either from a file on disk or from one of the base configs
-shipped under ``isofit/configs/templates/``. Base configs are referenced by the
-name of a top-level section in one of those files (e.g. ``"default"``,
-``"vswir"``, ``"modtran"``); see :func:`list_bases` for the full index.
+Configs are loaded either from a file on disk or from one of the templates
+shipped under ``isofit/configs/templates/``, which are split into:
+
+- ``bases/`` -- complete configs, typically inheriting ``default`` via ``^^``;
+  see :func:`list_bases`
+- ``mixins/`` -- overlays without ``^^``, grouped into files by purpose (e.g.
+  ``sensors.yml``) and layered on top of a base; see :func:`list_mixins`
+
+Both are referenced by the name of a top-level section in one of their files
+(e.g. ``"default"``, ``"vswir"``, ``"emit"``). Each section carries a
+``description`` of its purpose (see :func:`describe`), which is dropped when the
+section is loaded.
 
 Loading resolves ``^^`` inheritance via :mod:`isofit.configs.utils.interpolate`,
 upgrades the result from any legacy schema via :func:`isofit.configs.legacy.convert`,
@@ -23,24 +31,52 @@ from pydantic import ValidationError
 
 from isofit.configs import legacy
 from isofit.configs.config import Config
+from isofit.configs.sections.io import InputConfig
 from isofit.configs.utils import interpolate
 from isofit.data import env
-from isofit.retrieval.sensor import derive_fid
+from isofit.retrieval.utils.sensor import derive_fid
 
 Logger = logging.getLogger(__name__)
 Cache: dict[tuple[Path, Optional[str], bool], dict] = {}
 ConfigsDir = Path(__file__).resolve().parent / "templates"
+BasesDir = ConfigsDir / "bases"
+MixinsDir = ConfigsDir / "mixins"
+
+
+def index_sections(directory: Path) -> dict[str, Path]:
+    """
+    Index the top-level sections of the template files in ``directory``.
+
+    Files are scanned in sorted order, so if two files define the same section
+    the first one found wins.
+
+    Parameters
+    ----------
+    directory : pathlib.Path
+        Directory of template files.
+
+    Returns
+    -------
+    dict[str, pathlib.Path]
+        Mapping of section name to the template file that defines it.
+    """
+    index = {}
+    files = (p for p in directory.glob("*") if p.suffix in interpolate.Loaders)
+    for path in sorted(files):
+        for section in interpolate.read(path).keys():
+            index.setdefault(section, path)
+
+    return index
 
 
 @functools.cache
 def list_bases() -> dict[str, Path]:
     """
-    Index the base configs available in :data:`ConfigsDir`.
+    Index the base configs available in :data:`BasesDir`.
 
-    Every top-level section of every template file is a base config. Files are
-    scanned in sorted order, so if two files define the same section the first
-    one found wins. The index is computed once and cached; the returned dict is
-    shared, so do not mutate it.
+    Every top-level section of every file in :data:`BasesDir` is a base config.
+    The index is computed once and cached; the returned dict is shared, so do
+    not mutate it.
 
     Returns
     -------
@@ -54,13 +90,60 @@ def list_bases() -> dict[str, Path]:
     >>> index["vswir"].name
     'vswir.yml'
     """
-    index = {}
-    files = (p for p in ConfigsDir.glob("*") if p.suffix in {".yaml", ".yml", ".json"})
-    for path in sorted(files):
-        for section in interpolate.read(path).keys():
-            index.setdefault(section, path)
+    return index_sections(BasesDir)
 
-    return index
+
+@functools.cache
+def list_mixins() -> dict[str, Path]:
+    """
+    Index the mixins available in :data:`MixinsDir`.
+
+    Every top-level section of every file in :data:`MixinsDir` is a mixin, with
+    each file grouping related mixins (e.g. ``sensors.yml``). The index is
+    computed once and cached; the returned dict is shared, so do not mutate it.
+
+    Returns
+    -------
+    dict[str, pathlib.Path]
+        Mapping of mixin name to the template file that defines it.
+
+    Examples
+    --------
+    >>> from isofit.configs.loader import list_mixins
+    >>> index = list_mixins()
+    >>> index["emit"].name
+    'sensors.yml'
+    """
+    return index_sections(MixinsDir)
+
+
+def describe(ref: Union[str, Path]) -> Optional[str]:
+    """
+    Get the ``description`` of a config section.
+
+    Parameters
+    ----------
+    ref : str or pathlib.Path
+        The config reference; see :func:`resolve`.
+
+    Returns
+    -------
+    str or None
+        The section's own ``description``, or ``None`` if it has none.
+
+    Examples
+    --------
+    >>> from isofit.configs.loader import describe
+    >>> describe("tanager")
+    'Tanager-1 instrument noise'
+    """
+    file, section = resolve(ref)
+
+    data = interpolate.read(file)
+    if section:
+        data = data.get(section) or {}
+
+    return data.get("description")
 
 
 def resolve(ref: Union[str, Path]) -> tuple[Path, Optional[str]]:
@@ -71,11 +154,13 @@ def resolve(ref: Union[str, Path]) -> tuple[Path, Optional[str]]:
 
     - ``file`` -- an existing config file, loaded whole;
     - ``file:section`` -- a top-level section of a config file;
-    - ``name`` -- a base config (see :func:`list_bases`).
+    - ``name`` -- a base config (see :func:`list_bases`) or a mixin (see
+      :func:`list_mixins`).
 
-    An existing file takes precedence over a base config of the same name. The
-    ``file:section`` split is made on the colon directly after a supported file
-    extension, so colons elsewhere in the path are left untouched.
+    An existing file takes precedence over a base config of the same name,
+    which in turn takes precedence over a mixin. The ``file:section`` split is
+    made on the colon directly after a supported file extension, so colons
+    elsewhere in the path are left untouched.
 
     Parameters
     ----------
@@ -91,14 +176,15 @@ def resolve(ref: Union[str, Path]) -> tuple[Path, Optional[str]]:
     Raises
     ------
     ValueError
-        If ``ref`` is neither an existing file nor a known base config.
+        If ``ref`` is neither an existing file, a known base config, nor a
+        known mixin.
 
     Examples
     --------
     >>> from isofit.configs.loader import resolve
     >>> file, section = resolve("srtmnet")
     >>> file.name, section
-    ('default.yml', 'srtmnet')
+    ('engines.yml', 'srtmnet')
     """
     if Path(ref).is_file():
         return Path(ref), None
@@ -113,11 +199,14 @@ def resolve(ref: Union[str, Path]) -> tuple[Path, Optional[str]]:
                 raise ValueError(f"Config file not found: {str(file)!r} (from {ref!r})")
             return file, section or None
 
-    if ref in (index := list_bases()):
-        return index[ref], ref
+    for index in (list_bases(), list_mixins()):
+        if ref in index:
+            return index[ref], ref
 
-    valid = ", ".join(index)
-    msg = f"Unknown base config {ref!r}. Available base configs: {valid}"
+    msg = (
+        f"Unknown config {ref!r}. Available base configs: {', '.join(list_bases())}."
+        f" Available mixins: {', '.join(list_mixins())}"
+    )
     Logger.error(msg)
     raise ValueError(msg)
 
@@ -128,9 +217,9 @@ def load_layer(ref: Union[str, Path], inherit: bool = True) -> dict:
 
     The reference is resolved by :func:`resolve` and the selected file or
     section read without interpolation, then upgraded via
-    :func:`isofit.configs.legacy.convert`. Layers read from the base config
-    templates are stored in :data:`Cache`, while user files are re-read on every
-    call.
+    :func:`isofit.configs.legacy.convert`. Layers read from the templates
+    (bases and mixins) are stored in :data:`Cache`, while user files are re-read
+    on every call.
 
     Parameters
     ----------
@@ -170,13 +259,86 @@ def load_layer(ref: Union[str, Path], inherit: bool = True) -> dict:
         data = copy.deepcopy(data)
         data.pop("^^", None)
 
+    # Metadata of the template, not config; see `describe`
+    data.pop("description", None)
+
     data = legacy.convert(data)
 
     # Only the templates are cached; user files may be rewritten
-    if ident[0].parent == ConfigsDir:
+    if ident[0].is_relative_to(ConfigsDir):
         Cache[ident] = copy.deepcopy(data)
 
     return data
+
+
+def merge_layer(data: dict, layer: dict) -> dict:
+    """
+    Deep-merge a config layer on top of ``data`` in place, switching engines.
+
+    Layers are merged by :func:`isofit.configs.utils.interpolate.merge`, except
+    that a layer selecting a different ``forward_model.atmosphere.engine``
+    replaces the engine rather than merging into it, as each engine accepts
+    different fields. Values ``data`` set on its engine beyond that engine's
+    mixin defaults (e.g. the ``tc`` bases' ``template_file``) are carried over
+    when the new engine has the same field and the layer leaves it unset.
+
+    Parameters
+    ----------
+    data : dict
+        The config to update.
+    layer : dict
+        The layer to merge on top, e.g. from :func:`load_layer`.
+
+    Returns
+    -------
+    dict
+        The same ``data``, updated.
+
+    Examples
+    --------
+    >>> data = load_layer("pipeline")
+    >>> _ = merge_layer(data, load_layer("modtran", inherit=False))
+    >>> engine = data["forward_model"]["atmosphere"]["engine"]
+    >>> engine["name"], "sixs_dir" in engine, engine["template_file"]
+    ('modtran', False, '${output.dir}/config/${input.fid}_modtran_tpl.json')
+    """
+    old = engine_of(data)
+    new = engine_of(layer)
+    if not (old and new) or new.get("name") in (None, old.get("name")):
+        return interpolate.merge(data, layer)
+
+    # What `data` set on its old engine beyond that engine's mixin defaults
+    defaults = {}
+    if old.get("name") in list_mixins():
+        defaults = engine_of(load_layer(old["name"], inherit=False)) or {}
+
+    fields = legacy.engine_fields().get(legacy.engine_name(new["name"]), set())
+    kept = {
+        key: val
+        for key, val in old.items()
+        if key in fields and (key not in defaults or defaults[key] != val)
+    }
+
+    data["forward_model"]["atmosphere"]["engine"] = dict(kept)
+    interpolate.merge(data, layer)
+
+    # The carried values win over the new engine's unset (null) defaults
+    engine = data["forward_model"]["atmosphere"]["engine"]
+    for key, val in kept.items():
+        if new.get(key) is None:
+            engine[key] = val
+
+    return data
+
+
+def engine_of(data: dict) -> Optional[dict]:
+    """The ``forward_model.atmosphere.engine`` mapping of ``data``, if any."""
+    for key in ("forward_model", "atmosphere", "engine"):
+        if not isinstance(data, dict):
+            return None
+        data = data.get(key)
+
+    return data if isinstance(data, dict) else None
 
 
 def load(
@@ -184,14 +346,14 @@ def load(
     section: Optional[str] = None,
     overrides: Optional[dict] = None,
     interp: bool = False,
-    patch: Optional[Union[str, Path, list[Union[str, Path]]]] = None,
+    mixin: Optional[Union[str, Path, list[Union[str, Path]]]] = None,
 ) -> dict:
     """
     Load a config dict from a file or a named base config.
 
-    ``key`` and each ``patch`` are loaded as layers by :func:`load_layer`. Each
-    ``patch`` layer is then deep-merged on top of ``key``, in order, so later
-    patches win. A copy of the result then has
+    ``key`` and each ``mixin`` are loaded as layers by :func:`load_layer`. Each
+    ``mixin`` layer is then deep-merged on top of ``key``, in order, so later
+    mixins win. A copy of the result then has
     ``overrides`` applied to ``section``, and if ``interp`` is set its
     ``${...}`` references are resolved against the full config, so a section
     may reference values outside itself (e.g. ``${output.dir}`` from within
@@ -215,11 +377,12 @@ def load(
         :func:`isofit.configs.utils.interpolate.override`).
     interp : bool, default=False
         Resolve ``${...}`` references before returning.
-    patch : str or pathlib.Path or list of them, optional
-        Config references, in the same forms as ``key``, layered on top of it.
-        Only a patch's own keys are applied: its ``^^`` inheritance is ignored,
-        so e.g. ``patch="srtmnet"`` adds the sRTMnet engine without also
-        reapplying every ``default`` value over ``key``.
+    mixin : str or pathlib.Path or list of them, optional
+        Config references, in the same forms as ``key``, layered on top of it
+        by :func:`merge_layer`, typically mixins (see :func:`list_mixins`).
+        Only a mixin's own keys are applied: its ``^^`` inheritance is ignored,
+        so a section of a base may also be layered without reapplying every
+        ``default`` value over ``key``.
 
     Returns
     -------
@@ -229,8 +392,8 @@ def load(
     Raises
     ------
     ValueError
-        If ``key`` or a ``patch`` is neither an existing file nor a known base
-        config.
+        If ``key`` or a ``mixin`` is neither an existing file, a known base
+        config, nor a known mixin.
     KeyError
         If ``section`` is not in the loaded config, or a ``${...}`` reference
         cannot be resolved.
@@ -242,20 +405,28 @@ def load(
     >>> impl = load("vswir", section="implementation", overrides={"n_cores": 4})
     >>> impl["n_cores"]
     4
-    >>> config = load("default", patch="srtmnet")
+    >>> config = load("default", mixin="srtmnet")
     >>> config["forward_model"]["atmosphere"]["engine"]["name"]
     'srtmnet'
+    >>> config = load("pipeline", mixin=["emit", "empirical_line"])
+    >>> config = load("vswir", mixin="sixs")
+    >>> config["forward_model"]["atmosphere"]["engine"]["name"]
+    'sixs'
     """
     data = load_layer(key)
 
-    if isinstance(patch, (str, Path)):
-        patch = [patch]
-    for ref in patch or []:
-        interpolate.merge(data, load_layer(ref, inherit=False))
+    if isinstance(mixin, (str, Path)):
+        mixin = [mixin]
+    for ref in mixin or []:
+        merge_layer(data, load_layer(ref, inherit=False))
 
     # Overrides are relative to the section
     sub = interpolate.get_dotted(data, section)
     interpolate.override(sub, overrides)
+
+    # Before interpolation so references resolve by field name, e.g.
+    # `${input.measured_radiance_file}` when the config sets `input.rdn`
+    unalias(data)
 
     # Derived before interpolation so `${input.fid}` references resolve
     derive_fid(data)
@@ -268,6 +439,30 @@ def load(
         data.pop("env", None)
 
     return sub
+
+
+def unalias(data: dict) -> None:
+    """
+    Rename aliased ``input`` keys to their field names, in place.
+
+    An alias (e.g. ``rdn``) takes precedence over its field name
+    (``measured_radiance_file``) when both are set, matching Pydantic.
+
+    Examples
+    --------
+    >>> from isofit.configs.loader import unalias
+    >>> data = {"input": {"rdn": "a", "measured_radiance_file": "b"}}
+    >>> unalias(data)
+    >>> data
+    {'input': {'measured_radiance_file': 'a'}}
+    """
+    inputs = data.get("input")
+    if not isinstance(inputs, dict):
+        return
+
+    for name, field in InputConfig.model_fields.items():
+        if field.alias in inputs:
+            inputs[name] = inputs.pop(field.alias)
 
 
 def create_new_config(file: Union[str, Path], **kwargs) -> Config:
@@ -318,8 +513,8 @@ def expand_paths(data: Union[dict, list], root: Path) -> None:
     Expand relative paths in a config tree against ``root``, in place.
 
     Applies to string values of keys containing ``file``, ``directory``, or
-    ``path``. Absolute paths and values starting with a ``${...}`` reference
-    are left unchanged.
+    ``path``. Empty strings, absolute paths, and values starting with a
+    ``${...}`` reference are left unchanged.
 
     Parameters
     ----------
@@ -335,6 +530,7 @@ def expand_paths(data: Union[dict, list], root: Path) -> None:
         elif (
             isinstance(key, str)
             and isinstance(val, str)
+            and val
             and any(tag in key for tag in ("file", "directory", "path"))
             and not val.startswith("${")
             and not Path(val).is_absolute()

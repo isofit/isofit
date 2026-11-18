@@ -5,6 +5,7 @@ MODTRAN is a widely-used atmospheric RT code for visible through thermal infrare
 wavelengths. This module configures MODTRAN 6.0 for ISOFIT atmospheric correction.
 """
 
+from pathlib import Path
 from typing import Annotated, Literal, Optional
 
 from pydantic import BeforeValidator, ConfigDict, DirectoryPath, Field, FilePath
@@ -24,13 +25,12 @@ class ModtranConfig(SectionModel):
 
     Examples
     --------
-    The ``modtran`` base config (also underlying ``thermal``) defaults
+    The ``modtran`` engine mixin (also underlying ``thermal``) defaults
     ``base_dir`` to the ISOFIT ini ``modtran`` path. The installation directory
     and template files must exist:
 
     >>> from isofit.configs.sections.atmosphere.engines import ModtranConfig
     >>> modtran = ModtranConfig(
-    ...     base="modtran",
     ...     base_dir="/opt/modtran6.0",
     ...     aerosol_template_file="aerosol_template.json",
     ...     aerosol_model_file="aerosol_model.txt",
@@ -55,7 +55,7 @@ class ModtranConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
-    defaults = "modtran"
+    mixins = ("modtran",)
 
     model_config = ConfigDict(extra="forbid")
 
@@ -99,7 +99,8 @@ class ModtranConfig(SectionModel):
         examples=["aerosol_model.txt"],
     )
 
-    template_file: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval pipeline may create it
+    template_file: Optional[Path] = Field(
         description=(
             "Path to the MODTRAN input template file (tape5 or JSON format) with "
             "the base atmospheric configuration"

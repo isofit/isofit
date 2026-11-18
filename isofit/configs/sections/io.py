@@ -13,7 +13,7 @@ from pydantic import ConfigDict, Field, FilePath, field_validator, model_validat
 
 from isofit.configs.base import SectionModel
 from isofit.configs.utils.accessors import ElementAccessorMixin
-from isofit.retrieval.sensor import FID_PARSERS, flightline_id, is_supported
+from isofit.retrieval.utils.sensor import SENSOR_CHOICES, flightline_id, is_supported
 
 
 class InputConfig(SectionModel, ElementAccessorMixin):
@@ -61,7 +61,7 @@ class InputConfig(SectionModel, ElementAccessorMixin):
     sensor: Optional[str] = Field(
         description=(
             "Acquiring sensor, which sets how ``fid`` is parsed from the radiance "
-            f"file name. One of {list(FID_PARSERS)}, 'custom', or 'NA-YYYYMMDD'"
+            f"file name. Must be {SENSOR_CHOICES}"
         ),
     )
 
@@ -137,7 +137,8 @@ class InputConfig(SectionModel, ElementAccessorMixin):
         examples=["data/radiometry_correction.txt"],
     )
 
-    skyview_factor_file: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval pipeline may create it
+    skyview_factor_file: Optional[Path] = Field(
         alias="sff",
         description=(
             "Skyview factor file to modulate diffuse radiance contribution based on "
@@ -158,7 +159,7 @@ class InputConfig(SectionModel, ElementAccessorMixin):
         if value is None or is_supported(value):
             return value
 
-        raise ValueError(f"Must be one of {list(FID_PARSERS)}, 'custom', or 'NA-*'")
+        raise ValueError(f"Must be {SENSOR_CHOICES}")
 
     @model_validator(mode="after")
     def derive_fid(self) -> "InputConfig":

@@ -4,10 +4,11 @@ from typing import Any, Optional
 import click
 from rich.logging import RichHandler
 
-from isofit.configs import list_bases, load, make_config
+from isofit.configs import list_bases, list_mixins, load, make_config
 from isofit.configs.sections.pipeline import LogConfig
 from isofit.retrieval import Console
 from isofit.retrieval import pipeline as pl
+from isofit.retrieval.stages import Stages
 
 Logger = logging.getLogger(__name__)
 CS = dict(
@@ -19,15 +20,12 @@ Config = click.option(
     "--config",
     help="Either a configuration file or a usecase base. Use '[file.yaml]:<section>' to select a section instead of the whole file.",
 )
-Patch = click.option(
-    "-p", "--patch", multiple=True, help="Patch the base with additional usecases"
+Mixin = click.option(
+    "-m", "--mixin", multiple=True, help="Layer mixins on top of the base, in order"
 )
-# Section = click.option(
-#     "-s", "--section", help="Subsection to load rather than the whole file"
-# )
 
 
-def init(config: str, patch: Optional[tuple[str, ...]], ctx: click.Context) -> ...:
+def init(config: str, mixin: Optional[tuple[str, ...]], ctx: click.Context) -> ...:
     """
     Load the retrieval config and set up logging for a CLI invocation.
 
@@ -35,9 +33,9 @@ def init(config: str, patch: Optional[tuple[str, ...]], ctx: click.Context) -> .
     ----------
     config : str
         A base config name, a config file, or ``file:section``.
-    patch : tuple of str
+    mixin : tuple of str
         Config references, in the same forms as ``config``, layered on top of it
-        in order. Only each patch's own keys are applied, not its ``^^`` parents.
+        in order. Only each mixin's own keys are applied, not its ``^^`` parents.
     ctx : click.Context
         Click context whose extra args supply the dotted ``--key value`` overrides.
 
@@ -51,9 +49,10 @@ def init(config: str, patch: Optional[tuple[str, ...]], ctx: click.Context) -> .
             "-c/--config must be set to either a configuration file or a usecase base. Use '[file.yaml]:<section>' to select a section instead of the whole file."
         )
         Logger.error(f"Available usecase bases: {list_bases().keys()}")
+        Logger.error(f"Available mixins: {list_mixins().keys()}")
         return
 
-    c = load(config, overrides=ctx, patch=patch, interp=True)
+    c = load(config, overrides=ctx, mixin=mixin, interp=True)
 
     handlers = [
         RichHandler(
@@ -117,7 +116,7 @@ def cli() -> None:
 @cli.command(context_settings=CS)
 @click.pass_context
 @Config
-@Patch
+@Mixin
 def run(ctx: click.Context, **kwargs: Any) -> None:
     """
     Execute every enabled stage of the ISOFIT retrieval pipeline.
@@ -136,11 +135,11 @@ def stage_command(name: str, func) -> click.Command:
         if config := init(ctx=ctx, **kwargs):
             func(config)
 
-    command = Patch(Config(command))
+    command = Mixin(Config(command))
     return click.command(name=name, context_settings=CS, help=func.__doc__)(command)
 
 
-for name, func in pl.STAGES.items():
+for name, func in Stages.items():
     cli.add_command(stage_command(name, func))
 
 

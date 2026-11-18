@@ -300,14 +300,16 @@ class SurfaceConfig(SectionModel):
         ],
     )
 
-    surface_class_file: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval pipeline may create it
+    surface_class_file: Optional[Path] = Field(
         description=(
             "Path to surface classification file (ENVI format) for multi-surface mode"
         ),
         examples=["classification.hdr"],
     )
 
-    base_surface_class_file: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval pipeline may create it
+    base_surface_class_file: Optional[Path] = Field(
         description=(
             "Path to base surface classification file for hierarchical classification"
         ),

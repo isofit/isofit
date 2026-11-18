@@ -2,7 +2,7 @@
 The ``isofit config`` command group.
 
 Thin click wrappers around the pipeline in :mod:`isofit.configs.utils.interpolate`
-for previewing, copying, validating, and listing configs.
+for previewing, copying, validating, listing, and browsing configs.
 """
 
 import json
@@ -174,13 +174,72 @@ def validate(ctx: click.Context, **kwargs: Any) -> None:
         Logger.info("The above configuration is valid")
 
 
+def quiet() -> None:
+    """
+    Raise the log level to warnings, for the browser views that replace the
+    debug logging of loading and interpolation.
+    """
+    logging.getLogger().setLevel(logging.WARNING)
+
+
 @cli.command(context_settings=CS, name="list")
 def list_sections():
     """
-    Lists the available base configs
+    Lists the available base configs and mixins
     """
-    from isofit.configs.loader import list_bases
+    from isofit.configs.utils import browser
 
-    items = "\n- ".join(sorted(list_bases()))
+    browser.Console().print(browser.overview(browser.entries()))
 
-    Logger.info(f"Available base configs:\n- {items}")
+
+@cli.command(context_settings=CS)
+@click.pass_context
+@click.argument("name", required=False)
+@click.option(
+    "-m", "--mixin", multiple=True, help="Mixins to layer on top of NAME, in order"
+)
+@Section
+@click.option("--raw", is_flag=True, help="Show ${...} references unresolved")
+def browse(
+    ctx: click.Context,
+    name: Optional[str],
+    mixin: tuple[str, ...],
+    section: Optional[str],
+    raw: bool,
+):
+    """
+    Browse the base configs and mixins
+
+    With no NAME, interactively browse them: select a number or name to show
+    it, or a base followed by mixins (e.g. `pipeline + emit`) to show the
+    composed config. With NAME, show that base or mixin.
+
+    Given mixins, a section, --raw, or extra `--dotted.key value` overrides,
+    NAME is instead the base of a composed config: shows what each mixin
+    changes, validates the result, and shows the full config.
+    """
+    from isofit.configs.utils import browser
+
+    quiet()
+    console = browser.Console()
+    if not name:
+        return browser.browse(console)
+
+    items = browser.entries()
+    overrides = parse_overrides(ctx)
+    if not (mixin or section or raw or overrides):
+        if entry := browser.find(items, name):
+            return console.print(browser.details(entry))
+        raise click.BadParameter(f"Unknown base or mixin {name!r}", param_hint="NAME")
+
+    try:
+        base = browser.pick(items, name, "base")
+        mixin = [browser.pick(items, ref, "mixin") for ref in mixin]
+    except ValueError as e:
+        console.print(str(e))
+        raise click.exceptions.Exit(2)
+
+    view = browser.compose(
+        base, mixin, overrides=overrides, section=section, interp=not raw
+    )
+    console.print(view)

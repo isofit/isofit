@@ -6,9 +6,10 @@ atmosphere, and instrument models to simulate at-sensor radiance from surface
 reflectance.
 """
 
+from pathlib import Path
 from typing import Optional
 
-from pydantic import Field, FilePath
+from pydantic import Field
 
 from isofit.configs.base import SectionModel
 from isofit.configs.sections.atmosphere import AtmosphereConfig
@@ -83,7 +84,8 @@ class ForwardModelConfig(SectionModel):
         )
     )
 
-    model_discrepancy_file: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval setup stage may create it
+    model_discrepancy_file: Optional[Path] = Field(
         description=(
             "Path to a numpy-format covariance matrix representing systematic "
             "model-observation discrepancy. Used to account for forward model "

@@ -1,0 +1,99 @@
+# Engine mixins: overlays without `^^` that select the radiative transfer engine
+# and set its engine-specific defaults, layered on top of a base, e.g.
+#   isofit config browse vswir -m modtran
+#   load("default", mixin="sixs")
+# or inherited by a base, e.g. `^^: [default.yml:default, ../mixins/engines.yml:srtmnet]`.
+#
+# An engine mixin replaces the engine of the config it is layered on rather than
+# merging into it, as each engine accepts different fields (see
+# isofit.configs.loader.merge_layer). Engine install paths default to the ISOFIT
+# ini via `${env.<key>}`.
+
+prebuilt:
+  description: Prebuilt LUT engine, requiring no radiative transfer code (the `default` engine)
+  forward_model:
+    atmosphere:
+      engine:
+        name: prebuilt
+
+
+modtran:
+  description: MODTRAN radiative transfer engine
+  forward_model:
+    atmosphere:
+      engine:
+        name: modtran
+        base_dir: ${env.modtran}
+        multipart_transmittance: ${forward_model.atmosphere.multipart_transmittance}
+        use_tp7: false
+        aerosol_template_file: null
+        aerosol_model_file: null
+        template_file: null
+
+
+sixs:
+  description: 6S radiative transfer engine
+  forward_model:
+    atmosphere:
+      engine:
+        name: sixs
+        base_dir: ${env.sixs}
+        day: null
+        month: null
+        elev: null
+        alt: null
+        solzen: null
+        solaz: null
+        viewzen: null
+        viewaz: null
+        wlinf: null
+        wlsup: null
+        template_file: null
+        aerosol_model_file: null
+        aerosol_template_file: null
+        obs_file: null
+        earth_sun_distance_file: null
+
+
+srtmnet:
+  description: sRTMnet emulator (6S-based)
+  forward_model:
+    atmosphere:
+      engine:
+        name: srtmnet
+        base_dir: ${env.srtmnet}
+        sixs_dir: ${env.sixs}
+        emulator_batch_size: 4096
+        emulator_file: ${env.srtmnet}/${env.srtmnet-file}
+        emulator_aux_file: ${env.srtmnet}/${env.srtmnet-aux}
+        template_file: null
+
+
+libradtran:
+  description: libRadtran radiative transfer engine
+  forward_model:
+    atmosphere:
+      engine:
+        name: libradtran
+        base_dir: ${env.libradtran}/${env.libradtran-version}
+        reptran_band_model: coarse
+        # Required by LibRadTranConfig (no model default); set per run.
+        kb_alpha_1: null
+        kb_alpha_2: null
+        gg_set: null
+        gg_file: null
+        tau_file: null
+        ssa_file: null
+        ssa_scale: null
+        moments_file: null
+        template_file: null
+
+
+kernelflows:
+  description: KernelFlows Gaussian process emulator
+  forward_model:
+    atmosphere:
+      engine:
+        name: kernelflows
+        emulator_file: null
+        template_file: null

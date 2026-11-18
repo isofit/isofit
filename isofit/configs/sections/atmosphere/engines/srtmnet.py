@@ -6,6 +6,7 @@ orders-of-magnitude speedup over physics-based RT codes while maintaining
 high accuracy.
 """
 
+from pathlib import Path
 from typing import Annotated, Literal, Optional
 
 from pydantic import (
@@ -32,11 +33,11 @@ class sRTMnetConfig(SectionModel):
 
     Examples
     --------
-    The ``srtmnet`` base config (also underlying ``vswir``, ``glint``,
+    The ``srtmnet`` engine mixin (also underlying ``vswir``, ``glint``,
     ``simulation``, and ``mcmc``) points the emulator at the ISOFIT ini paths:
 
     >>> from isofit.configs.sections.atmosphere.engines import sRTMnetConfig
-    >>> srtm = sRTMnetConfig(base="srtmnet")
+    >>> srtm = sRTMnetConfig()
     >>> srtm.emulator_batch_size
     4096
     >>> srtm = sRTMnetConfig(base="vswir", emulator_batch_size=2048)
@@ -61,7 +62,7 @@ class sRTMnetConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
-    defaults = "srtmnet"
+    mixins = ("srtmnet",)
 
     model_config = ConfigDict(extra="forbid")
 
@@ -105,7 +106,8 @@ class sRTMnetConfig(SectionModel):
         examples=["srtmnet/emulator_aux.npz"],
     )
 
-    template_file: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval pipeline may create it
+    template_file: Optional[Path] = Field(
         description="MODTRAN template file used to build the 6S surrogate simulations",
         examples=["modtran_template.json"],
     )

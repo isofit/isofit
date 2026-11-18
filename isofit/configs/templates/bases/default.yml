@@ -1,19 +1,17 @@
 # ISOFIT base configuration defaults.
 #
 # `default` holds the complete set of defaults for every config section, mirroring
-# the Pydantic models in isofit/configs/sections. Each engine below inherits those
-# defaults via the `^^: default` directive (see configs/utils/interpolate/inherit.py) and
-# only overrides the radiative-transfer engine (and any engine-specific defaults).
+# the Pydantic models in isofit/configs/sections. It uses the prebuilt engine,
+# which needs no radiative transfer code; the engine mixins (mixins/engines.yml)
+# swap in another engine along with its own defaults, e.g.
+#   load("default", mixin="modtran")
+# or, from another base, `^^: [default.yml:default, ../mixins/engines.yml:modtran]`.
 #
-# This file is meant to be loaded with configs/utils/interpolate.load, e.g.
-#   load("default.yml", section="modtran")
-# which folds `default` in underneath the engine section and resolves the
-# `${...}` references below.
-#
-# Engine install paths default to the ISOFIT ini via `${env.<key>}`; the `env`
-# section is injected by isofit.configs.loader.load.
+# Paths default to the ISOFIT ini via `${env.<key>}`; the `env` section is
+# injected by isofit.configs.loader.load.
 
 default:
+  description: Complete set of defaults for every config section, using a prebuilt LUT
   input:
     sensor: null
     fid: null
@@ -50,6 +48,95 @@ default:
     level: INFO
     append: True
     config: null
+    resources: false
+
+  # Retrieval pipeline (isofit retrieval), see isofit/retrieval/pipeline.py.
+  # The paths between stages are unset here; see tc.yml:pipeline for a layout
+  lut:
+    enabled: true
+    exit: false
+    prebuilt: false
+    no_min_spacing: false
+    elevation: {spacing: 0.25, spacing_min: 0.2, range: null}
+    observer_zenith: {spacing: 10, spacing_min: 2, range: null}
+    solar_zenith: {spacing: 10, spacing_min: 2, range: null}
+    relative_azimuth: {spacing: 60, spacing_min: 25, range: null}
+    h2o: {spacing: 0.25, spacing_min: 0.03, range: null}
+    aerosol: {spacing: 0.1, spacing_min: 0, range: null}
+    co2: {spacing: 60, spacing_min: 60, range: [380, 440]}
+
+  setup:
+    enabled: true
+    rdn: null
+    obs: null
+    loc: null
+    wavelength_file: null
+    channelized_uncertainty_file: null
+    model_discrepancy_file: null
+    eof_file: null
+
+  preprocess:
+    enabled: true
+    interpolate_radiance: false
+    rdn: null
+    skyview: null
+    svf: null
+
+  scene:
+    enabled: true
+    atmosphere_type: ATM_MIDLAT_SUMMER
+    trim_lines: 5
+    max_flight_duration: 8
+    file: null
+
+  surface:
+    enabled: true
+    file: null
+    classify: false
+    classes: null
+
+  segment:
+    enabled: false
+    size: 40
+    npca: 5
+    labels: null
+    rdn: null
+    obs: null
+    loc: null
+    svf: null
+    surface_class: null
+
+  presolve:
+    enabled: false
+    grid_points: 10
+    layers: []
+    file: null
+    template: null
+    state: null
+
+  background:
+    enabled: false
+    rfl: null
+    subs: null
+
+  configure:
+    enabled: true
+    aerosol_climatology_file: null
+    layers: []
+    file: null
+
+  invert:
+    enabled: true
+
+  interpolate:
+    enabled: false
+    method: analytical
+    num_neighbors: []
+    atm_sigma: [2]
+
+  cleanup:
+    enabled: true
+    remove: []
 
   forward_model:
     model_discrepancy_file: null
@@ -153,92 +240,3 @@ default:
         ftol: 0.01
         gtol: null
         tr_solver: lsmr
-
-# ---------------------------------------------------------------------------
-# Engine profiles: inherit all of `default`, then override the RT engine with
-# its own name and engine-specific defaults.
-# ---------------------------------------------------------------------------
-
-prebuilt:
-  ^^: default
-  forward_model:
-    atmosphere:
-      engine:
-        name: prebuilt
-
-modtran:
-  ^^: default
-  forward_model:
-    atmosphere:
-      engine:
-        name: modtran
-        base_dir: ${env.modtran}
-        multipart_transmittance: ${forward_model.atmosphere.multipart_transmittance}
-        use_tp7: false
-        aerosol_template_file: null
-        aerosol_model_file: null
-        template_file: null
-
-sixs:
-  ^^: default
-  forward_model:
-    atmosphere:
-      engine:
-        name: sixs
-        base_dir: ${env.sixs}
-        day: null
-        month: null
-        elev: null
-        alt: null
-        solzen: null
-        solaz: null
-        viewzen: null
-        viewaz: null
-        wlinf: null
-        wlsup: null
-        template_file: null
-        aerosol_model_file: null
-        aerosol_template_file: null
-        obs_file: null
-        earth_sun_distance_file: null
-
-srtmnet:
-  ^^: default
-  forward_model:
-    atmosphere:
-      engine:
-        name: srtmnet
-        base_dir: ${env.srtmnet}
-        sixs_dir: ${env.sixs}
-        emulator_batch_size: 4096
-        emulator_file: ${env.srtmnet}/${env.srtmnet-file}
-        emulator_aux_file: ${env.srtmnet}/${env.srtmnet-aux}
-        template_file: null
-
-libradtran:
-  ^^: default
-  forward_model:
-    atmosphere:
-      engine:
-        name: libradtran
-        base_dir: ${env.libradtran}
-        band_model: reptran coarse
-        # Required by LibRadTranConfig (no model default); set per run.
-        kb_alpha_1: null
-        kb_alpha_2: null
-        gg_set: null
-        gg_file: null
-        tau_file: null
-        ssa_file: null
-        ssa_scale: null
-        moments_file: null
-        template_file: null
-
-kernelflows:
-  ^^: default
-  forward_model:
-    atmosphere:
-      engine:
-        name: kernelflows
-        emulator_file: null
-        template_file: null

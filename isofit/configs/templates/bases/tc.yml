@@ -1,0 +1,270 @@
+# Use case: the configs written by apply_oe / template_construction.
+#
+# Captures the static (non-programmatic) values apply_oe writes into its ISOFIT
+# configs, using apply_oe's working-directory layout with `output.dir` as the
+# working directory:
+#   ${output.dir}/input/    staged + superpixel inputs
+#   ${output.dir}/data/     wavelengths, surface model, staged instrument files
+#   ${output.dir}/config/   RT templates and the written ISOFIT configs
+#   ${output.dir}/lut_h2o/  presolve LUT
+#   ${output.dir}/lut_full/ main LUT
+#   ${output.dir}/output/   retrieval products
+#
+# Scene-derived values (LUT grids, statevector bounds/init/prior_mean, aerosol
+# climatology, multisurface `Surfaces`) are derived by the retrieval stages and
+# are not set here.
+#
+# Every file the stages exchange is set here, so the layout can be changed by
+# overriding any of them. Each stage reads the files of the stages before it by
+# reference, e.g. `segment.rdn: ${preprocess.rdn}`, so overriding a file also
+# redirects its readers. The retrieval mixins (mixins/retrieval.yml) choose
+# between alternatives by repointing these references, e.g. `copy_inputs` sets
+# `setup.rdn` to a copy under ${output.dir}/input/.
+#
+# `isofit retrieval` runs from `pipeline`. The presolve and configure stages
+# write their ISOFIT configs by layering the own keys of the run sections in
+# `presolve.layers` or `configure.layers` on top of it, in order (see
+# isofit/retrieval/utils/solve.py), so those sections only hold what differs
+# from `pipeline`.
+#
+# Sections:
+#   pipeline - Shared by every run, and the config `isofit retrieval` runs from
+#   presolve - H2O-only presolve (apply_oe --presolve), layered after `full` or
+#              `subs`. Not to be confused with the `presolve` stage key within
+#              `pipeline`
+#   main     - Shared by the main (non-presolve) solves
+#   subs     - Solve over the superpixels (--empirical_line, --analytical_line,
+#              or the presolve with --use_background_rfl)
+#   full     - Solve over every pixel
+#
+# Sensor mixins (mixins/sensors.yml) apply apply_oe's hardcoded per-sensor
+# defaults and are layered on top of a run section, e.g.
+# `^^: [full, ../mixins/sensors.yml:emit]`.
+
+pipeline:
+  ^^: [default.yml:default, ../mixins/engines.yml:srtmnet]
+  description: apply_oe-equivalent retrieval pipeline run by `isofit retrieval`
+
+  input:
+    sensor: null
+    fid: null  # SET: flightline ID, derived from the radiance file name per sensor
+    rdn: null  # SET: at-sensor radiance
+    obs: null  # SET: observation geometry
+    loc: null  # SET: lat/lon/elevation
+
+  output:
+    dir: ./isofit-output/  # apply_oe: working_directory
+    # Products of the main inversion over every pixel, or of the interpolate
+    # stage when it runs over the superpixels
+    estimated_state_file: ${output.dir}/output/${input.fid}_state
+    estimated_reflectance_file: ${output.dir}/output/${input.fid}_rfl
+    posterior_uncertainty_file: ${output.dir}/output/${input.fid}_uncert
+
+  log:
+    stage: isofit
+    file: ${output.dir}/${.stage}.log
+    level: INFO
+    append: True
+
+  setup:
+    # Working inputs; see the `copy_inputs` mixin (apply_oe: --copy_input_files)
+    rdn: ${input.measured_radiance_file}
+    obs: ${input.obs_file}
+    loc: ${input.loc_file}
+    wavelength_file: null  # apply_oe: --wavelength_path
+    # Sources staged into ${output.dir}/data/ (see the sensor mixins)
+    channelized_uncertainty_file: null  # apply_oe: --channelized_uncertainty_path
+    model_discrepancy_file: null  # apply_oe: --model_discrepancy_path
+    eof_file: null  # apply_oe: --eof_path
+
+  lut:
+    exit: false  # Stop after building the LUT
+    prebuilt: false  # apply_oe: --prebuilt_lut, see the `prebuilt_lut` mixin
+    no_min_spacing: false  # apply_oe: --no_min_lut_spacing
+
+  preprocess:
+    interpolate_radiance: false  # See the `interpolate_radiance` mixin
+    rdn: ${setup.rdn}
+    skyview: null  # See the `skyview` mixin
+    svf: ${input.skyview_factor_file}  # apply_oe: --skyview_factor <file>
+
+  scene:
+    atmosphere_type: ATM_MIDLAT_SUMMER  # apply_oe: --atmosphere_type
+    file: ${output.dir}/data/${input.fid}_scene.json
+
+  surface:
+    file: null  # SET: apply_oe: --surface_path
+    classify: false  # See the `classify` mixin
+    classes: null  # apply_oe: --surface_class_file
+
+  segment:
+    enabled: false  # Enabled by the superpixel mixins
+    size: 40  # apply_oe: --segmentation_size
+    labels: ${output.dir}/output/${input.fid}_lbl
+    rdn: ${output.dir}/input/${input.fid}_subs_rdn
+    obs: ${output.dir}/input/${input.fid}_subs_obs
+    loc: ${output.dir}/input/${input.fid}_subs_loc
+    svf: ${output.dir}/input/${input.fid}_subs_svf
+    surface_class: ${output.dir}/input/${input.fid}_subs_surface_class
+
+  presolve:
+    enabled: false  # Enabled by the `background_rfl` mixin (apply_oe: --presolve)
+    layers: [full, presolve]
+    file: ${output.dir}/config/${input.fid}_h2o.json
+    template: ${output.dir}/config/${input.fid}_h2o_tpl.json
+    state: ${output.dir}/output/${input.fid}_h2o
+
+  background:
+    enabled: false  # Enabled by the `background_rfl` mixin
+    rfl: ${output.dir}/data/${input.fid}_bgrfl
+    subs: ${output.dir}/input/${input.fid}_subs_bgrfl
+
+  configure:
+    aerosol_climatology_file: null  # apply_oe: --aerosol_climatology_path
+    layers: [full]
+    file: ${output.dir}/config/${input.fid}_isofit.json
+
+  interpolate:
+    enabled: false  # Enabled by the empirical/analytical mixins
+    method: analytical
+    num_neighbors: []  # apply_oe: --num_neighbors
+    atm_sigma: [2]  # apply_oe: --atm_sigma
+
+  cleanup:
+    # apply_oe's RTM_CLEANUP_LIST, only produced by MODTRAN
+    remove:
+      - ${output.dir}/lut_*/*r_k
+      - ${output.dir}/lut_*/*t_k
+      - ${output.dir}/lut_*/*tp7
+      - ${output.dir}/lut_*/*wrn
+      - ${output.dir}/lut_*/*psc
+      - ${output.dir}/lut_*/*plt
+      - ${output.dir}/lut_*/*7sc
+      - ${output.dir}/lut_*/*acd
+      - ${output.dir}/lut_*/*.inp
+      - ${output.dir}/lut_*/*.sh
+      - ${background.rfl}*
+      - ${background.subs}*
+
+  forward_model:
+    instrument:
+      wavelength_file: ${output.dir}/data/wavelengths.txt
+      integrations: 1
+      # Zeroed by apply_oe when --model_discrepancy_path is given
+      unknowns:
+        uncorrelated_radiometric_uncertainty: 0.01
+      # Used when no parametric noise file is available (see the sensor mixins
+      # or apply_oe --instrument_noise_path)
+      SNR: 500
+
+    surface:
+      multi_surface_flag: false
+      surface_file: ${output.dir}/data/surface.mat
+      surface_category: multicomponent_surface
+      terrain_style: dem
+      max_slope: 20.0
+      use_background_rfl: false
+
+    atmosphere:
+      sim_path: ${output.dir}/lut_full
+      lut_path: ${.sim_path}/lut.zarr
+      # false for .h5 sRTMnet emulators; true for .6c emulators and MODTRAN
+      multipart_transmittance: false
+      irradiance_file: ${env.examples}/20151026_SantaMonica/data/prism_optimized_irr.dat
+      engine:
+        template_file: ${output.dir}/config/${input.fid}_modtran_tpl.json
+      statevector:
+        H2OSTR:
+          scale: 1
+          prior_sigma: 100.0
+      statevector_names: [H2OSTR]
+
+  implementation:
+    n_cores: 1
+    ray_temp_dir: /tmp/ray
+    debug_mode: false
+    pixel_heuristic_priors: []
+    inversion:
+      windows: [[350.0, 1360.0], [1410.0, 1800.0], [1970.0, 2500.0]]
+
+
+presolve:
+  ^^: pipeline
+  description: H2O-only presolve inversion, layered after `full` or `subs`
+
+  # Layered after `full` or `subs`, so only the presolve state is written, and
+  # without the background reflectance it is used to estimate
+  input:
+    brf: null
+  output:
+    estimated_state_file: ${presolve.state}
+    estimated_reflectance_file: null
+    posterior_uncertainty_file: null
+
+  forward_model:
+    atmosphere:
+      sim_path: ${output.dir}/lut_h2o
+      lut_path: ${.sim_path}/lut.zarr
+      engine:
+        template_file: ${presolve.template}
+    surface:
+      use_background_rfl: false
+
+
+main:
+  ^^: pipeline
+  description: Shared settings of the main (non-presolve) inversions
+
+  forward_model:
+    atmosphere:
+      statevector:
+        # Climatology default; with the AOT pixel heuristic prior, prior_sigma
+        # comes from the AERONET model instead
+        AOT550:
+          scale: 1
+          prior_sigma: 0.1
+      statevector_names: [AOT550, H2OSTR]
+
+
+# The files written by `pipeline`'s stages that an inversion over superpixels
+# or over every pixel reads. A file whose producing stage is unused is unset
+# when the ISOFIT config is written (see solve.Optional)
+subs:
+  ^^: main
+  description: Main inversion over the superpixels
+
+  input:
+    rdn: ${segment.rdn}
+    obs: ${segment.obs}
+    loc: ${segment.loc}
+    sff: ${segment.svf}
+    brf: ${background.subs}
+
+  output:
+    estimated_state_file: ${output.dir}/output/${input.fid}_subs_state
+    estimated_reflectance_file: ${output.dir}/output/${input.fid}_subs_rfl
+    posterior_uncertainty_file: ${output.dir}/output/${input.fid}_subs_uncert
+
+  forward_model:
+    instrument:
+      integrations: ${segment.size}
+    surface:
+      surface_class_file: ${segment.surface_class}
+      base_surface_class_file: ${surface.classes}
+
+
+full:
+  ^^: main
+  description: Main inversion over every pixel
+
+  input:
+    rdn: ${preprocess.rdn}
+    obs: ${setup.obs}
+    loc: ${setup.loc}
+    sff: ${preprocess.svf}
+    brf: ${background.rfl}
+
+  forward_model:
+    surface:
+      surface_class_file: ${surface.classes}
+      base_surface_class_file: ${surface.classes}

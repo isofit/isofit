@@ -5,6 +5,7 @@ Kernel Flows is a machine learning-based RT emulator providing fast
 atmospheric correction capabilities.
 """
 
+from pathlib import Path
 from typing import Annotated, Literal, Optional
 
 from pydantic import BeforeValidator, ConfigDict, Field, FilePath
@@ -23,17 +24,16 @@ class KernelFlowsConfig(SectionModel):
 
     Examples
     --------
-    The ``kernelflows`` base config leaves the emulator unset:
+    The ``kernelflows`` engine mixin leaves the emulator unset:
 
     >>> from isofit.configs.sections.atmosphere.engines import KernelFlowsConfig
-    >>> kf = KernelFlowsConfig(base="kernelflows")
+    >>> kf = KernelFlowsConfig()
     >>> kf.name, kf.emulator_file
     ('kernelflows', None)
 
     Supplying the emulator and template files (they must exist):
 
     >>> kf = KernelFlowsConfig(
-    ...     base="kernelflows",
     ...     emulator_file="kf_emulator.h5",
     ...     template_file="modtran_template.json",
     ... )
@@ -50,7 +50,7 @@ class KernelFlowsConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
-    defaults = "kernelflows"
+    mixins = ("kernelflows",)
 
     model_config = ConfigDict(extra="forbid")
 
@@ -63,7 +63,8 @@ class KernelFlowsConfig(SectionModel):
         examples=["kf_emulator.h5"],
     )
 
-    template_file: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval pipeline may create it
+    template_file: Optional[Path] = Field(
         description=(
             "Path to the template configuration file for Kernel Flows parameters"
         ),

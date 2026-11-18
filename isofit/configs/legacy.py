@@ -237,7 +237,10 @@ def convert_atmosphere(atmosphere: dict) -> dict:
         if key in fields:
             engine[key] = value
         if key not in fields or key in SharedKeys:
-            atmosphere[key] = value
+            # An engine value referencing the atmosphere's own (as the engine
+            # mixins set) would reference itself at the atmosphere level
+            if value != f"${{forward_model.atmosphere.{key}}}":
+                atmosphere[key] = value
 
     atmosphere["engine"] = engine
     return atmosphere

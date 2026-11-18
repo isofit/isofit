@@ -1,11 +1,14 @@
 import logging
 import os
+import shutil
 import time
 from datetime import timedelta
 from functools import wraps
 from os.path import exists
-from typing import Any, Callable, List, TypeVar
+from pathlib import Path
+from typing import Any, Callable, List, Optional, TypeVar
 
+import numpy as np
 from spectral.io import envi as spectral_envi
 
 from isofit.core.common import envi_header
@@ -136,6 +139,41 @@ def skip(file: str, envi: bool = True) -> bool:
     return done
 
 
+def walk_paths(model) -> list[Path]:
+    """
+    Every path set in a config, depth-first.
+
+    Parameters
+    ----------
+    model : pydantic.BaseModel
+        The config, or a section of it.
+
+    Returns
+    -------
+    list[pathlib.Path]
+        The set path fields of ``model`` and its subsections.
+    """
+    found = []
+
+    def walk(value):
+        if isinstance(value, Path):
+            found.append(value)
+        elif hasattr(value, "__pydantic_fields__"):
+            # Iterating a model yields its declared fields followed by its extras
+            for _, val in value:
+                walk(val)
+        elif isinstance(value, dict):
+            for val in value.values():
+                walk(val)
+        elif isinstance(value, (list, tuple)):
+            for val in value:
+                walk(val)
+
+    walk(model)
+
+    return found
+
+
 def envi_shape(file: str) -> tuple[int, int]:
     """
     Spatial (rows, columns) shape of an ENVI file.
@@ -152,3 +190,100 @@ def remove(*files: str) -> None:
         if exists(file):
             Logger.debug(f"Removing {file}")
             os.remove(file)
+
+
+def stage(src: Optional[Path], dst: Optional[Path], envi: bool = False) -> None:
+    """
+    Copy a file into the working directory, skipping it if already staged.
+
+    Parameters
+    ----------
+    src : pathlib.Path, optional
+        File to copy. Nothing is staged when None.
+    dst : pathlib.Path, optional
+        Where to copy ``src`` to.
+    envi : bool, default=False
+        ``src`` is an ENVI file, so its header is copied alongside it.
+
+    Raises
+    ------
+    ValueError
+        If ``src`` is set without a ``dst``.
+    """
+    if src is None:
+        return
+
+    if dst is None:
+        raise ValueError(f"No destination is configured to stage {src} to")
+
+    if Path(src).resolve() == Path(dst).resolve() or skip(dst, envi=envi):
+        return
+
+    Logger.info(f"Staging {src} to {dst}")
+    shutil.copyfile(src, dst)
+    if envi:
+        shutil.copyfile(envi_header(str(src)), envi_header(str(dst)))
+
+
+def read_wavelengths(
+    radiance: Path, file: Optional[Path] = None
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Read the wavelength centers and FWHM of a radiance cube, in microns.
+
+    Parameters
+    ----------
+    radiance : pathlib.Path
+        ENVI radiance file whose header holds the wavelengths.
+    file : pathlib.Path, optional
+        Wavelength file with channel, wavelength, and FWHM columns to use
+        instead of the radiance header. Must have one row per radiance channel.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Wavelength centers and FWHM. Values above 100 are taken to be nanometers
+        and converted to microns.
+
+    Raises
+    ------
+    ValueError
+        If ``file`` does not have one row per radiance channel.
+
+    Notes
+    -----
+    Without a FWHM in the header, the FWHM is the spacing of the first two
+    channels.
+    """
+    meta = spectral_envi.open(envi_header(str(radiance))).metadata
+    channels = len(meta["wavelength"])
+
+    if file:
+        _, wl, fwhm = np.loadtxt(file).T
+        if len(wl) != channels:
+            raise ValueError(
+                f"Wavelength file {file} has {len(wl)} channels, which does not "
+                f"match the {channels} channels of the radiance {radiance}"
+            )
+    else:
+        Logger.info("Reading the wavelengths from the radiance header")
+        wl = np.array(meta["wavelength"], dtype=float)
+        fwhm = meta.get("fwhm", meta.get("FWHM"))
+        if fwhm is not None:
+            fwhm = np.array(fwhm, dtype=float)
+        else:
+            fwhm = np.full(wl.shape, wl[1] - wl[0])
+
+    if wl[0] > 100:
+        Logger.info("Wavelength units of nm inferred, converting to microns")
+        wl, fwhm = wl / 1000, fwhm / 1000
+
+    return wl, fwhm
+
+
+def write_wavelengths(file: Path, wl: np.ndarray, fwhm: np.ndarray) -> None:
+    """
+    Write a wavelength file of channel index, wavelength, and FWHM columns.
+    """
+    data = np.column_stack([np.arange(len(wl)), wl, fwhm])
+    np.savetxt(file, data, delimiter=" ")

@@ -9,11 +9,10 @@ from pydantic import Field, ValidationError
 Logger = logging.getLogger(__name__)
 
 from isofit.configs.base import SectionModel
-from isofit.configs.sections import io
+from isofit.configs.sections import io, pipeline
 from isofit.configs.sections.atmosphere import AtmosphereConfig
 from isofit.configs.sections.forward_model import ForwardModelConfig
 from isofit.configs.sections.implementation import ImplementationConfig
-from isofit.configs.sections.pipeline import LogConfig
 
 
 class Config(SectionModel):
@@ -83,6 +82,38 @@ class Config(SectionModel):
             "parameters"
         ),
     )
+
+    # Retrieval pipeline sections, see isofit.retrieval
+    log: pipeline.LogConfig = Field(
+        description="Logging configuration for the retrieval pipeline",
+    )
+
+    # Stages, in pipeline order
+    setup: pipeline.SetupStage = Field(description="Retrieval ``setup`` stage")
+    preprocess: pipeline.PreprocessStage = Field(
+        description="Retrieval ``preprocess`` stage"
+    )
+    scene: pipeline.SceneStage = Field(description="Retrieval ``scene`` stage")
+    surface: pipeline.SurfaceStage = Field(description="Retrieval ``surface`` stage")
+    segment: pipeline.SegmentStage = Field(description="Retrieval ``segment`` stage")
+    presolve: pipeline.PresolveStage = Field(description="Retrieval ``presolve`` stage")
+    background: pipeline.BackgroundStage = Field(
+        description="Retrieval ``background`` stage"
+    )
+    configure: pipeline.ConfigureStage = Field(
+        description="Retrieval ``configure`` stage"
+    )
+    lut: pipeline.LutConfig = Field(
+        description=(
+            "Retrieval ``lut`` stage, and the LUT grid heuristics of the "
+            "retrieval pipeline"
+        ),
+    )
+    invert: pipeline.InvertStage = Field(description="Retrieval ``invert`` stage")
+    interpolate: pipeline.InterpolateStage = Field(
+        description="Retrieval ``interpolate`` stage"
+    )
+    cleanup: pipeline.CleanupStage = Field(description="Retrieval ``cleanup`` stage")
 
     def get_config_errors(self) -> None:
         """

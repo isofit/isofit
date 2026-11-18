@@ -129,7 +129,8 @@ class InstrumentUnknownsConfig(SectionModel):
 
     section = "forward_model.instrument.unknowns"
 
-    channelized_radiometric_uncertainty_file: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval setup stage may create it
+    channelized_radiometric_uncertainty_file: Optional[Path] = Field(
         description=(
             "Path to file containing per-channel radiometric uncertainty values "
             "(e.g. systematic calibration errors that vary by wavelength)"
@@ -207,7 +208,8 @@ class InstrumentConfig(SectionModel):
 
     section = "forward_model.instrument"
 
-    wavelength_file: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval setup stage may create it
+    wavelength_file: Optional[Path] = Field(
         description=(
             "Path to file containing instrument wavelength centers for each channel"
         ),
@@ -277,7 +279,8 @@ class InstrumentConfig(SectionModel):
         examples=["data/nedt_noise.txt"],
     )
 
-    eof_path: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval setup stage may create it
+    eof_path: Optional[Path] = Field(
         description=(
             "Path to Empirical Orthogonal Function (EOF) file for spectral "
             "radiometric error modeling"
