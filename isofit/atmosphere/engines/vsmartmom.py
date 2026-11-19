@@ -62,6 +62,8 @@ class VSmartMomRT(BaseAtmosphere, Writer):
     # TODO
     # - Figure out a way to suppress @progressbar and other logs/prints vSmartMOM passes through...
 
+    # - Chappuis still pending issue
+
     # - tau dimension patch, see method below (`check_tau_dim()`). Do we still even need it in this python implementation?
 
     # - implement multiband model (similarly to TP7 PR)
@@ -111,6 +113,29 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             self.modtran_atmos["M1"], str
         ):
             self.atm_type = self.modtran_atmos["M1"].lower()
+
+        # Read atm profiles from isofit-data
+        self.path_atm_profiles = env.path("data", "atm_1996_profiles.csv")
+        atm_profile_data = np.genfromtxt(
+            self.path_atm_profiles, delimiter=",", names=True, encoding="utf-8"
+        )
+
+        atm_idx = atm_profile_data["atm_type"].astype(str) == self.atm_type
+
+        fields = [
+            "z_km",
+            "p_mbar",
+            "t_kelvin",
+            "o3_ppmv",
+            "n2o_ppmv",
+            "co_ppmv",
+            "ch4_ppmv",
+            "no2_ppmv",
+        ]
+
+        self.atm_profile = {
+            k: np.asarray(atm_profile_data[k][atm_idx], dtype=float) for k in fields
+        }
 
         self.day_of_year = self.modtran_geom["IDAY"]
 
@@ -275,7 +300,8 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         GRAVITY = 9.80665
         O2_TOTAL = 167820
         O2_VMR = 0.2095
-        TOA_KM = 98.0
+        SO2_VMR = 1.353e-10  # SO2 effect above 350 nm is near zero, value is represenative for midlat summer
+        TOA_KM = 100.0
         P_SEALEVEL = 1013.25
         H2O_MOLAR_MASS = 18.015
         AIR_MOLAR_MASS = 28.97
@@ -285,8 +311,6 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         )
         co2_vmr = (vals["co2"] / O2_TOTAL) * O2_VMR
 
-        atm_type = self.atm_type
-
         # We initialize based on default yaml (based on Version 2.2.0)
         # https://github.com/RemoteSensingTools/vSmartMOM.jl/blob/release/v2.2-consolidation/src/CoreRT/DefaultParameters.yaml
         params = jl.vSmartMOM.default_parameters()
@@ -294,67 +318,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         params.architecture = jl.seval(self.config.engine.architecture)
         params.float_type = jl.seval(self.config.engine.float_type)
 
-        # Assumes O2 scaling factor is constant
-        # Table is approx. based on MODTRAN profiles
-        # http://modtran.spectral.com/modtran_faq
-        jl.ATM_VMRS = {
-            "atm_tropical": {
-                "O2": 0.2095,
-                "CH4": 1.649e-6,
-                "O3": 3.453e-7,
-                "N2O": 3.069e-7,
-                "CO": 1.092e-7,
-                "NO2": 2.625e-10,
-                "SO2": 1.344e-10,
-            },
-            "atm_midlat_summer": {
-                "O2": 0.2095,
-                "CH4": 1.583e-6,
-                "O3": 4.141e-7,
-                "N2O": 2.964e-7,
-                "CO": 1.095e-7,
-                "NO2": 2.724e-10,
-                "SO2": 1.353e-10,
-            },
-            "atm_midlat_winter": {
-                "O2": 0.2095,
-                "CH4": 1.594e-6,
-                "O3": 4.691e-7,
-                "N2O": 2.992e-7,
-                "CO": 1.121e-7,
-                "NO2": 2.470e-10,
-                "SO2": 1.400e-10,
-            },
-            "atm_subarc_summer": {
-                "O2": 0.2095,
-                "CH4": 1.576e-6,
-                "O3": 4.329e-7,
-                "N2O": 2.751e-7,
-                "CO": 1.105e-7,
-                "NO2": 2.704e-10,
-                "SO2": 1.372e-10,
-            },
-            "atm_subarc_winter": {
-                "O2": 0.2095,
-                "CH4": 1.592e-6,
-                "O3": 4.702e-7,
-                "N2O": 3.004e-7,
-                "CO": 1.139e-7,
-                "NO2": 2.338e-10,
-                "SO2": 1.428e-10,
-            },
-            "atm_us_standard_1976": {
-                "O2": 0.2095,
-                "CH4": 1.652e-6,
-                "O3": 4.298e-7,
-                "N2O": 3.077e-7,
-                "CO": 1.110e-7,
-                "NO2": 2.553e-10,
-                "SO2": 1.375e-10,
-            },
-        }
-
-        # Truncate pressure, surface, and q if above sea level
+        # Truncate pressure, surface, q, and gas if above sea level
         if vals["surface_elev_km"] > 0.0:
             p_surf = P_SEALEVEL * np.exp(-vals["surface_elev_km"] / 8.0)
 
@@ -363,7 +327,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
             # find where p_surf is in and set the new surface
             idx = np.searchsorted(p_array, p_surf, side="left")
-            idx = max(1, min(idx, len(p_array)))
+            idx = max(1, min(idx, len(p_array) - 1))
             params.p = np.concatenate((p_array[:idx], [p_surf]))
 
             # get midpoint temperature for new surface
@@ -371,10 +335,53 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             new_centers = 0.5 * (params.p[:-1] + params.p[1:])
             params.T = np.interp(new_centers, orig_centers, T_array)
 
+        # Always interpolate gas profiles
+        # (reference file from isofit-data has different profile than vSmartMOM)
+        log_p_ref = np.log(self.atm_profile["p_mbar"])
+        p_final = np.asarray(params.p, dtype=float)
+        p_centers = 0.5 * (p_final[:-1] + p_final[1:])
+        log_p_surf = np.log(
+            np.clip(
+                p_centers,
+                self.atm_profile["p_mbar"].min(),
+                self.atm_profile["p_mbar"].max(),
+            )
+        )
+        z_centers = np.interp(log_p_surf, log_p_ref, self.atm_profile["z_km"])
+
+        gas_profiles = {
+            "O3": np.interp(log_p_surf, log_p_ref, self.atm_profile["o3_ppmv"]) * 1e-6,
+            "N2O": np.interp(log_p_surf, log_p_ref, self.atm_profile["n2o_ppmv"])
+            * 1e-6,
+            "CO": np.interp(log_p_surf, log_p_ref, self.atm_profile["co_ppmv"]) * 1e-6,
+            "CH4": np.interp(log_p_surf, log_p_ref, self.atm_profile["ch4_ppmv"])
+            * 1e-6,
+            "NO2": np.interp(log_p_surf, log_p_ref, self.atm_profile["no2_ppmv"])
+            * 1e-6,
+        }
+
+        above_toa = z_centers > TOA_KM
+        if np.any(above_toa):
+            for k in gas_profiles:
+                gas_profiles[k] = np.where(above_toa, 0.0, gas_profiles[k])
+
+        # # Absorption poriton of params
+        # ~/data/HITRAN_LUTs/{O2,CO2,H2O,CH4,O3,N2O,CO,NO2,SO2}.jld2` (9 species)
+        params.absorption_params.fixed_molecules = [
+            ["O2", "CO2", "H2O", "CH4", "O3", "N2O", "CO", "NO2", "SO2"]
+        ]
+        params.absorption_params.vmr["H2O"] = h2o_vmr
+        params.absorption_params.vmr["CO2"] = co2_vmr
+        params.absorption_params.vmr["O2"] = O2_VMR
+        params.absorption_params.vmr["SO2"] = SO2_VMR
+
+        for mol, vmr_profile in gas_profiles.items():
+            params.absorption_params.vmr[mol] = vmr_profile
+
         # ISOFIT defintion - to ensure h2o absorption is driven by total water column vapor input, q is set to zero.
         # NOTE This is a vSmartMOM hack (v2.2.0) which may be version dependent.
         # Alternatively, we could change the definition of H2O to be altitude dependent, but this would be a larger discussion.
-        params.q = jl.zeros(jl.Float32, len(params.p))
+        params.q = jl.zeros(jl.Float32, len(params.T))
 
         # Only update observer altitude if we are below TOA
         if vals["observer_elev_km"] < TOA_KM:
@@ -403,18 +410,6 @@ class VSmartMomRT(BaseAtmosphere, Writer):
                 self.config.engine.aerosol_mu, self.config.engine.aerosol_sigma
             )
         )
-
-        # # Absorption poriton of params
-        # ~/data/HITRAN_LUTs/{O2,CO2,H2O,CH4,O3,N2O,CO,NO2,SO2}.jld2` (9 species)
-        params.absorption_params.fixed_molecules = [
-            ["O2", "CO2", "H2O", "CH4", "O3", "N2O", "CO", "NO2", "SO2"]
-        ]
-        params.absorption_params.vmr["H2O"] = h2o_vmr
-        params.absorption_params.vmr["CO2"] = co2_vmr
-
-        atm_dict = jl.ATM_VMRS[atm_type]
-        for mol, vmr_val in atm_dict.items():
-            params.absorption_params.vmr[mol] = vmr_val
 
         # Set same wavelegth grid that was set in preSim
         params.spec_bands = [self.wn_grid]
@@ -446,7 +441,9 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             model = jl.vSmartMOM.CoreRT.model_from_parameters(params)
 
             # rt_run returns 7-tuple (R_SFI, T_SFI, ieR_SFI, ieT_SFI, hdr, bhr_uw, bhr_dw)
-            R_SFI_tot, _, _, _, _, _, hem_T_tot = jl.vSmartMOM.CoreRT.rt_run(RS, model, 1)
+            R_SFI_tot, _, _, _, _, _, hem_T_tot = jl.vSmartMOM.CoreRT.rt_run(
+                RS, model, 1
+            )
 
             R_tot_I = np.array(R_SFI_tot)[0, 0, :]
 

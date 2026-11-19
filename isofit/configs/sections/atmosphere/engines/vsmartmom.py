@@ -70,11 +70,12 @@ class VSmartMomConfig(SectionModel):
         examples=[3, 8],
     )
 
-    architecture: Literal[
-        "CPU()", "default_architecture()", "GPU()", "MetalGPU()"]  = Field(
-        default="CPU()",
-        description="Compute architecture for vSmartMOM",
-        examples=["default_architecture()"],
+    architecture: Literal["CPU()", "default_architecture()", "GPU()", "MetalGPU()"] = (
+        Field(
+            default="CPU()",
+            description="Compute architecture for vSmartMOM",
+            examples=["default_architecture()"],
+        )
     )
 
     float_type: str = Field(
