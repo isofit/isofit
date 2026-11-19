@@ -28,7 +28,10 @@ def test_calc_rdn_lambertian_no_emission():
     L_tot = np.full(n, 10.0)
     L_atm_val = 1.0
     s_alb_val = 0.1
-    r = {"sphalb": np.full(n, s_alb_val)}
+    r = {
+        "sphalb": np.full(n, s_alb_val),
+        "rhoatm": np.full(n, L_atm_val),
+    }
 
     fm = _mock_fm_1c(n, L_atm_val, s_alb_val, upward_transm=1.0)
     geom = MagicMock()
@@ -59,9 +62,13 @@ def test_calc_rdn_lambertian_zero_sphalb():
     n = 8
     rho = np.linspace(0.05, 0.5, n)
     L_tot = np.full(n, 5.0)
-    r = {"sphalb": np.zeros(n)}
+    L_atm = 2.0
+    r = {
+        "sphalb": np.zeros(n),
+        "rhoatm": np.full(n, L_atm),
+    }
 
-    fm = _mock_fm_1c(n, L_atm=2.0, s_alb=0.0, upward_transm=1.0)
+    fm = _mock_fm_1c(n, L_atm=L_atm, s_alb=0.0, upward_transm=1.0)
     geom = MagicMock()
 
     result = ForwardModel.calc_rdn(
@@ -90,7 +97,10 @@ def test_calc_rdn_includes_surface_emission():
     added to the radiance signal."""
     n = 6
     rho = np.full(n, 0.0)
-    r = {"sphalb": np.zeros(n)}
+    r = {
+        "sphalb": np.zeros(n),
+        "rhoatm": np.zeros(n),
+    }
     Ls = np.full(n, 3.0)
     upward_transm = 0.8
 
