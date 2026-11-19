@@ -58,11 +58,14 @@ class VSmartMomRT(BaseAtmosphere, Writer):
     albedos = [0.0, 0.2]
 
     # TODO
+
+    # - Test out nstreams 3-8 to find changes in accuracy
+
     # - Figure out a way to suppress @progressbar and other logs/prints vSmartMOM passes through...
 
-    # - Chappuis still pending issue
+    # - think about how we want to interface with scattering parameters (e.g., angstrom exponent)
 
-    # - tau dimension patch, see method below (`check_tau_dim()`). Do we still even need it in this python implementation?
+    # - Chappuis still pending issue
 
     # - enable option not to write to disk and just pass arrays from makeSim to readSim
 
@@ -133,7 +136,10 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         ):
             self.atm_type = self.modtran_atmos["M1"].lower()
 
-        # Read atm profiles from isofit-data
+        # Read the atm profiles data from isofit-data
+        # Korkin, S., Sayer, A. M., Ibrahim, A., & Lyapustin, A. (2025).
+        # A practical guide to coding line-by-line trace gas absorption in Earth's atmosphere.
+        # Journal of Quantitative Spectroscopy and Radiative Transfer, 337, 109345.
         atm_profile_path = env.path("data", "atm_1996_profiles.csv")
         atm_profile_data = np.genfromtxt(
             atm_profile_path, delimiter=",", names=True, dtype=None, encoding="utf-8"
@@ -216,7 +222,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         name = self.point_to_filename(point)
         out_path = abspath(join(self.sim_path, f"{name}_vsmartmom.csv"))
 
-        # Load output data from vSmartMOM, with each sim as a csv
+        # Load output simulation from vSmartMOM
         data = np.loadtxt(out_path, delimiter=",", skiprows=1)
         # wl = data[:, 0]
         rhoatm = data[:, 1]
@@ -435,14 +441,12 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
         FT = params.float_type
 
-        # NOTE This currently assumes noRS. See note from vSmartMOM docs below:
+        # This currently assumes no raman scattering. See note from vSmartMOM docs below:
         # "The bulk of retrievals (NIR shortwave) use `noRS` — the inelastic correction is small there.
         # UV/Vis retrievals (Ring effect, O2A-band line shapes, ozone DOAS) need RRS."
         RS = jl.vSmartMOM.InelasticScattering.noRS[FT]()
 
-        # TODO - Figure out why this needed for some of the taus
-        # There is likely a better fix...
-        def check_tau_dim(tau):
+        def sum_tau(tau):
             if tau.ndim == 3:
                 return np.sum(tau, axis=(0, 2))
             elif tau.ndim == 2:
@@ -466,10 +470,11 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
             R_tot_I = np.array(R_SFI_tot)[0, 0, :]
 
+            # total column optical depth composed of gaseous absorption, rayleigh, and aerosol
             tau_total = (
-                check_tau_dim(np.array(model.τ_abs[0]))
-                + check_tau_dim(np.array(model.τ_rayl[0]))
-                + check_tau_dim(np.array(model.τ_aer[0]))
+                sum_tau(np.array(model.τ_abs[0]))
+                + sum_tau(np.array(model.τ_rayl[0]))
+                + sum_tau(np.array(model.τ_aer[0]))
             )
 
             R_results.append(R_tot_I)

@@ -70,7 +70,7 @@ class VSmartMomConfig(SectionModel):
         examples=[3, 8],
     )
 
-    architecture: Literal["CPU()", "default_architecture()", "GPU()", "MetalGPU()"] = (
+    architecture: Literal["CPU()", "default_architecture()", "GPU()"] = (
         Field(
             default="CPU()",
             description="Compute architecture for vSmartMOM",
@@ -78,26 +78,22 @@ class VSmartMomConfig(SectionModel):
         )
     )
 
-    float_type: str = Field(
-        default="Float64",
+    float_type: Literal["Float64", "Float32"] = Field(
+        default="Float32",
         description="Floating point precision type for calculations (Float32, Float64)",
         examples=["Float64"],
     )
 
     wl_resolutions: list[tuple[float, float, float]] = Field(
         default=[
-            (350.0, 1200.0, 20.0),
+            (340.0, 1200.0, 20.0),
             (1200.0, 2510.0, 10.0),
         ],
         description="List of tuples defining spectral resolutions (start_wl_nm, end_wl_nm, wn_res_cm_1)",
         examples=[
             [
-                (350.0, 490.0, 4.0),
-                (490.0, 685.0, 2.0),
-                (685.0, 960.0, 1.0),
-                (960.0, 1345.0, 0.5),
-                (1345.0, 1880.0, 0.3),
-                (1880.0, 2510.0, 0.1),
+                (340.0, 490.0, 4.0),
+                (490.0, 2510.0, 0.1),
             ]
         ],
     )

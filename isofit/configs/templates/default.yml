@@ -241,7 +241,7 @@ vsmartmom:
         architecture: "CPU()"
         float_type: "Float64"
         wl_resolutions:
-        - [350.0, 1200.0, 20.0]
+        - [340.0, 1200.0, 20.0]
         - [1200.0, 2510.0, 10.0]
         template_file: null
 
