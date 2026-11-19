@@ -56,8 +56,6 @@ Logger = logging.getLogger(__name__)
 class VSmartMomRT(BaseAtmosphere, Writer):
 
     albedos = [0.0, 0.2]
-    wl_start = 350.0
-    wl_end = 2510.0
 
     # TODO
     # - Figure out a way to suppress @progressbar and other logs/prints vSmartMOM passes through...
@@ -65,8 +63,6 @@ class VSmartMomRT(BaseAtmosphere, Writer):
     # - Chappuis still pending issue
 
     # - tau dimension patch, see method below (`check_tau_dim()`). Do we still even need it in this python implementation?
-
-    # - implement multiband model (similarly to TP7 PR)
 
     # - enable option not to write to disk and just pass arrays from makeSim to readSim
 
@@ -80,9 +76,9 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     # - Check UV and Conda install to check changes needed
 
-    # - Fully hookup through apply_oe and template construction
+    # - Fully hookup through apply_oe and template construction (vsmartmom flag?)
 
-    # - Don't forget default wl is at 10 cm-1 for testing but should not keep this for the PR
+    # - Bring in atm profile into isofit-data
 
     def __init__(self, full_config, **kwargs):
         self.config = full_config.forward_model.atmosphere
@@ -93,12 +89,35 @@ class VSmartMomRT(BaseAtmosphere, Writer):
     def preSim(self):
 
         # define the output wl grid [nm], and stash matrix H
-        # The wn grid is also stored to self and used for vsmartmom sims.
-        wn1 = units.nm_to_wavenumber(self.wl_start)
-        wn2 = units.nm_to_wavenumber(self.wl_end)
-        start_wn = min(wn1, wn2)
-        end_wn = max(wn1, wn2)
-        self.wn_grid = np.arange(start_wn, end_wn + 1e-8, self.config.engine.wl_cm_1)
+        # The wn (wavenumber) grid is also stored to self and used for vsmartmom sims.
+        # Loop through each, sorted by resolution
+        wn, intervals = [], []
+        for wl1, wl2, step_wn in sorted(
+            self.config.engine.wl_resolutions, key=lambda b: b[2]
+        ):
+            wn1 = units.nm_to_wavenumber(wl1)
+            wn2 = units.nm_to_wavenumber(wl2)
+            start_wn = min(wn1, wn2)
+            end_wn = max(wn1, wn2)
+            g = np.arange(start_wn, end_wn + 1e-8, step_wn)
+
+            # guard against empty range and keep low wl (end_wn)
+            if len(g) == 0 or abs(g[-1] - end_wn) > 1e-6:
+                g = np.append(g, end_wn)
+
+            # drop points that are within finer resolution intervals
+            to_drop = np.zeros(len(g), dtype=bool)
+            for lo, hi in intervals:
+                to_drop |= (g >= lo - 1e-6) & (g <= hi + 1e-6)
+            g = g[~to_drop]
+
+            wn.append(g)
+            intervals.append((start_wn, end_wn))
+
+        # join and deduplicate points
+        wn = np.sort(np.concatenate(wn))
+        self.wn_grid = wn[np.concatenate(([True], np.diff(wn) > 1e-6))]
+
         self.vsmartmom_wl = np.sort(units.wavenumber_to_nm(self.wn_grid))
         self.matrix_H = calculate_resample_matrix(self.vsmartmom_wl, self.wl, self.fwhm)
 
@@ -115,9 +134,9 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             self.atm_type = self.modtran_atmos["M1"].lower()
 
         # Read atm profiles from isofit-data
-        self.path_atm_profiles = env.path("data", "atm_1996_profiles.csv")
+        atm_profile_path = env.path("data", "atm_1996_profiles.csv")
         atm_profile_data = np.genfromtxt(
-            self.path_atm_profiles, delimiter=",", names=True, encoding="utf-8"
+            atm_profile_path, delimiter=",", names=True, dtype=None, encoding="utf-8"
         )
 
         atm_idx = atm_profile_data["atm_type"].astype(str) == self.atm_type

@@ -84,8 +84,20 @@ class VSmartMomConfig(SectionModel):
         examples=["Float64"],
     )
 
-    wl_cm_1: float = Field(
-        default=10.0,
-        description="Spectral resolution step in wavenumbers (cm-1)",
-        examples=[10.0],
+    wl_resolutions: list[tuple[float, float, float]] = Field(
+        default=[
+            (350.0, 1200.0, 20.0),
+            (1200.0, 2510.0, 10.0),
+        ],
+        description="List of tuples defining spectral resolutions (start_wl_nm, end_wl_nm, wn_res_cm_1)",
+        examples=[
+            [
+                (350.0, 490.0, 4.0),
+                (490.0, 685.0, 2.0),
+                (685.0, 960.0, 1.0),
+                (960.0, 1345.0, 0.5),
+                (1345.0, 1880.0, 0.3),
+                (1880.0, 2510.0, 0.1),
+            ]
+        ],
     )

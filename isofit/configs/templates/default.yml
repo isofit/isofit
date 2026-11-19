@@ -240,7 +240,9 @@ vsmartmom:
         nstreams_mom: 8
         architecture: "CPU()"
         float_type: "Float64"
-        wl_cm_1: 10.0
+        wl_resolutions:
+        - [350.0, 1200.0, 20.0]
+        - [1200.0, 2510.0, 10.0]
         template_file: null
 
 kernelflows:
