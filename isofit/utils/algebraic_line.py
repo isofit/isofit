@@ -148,7 +148,11 @@ def algebraic_line(
         "L2A Algebraic per-pixel surface reflectance retrieval"
     )
     output_metadata["bands"] = str(len(fm.idx_surf_rfl))
-    output_metadata["band names"] = np.array(fm.surface.statevec_names)[fm.idx_surf_rfl]
+
+    if not fm.is_lut_surface:
+        output_metadata["band names"] = np.array(fm.surface.statevec_names)[
+            fm.idx_surf_rfl
+        ]
 
     outside_ret_windows = np.zeros(len(fm.surface.idx_lamb), dtype=int)
     outside_ret_windows[iv.winidx] = 1
@@ -340,7 +344,8 @@ class Worker(object):
                     meas,
                     geom,
                 )
-                rfl_est = self.fm.surface.fit_params(rfl_est, geom)
+                if not self.fm.is_lut_surface:
+                    rfl_est = self.fm.surface.fit_params(rfl_est, geom)
 
                 output_rfl[0, c, :] = rfl_est
 

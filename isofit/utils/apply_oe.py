@@ -331,6 +331,14 @@ def apply_oe(
                 "If num_neighbors has multiple elements, only --analytical_line is valid"
             )
 
+    if surface_category == "lut_surface" and (analytical_line or empirical_line):
+        raise ValueError("Analytical line method is not supported for lut_surface.")
+
+    if surface_category != "lut_surface" and terrain_style == "solved":
+        raise ValueError(
+            "Terrain style is only supported for surface category lut_surface."
+        )
+
     if use_background_rfl and not multipart_transmittance:
         raise ValueError(
             "ApplyOE must use multi-part transmittance to enable heterogeneous background reflectance."
@@ -901,6 +909,12 @@ def apply_oe(
         )
 
         if presolve and use_background_rfl:
+
+            if surface_category == "lut_surface":
+                use_slic_rfls = False
+            else:
+                use_slic_rfls = True
+
             # Only create background reflectance if it doesn't already exist in /data
             # NOTE this may be useful for our single pixel pytests
             if not exists(paths.bgrfl_working_path) or (
@@ -915,7 +929,7 @@ def apply_oe(
                     mean_altitude_km=mean_altitude_km,
                     mean_elevation_km=mean_elevation_km,
                     smoothing_sigma=atm_sigma,
-                    use_slic_rfls=True,
+                    use_slic_rfls=use_slic_rfls,
                     use_superpixels=use_superpixels,
                     nodata_value=-9999,
                     chunksize=CHUNKSIZE,
@@ -1056,7 +1070,9 @@ def apply_oe(
 @click.option("--retrieve_co2", is_flag=True, default=False)
 @click.option("--use_background_rfl", is_flag=True, default=False)
 @click.option("--eof_path", default=None)
-@click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
+@click.option(
+    "--terrain_style", default="dem", type=click.Choice(["dem", "flat", "solved"])
+)
 @click.option(
     "--pixel_heuristic_priors",
     "-php",

@@ -680,6 +680,24 @@ class IO:
                     self.full_statevec,
                 )
 
+            # Special case for LUTSurface with several endmembers using softmax
+            if fm.is_lut_surface:
+                if fm.surface.solve_mixed_pixel:
+                    surf_em_idx = fm.surface.idx_em_rfls
+                    full_em_idx = np.array(fm.full_idx)[surf_em_idx]
+                    f = fm.surface.softmax(state_est[surf_em_idx])
+
+                    if "estimated_state_file" in self.output_datasets:
+                        to_write["estimated_state_file"][full_em_idx] = f
+
+                    if "posterior_uncertainty_file" in self.output_datasets:
+                        # Apply delta method transformation
+                        J = np.diag(f) - np.outer(f, f)
+                        S_frac = J @ S_hat[np.ix_(surf_em_idx, surf_em_idx)] @ J.T
+                        to_write["posterior_uncertainty_file"][full_em_idx] = np.sqrt(
+                            np.diag(S_frac)
+                        )
+
             ############ Now proceed to the calcs where they may be some overlap
 
             if any(

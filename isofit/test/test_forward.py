@@ -186,9 +186,10 @@ def test_get_L_coupled_nadir_sum():
     geom.skyview_factor = 1.0
     geom.bg_rfl = None
     fm.terrain_rereflection = MagicMock(return_value=1.0)
+    fm.surface.cos_i_idx = None
 
     L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = ForwardModel.get_L_coupled(
-        fm, r, geom, rho_dif_dif=0
+        fm, r, geom, x_surface=np.array([]), rho_dif_dif=0
     )
 
     assert np.allclose(L_tot, L_dir_dir + L_dif_dir + L_dir_dif + L_dif_dif)
@@ -212,9 +213,10 @@ def test_get_L_coupled_cos_i_scaling():
     geom.skyview_factor = 1.0
     geom.bg_rfl = None
     fm.terrain_rereflection = MagicMock(return_value=1.0)
+    fm.surface.cos_i_idx = None
 
     L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = ForwardModel.get_L_coupled(
-        fm, r, geom, rho_dif_dif=0
+        fm, r, geom, x_surface=np.array([]), rho_dif_dif=0
     )
 
     # L_dir_dir = r["L_dd"] / coszen * cos_i = 1.0 / 1.0 * 0.5 = 0.5

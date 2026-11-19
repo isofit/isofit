@@ -52,6 +52,7 @@ default:
       surface_file: null
       surface_category: null
       surface_class_file: null
+      surface_lut_file: null
       base_surface_class_file: null
       Surfaces: {}
       wavelength_file: null
