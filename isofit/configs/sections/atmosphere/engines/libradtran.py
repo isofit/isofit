@@ -28,7 +28,6 @@ class LibRadTranConfig(SectionModel):
     --------
     >>> from isofit.configs.sections.atmosphere.engines import LibRadTranConfig
     >>> librad = LibRadTranConfig(
-    ...     base="libradtran",
     ...     kb_alpha_1=1.3,
     ...     kb_alpha_2=0.2,
     ...     gg_set=0.7,
@@ -55,7 +54,7 @@ class LibRadTranConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
-    defaults = "libradtran"
+    mixins = ("libradtran",)
 
     model_config = ConfigDict(extra="forbid")
 

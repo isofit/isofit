@@ -6,10 +6,12 @@
 # uncertainty estimation.
 #
 # Inherits the entire vswir.yml use case (which itself inherits the
-# sRTMnet engine profile from default.yml) and overrides only the implementation
+# sRTMnet engine mixin) and overrides only the implementation
 # mode and MCMC sampler settings. Load with:
 #   interpolate.load("mcmc.yml")
 
+# VSWIR retrieval sampling the posterior with MCMC for uncertainty
+# quantification
 mcmc:
   ^^: vswir.yml:vswir
 

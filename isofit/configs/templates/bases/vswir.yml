@@ -4,15 +4,16 @@
 # radiance (e.g. EMIT, AVIRIS-NG, PRISMA) using the sRTMnet emulator. Retrieves
 # a multicomponent surface reflectance jointly with water vapor and aerosol.
 #
-# Inherits every default plus the sRTMnet engine profile from default.yml, then
+# Inherits every default from default.yml plus the sRTMnet engine mixin, then
 # overrides only the retrieval methodology. Load with:
 #   interpolate.load("vswir.yml")
 #
 # Before running, fill in the scene-specific inputs marked `# SET:` below
 # (radiance/obs/loc files, instrument wavelengths + noise, surface model).
 
+# Standard VSWIR surface reflectance retrieval with sRTMnet
 vswir:
-  ^^: default.yml:srtmnet
+  ^^: [default.yml:default, ../mixins/engines.yml:srtmnet]
 
   input:
     measured_radiance_file: null  # SET: at-sensor radiance (.hdr/ENVI, .mat, .txt)

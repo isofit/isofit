@@ -25,7 +25,8 @@ class PrebuiltConfig(SectionModel):
 
     Examples
     --------
-    Prebuilt is the engine of the ``default`` base config:
+    Prebuilt is the engine of the ``default`` base config, and of the
+    ``prebuilt`` engine mixin:
 
     >>> from isofit.configs.sections.atmosphere.engines import PrebuiltConfig
     >>> engine = PrebuiltConfig()
@@ -46,7 +47,7 @@ class PrebuiltConfig(SectionModel):
     """
 
     section = "forward_model.atmosphere.engine"
-    defaults = "prebuilt"
+    mixins = ("prebuilt",)
 
     model_config = ConfigDict(extra="forbid")
 

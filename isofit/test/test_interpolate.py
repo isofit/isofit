@@ -4,7 +4,7 @@ import json
 import pytest
 from click.testing import CliRunner
 
-from isofit.configs.loader import load
+from isofit.configs.loader import describe, list_bases, list_mixins, load, load_layer
 from isofit.configs.utils import interpolate
 from isofit.configs.utils.interpolate.cli import cli
 
@@ -291,6 +291,28 @@ def test_load_base_returns_dicts():
                 walk(val)
 
     walk(cfg)
+
+
+def test_templates_described():
+    """Every base and mixin is described by the comment above it, not a key."""
+    for name in {**list_bases(), **list_mixins()}:
+        assert describe(name), name
+        assert "description" not in load_layer(name, inherit=False), name
+
+
+def test_describe(tmp_path):
+    """A description is the comment directly above a key, joined into one line."""
+    file = tmp_path / "t.yml"
+    file.write_text(
+        "# File header\n\n"
+        "# First, which\n# wraps\na: {x: 1}\n\n"
+        "b: {x: 2}  # Inline, not a description\n"
+        "#\n# Spaced\n#\nc: {x: 3}\n"
+    )
+    assert describe(f"{file}:a") == "First, which wraps"
+    assert describe(f"{file}:b") is None
+    assert describe(f"{file}:c") == "Spaced"
+    assert describe(str(file)) is None
 
 
 def test_cli_copy(tmp_path):

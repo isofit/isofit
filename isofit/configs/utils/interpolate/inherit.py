@@ -3,7 +3,7 @@ Stage 1 of the pipeline: inheritance via the ``^^`` key.
 
 A section declaring ``^^: <ref>`` has the referenced section(s) merged in
 underneath it. References may be same-file (``^^: default``) or cross-file
-(``^^: bases/default.yml:srtmnet``).
+(``^^: ../mixins/engines.yml:srtmnet``).
 """
 
 import copy
@@ -36,7 +36,7 @@ def patch(
 
     References may point either at a section in the same file (``^^: default``) or
     at a section in another file using ``file:section`` syntax (``^^:
-    bases/default.yml:srtmnet``). The referenced file may be YAML or JSON. The
+    ../mixins/engines.yml:srtmnet``). The referenced file may be YAML or JSON. The
     file portion is resolved relative to ``base_dir`` (the directory of the file
     being loaded); a bare ``file`` with no ``:section`` inherits that file's
     top-level mapping.
@@ -136,7 +136,7 @@ def resolve_file(sect: str, base_dir: Path, cache: dict) -> tuple:
     Parameters
     ----------
     sect : str
-        The raw reference string, e.g. ``bases/default.yml:srtmnet`` or
+        The raw reference string, e.g. ``../mixins/engines.yml:srtmnet`` or
         ``../common.json``.
     base_dir : pathlib.Path
         Directory used to resolve ``path`` relative references.

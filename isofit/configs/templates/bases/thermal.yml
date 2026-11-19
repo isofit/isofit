@@ -5,12 +5,14 @@
 # SURF_TEMP_K element to the surface state vector, and a NEDT (noise-equivalent
 # delta temperature) noise model appropriate for thermal sensors.
 #
-# Inherits defaults + the MODTRAN engine profile from default.yml (MODTRAN covers
+# Inherits defaults from default.yml + the MODTRAN engine mixin (MODTRAN covers
 # the solar+thermal spectral range). Load with:
 #   interpolate.load("thermal.yml")
 
+# Thermal-infrared retrieval of reflectance, emissivity, and surface temperature
+# with MODTRAN
 thermal:
-  ^^: default.yml:modtran
+  ^^: [default.yml:default, ../mixins/engines.yml:modtran]
 
   input:
     measured_radiance_file: null  # SET: at-sensor TIR radiance

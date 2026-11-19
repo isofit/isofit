@@ -9,10 +9,11 @@ This module defines Pydantic models for specifying input data files
 from pathlib import Path
 from typing import ClassVar, Optional
 
-from pydantic import ConfigDict, Field, FilePath
+from pydantic import ConfigDict, Field, FilePath, field_validator, model_validator
 
 from isofit.configs.base import SectionModel
 from isofit.configs.utils.accessors import ElementAccessorMixin
+from isofit.retrieval.utils.sensor import SENSOR_CHOICES, flightline_id, is_supported
 
 
 class InputConfig(SectionModel, ElementAccessorMixin):
@@ -53,6 +54,23 @@ class InputConfig(SectionModel, ElementAccessorMixin):
     # names, which is how the generated configs (e.g. apply_oe) write them.
     # Pydantic v2 restricts population to the alias unless this is enabled.
     model_config = ConfigDict(populate_by_name=True)
+
+    # Scene metadata rather than input files; excluded from the element accessors
+    _metadata: ClassVar[tuple[str, ...]] = ("sensor", "fid")
+
+    sensor: Optional[str] = Field(
+        description=(
+            "Acquiring sensor, which sets how ``fid`` is parsed from the radiance "
+            f"file name. Must be {SENSOR_CHOICES}"
+        ),
+    )
+
+    fid: Optional[str] = Field(
+        description=(
+            "Flightline ID. Derived from ``measured_radiance_file`` per ``sensor`` "
+            "when not set"
+        ),
+    )
 
     measured_radiance_file: Optional[FilePath] = Field(
         alias="rdn",
@@ -119,7 +137,8 @@ class InputConfig(SectionModel, ElementAccessorMixin):
         examples=["data/radiometry_correction.txt"],
     )
 
-    skyview_factor_file: Optional[FilePath] = Field(
+    # Path rather than FilePath: the retrieval pipeline may create it
+    skyview_factor_file: Optional[Path] = Field(
         alias="sff",
         description=(
             "Skyview factor file to modulate diffuse radiance contribution based on "
@@ -127,6 +146,73 @@ class InputConfig(SectionModel, ElementAccessorMixin):
         ),
         examples=["data/skyview_factor.hdr"],
     )
+
+    def _element_names(self):
+        """Only the input files are elements, see :attr:`_metadata`."""
+        names = super()._element_names()
+        return [name for name in names if name not in self._metadata]
+
+    @field_validator("sensor")
+    @classmethod
+    def check_sensor(cls, value: Optional[str]) -> Optional[str]:
+        """Validate that ``sensor`` is supported."""
+        if value is None or is_supported(value):
+            return value
+
+        raise ValueError(f"Must be {SENSOR_CHOICES}")
+
+    @model_validator(mode="after")
+    def derive_fid(self) -> "InputConfig":
+        """Derive ``fid`` from the radiance file name when not explicitly set."""
+        if self.fid is None and self.sensor and self.measured_radiance_file:
+            self.fid = flightline_id(self.sensor, self.measured_radiance_file)
+        return self
+
+    @model_validator(mode="after")
+    def check_shapes(self) -> "InputConfig":
+        """
+        Validate that the per-pixel inputs match the spatial shape of the radiance.
+
+        Only applies when the radiance is an ENVI file; .mat and .txt radiance
+        inputs carry a single spectrum and have no spatial shape.
+
+        Returns
+        -------
+        InputConfig
+            The validated config.
+
+        Raises
+        ------
+        ValueError
+            If ``obs_file`` or ``loc_file`` differs in (rows, columns) from
+            ``measured_radiance_file``.
+        """
+        rdn = self.measured_radiance_file
+        if rdn is None or rdn.suffix in (".mat", ".txt"):
+            return self
+
+        from spectral.io import envi
+
+        from isofit.core.common import envi_header
+
+        def shape(file):
+            ds = envi.open(envi_header(file), file)
+            return ds.shape[0], ds.shape[1]
+
+        expected = shape(rdn)
+        for name in ("obs_file", "loc_file"):
+            file = getattr(self, name)
+            if file is None:
+                continue
+
+            actual = shape(file)
+            if actual != expected:
+                raise ValueError(
+                    f"{name} size is {actual}, which does not match the "
+                    f"measured_radiance_file size: {expected}"
+                )
+
+        return self
 
 
 class OutputConfig(SectionModel):

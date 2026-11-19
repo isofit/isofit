@@ -7,11 +7,12 @@
 # Simulation mode requires input.reflectance_file to be set (enforced by
 # Config.get_config_errors) and does not use an inversion block.
 #
-# Inherits defaults + the sRTMnet engine profile from default.yml. Load with:
+# Inherits defaults from default.yml + the sRTMnet engine mixin. Load with:
 #   interpolate.load("simulation.yml")
 
+# Forward simulation of at-sensor radiance from a surface reflectance
 simulation:
-  ^^: default.yml:srtmnet
+  ^^: [default.yml:default, ../mixins/engines.yml:srtmnet]
 
   input:
     reflectance_file: null        # SET: surface reflectance to forward-model (required)

@@ -40,10 +40,12 @@ class AtmosphereConfig(SectionModel):
     >>> atm.engine.name, list(atm.lut_grid)
     ('srtmnet', ['AOT550', 'H2OSTR'])
 
-    Each engine profile seeds its own engine defaults:
+    Each engine mixin swaps in its engine along with its defaults:
 
+    >>> AtmosphereConfig(base="vswir", mixin="sixs").engine.name
+    'sixs'
     >>> atm = AtmosphereConfig(
-    ...     base="sixs",
+    ...     mixin="sixs",
     ...     lut_grid={
     ...         "H2OSTR": [0.5, 1.0, 1.5, 2.0, 2.5],
     ...         "AOT550": [0.05, 0.1, 0.2, 0.3],

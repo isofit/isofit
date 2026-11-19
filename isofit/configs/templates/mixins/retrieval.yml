@@ -1,0 +1,67 @@
+# Retrieval mixins: overlays without `^^` that enable the optional stages of the
+# `tc` pipeline (see bases/tc.yml), layered on top of `pipeline` with
+#   isofit retrieval run -c pipeline -m <mixin> ...
+#
+# Each mixin chooses between alternatives by repointing the files `pipeline`'s
+# stages exchange, e.g. `copy_inputs` sets `setup.rdn` to a copy under
+# ${output.dir}/input/, which every reader of `setup.rdn` then follows.
+
+# Copy the input files into the working directory before processing
+copy_inputs:  # apply_oe: --copy_input_files
+  setup:
+    rdn: ${output.dir}/input/${input.fid}_rdn
+    obs: ${output.dir}/input/${input.fid}_obs
+    loc: ${output.dir}/input/${input.fid}_loc
+
+
+# Interpolate bad radiance channels before the retrieval
+interpolate_radiance:  # apply_oe: --interpolate_bad_rdn
+  preprocess:
+    interpolate_radiance: true
+    rdn: ${output.dir}/input/${input.fid}_rdn_interp
+
+
+# Compute the sky view factor from the terrain slope
+skyview:  # apply_oe: --skyview_factor slope
+  preprocess:
+    skyview: slope
+    svf: ${output.dir}/data/sky_view_factor
+
+
+# Classify the scene into surface types for a multisurface retrieval
+classify:  # apply_oe: --classify_multisurface
+  surface:
+    classify: true
+    classes: ${output.dir}/input/${input.fid}_surface_class
+
+
+# Use a prebuilt LUT instead of building one
+prebuilt_lut:  # apply_oe: --prebuilt_lut; set forward_model.atmosphere.lut_path
+  lut: {enabled: false, prebuilt: true}
+
+
+# Invert the superpixels, then extend to every pixel by empirical line
+empirical_line:  # apply_oe: --empirical_line
+  segment: {enabled: true}
+  interpolate: {enabled: true, method: empirical}
+  configure: {layers: [subs]}
+
+
+# Invert the superpixels, then extend to every pixel by analytical line
+analytical_line:  # apply_oe: --analytical_line
+  segment: {enabled: true}
+  interpolate: {enabled: true, method: analytical}
+  configure: {layers: [subs]}
+
+
+# Presolve over the superpixels to estimate and use a background reflectance
+background_rfl:  # apply_oe: --presolve --use_background_rfl
+  segment: {enabled: true}
+  presolve:
+    enabled: true
+    # The presolve runs over the superpixels
+    layers: [subs, presolve]
+    state: ${output.dir}/output/${input.fid}_subs_h2o
+  background: {enabled: true}
+  forward_model:
+    surface: {use_background_rfl: true}
