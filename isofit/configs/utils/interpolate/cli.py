@@ -271,6 +271,8 @@ def browse(
         console.print(str(e))
         raise click.exceptions.Exit(2)
 
+    if mixin or overrides:
+        console.print(browser.changes_table(base, mixin, overrides, section=section))
     console.print(browser.compose(base, mixin, overrides=overrides, section=section))
     if interpolate:
         console.print(browser.references_table(base, mixin, overrides, section=section))

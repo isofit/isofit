@@ -5,8 +5,8 @@ Rich browser for the base configs and mixins shipped under
 :func:`overview` renders every base and mixin as tables grouped by template
 file, and :func:`details` renders a single one: its description, where it is
 defined, and its YAML exactly as written in the file. :func:`compose` renders
-the full config of a base with mixins and overrides layered on top, along with
-what each changed, and :func:`save` writes it to a file. :func:`browse` combines
+the full config of a base with mixins and overrides layered on top,
+:func:`changes_table` what each changed, and :func:`save` writes it to a file. :func:`browse` combines
 them into an interactive session driven by single-key buttons (see
 :data:`Buttons`), composing a config one mixin or override at a time:
 
@@ -38,7 +38,6 @@ from rich.rule import Rule
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
-from rich.tree import Tree
 
 from isofit.configs import Config, loader
 from isofit.configs.utils import interpolate
@@ -70,8 +69,12 @@ Composing = ("d", "i", "m", "o", "u", "r", "s")
 # The formats :func:`save` writes, by file extension
 Formats = (".yml", ".yaml", ".json")
 
-# Separates the names of a composition, e.g. `pipeline + emit, empirical_line`
-Separators = re.compile(r"[\s,+]+")
+# The option naming the base, as on the command line, e.g. `-c vswir`
+BaseOption = re.compile(r"^--?c(?:onfig)?\s+")
+
+# Separates the names of mixins, e.g. `emit, empirical_line` or, as on the
+# command line, `-m emit -m empirical_line`
+Separators = re.compile(r"(?:[\s,]|(?<![^\s,])--?m(?:ixin)?(?![^\s,]))+")
 
 # A key absent from a config, as distinct from one set to `null`
 Unset = object()
@@ -523,30 +526,42 @@ def show(value: Any) -> Text:
     return Text(json.dumps(value), style="bright_blue")
 
 
-def changes_tree(layer: Layer, rows: list[tuple[tuple, Any, Any]], style: str) -> Tree:
+def command(
+    base: str,
+    mixins: Optional[list[str]] = None,
+    overrides: Optional[dict] = None,
+    values: bool = False,
+) -> str:
     """
-    Render a layer's changes as a tree of their keys, with shared parent keys
-    merged, e.g.::
+    Name a composition as its command-line arguments, e.g.
+    ``-c vswir -m emit -m tanager``.
 
-        emit
-        └── forward_model
-            └── instrument
-                ├── SNR  500 → null
-                └── parametric_noise_file  null → ${env.data}/emit_noise.txt
+    Parameters
+    ----------
+    base : str
+        The base config.
+    mixins : list[str], optional
+        The mixins layered on top of ``base``, in order.
+    overrides : dict, optional
+        Dotted-key overrides applied last. Shown with their values when
+        ``values`` is set, otherwise as a count, e.g. ``+ 2 overrides``.
+    values : bool, default=False
+        Show the overrides' values.
+
+    Examples
+    --------
+    >>> command("vswir", ["emit", "tanager"], {"output.dir": "/x"})
+    '-c vswir -m emit -m tanager + 1 override'
+    >>> command("vswir", ["emit"], {"output.dir": "/x"}, values=True)
+    '-c vswir -m emit --output.dir /x'
     """
-    tree = Tree(Text(layer.ref, style=f"bold {style}"), guide_style="dim")
-    nodes = {(): tree}
-    for path, old, new in rows:
-        for n in range(1, len(path)):
-            if path[:n] not in nodes:
-                nodes[path[:n]] = nodes[path[: n - 1]].add(Text(str(path[n - 1])))
+    name = " ".join([f"-c {base}", *(f"-m {mixin}" for mixin in mixins or [])])
+    if overrides and values:
+        name += "".join(f" --{key} {show(val).plain}" for key, val in overrides.items())
+    elif overrides:
+        name += f" + {len(overrides)} override{'s' if len(overrides) > 1 else ''}"
 
-        label = Text.assemble(
-            (str(path[-1]), "bold"), "  ", show(old), (" → ", "dim"), show(new)
-        )
-        nodes[path[:-1]].add(label)
-
-    return tree
+    return name
 
 
 def changes_table(
@@ -613,10 +628,7 @@ def changes_table(
     if not table.rows:
         return Text(f"No changes on top of {base}", style="dim")
 
-    title = " + ".join([base, *(mixins or [])])
-    count = sum(1 for layer in stack[1:] if layer.kind == "override")
-    if count:
-        title += f" + {count} override{'s' if count > 1 else ''}"
+    title = command(base, mixins, overrides)
 
     return Panel(
         table,
@@ -769,9 +781,7 @@ def references_table(
     if failed:
         count += f", [red]{failed} unresolved[/]"
 
-    title = " + ".join([base, *(mixins or [])])
-    if overrides:
-        title += f" + {len(overrides)} override{'s' if len(overrides) > 1 else ''}"
+    title = command(base, mixins, overrides)
 
     return Panel(
         table,
@@ -792,10 +802,11 @@ def compose(
     """
     Render the full config of a base with mixins layered on top.
 
-    Shows the layer stack with each layer's description, a tree of what each
-    mixin (and the overrides) changed, whether the interpolated result
-    validates as a :class:`~isofit.configs.Config`, and the composed config
-    itself.
+    Shows the layer stack with each layer's description and how many keys it
+    changes, the composed config itself, and then whether the interpolated
+    result validates as a :class:`~isofit.configs.Config`, last so that any
+    errors are next to what follows. What each layer changes is shown by
+    :func:`changes_table`.
 
     Parameters
     ----------
@@ -840,19 +851,12 @@ def compose(
     stacked.add_column(style="dim")
     stacked.add_column()
     styles = {**Styles, "override": "magenta"}
+    marks = {"base": "-c", "mixin": "-m", "override": ""}
     for n, layer in enumerate(stack):
-        mark = "" if n == 0 else "+"
+        mark = marks[layer.kind]
         count = "" if n == 0 else f"{len(layer.changes)} change(s)"
         name = Text(layer.ref, style=f"bold {styles[layer.kind]}")
         stacked.add_row(mark, name, count, layer.description or "")
-
-    # What each layer changed, as a tree of keys per layer
-    prefix = tuple(section.split(".")) if section else ()
-    diffs = []
-    for layer in stack[1:]:
-        rows = [c for c in layer.changes if c[0][: len(prefix)] == prefix]
-        if rows:
-            diffs.append(changes_tree(layer, rows, styles[layer.kind]))
 
     # The composed config, validated once interpolated
     raw = loader.load(base, mixin=mixins, overrides=overrides)
@@ -885,23 +889,10 @@ def compose(
     yml = dump(shown)
     source = Syntax(yml.rstrip(), "yaml", line_numbers=True, background_color="default")
 
-    title = " + ".join([base, *mixins])
-    if overrides:
-        title += f" + {len(overrides)} override{'s' if len(overrides) > 1 else ''}"
-    parts = [
+    # The status last, so it is next to the prompt or buttons below
+    title = command(base, mixins, overrides)
+    return Group(
         Panel(stacked, title="[bold]Layers[/]", border_style="blue", box=box.ROUNDED),
-    ]
-    if diffs:
-        parts.append(
-            Panel(
-                Group(*diffs),
-                title="[bold]Changes[/]",
-                border_style="blue",
-                box=box.ROUNDED,
-            )
-        )
-    parts += [
-        status,
         Panel(
             source,
             title=f"[bold]{title}[/]",
@@ -910,8 +901,8 @@ def compose(
             border_style="cyan",
             box=box.ROUNDED,
         ),
-    ]
-    return Group(*parts)
+        status,
+    )
 
 
 def tokens(text: str) -> list[str]:
@@ -1207,13 +1198,13 @@ class Session:
         """Render the active composition, if any, and the available buttons."""
         text = Text()
         if self.composing:
-            text.append("Composing ", style="dim")
+            text.append("Composing -c ", style="dim")
             text.append(self.base, style=f"bold {Styles['base']}")
             for mixin in self.mixins:
-                text.append(" + ", style="dim")
+                text.append(" -m ", style="dim")
                 text.append(mixin, style=f"bold {Styles['mixin']}")
             for key, val in self.overrides.items():
-                text.append(f"  --{key} ", style="magenta")
+                text.append(f" --{key} ", style="magenta")
                 text.append(show(val))
             text.append("\n")
 
@@ -1246,7 +1237,7 @@ class Session:
             return None
 
         numbers = []
-        for part in Separators.split(choice.replace(",", " ")):
+        for part in re.split(r"[\s,]+", choice.strip()):
             first, _, last = part.partition("-")
             numbers += range(int(first), int(last or first) + 1)
 
@@ -1317,12 +1308,13 @@ class Session:
         if not self.composing:
             self.console.print(overview(self.items, kinds=("base",)))
             choice = self.ask(
-                "[bold cyan]Base[/] [dim](number or name, blank to cancel)[/]"
+                "[bold cyan]Base[/] [dim](number or name, e.g. [cyan]vswir[/] or "
+                "[cyan]-c vswir[/], blank to cancel)[/]"
             )
             if not choice:
                 return
             try:
-                self.base = pick(self.items, choice, "base")
+                self.base = pick(self.items, BaseOption.sub("", choice), "base")
             except ValueError as e:
                 return self.console.print(str(e))
 
@@ -1332,7 +1324,8 @@ class Session:
         """Prompt for mixins to layer on top of the composition, in order."""
         self.console.print(overview(self.items, kinds=("mixin",)))
         choice = self.ask(
-            "[bold green]Mixins[/] [dim](numbers or names in order, blank to cancel)[/]"
+            "[bold green]Mixins[/] [dim](numbers or names in order, e.g. "
+            "[green]emit -m empirical_line[/], blank to cancel)[/]"
         )
         if not choice:
             return
