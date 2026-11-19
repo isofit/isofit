@@ -89,6 +89,7 @@ from .modtran import ModtranConfig
 from .prebuilt import PrebuiltConfig
 from .sixs import SixSConfig
 from .srtmnet import sRTMnetConfig
+from .vsmartmom import VSmartMomConfig
 
 # Add new engines using their standard name
 Engines = Annotated[
@@ -99,6 +100,7 @@ Engines = Annotated[
         Annotated[PrebuiltConfig, Tag("prebuilt")],
         Annotated[SixSConfig, Tag("sixs")],
         Annotated[sRTMnetConfig, Tag("srtmnet")],
+        Annotated[VSmartMomConfig, Tag("vsmartmom")],
     ],
     Discriminator(selectByName),
 ]

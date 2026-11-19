@@ -53,6 +53,7 @@ class Ini:
         "plots",
         "libradtran",
         "windows",
+        "vsmartmom",
     ]
 
     # Additional keys with default values
