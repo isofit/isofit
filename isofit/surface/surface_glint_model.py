@@ -453,6 +453,7 @@ class GlintModelSurface(MultiComponentSurface):
                 + ((np.tan(theta - theta_i) ** 2) / (np.tan(theta + theta_i) ** 2))
             )
         else:
-            rho_ls = 0.02  # the reflectance factor converges to 0.02 for view angles equal to 0.0°
+            # the reflectance factor converges to 0.02 for view angles equal to 0.0°
+            rho_ls = np.array([0.02 for i in self.real_ref_idx])
 
         return rho_ls
