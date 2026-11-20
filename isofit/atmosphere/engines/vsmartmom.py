@@ -31,6 +31,34 @@ try:
     jl.seval("using vSmartMOM")
     jl.seval("using vSmartMOM.CoreRT")
     jl.seval("using vSmartMOM.InelasticScattering")
+    # wrapper for rt_run() call that suppresses the progressbars/logs derived from julia process
+    jl.seval(
+        """
+        using Logging
+        if isdefined(Main, :ProgressMeter) || Base.find_package("ProgressMeter") !== nothing
+            @eval begin
+                import ProgressMeter
+                ProgressMeter.updateProgress!(p, args...; kwargs...) = nothing
+                ProgressMeter.printover(io, args...; kwargs...) = nothing
+            end
+        end
+        function run_vsmartmom_quiet(f)
+            old_logger = global_logger(NullLogger())
+            try
+                redirect_stdout(devnull) do
+                    redirect_stderr(devnull) do
+                        with_logger(NullLogger()) do
+                            return f()
+                        end
+                    end
+                end
+            finally
+                global_logger(old_logger)
+            end
+        end
+        """
+    )
+    run_vsmartmom_quiet = jl.seval("run_vsmartmom_quiet")
 
 except ImportError:
     raise ImportError(
@@ -59,8 +87,6 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     # TODO
 
-    # - Figure out a way to suppress @progressbar and other logs/prints vSmartMOM passes through...
-
     # - think about how we want to interface with scattering parameters (e.g., angstrom exponent)
 
     # - Chappuis still pending issue
@@ -69,7 +95,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     # - double check RAA based on Phils PR-1070
 
-    # -  Bring in H2O molar mass, air mass etc, into units
+    # - Bring in H2O molar mass, air mass etc, into units
 
     # - UserWarning: torch was imported before juliacall. This may cause a segfault.
     #     To avoid this, import juliacall before importing torch.
@@ -457,29 +483,32 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         hem_dw_results = []
         tau_results = []
 
-        for alb in self.albedos:
-            params.brdf = jl.seval(
-                "(alb, FT) -> [vSmartMOM.LambertianSurfaceScalar{FT}(alb)]"
-            )(alb, FT)
-            model = jl.vSmartMOM.CoreRT.model_from_parameters(params)
+        def loop_albedos():
+            for alb in self.albedos:
+                params.brdf = jl.seval(
+                    "(alb, FT) -> [vSmartMOM.LambertianSurfaceScalar{FT}(alb)]"
+                )(alb, FT)
+                model = jl.vSmartMOM.CoreRT.model_from_parameters(params)
 
-            # rt_run returns 7-tuple (R_SFI, T_SFI, ieR_SFI, ieT_SFI, hdr, bhr_uw, bhr_dw)
-            R_SFI_tot, _, _, _, _, _, hem_T_tot = jl.vSmartMOM.CoreRT.rt_run(
-                RS, model, 1
-            )
+                # rt_run returns 7-tuple (R_SFI, T_SFI, ieR_SFI, ieT_SFI, hdr, bhr_uw, bhr_dw)
+                R_SFI_tot, _, _, _, _, _, hem_T_tot = jl.vSmartMOM.CoreRT.rt_run(
+                    RS, model, 1
+                )
 
-            R_tot_I = np.array(R_SFI_tot)[0, 0, :]
+                R_tot_I = np.array(R_SFI_tot)[0, 0, :]
 
-            # total column optical depth composed of gaseous absorption, rayleigh, and aerosol
-            tau_total = (
-                sum_tau(np.array(model.τ_abs[0]))
-                + sum_tau(np.array(model.τ_rayl[0]))
-                + sum_tau(np.array(model.τ_aer[0]))
-            )
+                # total column optical depth composed of gaseous absorption, rayleigh, and aerosol
+                tau_total = (
+                    sum_tau(np.array(model.τ_abs[0]))
+                    + sum_tau(np.array(model.τ_rayl[0]))
+                    + sum_tau(np.array(model.τ_aer[0]))
+                )
 
-            R_results.append(R_tot_I)
-            hem_dw_results.append(np.array(hem_T_tot).flatten())
-            tau_results.append(tau_total)
+                R_results.append(R_tot_I)
+                hem_dw_results.append(np.array(hem_T_tot).flatten())
+                tau_results.append(tau_total)
+
+        run_vsmartmom_quiet(loop_albedos)
 
         # math for MODTRAN equivalent field via Suniti's code in vSmartMOM test codes
         L0 = R_results[0]
@@ -491,29 +520,33 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         mu_s = np.cos(np.radians(vals["sza"]))
         mu_v = np.cos(np.radians(vals["vza"]))
 
-        # path reflectance for zero albedo
-        rhoatm = np.pi * L0 / mu_s
+        # ignore divide by zero warnings
+        with np.errstate(divide="ignore", invalid="ignore"):
 
-        # spherical albedo
-        sphalb = np.where(
-            hT2 > np.finfo(float).eps, (1.0 - hT0 / hT2) / self.albedos[1], 0.0
-        )
-        sphalb = np.clip(sphalb, 0.0, 1.0)
+            # path reflectance for zero albedo
+            rhoatm = np.pi * L0 / mu_s
 
-        # split transmittances
-        transm_down_dir = np.exp(-tau_tot / mu_s)
-        T_down_tot = hT0 / mu_s
-        transm_down_dif = np.maximum(T_down_tot - transm_down_dir, 0.0)
+            # spherical albedo
+            sphalb = np.where(
+                hT2 > np.finfo(float).eps, (1.0 - hT0 / hT2) / self.albedos[1], 0.0
+            )
+            sphalb = np.clip(sphalb, 0.0, 1.0)
 
-        transm_up_dir = np.exp(-tau_tot / mu_v)
-        alpha_rho = np.pi * (L2 - L0) / mu_s
-        T_up_tot = np.where(
-            hT0 > np.finfo(float).eps,
-            alpha_rho
-            * (1.0 - self.albedos[1] * sphalb)
-            / (self.albedos[1] * T_down_tot),
-            transm_up_dir,
-        )
+            # split transmittances
+            transm_down_dir = np.exp(-tau_tot / mu_s)
+            T_down_tot = hT0 / mu_s
+            transm_down_dif = np.maximum(T_down_tot - transm_down_dir, 0.0)
+
+            transm_up_dir = np.exp(-tau_tot / mu_v)
+            alpha_rho = np.pi * (L2 - L0) / mu_s
+            T_up_tot = np.where(
+                hT0 > np.finfo(float).eps,
+                alpha_rho
+                * (1.0 - self.albedos[1] * sphalb)
+                / (self.albedos[1] * T_down_tot),
+                transm_up_dir,
+            )
+
         transm_up_dif = np.maximum(T_up_tot - transm_up_dir, 0.0)
 
         transm_down_dif = np.maximum(transm_down_dif, 0)
