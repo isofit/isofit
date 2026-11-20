@@ -72,6 +72,9 @@ docs = [
 plots = [
   "isoplots",
 ]
+juliacall = [
+  "juliacall",
+]
 
 [tool.uv.sources]
 torch = [{index="pytorch-cpu"}]
