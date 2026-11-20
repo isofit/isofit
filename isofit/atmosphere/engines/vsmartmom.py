@@ -59,8 +59,6 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     # TODO
 
-    # - Test out nstreams 3-8 to find changes in accuracy
-
     # - Figure out a way to suppress @progressbar and other logs/prints vSmartMOM passes through...
 
     # - think about how we want to interface with scattering parameters (e.g., angstrom exponent)
@@ -340,6 +338,8 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         # https://github.com/RemoteSensingTools/vSmartMOM.jl/blob/release/v2.2-consolidation/src/CoreRT/DefaultParameters.yaml
         params = jl.vSmartMOM.default_parameters()
         params.nstreams = self.config.engine.nstreams_mom
+        params.l_trunc = 2 * self.config.engine.nstreams_mom - 1
+        params.stream_l_cap = 2 * self.config.engine.nstreams_mom - 1
         params.architecture = jl.seval(self.config.engine.architecture)
         params.float_type = jl.seval(self.config.engine.float_type)
 

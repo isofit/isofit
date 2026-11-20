@@ -67,15 +67,13 @@ class VSmartMomConfig(SectionModel):
     nstreams_mom: int = Field(
         default=8,
         description="Weighted streams per hemisphere for vSmartMOM radiative transfer. The advised minimum is 3 (Rayleigh contributes through m=2).",
-        examples=[3, 8],
+        examples=[3, 8, 16],
     )
 
-    architecture: Literal["CPU()", "default_architecture()", "GPU()"] = (
-        Field(
-            default="CPU()",
-            description="Compute architecture for vSmartMOM",
-            examples=["default_architecture()"],
-        )
+    architecture: Literal["CPU()", "default_architecture()", "GPU()"] = Field(
+        default="CPU()",
+        description="Compute architecture for vSmartMOM",
+        examples=["default_architecture()"],
     )
 
     float_type: Literal["Float64", "Float32"] = Field(
