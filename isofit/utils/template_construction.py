@@ -1635,9 +1635,6 @@ def make_atmosphere_config(
     else:
         engine_name = "srtmnet"
 
-    # TODO just for testing
-    engine_name = "vsmartmom"
-
     # Engine-level fields are nested under "engine" (a discriminated union keyed
     # on "name"); atmosphere-level fields (sim_path, lut_path, multipart, ...)
     # live at the top level of the atmosphere config.
@@ -1680,9 +1677,7 @@ def make_atmosphere_config(
                     os.path.splitext(emulator_base)[0] + "_aux.npz"
                 )
     else:
-        # atmosphere_rte["base_dir"] = modtran_path
-        pass
-        # TODO
+        atmosphere_rte["base_dir"] = modtran_path
     atmosphere_config["engine"].update(atmosphere_rte)
 
     if aerosol_model_file is not None and engine_name in ("modtran", "sixs"):
