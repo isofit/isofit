@@ -58,7 +58,8 @@ try:
         end
         """
     )
-    _run_vsmartmom_quiet = jl.seval("_run_vsmartmom_quiet")
+    _jl_run_vsmartmom_quiet = jl.seval("_run_vsmartmom_quiet")
+    _jl_deepcopy = jl.seval("deepcopy")
 
 except ImportError:
     raise ImportError(
@@ -105,6 +106,11 @@ class VSmartMomRT(BaseAtmosphere, Writer):
     def __init__(self, full_config, **kwargs):
         self.config = full_config.forward_model.atmosphere
         self.sim_path = self.config.sim_path
+
+        self.o2_total = 167820
+        self.o2_vmr = 0.2095
+        self.so2_vmr = 1.353e-10  # SO2 effect above 350 nm is near zero, value is represenative for midlat summer
+        self.toa_km = 100.0
 
         super().__init__(full_config, **kwargs)
 
@@ -209,6 +215,35 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         self.solar_irr_sensor = resample_spectrum(
             solar_irr, wl_solar, self.wl, self.fwhm
         )
+
+        # initialize vsmartmom static params based on default yaml (based on Version 2.2.0)
+        # https://github.com/RemoteSensingTools/vSmartMOM.jl/blob/release/v2.2-consolidation/src/CoreRT/DefaultParameters.yaml
+        self.params = jl.vSmartMOM.default_parameters()
+        self.params.nstreams = self.config.engine.nstreams_mom
+        self.params.l_trunc = 2 * self.config.engine.nstreams_mom - 1
+        self.params.stream_l_cap = 2 * self.config.engine.nstreams_mom - 1
+        self.params.architecture = jl.seval(self.config.engine.architecture)
+        self.params.float_type = jl.seval(self.config.engine.float_type)
+        self.params.scattering_params.λ_ref = self.config.engine.aot_ref
+        self.params.spec_bands = [self.wn_grid]
+        setattr(
+            self.params.scattering_params.rt_aerosols[0].aerosol,
+            "nᵣ",
+            self.config.engine.aerosol_nr,
+        )
+        setattr(
+            self.params.scattering_params.rt_aerosols[0].aerosol,
+            "nᵢ",
+            self.config.engine.aerosol_ni,
+        )
+        self.params.scattering_params.rt_aerosols[0].aerosol.size_distribution = (
+            jl.vSmartMOM.Scattering.LogNormal(
+                self.config.engine.aerosol_mu, self.config.engine.aerosol_sigma
+            )
+        )
+        self.params.absorption_params.fixed_molecules = [
+            ["O2", "CO2", "H2O", "CH4", "O3", "N2O", "CO", "NO2", "SO2"]
+        ]
 
         return {
             "coszen": np.cos(np.radians(self.modtran_geom["PARM2"])),
@@ -349,29 +384,18 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     def run_vsmartmom(self, vals, out_path):
 
-        # Constants
+        # TODO Constants can move to units
         GRAVITY = 9.80665
-        O2_TOTAL = 167820
-        O2_VMR = 0.2095
-        SO2_VMR = 1.353e-10  # SO2 effect above 350 nm is near zero, value is represenative for midlat summer
-        TOA_KM = 100.0
         P_SEALEVEL = 1013.25
         H2O_MOLAR_MASS = 18.015
         AIR_MOLAR_MASS = 28.97
 
+        params = _jl_deepcopy(self.params)
+
         h2o_vmr = vals["h2o"] / (
             ((P_SEALEVEL * 10.0) / GRAVITY) * (H2O_MOLAR_MASS / AIR_MOLAR_MASS)
         )
-        co2_vmr = (vals["co2"] / O2_TOTAL) * O2_VMR
-
-        # We initialize based on default yaml (based on Version 2.2.0)
-        # https://github.com/RemoteSensingTools/vSmartMOM.jl/blob/release/v2.2-consolidation/src/CoreRT/DefaultParameters.yaml
-        params = jl.vSmartMOM.default_parameters()
-        params.nstreams = self.config.engine.nstreams_mom
-        params.l_trunc = 2 * self.config.engine.nstreams_mom - 1
-        params.stream_l_cap = 2 * self.config.engine.nstreams_mom - 1
-        params.architecture = jl.seval(self.config.engine.architecture)
-        params.float_type = jl.seval(self.config.engine.float_type)
+        co2_vmr = (vals["co2"] / self.o2_total) * self.o2_vmr
 
         # Truncate pressure, surface, q, and gas if above sea level
         if vals["surface_elev_km"] > 0.0:
@@ -415,20 +439,16 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             * 1e-6,
         }
 
-        above_toa = z_centers > TOA_KM
+        above_toa = z_centers > self.toa_km
         if np.any(above_toa):
             for k in gas_profiles:
                 gas_profiles[k] = np.where(above_toa, 0.0, gas_profiles[k])
 
         # # Absorption poriton of params
-        # ~/data/HITRAN_LUTs/{O2,CO2,H2O,CH4,O3,N2O,CO,NO2,SO2}.jld2` (9 species)
-        params.absorption_params.fixed_molecules = [
-            ["O2", "CO2", "H2O", "CH4", "O3", "N2O", "CO", "NO2", "SO2"]
-        ]
         params.absorption_params.vmr["H2O"] = h2o_vmr
         params.absorption_params.vmr["CO2"] = co2_vmr
-        params.absorption_params.vmr["O2"] = O2_VMR
-        params.absorption_params.vmr["SO2"] = SO2_VMR
+        params.absorption_params.vmr["O2"] = self.o2_vmr
+        params.absorption_params.vmr["SO2"] = self.so2_vmr
 
         for mol, vmr_profile in gas_profiles.items():
             params.absorption_params.vmr[mol] = vmr_profile
@@ -439,7 +459,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         params.q = jl.zeros(jl.Float32, len(params.T))
 
         # Only update observer altitude if we are below TOA
-        if vals["observer_elev_km"] < TOA_KM:
+        if vals["observer_elev_km"] < self.toa_km:
             params.obs_alt = [vals["observer_elev_km"]]
 
         # The vza and vaz have to be wrapped by a list -- even if it's a scalar.
@@ -447,33 +467,13 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         params.vza = [vals["vza"]]
         params.vaz = [vals["vaz"]]
 
-        # Scattering portion of params
-        params.scattering_params.λ_ref = self.config.engine.aot_ref
+        # Set aerosol optical thickness
         params.scattering_params.rt_aerosols[0].τ_ref = vals["aot"]
-        setattr(
-            params.scattering_params.rt_aerosols[0].aerosol,
-            "nᵣ",
-            self.config.engine.aerosol_nr,
-        )
-        setattr(
-            params.scattering_params.rt_aerosols[0].aerosol,
-            "nᵢ",
-            self.config.engine.aerosol_ni,
-        )
-        params.scattering_params.rt_aerosols[0].aerosol.size_distribution = (
-            jl.vSmartMOM.Scattering.LogNormal(
-                self.config.engine.aerosol_mu, self.config.engine.aerosol_sigma
-            )
-        )
-
-        # Set same wavelegth grid that was set in preSim
-        params.spec_bands = [self.wn_grid]
-
-        FT = params.float_type
 
         # This currently assumes no raman scattering. See note from vSmartMOM docs below:
         # "The bulk of retrievals (NIR shortwave) use `noRS` — the inelastic correction is small there.
         # UV/Vis retrievals (Ring effect, O2A-band line shapes, ozone DOAS) need RRS."
+        FT = params.float_type
         RS = jl.vSmartMOM.InelasticScattering.noRS[FT]()
 
         def sum_tau(tau):
@@ -512,7 +512,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
                 hem_dw_results.append(np.array(hem_T_tot).flatten())
                 tau_results.append(tau_total)
 
-        _run_vsmartmom_quiet(loop_albedos)
+        _jl_run_vsmartmom_quiet(loop_albedos)
 
         # math for MODTRAN equivalent field via Suniti's code in vSmartMOM test codes
         L0 = R_results[0]
