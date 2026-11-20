@@ -89,6 +89,8 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     # TODO
 
+    # - work more on the h2o representation, using params.q
+
     # - think about how we want to interface with scattering parameters (e.g., angstrom exponent)
 
     # - Chappuis still pending issue
@@ -99,8 +101,6 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     # - Check UV and Conda install to check changes needed
 
-    # - Fully hookup through apply_oe and template construction (vsmartmom flag?)
-
     # - Bring in atm profile into isofit-data
 
     def __init__(self, full_config, **kwargs):
@@ -108,8 +108,10 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         self.sim_path = self.config.sim_path
 
         self.o2_total = 167820
-        self.o2_vmr = 0.2095
-        self.so2_vmr = 1.353e-10  # SO2 effect above 350 nm is near zero, value is represenative for midlat summer
+        self.o2_vmr = 0.2095  # treated as constant vertically
+        self.so2_vmr = (
+            1.353e-10  # SO2 effect above 350 nm ~ zero, value represents midlat summer
+        )
         self.toa_km = 100.0
 
         super().__init__(full_config, **kwargs)
@@ -242,7 +244,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             )
         )
         self.params.absorption_params.fixed_molecules = [
-            ["O2", "CO2", "H2O", "CH4", "O3", "N2O", "CO", "NO2", "SO2"]
+            ["O2", "CO2", "CH4", "O3", "N2O", "CO", "NO2", "SO2"]
         ]
 
         return {
@@ -387,22 +389,21 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         # TODO Constants can move to units
         GRAVITY = 9.80665
         P_SEALEVEL = 1013.25
-        H2O_MOLAR_MASS = 18.015
-        AIR_MOLAR_MASS = 28.97
 
         params = _jl_deepcopy(self.params)
 
-        h2o_vmr = vals["h2o"] / (
-            ((P_SEALEVEL * 10.0) / GRAVITY) * (H2O_MOLAR_MASS / AIR_MOLAR_MASS)
-        )
-        co2_vmr = (vals["co2"] / self.o2_total) * self.o2_vmr
-
-        # Truncate pressure, surface, q, and gas if above sea level
+        p_surf = P_SEALEVEL
         if vals["surface_elev_km"] > 0.0:
             p_surf = P_SEALEVEL * np.exp(-vals["surface_elev_km"] / 8.0)
 
-            p_array = np.array(params.p)
-            T_array = np.array(params.T)
+        co2_vmr = (vals["co2"] / self.o2_total) * self.o2_vmr
+
+        p_array = np.array(params.p)
+        T_array = np.array(params.T)
+        q_array = np.array(params.q)
+
+        # Truncate pressure, surface, q, and gas if above sea level
+        if vals["surface_elev_km"] > 0.0:
 
             # find where p_surf is in and set the new surface
             idx = np.searchsorted(p_array, p_surf, side="left")
@@ -413,6 +414,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             orig_centers = 0.5 * (p_array[:-1] + p_array[1:])
             new_centers = 0.5 * (params.p[:-1] + params.p[1:])
             params.T = np.interp(new_centers, orig_centers, T_array)
+            q_array = np.interp(new_centers, orig_centers, q_array)
 
         # Always interpolate gas profiles
         # (reference file from isofit-data has different profile than vSmartMOM)
@@ -444,19 +446,21 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             for k in gas_profiles:
                 gas_profiles[k] = np.where(above_toa, 0.0, gas_profiles[k])
 
-        # # Absorption poriton of params
-        params.absorption_params.vmr["H2O"] = h2o_vmr
+        # Absorption portion of params
+
+        # H2O is set via q and not absorption_params.vmr
+        # TODO
+        dp_gcm2 = np.abs(np.diff(p_final)) * 100.0 / GRAVITY * 0.1
+        w_base_gcm2 = np.sum(q_array * dp_gcm2)
+        q_scale = (vals["h2o"] / w_base_gcm2) if w_base_gcm2 > 0.0 else 0.0
+        params.q = q_array * q_scale
+
         params.absorption_params.vmr["CO2"] = co2_vmr
         params.absorption_params.vmr["O2"] = self.o2_vmr
         params.absorption_params.vmr["SO2"] = self.so2_vmr
 
         for mol, vmr_profile in gas_profiles.items():
             params.absorption_params.vmr[mol] = vmr_profile
-
-        # ISOFIT defintion - to ensure h2o absorption is driven by total water column vapor input, q is set to zero.
-        # NOTE This is a vSmartMOM hack (v2.2.0) which may be version dependent.
-        # Alternatively, we could change the definition of H2O to be altitude dependent, but this would be a larger discussion.
-        params.q = jl.zeros(jl.Float32, len(params.T))
 
         # Only update observer altitude if we are below TOA
         if vals["observer_elev_km"] < self.toa_km:

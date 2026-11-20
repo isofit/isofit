@@ -6,7 +6,7 @@ except ImportError as e:
 
     def VSmartMomRT(*args, **kwargs):
         raise ImportError(
-            "The vSmartMOM engine requires the optional dependencies, install with isofit download to proceed."
+            "The vSmartMOM engine requires optional dependencies, install with isofit download to proceed."
         ) from _vsmartmom_error
 
 
