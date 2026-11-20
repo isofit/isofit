@@ -77,7 +77,11 @@ def selectByName(data: dict) -> str:
     This function is called automatically by Pydantic during validation
     and should not be invoked directly by users.
     """
-    name = data.get("name")
+    if isinstance(data, dict):
+        name = data.get("name")
+    else:
+        name = getattr(data, "name", None)
+
     if isinstance(name, str):
         return standardName(name)
     return name
