@@ -1,5 +1,14 @@
-# NOTE juliacall must be called before torch: https://github.com/pytorch/pytorch/issues/78829
-from .vsmartmom import VSmartMomRT
+# NOTE juliacall must be called before pytorch: https://github.com/pytorch/pytorch/issues/78829
+try:
+    from .vsmartmom import VSmartMomRT
+except ImportError as e:
+    _vsmartmom_error = e
+
+    def VSmartMomRT(*args, **kwargs):
+        raise ImportError(
+            "The vSmartMOM engine requires the optional dependencies, install with isofit download to proceed."
+        ) from _vsmartmom_error
+
 
 from .kernel_flows import KernelFlowsRT
 from .libradtran import LibRadTranRT

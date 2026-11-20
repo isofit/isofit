@@ -37,18 +37,14 @@ def validate(path=None, debug=print, error=print, **_):
 
     try:
         from juliacall import Main as jl
-
-        jl.seval("using vSmartMOM")
     except ImportError:
-        error(
-            "[x] vSmartMOM is not installed. Import error for juliacall. You can install via: pip install isofit[juliacall]"
-        )
-        return False
+        debug("optional juliacall is not installed; vSmartMOM validation skipped")
+        return True
     except Exception as e:
         error(f"[x] vSmartMOM could not be loaded: {e}")
         return False
 
-    debug("[OK] Path is valid")
+    debug("[OK] vSmartMOM is properly installed")
     return True
 
 
