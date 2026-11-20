@@ -29,11 +29,6 @@ class VSmartMomConfig(SectionModel):
         description='Engine identifier. Must be ``"vsmartmom"``',
     )
 
-    template_file: Optional[FilePath] = Field(
-        description="Template file used as the base configuration for vSmartMOM",
-        examples=["vsmartmom_template.json"],
-    )
-
     aot_ref: float = Field(
         default=0.550,
         description="Reference wavelength for aerosol optical depth (um)",
@@ -70,6 +65,11 @@ class VSmartMomConfig(SectionModel):
         examples=[3, 8, 16],
     )
 
+    write_sim: bool = Field(
+        default=True,
+        description="True will write out the fine resolution csv(s) to disk, while False will hold in memory for resampling to instrument",
+    )
+
     architecture: Literal["CPU()", "default_architecture()", "GPU()"] = Field(
         default="CPU()",
         description="Compute architecture for vSmartMOM",
@@ -94,4 +94,9 @@ class VSmartMomConfig(SectionModel):
                 (490.0, 2510.0, 0.1),
             ]
         ],
+    )
+
+    template_file: Optional[FilePath] = Field(
+        description="Template file used as the base configuration for vSmartMOM",
+        examples=["vsmartmom_template.json"],
     )

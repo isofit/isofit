@@ -42,7 +42,7 @@ try:
                 ProgressMeter.printover(io, args...; kwargs...) = nothing
             end
         end
-        function run_vsmartmom_quiet(f)
+        function _run_vsmartmom_quiet(f)
             old_logger = global_logger(NullLogger())
             try
                 redirect_stdout(devnull) do
@@ -58,7 +58,7 @@ try:
         end
         """
     )
-    run_vsmartmom_quiet = jl.seval("run_vsmartmom_quiet")
+    _run_vsmartmom_quiet = jl.seval("_run_vsmartmom_quiet")
 
 except ImportError:
     raise ImportError(
@@ -79,6 +79,7 @@ from isofit.data import env
 from isofit.luts.writer import Writer
 
 Logger = logging.getLogger(__name__)
+_sim_cache: dict[str, np.ndarray] = {}
 
 
 class VSmartMomRT(BaseAtmosphere, Writer):
@@ -90,8 +91,6 @@ class VSmartMomRT(BaseAtmosphere, Writer):
     # - think about how we want to interface with scattering parameters (e.g., angstrom exponent)
 
     # - Chappuis still pending issue
-
-    # - enable option not to write to disk and just pass arrays from makeSim to readSim
 
     # - double check RAA based on Phils PR-1070
 
@@ -235,6 +234,11 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             Logger.warning(f"vSmartMOM sim files already exist for point {point}")
             return
 
+        if not self.config.engine.write_sim:
+            if not self.config.configure_and_exit:
+                _sim_cache[name] = self.run_vsmartmom(vals, out_path=None)
+                return
+
         if not self.config.configure_and_exit:
             self.run_vsmartmom(vals, out_path)
 
@@ -242,8 +246,12 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         name = self.point_to_filename(point)
         out_path = abspath(join(self.sim_path, f"{name}_vsmartmom.csv"))
 
-        # Load output simulation from vSmartMOM
-        data = np.loadtxt(out_path, delimiter=",", skiprows=1)
+        if not self.config.engine.write_sim:
+            data = _sim_cache[name]
+            _sim_cache.pop(name)
+        else:
+            data = np.loadtxt(out_path, delimiter=",", skiprows=1)
+
         # wl = data[:, 0]
         rhoatm = data[:, 1]
         sphalb = data[:, 2]
@@ -504,7 +512,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
                 hem_dw_results.append(np.array(hem_T_tot).flatten())
                 tau_results.append(tau_total)
 
-        run_vsmartmom_quiet(loop_albedos)
+        _run_vsmartmom_quiet(loop_albedos)
 
         # math for MODTRAN equivalent field via Suniti's code in vSmartMOM test codes
         L0 = R_results[0]
@@ -560,6 +568,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         transm_up_dir = transm_up_dir[::-1]
         transm_up_dif = transm_up_dif[::-1]
 
+        header = "wl,rhoatm,sphalb,transm_down_dir,transm_down_dif,transm_up_dir,transm_up_dif"
         data = np.column_stack(
             [
                 wl,
@@ -571,7 +580,9 @@ class VSmartMomRT(BaseAtmosphere, Writer):
                 transm_up_dif,
             ]
         )
-        header = "wl,rhoatm,sphalb,transm_down_dir,transm_down_dif,transm_up_dir,transm_up_dif"
-        np.savetxt(out_path, data, delimiter=",", header=header, comments="")
+        if out_path is None:
+            return data
+        else:
+            np.savetxt(out_path, data, delimiter=",", header=header, comments="")
 
         return
