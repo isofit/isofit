@@ -1,9 +1,11 @@
+# NOTE juliacall must be called before torch: https://github.com/pytorch/pytorch/issues/78829
+from .vsmartmom import VSmartMomRT
+
 from .kernel_flows import KernelFlowsRT
 from .libradtran import LibRadTranRT
 from .modtran import ModtranRT
 from .six_s import SixSRT
 from .sRTMnet import SimulatedModtranRT
-from .vsmartmom import VSmartMomRT
 
 Engines = {
     "kernelflows": KernelFlowsRT,

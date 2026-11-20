@@ -97,10 +97,6 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     # - Bring in H2O molar mass, air mass etc, into units
 
-    # - UserWarning: torch was imported before juliacall. This may cause a segfault.
-    #     To avoid this, import juliacall before importing torch.
-    #     For updates, see https://github.com/pytorch/pytorch/issues/78829.
-
     # - Check UV and Conda install to check changes needed
 
     # - Fully hookup through apply_oe and template construction (vsmartmom flag?)
