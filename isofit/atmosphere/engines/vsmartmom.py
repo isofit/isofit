@@ -426,6 +426,11 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         }
 
     def run_vsmartmom(self, vals, out_path):
+        """
+        For all vSmartMOM conventions for code development please refer to:
+        https://github.com/RemoteSensingTools/vSmartMOM.jl/blob/release/v2.2-consolidation/docs/src/pages/conventions.md
+
+        """
 
         params = _jl_deepcopy(self.params)
 
@@ -518,11 +523,11 @@ class VSmartMomRT(BaseAtmosphere, Writer):
                 model = jl.vSmartMOM.CoreRT.model_from_parameters(params)
 
                 # rt_run returns 7-tuple (R_SFI, T_SFI, ieR_SFI, ieT_SFI, hdr, bhr_uw, bhr_dw)
+                # I, Q = R_SFI_tot[0, 0, :],  R_SFI_tot[0, 1, :]
+                # U, V =  R_SFI_tot[0, 2, :],  R_SFI_tot[0, 3, :]
                 R_SFI_tot, _, _, _, _, _, hem_T_tot = jl.vSmartMOM.CoreRT.rt_run(
                     RS, model, 1
                 )
-
-                R_tot_I = np.array(R_SFI_tot)[0, 0, :]
 
                 # total column optical depth composed of gaseous absorption, rayleigh, and aerosol
                 tau_total = (
@@ -531,15 +536,16 @@ class VSmartMomRT(BaseAtmosphere, Writer):
                     + sum_tau(np.array(model.τ_aer[0]))
                 )
 
-                R_results.append(R_tot_I)
+                R_results.append(np.array(R_SFI_tot))
                 hem_dw_results.append(np.array(hem_T_tot).flatten())
                 tau_results.append(tau_total)
 
         _jl_run_vsmartmom_quiet(loop_albedos)
 
         # math for MODTRAN equivalent field via Suniti's code in vSmartMOM test codes
-        L0 = R_results[0]
-        L2 = R_results[1]
+        L0 = R_results[0][0, 0, :]
+        L1 = R_results[1][0, 0, :]
+
         hT0 = hem_dw_results[0]
         hT2 = hem_dw_results[1]
         tau_tot = tau_results[0]
@@ -565,7 +571,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             transm_down_dif = np.maximum(T_down_tot - transm_down_dir, 0.0)
 
             transm_up_dir = np.exp(-tau_tot / mu_v)
-            alpha_rho = np.pi * (L2 - L0) / mu_s
+            alpha_rho = np.pi * (L1 - L0) / mu_s
             T_up_tot = np.where(
                 hT0 > np.finfo(float).eps,
                 alpha_rho
