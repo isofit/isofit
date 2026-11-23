@@ -6,7 +6,7 @@ Vector simulated measurements of the atmosphere using radiative transfer based o
 
 from typing import Annotated, Literal, Optional
 
-from pydantic import BeforeValidator, ConfigDict, Field, FilePath
+from pydantic import BeforeValidator, ConfigDict, Field, FilePath, model_validator
 
 from isofit.configs.base import SectionModel
 
@@ -35,28 +35,36 @@ class VSmartMomConfig(SectionModel):
         examples=[0.550],
     )
 
-    aerosol_mu: float = Field(
-        default=0.1,
-        description="Log mean radius for aerosol size distribution (um)",
-        examples=[0.1],
+    aerosol_mu: list[float] = Field(
+        default=[0.1],
+        min_length=1,
+        max_length=2,
+        description="Mean radii for fine and coarse aerosol size distributions (um). By default, only one mode is used",
+        examples=[[0.1]],
     )
 
-    aerosol_sigma: float = Field(
-        default=1.75,
-        description="Log stddev of radius for aerosol size distribution (um)",
-        examples=[1.75],
+    aerosol_sigma: list[float] = Field(
+        default=[1.75],
+        min_length=1,
+        max_length=2,
+        description="Standard deviation of radii for fine and coarse aerosol size distributions (um). By default, only one mode is used",
+        examples=[[1.75]],
     )
 
-    aerosol_nr: float = Field(
-        default=1.5,
-        description="Real part of the aerosol refractive index",
-        examples=[1.5],
+    aerosol_nr: list[float] = Field(
+        default=[1.5],
+        min_length=1,
+        max_length=2,
+        description="Real part of the aerosol refractive indices for fine and coarse aerosol size distributions. By default, only one mode is used",
+        examples=[[1.5]],
     )
 
-    aerosol_ni: float = Field(
-        default=0.001,
-        description="Imaginary part of the aerosol refractive index",
-        examples=[0.001],
+    aerosol_ni: list[float] = Field(
+        default=[0.001],
+        min_length=1,
+        max_length=2,
+        description="Imaginary part of the aerosol refractive indices for fine and coarse aerosol size distributions. By default, only one mode is used",
+        examples=[[0.001]],
     )
 
     nstreams_mom: int = Field(
@@ -67,7 +75,7 @@ class VSmartMomConfig(SectionModel):
 
     write_sim: bool = Field(
         default=True,
-        description="True will write out the fine resolution csv(s) to disk, while False will hold in memory for resampling to instrument",
+        description="Leaving write_sim as True will write out the fine resolution csv(s) to disk, while False will hold in memory for resampling to instrument",
     )
 
     architecture: Literal["CPU()", "default_architecture()", "GPU()"] = Field(
@@ -100,3 +108,32 @@ class VSmartMomConfig(SectionModel):
         description="Template file used as the base configuration for vSmartMOM",
         examples=["vsmartmom_template.json"],
     )
+
+    @model_validator(mode="after")
+    def check_aerosols_match(self):
+        """
+        Validate lengths of each of the aerosol configs match (either of length 1 or 2).
+
+        Returns
+        -------
+        VSmartMomConfig
+            The validated config.
+
+        Raises
+        ------
+        ValueError
+            If lengths of aerosol configs do not match
+        """
+
+        counts = {
+            "aerosol_mu": len(self.aerosol_mu),
+            "aerosol_sigma": len(self.aerosol_sigma),
+            "aerosol_nr": len(self.aerosol_nr),
+            "aerosol_ni": len(self.aerosol_ni),
+        }
+        if len(set(counts.values())) > 1:
+            msg = ", ".join(f"{name}={n}" for name, n in counts.items())
+            raise ValueError(
+                f"aerosol_mu, aerosol_sigma, aerosol_nr, and aerosol_ni must have the same length. Instead got: {msg}"
+            )
+        return self

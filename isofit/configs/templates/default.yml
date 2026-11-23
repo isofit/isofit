@@ -233,17 +233,17 @@ vsmartmom:
       engine:
         name: vsmartmom
         aot_ref: 0.550
-        aerosol_mu: 0.1
-        aerosol_sigma: 1.75
-        aerosol_nr: 1.5
-        aerosol_ni: 0.001
+        aerosol_mu: [0.1]
+        aerosol_sigma: [1.75]
+        aerosol_nr: [1.5]
+        aerosol_ni: [0.001]
         nstreams_mom: 8
         write_sim: true
         architecture: "CPU()"
         float_type: "Float64"
         wl_resolutions:
-        - [340.0, 1200.0, 20.0]
-        - [1200.0, 2510.0, 10.0]
+          - [340.0, 1200.0, 20.0]
+          - [1200.0, 2510.0, 10.0]
         template_file: null
 
 kernelflows:
