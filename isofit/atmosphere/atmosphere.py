@@ -743,6 +743,26 @@ def modtran_aot_lowerbound_polynomials() -> dict:
     return polynomials
 
 
+def standard_column_o2(atm_type: str) -> float:
+
+    if "midlat_summer" in atm_type.lower():
+        o2_total = 167820
+    elif "midlat_winter" in atm_type.lower():
+        o2_total = 167320
+    elif "subarc_winter" in atm_type.lower():
+        o2_total = 167320
+    elif "subarc_summer" in atm_type.lower():
+        o2_total = 166910
+    elif "tropical" in atm_type.lower():
+        o2_total = 168230
+    elif "us_standard_1976" in atm_type.lower():
+        o2_total = 167460
+    else:
+        o2_total = 167820
+
+    return o2_total
+
+
 def aeronet_model(
     elevation_km: float, aot_min: float = 0.01, aot_max: float = 1.0
 ) -> tuple:
