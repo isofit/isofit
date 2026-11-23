@@ -68,6 +68,8 @@ class Pathnames:
         use_background_rfl: bool = False,
         dn_uncertainty_file: str = None,
         eof_path=None,
+        tilt_basis_file: str = None,
+        output_tilt_coefficients_file: str = None,
     ):
         # Determine FID based on sensor name
         if sensor == "ang":
@@ -234,6 +236,19 @@ class Pathnames:
 
         self.eof_working_path = abspath(join(self.data_directory, "eof.txt"))
 
+        # DEM-tilt ratio basis (input) and coefficients (output)
+        self.input_tilt_basis_path = tilt_basis_file
+        self.tilt_basis_working_path = (
+            abspath(join(self.data_directory, "tilt_basis.mat"))
+            if tilt_basis_file
+            else None
+        )
+        self.tilt_coefficients_working_path = (
+            abspath(output_tilt_coefficients_file)
+            if output_tilt_coefficients_file
+            else None
+        )
+
         if skyview_factor:
             self.svf_working_path = abspath(skyview_factor)
             self.svf_subs_path = abspath(
@@ -382,6 +397,7 @@ class Pathnames:
                 False,
             ),
             (self.eof_path, self.eof_working_path, False),
+            (self.input_tilt_basis_path, self.tilt_basis_working_path, False),
         ]
 
         for src, dst, hasheader in files_to_stage:
@@ -819,6 +835,14 @@ def build_config(
             rfl_output_path = paths.rfl_working_path
             bgrfl_input_path = paths.bgrfl_working_path
 
+    # Only the full-resolution main solve writes tilt coefficients directly;
+    # with superpixels, the analytical or empirical line writes them
+    tilt_output_path = (
+        paths.tilt_coefficients_working_path
+        if not use_superpixels and not presolve
+        else None
+    )
+
     input_config = make_input_config(
         rdn_input_path=rdn_input_path,
         loc_input_path=loc_input_path,
@@ -831,6 +855,7 @@ def build_config(
         state_output_path=state_output_path,
         posterior_output_path=posterior_output_path,
         rfl_output_path=rfl_output_path,
+        tilt_output_path=tilt_output_path,
     )
 
     config = {
@@ -878,6 +903,7 @@ def build_config(
                 to_sun_zenith_lut_grid=to_sun_zenith_lut_grid,
                 elevation_km=elevation_km,
                 libradtran_band_model=libradtran_band_model,
+                tilt_basis_path=None if presolve else paths.tilt_basis_working_path,
             ),
             "surface": make_surface_config(
                 surface_class_working_path=paths.surface_class_working_path,
@@ -1599,6 +1625,7 @@ def make_atmosphere_config(
     libradtran_band_model: str = None,
     unknowns: dict = {},
     wavelength_file: str = None,
+    tilt_basis_path: str = None,
     **kwargs,
 ):
     avc = np.sum(
@@ -1926,6 +1953,10 @@ def make_atmosphere_config(
     if wavelength_file:
         atmosphere_config["wavelength_file"] = wavelength_file
 
+    # PCA basis for DEM-tilt ratio coefficients
+    if tilt_basis_path:
+        atmosphere_config["tilt_basis_file"] = tilt_basis_path
+
     return atmosphere_config
 
 
@@ -2152,6 +2183,7 @@ def make_output_config(
     state_output_path: str,
     posterior_output_path: str = None,
     rfl_output_path: str = None,
+    tilt_output_path: str = None,
     **kwargs,
 ):
     output_config = {}
@@ -2160,5 +2192,7 @@ def make_output_config(
         output_config["posterior_uncertainty_file"] = posterior_output_path
     if rfl_output_path:
         output_config["estimated_reflectance_file"] = rfl_output_path
+    if tilt_output_path:
+        output_config["tilt_coefficients_file"] = tilt_output_path
 
     return output_config

@@ -32,6 +32,7 @@ from isofit.core.common import PriorUpdate, eps, svd_inv_sqrt
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
 from isofit.core.multistate import match_statevector
+from isofit.core.tilt import TiltBasis
 from isofit.core.units import transm_to_rdn
 from isofit.surface import Surface
 
@@ -157,6 +158,17 @@ class ForwardModel:
             self.model_discrepancy = D["cov"]
         else:
             self.model_discrepancy = None
+
+        # Load the PCA basis for DEM-tilt ratio coefficients
+        tilt_basis_file = full_config.forward_model.atmosphere.tilt_basis_file
+        if tilt_basis_file is not None:
+            self.tilt_basis = TiltBasis(
+                tilt_basis_file,
+                self.instrument.wl_init,
+                full_config.implementation.inversion.windows,
+            )
+        else:
+            self.tilt_basis = None
 
         if self.surface.use_background_rfl:
             self.calc_rdn_bgrfl = self.calc_rdn_bgrfl_heterogeneous
@@ -564,7 +576,7 @@ class ForwardModel:
         """
 
         # 1. Call get_L_coupled(...) for the current geometry and store these radiances
-        L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(
+        _, L_dir_dir, L_dif_dir, _, _ = self.get_L_coupled(
             r, geom, rho_dif_dif=rho_dif_dif
         )
 
@@ -573,13 +585,9 @@ class ForwardModel:
         geom_tilt.cos_i = new_cosi
 
         # 3. Call get_L_coupled(...) for the modified geometry and store these radiances
-        (
-            L_tot_tilt,
-            L_dir_dir_tilt,
-            L_dif_dir_tilt,
-            L_dir_dif_tilt,
-            L_dif_dif_tilt,
-        ) = self.get_L_coupled(r, geom_tilt, rho_dif_dif=rho_dif_dif)
+        _, L_dir_dir_tilt, L_dif_dir_tilt, _, _ = self.get_L_coupled(
+            r, geom_tilt, rho_dif_dif=rho_dif_dif
+        )
 
         # 4. Assuming the background reflectance is the same for the tilted and original surface, we have:
         # L_dir_dir * rho_dir_dir + L_dif_dir * rho_dif_dir = (L_dir_dir_tilt + L_dif_dir_tilt) * rho_tilt
@@ -589,6 +597,58 @@ class ForwardModel:
         )
 
         return rho_tilt
+
+    def calc_tilt_ratio(
+        self,
+        rfl: np.ndarray,
+        x_atmosphere: np.ndarray,
+        x_instrument: np.ndarray,
+        geom: Geometry,
+    ):
+        """Ratio of DEM-tilted to flat (geoid-relative) Lambertian reflectance,
+        one value per instrument channel. The flat reflectance is tilted from
+        geom.cos_i to the DEM local illumination geom.cos_i_dem.
+
+        Note:   This function is only applicable to the 6c run case
+                where r contains populated separated transmittances
+
+        Args:
+            rfl:          flat Lambertian reflectance at surface wavelengths
+            x_atmosphere: atmosphere portion of the state vector
+            x_instrument: instrument portion of the state vector
+            geom:         Geometry object for the current observation
+
+        Returns:
+            ratio: tilted / flat reflectance, NaN where the ratio is undefined
+        """
+        if not self.atmosphere.multipart_transmittance:
+            raise ValueError("Tilt ratios require multipart_transmittance (6c) mode")
+        if geom.cos_i_dem is None:
+            raise ValueError("Tilt ratios require the DEM cos(i) from an obs file")
+
+        rho_hi = self.upsample(self.surface.wl, rfl)
+        rho_dif_dif_hi = (
+            self.upsample(self.surface.wl, geom.bg_rfl)
+            if isinstance(geom.bg_rfl, np.ndarray)
+            else rho_hi
+        )
+        r = self.atmosphere.get(x_atmosphere, geom)
+
+        # NOTE potential issue: only cos(i) changes, so the flat and tilted
+        # calculations share geom.skyview_factor. A strictly geoid-relative flat
+        # surface would see the full sky (svf = 1), while the tilted one sees
+        # the DEM sky view. Revisit if flat runs with a sky view file show
+        # biased ratios.
+        rho_tilt_hi = self.tilt_reflectance(
+            r, geom, geom.cos_i_dem, rho_hi, rho_hi, rho_dif_dif_hi
+        )
+        rho_tilt = self.instrument.sample(x_instrument, self.atmosphere.wl, rho_tilt_hi)
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            ratio = rho_tilt / rfl
+        ratio[~np.isfinite(ratio)] = np.nan
+
+        return ratio
 
     def calc_rdn(
         self,

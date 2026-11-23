@@ -41,6 +41,7 @@ from isofit.core.multistate import (
     index_spectra_by_surface,
     update_config_for_surface,
 )
+from isofit.core.tilt import TiltBasis
 from isofit.inversion.inverse_simple import (
     invert_algebraic,
     invert_analytical,
@@ -81,9 +82,14 @@ def analytical_line(
     logfile: str = None,
     initializer: str = "algebraic",
     segmentation_size: int = 40,
+    output_tilt_file: str = None,
 ) -> None:
     """
     TODO: Description
+
+    If output_tilt_file is given, also writes the PCA coefficients of the
+    ratio between DEM-tilted and flat reflectance, using the basis in
+    forward_model.atmosphere.tilt_basis_file.
     """
     logging.basicConfig(
         format="%(levelname)s:%(asctime)s ||| %(message)s",
@@ -254,6 +260,42 @@ def analytical_line(
         non_rfl_output = None
         non_rfl_unc_output = None
 
+    # Construct DEM-tilt coefficient output
+    if output_tilt_file:
+        issues = config.get_tilt_issues()
+        if issues:
+            raise ValueError("; ".join(issues))
+
+        tilt_basis = TiltBasis(
+            config.forward_model.atmosphere.tilt_basis_file,
+            wl_init,
+            config.implementation.inversion.windows,
+        )
+        tilt_metadata = {
+            "data type": 4,
+            "file type": "ENVI Standard",
+            "byte order": 0,
+            "no data value": -9999,
+            "lines": rdn_meta["lines"],
+            "samples": rdn_meta["samples"],
+            "interleave": "bil",
+            "band names": tilt_basis.band_names,
+        }
+        if "map info" in output_metadata:
+            tilt_metadata["map info"] = output_metadata["map info"]
+
+        tilt_output = initialize_output(
+            tilt_metadata,
+            output_tilt_file,
+            (rdns[0], tilt_basis.n_components, rdns[1]),
+            bands=f"{tilt_basis.n_components}",
+            description=(
+                f"L2A Analytical per-pixel DEM-tilt ratio PCA coefficients (tilt_basis_file={config.forward_model.atmosphere.tilt_basis_file}, segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
+            ),
+        )
+    else:
+        tilt_output = None
+
     # Ray initialization
     ray_dict = {
         "ignore_reinit_error": config.implementation.ray_ignore_reinit_error,
@@ -310,6 +352,7 @@ def analytical_line(
             initializer,
             skyview_factor_file,
             bgrfl_file,
+            tilt_output,
         ]
         workers = ray.util.ActorPool([Worker.remote(*wargs) for _ in range(n_workers)])
 
@@ -373,6 +416,7 @@ class Worker(object):
         initializer: str,
         skyview_factor_file: str,
         bgrfl_file: str,
+        tilt_output: str = None,
     ):
         """
         Worker class to help run a subset of spectra.
@@ -445,6 +489,7 @@ class Worker(object):
         self.unc_outpath = unc_output
         self.non_rfl_outpath = non_rfl_output
         self.non_rfl_unc_outpath = non_rfl_unc_output
+        self.tilt_outpath = tilt_output
 
         self.completed_spectra = 0
         self.hash_table = OrderedDict()
@@ -505,6 +550,15 @@ class Worker(object):
 
             output_non_rfl_unc = (
                 envi.open(envi_header(self.non_rfl_unc_outpath))
+                .open_memmap(interleave="bip", writable=False)[
+                    start_line:stop_line, ...
+                ]
+                .copy()
+            )
+
+        if self.tilt_outpath:
+            output_tilt = (
+                envi.open(envi_header(self.tilt_outpath))
                 .open_memmap(interleave="bip", writable=False)[
                     start_line:stop_line, ...
                 ]
@@ -642,6 +696,14 @@ class Worker(object):
                     self.n_rfl_bands : self.n_rfl_bands + self.n_non_rfl_bands
                 ]
 
+            # Save the DEM-tilt ratio coefficients
+            if self.tilt_outpath:
+                _, x_atm, x_inst = self.fm.unpack(state_est)
+                ratio = self.fm.calc_tilt_ratio(
+                    self.fm.calc_lamb(state_est, geom), x_atm, x_inst, geom
+                )
+                output_tilt[r - start_line, c, :] = self.fm.tilt_basis.project(ratio)
+
         logging.info(
             f"Analytical line writing lines: {start_line} to {stop_line}. "
             f"Surface: {self.surface_class_str}"
@@ -679,6 +741,14 @@ class Worker(object):
                 (self.n_lines, self.n_non_rfl_bands, self.n_samples),
             )
 
+        if self.tilt_outpath:
+            write_bil_chunk(
+                np.swapaxes(output_tilt, 1, 2),
+                self.tilt_outpath,
+                start_line,
+                (self.n_lines, output_tilt.shape[2], self.n_samples),
+            )
+
 
 @click.command(name="analytical_line")
 @click.argument("rdn_file")
@@ -695,6 +765,12 @@ class Worker(object):
 @click.option("--skyview_factor_file", help="TODO", type=str, default=None)
 @click.option("--bgrfl_file", help="TODO", type=str, default=None)
 @click.option("--atm_file", help="TODO", type=str, default=None)
+@click.option(
+    "--output_tilt_file",
+    help="Output file for DEM-tilt ratio PCA coefficients",
+    type=str,
+    default=None,
+)
 @click.option("--loglevel", help="TODO", type=str, default="INFO")
 @click.option("--logfile", help="TODO", type=str, default=None)
 def cli(**kwargs):

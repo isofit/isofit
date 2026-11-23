@@ -41,6 +41,7 @@ from isofit.core.common import (
 )
 from isofit.core.geometry import Geometry
 from isofit.core.multistate import fill_statevector
+from isofit.core.tilt import TiltBasis
 from isofit.data import env
 from isofit.inversion.inverse_simple import invert_algebraic
 
@@ -347,6 +348,21 @@ class SpectrumFile:
             self.dataset.to_netcdf(self.fname)
 
 
+def output_band_names(
+    key: str, wl_names: list, sv_names: list, tilt_names: list = None
+):
+    """Band names for an output product, from its header band-name key."""
+    if key == "statevector":
+        return sv_names
+    elif key == "wavelength":
+        return wl_names
+    elif key == "atm_coeffs":
+        return wl_names * 5
+    elif key == "tilt_pcs":
+        return tilt_names
+    return "{}"
+
+
 class InputData:
     def __init__(self):
         self.meas = None
@@ -396,6 +412,18 @@ class IO:
         wl_names = [("Channel %i" % i) for i in range(self.n_chan)]
         sv_names = self.full_statevec.copy()
 
+        # PCA basis for DEM-tilt ratio coefficients, if that output is requested
+        self.tilt_basis = None
+        tilt_names = None
+        if config.output.tilt_coefficients_file is not None:
+            if forward.tilt_basis is None:
+                raise ValueError(
+                    "output.tilt_coefficients_file requires "
+                    "forward_model.atmosphere.tilt_basis_file"
+                )
+            self.tilt_basis = forward.tilt_basis
+            tilt_names = self.tilt_basis.band_names
+
         self.input_datasets, self.output_datasets, self.map_info = {}, {}, "{}"
 
         # Load input files and record relevant metadata
@@ -420,15 +448,7 @@ class IO:
             *self.config.output.get_output_files()
         ):
             band_names, ztitle, zrange = element_header
-
-            if band_names == "statevector":
-                band_names = sv_names
-            elif band_names == "wavelength":
-                band_names = wl_names
-            elif band_names == "atm_coeffs":
-                band_names = wl_names * 5
-            else:
-                band_names = "{}"
+            band_names = output_band_names(band_names, wl_names, sv_names, tilt_names)
 
             n_bands = len(band_names)
             self.output_datasets[element_name] = SpectrumFile(
@@ -604,7 +624,7 @@ class IO:
 
         if len(states) == 0:
             # Write a bad data flag
-            atm_bad = np.zeros(len(fm.instrument.n_chan) * 5) + fill_value
+            atm_bad = np.zeros(fm.instrument.n_chan * 5) + fill_value
             state_bad = np.zeros(len(fm.statevec)) + fill_value
             data_bad = np.zeros(fm.instrument.n_chan) + fill_value
             to_write = {
@@ -621,6 +641,10 @@ class IO:
                 "spectral_calibration_file": data_bad,
                 "posterior_uncertainty_file": state_bad,
             }
+            if self.tilt_basis is not None:
+                to_write["tilt_coefficients_file"] = (
+                    np.zeros(self.tilt_basis.n_components) + fill_value
+                )
 
         else:
             to_write = {}
@@ -695,6 +719,7 @@ class IO:
                     "apparent_reflectance_file",
                     "modeled_radiance_file",
                     "simulated_measurement_file",
+                    "tilt_coefficients_file",
                 ]
                 for item in self.output_datasets
             ):
@@ -734,6 +759,11 @@ class IO:
                 )
 
             x_surface, x_RT, x_instrument = fm.unpack(state_est)
+
+            if "tilt_coefficients_file" in self.output_datasets:
+                ratio = fm.calc_tilt_ratio(lamb_est, x_RT, x_instrument, geom)
+                to_write["tilt_coefficients_file"] = self.tilt_basis.project(ratio)
+
             if any(
                 item in ["algebraic_inverse_file", "atmospheric_coefficients_file"]
                 for item in self.output_datasets
@@ -822,19 +852,21 @@ class IO:
         bbl = "{" + ",".join([str(1) for n in range(len(wl_init))]) + "}"
         engine_name = config.forward_model.atmosphere.engine.name
 
+        tilt_names = None
+        if config.output.tilt_coefficients_file is not None:
+            tilt_names = TiltBasis(
+                config.forward_model.atmosphere.tilt_basis_file,
+                wl_init,
+                config.implementation.inversion.windows,
+            ).band_names
+
         for element, element_header, element_name in zip(
             *config.output.get_output_files()
         ):
             band_names, ztitle, zrange = element_header
-
-            if band_names == "statevector":
-                band_names = full_statevector
-            elif band_names == "wavelength":
-                band_names = wl_names
-            elif band_names == "atm_coeffs":
-                band_names = wl_names * 5
-            else:
-                band_names = "{}"
+            band_names = output_band_names(
+                band_names, wl_names, full_statevector, tilt_names
+            )
 
             n_bands = len(band_names)
             _ = SpectrumFile(

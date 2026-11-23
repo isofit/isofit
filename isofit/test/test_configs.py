@@ -591,3 +591,114 @@ def test_example_configs(path, monkeypatch):
 
     config = create_new_config(file)
     config.get_config_errors()
+
+
+# DEM-tilt coefficient configuration
+
+
+def tilt_config() -> Config:
+    """A config satisfying every requirement for tilt coefficients."""
+    data = legacy_config({"engine_name": "6s"})
+    data["forward_model"]["surface"] = {
+        "surface_category": "multicomponent_surface",
+        "surface_file": "surface.mat",
+        "terrain_style": "flat",
+    }
+    config = validate(data)
+    config.forward_model.atmosphere.tilt_basis_file = Path("tilt_basis.mat")
+    config.forward_model.atmosphere.multipart_transmittance = True
+    config.input.obs_file = Path("obs")
+    config.output.tilt_coefficients_file = Path("tilt")
+    return config
+
+
+def test_tilt_fields_default_to_none():
+    config = Config()
+    assert config.forward_model.atmosphere.tilt_basis_file is None
+    assert config.output.tilt_coefficients_file is None
+
+
+def test_tilt_output_file_header():
+    output = OutputConfig(tilt_coefficients_file="tilt")
+    elements, headers, names = output.get_output_files()
+    assert names == ["tilt_coefficients_file"]
+    assert headers[0][0] == "tilt_pcs"
+
+
+def test_tilt_config_valid():
+    config = tilt_config()
+    assert config.get_tilt_issues() == []
+    config.get_config_errors()
+
+
+def _dem_sub_surface(config):
+    from isofit.configs.sections.surface import SubSurfaceConfig
+
+    config.forward_model.surface.Surfaces = {
+        "multicomponent_surface": SubSurfaceConfig(
+            surface_category="multicomponent_surface",
+            surface_file="a.mat",
+            surface_int=0,
+            terrain_style="dem",
+        )
+    }
+
+
+@pytest.mark.parametrize(
+    "breaks, match",
+    [
+        (
+            lambda c: setattr(c.forward_model.atmosphere, "tilt_basis_file", None),
+            "tilt_basis_file",
+        ),
+        (
+            lambda c: setattr(
+                c.forward_model.atmosphere, "multipart_transmittance", False
+            ),
+            "multipart_transmittance",
+        ),
+        (
+            lambda c: setattr(c.forward_model.surface, "terrain_style", "dem"),
+            "terrain_style",
+        ),
+        (_dem_sub_surface, "terrain_style"),
+        (lambda c: setattr(c.input, "obs_file", None), "obs_file"),
+    ],
+)
+def test_tilt_config_issues(breaks, match):
+    """Each unmet requirement is reported, and fails get_config_errors."""
+    config = tilt_config()
+    breaks(config)
+
+    issues = config.get_tilt_issues()
+    assert len(issues) == 1 and match in issues[0]
+    with pytest.raises(AttributeError):
+        config.get_config_errors()
+
+
+def test_tilt_basis_without_output_is_allowed():
+    """The superpixel config of apply_oe carries the basis but not the output."""
+    config = tilt_config()
+    config.output.tilt_coefficients_file = None
+    config.forward_model.surface.terrain_style = "dem"
+    config.get_config_errors()
+
+
+def test_make_atmosphere_config_tilt_basis(tmp_path):
+    from isofit.utils.template_construction import make_atmosphere_config
+
+    for name in ("emulator.h5", "emulator_aux.npz", "template.json"):
+        (tmp_path / name).touch()
+
+    kwargs = dict(
+        lut_directory=str(tmp_path),
+        modtran_template_path=str(tmp_path / "template.json"),
+        emulator_base=str(tmp_path / "emulator.h5"),
+        sixs_path=str(tmp_path),
+        h2o_lut_grid=np.array([0.5, 1.0]),
+    )
+    assert "tilt_basis_file" not in make_atmosphere_config(**kwargs)
+
+    atmosphere = make_atmosphere_config(**kwargs, tilt_basis_path="basis.mat")
+    validated = AtmosphereConfig.model_validate(atmosphere)
+    assert validated.tilt_basis_file == Path("basis.mat")

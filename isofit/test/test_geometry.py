@@ -126,3 +126,33 @@ def test_coszen_priority(input_obs):
 
     assert geom.coszen == user_coszen
     assert geom.use_universal_coszen is True
+
+
+def _flat_config(max_slope=20.0):
+    full_config = MagicMock()
+    full_config.forward_model.atmosphere.lut_grid = None
+    full_config.forward_model.surface.max_slope = max_slope
+    full_config.forward_model.surface.terrain_style = "flat"
+    return full_config
+
+
+def test_cos_i_dem_kept_when_flat(input_obs):
+    """Flat terrain sets cos_i to coszen, but keeps the obs-file cos(i) as cos_i_dem."""
+    geom = Geometry(obs=input_obs, coszen=0.7, full_config=_flat_config())
+
+    assert geom.cos_i == 0.7
+    assert geom.cos_i_dem == 0.5
+
+
+@pytest.mark.parametrize("cos_i_obs", [0.01, 1.2])
+def test_cos_i_dem_clipped(input_obs, cos_i_obs):
+    """cos_i_dem is clipped to [min_cosi, 1], as cos_i is for DEM terrain."""
+    input_obs[8] = cos_i_obs
+    geom = Geometry(obs=input_obs, coszen=0.7, full_config=_flat_config())
+
+    assert geom.min_cosi > 0.01
+    assert geom.cos_i_dem == np.clip(cos_i_obs, geom.min_cosi, 1.0)
+
+
+def test_cos_i_dem_without_obs():
+    assert Geometry(coszen=0.7).cos_i_dem is None

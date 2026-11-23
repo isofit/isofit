@@ -116,6 +116,8 @@ def apply_oe(
     pixel_heuristic_priors=[],
     datestr=None,
     libradtran_band_model=None,
+    tilt_basis_file=None,
+    output_tilt_coefficients_file=None,
 ):
     """
     Applies OE over a flightline using an atmospheric radiative transfer engine. This executes
@@ -276,6 +278,15 @@ def apply_oe(
         for all other sensors.
     libradtran_band_model: str, default=None
         Provide a band model override to the libradtran atmospheric radiative transfer model.
+    tilt_basis_file : str, default=None
+        Path to a .mat file holding a PCA basis (wl, bases, optional mean) for the
+        ratio between DEM-tilted and flat reflectance. Required by
+        output_tilt_coefficients_file
+    output_tilt_coefficients_file : str, default=None
+        Path to write the per-pixel PCA coefficients of the ratio between
+        DEM-tilted and flat reflectance, so flat (geoid-relative) reflectance can
+        later be converted to DEM-relative reflectance. Requires
+        tilt_basis_file, terrain_style "flat", and multipart transmittance (6c)
 
     References
     ----------
@@ -336,6 +347,20 @@ def apply_oe(
             "ApplyOE must use multi-part transmittance to enable heterogeneous background reflectance."
         )
 
+    if output_tilt_coefficients_file:
+        if not tilt_basis_file:
+            raise ValueError(
+                "output_tilt_coefficients_file requires tilt_basis_file to be set"
+            )
+        if terrain_style != "flat":
+            raise ValueError(
+                'output_tilt_coefficients_file requires terrain_style "flat"'
+            )
+        if not multipart_transmittance:
+            raise ValueError(
+                "output_tilt_coefficients_file requires multi-part transmittance (6c)."
+            )
+
     # Load in water column upper bound polynomials
     modtran_polynomials_dict = modtran_water_upperbound_polynomials()
     if atmosphere_type not in modtran_polynomials_dict:
@@ -359,6 +384,12 @@ def apply_oe(
         filename=log_file,
         datefmt="%Y-%m-%d,%H:%M:%S",
     )
+
+    if tilt_basis_file and not output_tilt_coefficients_file:
+        logging.warning(
+            "tilt_basis_file is set without output_tilt_coefficients_file; ignoring it"
+        )
+        tilt_basis_file = None
 
     # Track system resources to a file adjacent to the log file
     fr = None
@@ -468,6 +499,8 @@ def apply_oe(
         use_background_rfl=use_background_rfl,
         dn_uncertainty_file=dn_uncertainty_file,
         eof_path=eof_path,
+        tilt_basis_file=tilt_basis_file,
+        output_tilt_coefficients_file=output_tilt_coefficients_file,
     )
     paths.make_directories()
     paths.stage_files()
@@ -944,7 +977,14 @@ def apply_oe(
                 logging.info(cmd)
                 subprocess.call(cmd, shell=True)
 
-    if not exists(paths.rfl_working_path) or not exists(paths.uncert_working_path):
+    tilt_missing = paths.tilt_coefficients_working_path is not None and not exists(
+        paths.tilt_coefficients_working_path
+    )
+    if (
+        not exists(paths.rfl_working_path)
+        or not exists(paths.uncert_working_path)
+        or tilt_missing
+    ):
         # Determine the number of neighbors to use.  Provides backwards stability and works
         # well with defaults, but is arbitrary
         if not num_neighbors:
@@ -969,6 +1009,10 @@ def apply_oe(
                 nneighbors=nneighbors[0],
                 n_cores=n_cores,
                 segmentation_size=segmentation_size,
+                input_obs_file=paths.obs_working_path,
+                skyview_factor_file=paths.svf_working_path,
+                bgrfl_file=paths.bgrfl_working_path,
+                output_tilt_file=paths.tilt_coefficients_working_path,
             )
         elif analytical_line:
             logging.info("Analytical line inference")
@@ -988,6 +1032,7 @@ def apply_oe(
                 n_cores=n_cores,
                 smoothing_sigma=atm_sigma,
                 segmentation_size=segmentation_size,
+                output_tilt_file=paths.tilt_coefficients_working_path,
             )
     # Remove any other large temporary files created during ApplyOE
     if remove_bgrfl_file:
@@ -1070,6 +1115,8 @@ def apply_oe(
     is_flag=True,
 )
 @click.option("--libradtran_band_model", default=None)
+@click.option("--tilt_basis_file", type=str, default=None)
+@click.option("--output_tilt_coefficients_file", type=str, default=None)
 @click.option("--profile")
 def cli(debug_args, profile, **kwargs):
     if debug_args:

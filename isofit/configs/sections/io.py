@@ -248,6 +248,15 @@ class OutputConfig(SectionModel):
         examples=["isofit-output/posterior_uncertainty"],
     )
 
+    tilt_coefficients_file: Optional[Path] = Field(
+        description=(
+            "Output file for PCA coefficients of the ratio between DEM-tilted and "
+            "flat reflectance. Requires ``forward_model.atmosphere.tilt_basis_file`` "
+            "and a flat ``terrain_style``"
+        ),
+        examples=["isofit-output/tilt_coefficients"],
+    )
+
     plot_surface_components: bool = Field(
         description="If True, generate diagnostic plots of surface components",
         examples=[False],
@@ -316,6 +325,11 @@ class OutputConfig(SectionModel):
         "posterior_uncertainty_file": (
             "statevector",
             "{State Parameter, Value}",
+            "{}",
+        ),
+        "tilt_coefficients_file": (
+            "tilt_pcs",
+            "{PCA Component, Tilt Ratio Coefficient}",
             "{}",
         ),
     }
