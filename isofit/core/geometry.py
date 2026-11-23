@@ -58,6 +58,7 @@ class Geometry:
 
         self.bg_rfl = bg_rfl
         self.cos_i = None
+        self.cos_i_dem = None
         self.skyview_factor = svf
 
         self.max_slope = 0.0
@@ -73,6 +74,8 @@ class Geometry:
             self.solar_azimuth = obs[3]  # 0 to 360 clockwise from N
             self.solar_zenith = obs[4]  # 0 to 90 from zenith
             self.cos_i = obs[8]  # cosine of eSZA
+            # DEM cosine of eSZA, retained even when terrain_style is flat
+            self.cos_i_dem = obs[8]
             # calculate relative to-sun azimuth
             delta_phi = np.abs(self.solar_azimuth - self.observer_azimuth)
             self.relative_azimuth = np.minimum(delta_phi, 360 - delta_phi)  # 0 to 180
@@ -156,6 +159,8 @@ class Geometry:
             # Check bounds
             self.coszen = max(self.min_cosi, min(self.coszen, 1.0))
             self.cos_i = max(self.min_cosi, min(self.cos_i, 1.0))
+            if self.cos_i_dem is not None:
+                self.cos_i_dem = max(self.min_cosi, min(self.cos_i_dem, 1.0))
             self.skyview_factor = (
                 1.0 if not 0 < self.skyview_factor <= 1 else self.skyview_factor
             )

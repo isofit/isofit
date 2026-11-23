@@ -124,6 +124,8 @@ class Config(SectionModel):
         -----
         The following inter-field validations are performed:
         - Simulation mode requires input.reflectance_file to be set
+        - output.tilt_coefficients_file requires the conditions of
+          :meth:`get_tilt_issues`
         - The surface checks of :meth:`SurfaceConfig.get_config_issues`, which
           read the surface model files
         """
@@ -146,6 +148,10 @@ class Config(SectionModel):
                 "input.reflectance_file must be set"
             )
 
+        # 2. DEM-tilt coefficients
+        if self.output.tilt_coefficients_file is not None:
+            errors.extend(self.get_tilt_issues())
+
         # Log warnings
         for w in warnings:
             Logger.warning(w)
@@ -158,3 +164,44 @@ class Config(SectionModel):
             raise AttributeError("Configuration error(s) found. See log for details.")
 
         Logger.info("Configuration file checks complete, no errors found.")
+
+    def get_tilt_issues(self) -> list[str]:
+        """
+        Reasons this config cannot produce DEM-tilt ratio coefficients.
+
+        Tilt coefficients transform flat (geoid-relative) reflectance to the
+        DEM illumination geometry, so they need a basis file, flat terrain,
+        multipart (6c) transmittances, and an obs file for the DEM cos(i).
+
+        Returns
+        -------
+        list[str]
+            One message per unmet requirement; empty if none.
+        """
+        issues = []
+        atmosphere = self.forward_model.atmosphere
+        surface = self.forward_model.surface
+
+        if atmosphere.tilt_basis_file is None:
+            issues.append(
+                "Tilt coefficients require forward_model.atmosphere.tilt_basis_file"
+            )
+        if not atmosphere.multipart_transmittance:
+            issues.append(
+                "Tilt coefficients require "
+                "forward_model.atmosphere.multipart_transmittance"
+            )
+        if surface is not None:
+            styles = [surface.terrain_style] + [
+                getattr(sub, "terrain_style", surface.terrain_style)
+                for sub in surface.Surfaces.values()
+            ]
+            if any(style != "flat" for style in styles):
+                issues.append(
+                    "Tilt coefficients require forward_model.surface.terrain_style "
+                    "'flat' for every surface"
+                )
+        if self.input.obs_file is None:
+            issues.append("Tilt coefficients require input.obs_file")
+
+        return issues

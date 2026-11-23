@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 import logging
-from copy import deepcopy
+from copy import copy, deepcopy
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -32,6 +32,7 @@ from isofit.core.common import PriorUpdate, eps, svd_inv_sqrt
 from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
 from isofit.core.multistate import match_statevector
+from isofit.core.tilt import TiltBasis
 from isofit.core.units import transm_to_rdn
 from isofit.surface import Surface
 
@@ -157,6 +158,17 @@ class ForwardModel:
             self.model_discrepancy = D["cov"]
         else:
             self.model_discrepancy = None
+
+        # Load the PCA basis for DEM-tilt ratio coefficients
+        tilt_basis_file = full_config.forward_model.atmosphere.tilt_basis_file
+        if tilt_basis_file is not None:
+            self.tilt_basis = TiltBasis(
+                tilt_basis_file,
+                self.instrument.wl_init,
+                full_config.implementation.inversion.windows,
+            )
+        else:
+            self.tilt_basis = None
 
         if self.surface.use_background_rfl:
             self.calc_rdn_bgrfl = self.calc_rdn_bgrfl_heterogeneous
@@ -531,6 +543,112 @@ class ForwardModel:
         L_dif_dif /= eq_11_term
 
         return L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
+
+    def tilt_reflectance(
+        self,
+        r: dict,
+        geom: Geometry,
+        new_cosi: float,
+        rho_dir_dir: np.ndarray,
+        rho_dif_dir: np.ndarray,
+        rho_dif_dif: np.ndarray = 0,
+    ):
+        """Convert surface reflectance under the current local illumination
+        geometry into the equivalent Lambertian reflectance of a surface tilted
+        to a new local solar incidence angle, such that both surfaces produce
+        the same target-dependent radiance.
+
+        Note:   This function is only applicable to the 6c run case
+                where r contains populated separated transmittances
+
+        Args:
+            r:           interpolated radiative transfer quantities from the LUT
+            geom:        Geometry object for the current observation
+            new_cosi:    cosine of the local solar zenith angle of the tilted surface
+            rho_dir_dir: directional-directional surface reflectance
+            rho_dif_dir: diffuse-directional surface reflectance
+            rho_dif_dif: diffuse-diffuse (background) surface reflectance
+
+            All reflectances are on the atmosphere (LUT) wavelength grid.
+
+        Returns:
+            rho_tilt: Lambertian reflectance of the tilted surface
+        """
+
+        # 1. Call get_L_coupled(...) for the current geometry and store these radiances
+        _, L_dir_dir, L_dif_dir, _, _ = self.get_L_coupled(
+            r, geom, rho_dif_dif=rho_dif_dif
+        )
+
+        # 2. Create a modified geometry object using the new cosine i
+        geom_tilt = copy(geom)
+        geom_tilt.cos_i = new_cosi
+
+        # 3. Call get_L_coupled(...) for the modified geometry and store these radiances
+        _, L_dir_dir_tilt, L_dif_dir_tilt, _, _ = self.get_L_coupled(
+            r, geom_tilt, rho_dif_dif=rho_dif_dif
+        )
+
+        # 4. Assuming the background reflectance is the same for the tilted and original surface, we have:
+        # L_dir_dir * rho_dir_dir + L_dif_dir * rho_dif_dir = (L_dir_dir_tilt + L_dif_dir_tilt) * rho_tilt
+        # We solve for rho_tilt and return that
+        rho_tilt = (L_dir_dir * rho_dir_dir + L_dif_dir * rho_dif_dir) / (
+            L_dir_dir_tilt + L_dif_dir_tilt
+        )
+
+        return rho_tilt
+
+    def calc_tilt_ratio(
+        self,
+        rfl: np.ndarray,
+        x_atmosphere: np.ndarray,
+        x_instrument: np.ndarray,
+        geom: Geometry,
+    ):
+        """Ratio of DEM-tilted to flat (geoid-relative) Lambertian reflectance,
+        one value per instrument channel. The flat reflectance is tilted from
+        geom.cos_i to the DEM local illumination geom.cos_i_dem.
+
+        Note:   This function is only applicable to the 6c run case
+                where r contains populated separated transmittances
+
+        Args:
+            rfl:          flat Lambertian reflectance at surface wavelengths
+            x_atmosphere: atmosphere portion of the state vector
+            x_instrument: instrument portion of the state vector
+            geom:         Geometry object for the current observation
+
+        Returns:
+            ratio: tilted / flat reflectance, NaN where the ratio is undefined
+        """
+        if not self.atmosphere.multipart_transmittance:
+            raise ValueError("Tilt ratios require multipart_transmittance (6c) mode")
+        if geom.cos_i_dem is None:
+            raise ValueError("Tilt ratios require the DEM cos(i) from an obs file")
+
+        rho_hi = self.upsample(self.surface.wl, rfl)
+        rho_dif_dif_hi = (
+            self.upsample(self.surface.wl, geom.bg_rfl)
+            if isinstance(geom.bg_rfl, np.ndarray)
+            else rho_hi
+        )
+        r = self.atmosphere.get(x_atmosphere, geom)
+
+        # NOTE potential issue: only cos(i) changes, so the flat and tilted
+        # calculations share geom.skyview_factor. A strictly geoid-relative flat
+        # surface would see the full sky (svf = 1), while the tilted one sees
+        # the DEM sky view. Revisit if flat runs with a sky view file show
+        # biased ratios.
+        rho_tilt_hi = self.tilt_reflectance(
+            r, geom, geom.cos_i_dem, rho_hi, rho_hi, rho_dif_dif_hi
+        )
+        rho_tilt = self.instrument.sample(x_instrument, self.atmosphere.wl, rho_tilt_hi)
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            ratio = rho_tilt / rfl
+        ratio[~np.isfinite(ratio)] = np.nan
+
+        return ratio
 
     def calc_rdn(
         self,

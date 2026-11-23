@@ -1,8 +1,10 @@
 from datetime import datetime
 from os.path import basename
+from unittest.mock import MagicMock
 
 import pytest
 
+import isofit.utils.template_construction as tmpl
 from isofit.data import env
 from isofit.utils.template_construction import Pathnames, get_sensor_metadata_from_fid
 
@@ -76,3 +78,89 @@ def test_custom_sensor_requires_datestr():
 def test_custom_sensor_datestr_no_match():
     with pytest.raises(ValueError, match="does not start with a date"):
         get_sensor_metadata_from_fid("custom", "tile04", "emit%Y%m%dt%H%M%S")
+
+
+def test_tilt_pathnames(tmp_path, monkeypatch):
+    """The tilt basis is staged into the data directory, and the tilt output
+    path is kept as given."""
+    monkeypatch.setattr(env, "path", lambda *args, **kwargs: tmp_path)
+
+    paths = _pathnames(tmp_path, "tile04", "custom")
+    assert paths.tilt_basis_working_path is None
+    assert paths.tilt_coefficients_working_path is None
+
+    paths = Pathnames(
+        input_radiance=str(tmp_path / "tile04"),
+        input_loc=str(tmp_path / "loc"),
+        input_obs=str(tmp_path / "obs"),
+        surface_class_file=None,
+        surface_path=None,
+        working_directory=str(tmp_path / "work"),
+        ray_temp_dir=str(tmp_path / "ray"),
+        sensor="custom",
+        tilt_basis_file=str(tmp_path / "my_basis.mat"),
+        output_tilt_coefficients_file=str(tmp_path / "out" / "tile04_tilt"),
+    )
+    assert paths.tilt_basis_working_path == str(
+        tmp_path / "work" / "data" / "tilt_basis.mat"
+    )
+    assert paths.tilt_coefficients_working_path == str(tmp_path / "out" / "tile04_tilt")
+
+
+def test_make_output_config_tilt():
+    assert "tilt_coefficients_file" not in tmpl.make_output_config("state")
+    output = tmpl.make_output_config("state", tilt_output_path="tilt")
+    assert output["tilt_coefficients_file"] == "tilt"
+
+
+@pytest.mark.parametrize(
+    "use_superpixels, presolve, tilt_output, tilt_basis",
+    [
+        (False, False, "tilt", "basis.mat"),
+        (True, False, None, "basis.mat"),
+        (False, True, None, None),
+        (True, True, None, None),
+    ],
+)
+def test_build_config_tilt_paths(
+    monkeypatch, use_superpixels, presolve, tilt_output, tilt_basis
+):
+    """Only the full-resolution main solve writes tilt coefficients; every
+    non-presolve config carries the basis for the line algorithms."""
+    captured = {}
+
+    def capture(name):
+        def make(**kwargs):
+            captured[name] = kwargs
+            return {}
+
+        return make
+
+    for name in [
+        "make_input_config",
+        "make_output_config",
+        "make_instrument_config",
+        "make_atmosphere_config",
+        "make_surface_config",
+        "make_implementation_config",
+    ]:
+        monkeypatch.setattr(tmpl, name, capture(name))
+
+    class Validated(Exception):
+        pass
+
+    def stop(config):
+        raise Validated
+
+    monkeypatch.setattr(tmpl, "_validate_config", stop)
+
+    paths = MagicMock()
+    paths.tilt_coefficients_working_path = "tilt"
+    paths.tilt_basis_working_path = "basis.mat"
+    paths.input_model_discrepancy_path = None
+
+    with pytest.raises(Validated):
+        tmpl.build_config(paths, use_superpixels=use_superpixels, presolve=presolve)
+
+    assert captured["make_output_config"]["tilt_output_path"] == tilt_output
+    assert captured["make_atmosphere_config"]["tilt_basis_path"] == tilt_basis

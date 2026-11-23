@@ -179,6 +179,15 @@ class AtmosphereConfig(SectionModel):
         examples=["data/irradiance.txt"],
     )
 
+    tilt_basis_file: Path | None = Field(
+        description=(
+            "Optional .mat file with a PCA basis (``wl``, ``bases``, optional "
+            "``mean``) for the ratio between DEM-tilted and flat reflectance. "
+            "Required when ``output.tilt_coefficients_file`` is set"
+        ),
+        examples=["data/tilt_basis.mat"],
+    )
+
     @field_validator("lut_grid")
     @classmethod
     def validate_lut_grid(cls, v: dict[str, list[float]]) -> dict[str, list[float]]:

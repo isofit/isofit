@@ -5,6 +5,7 @@ import pytest
 
 from isofit.core.common import eps
 from isofit.core.forward import ForwardModel
+from isofit.core.geometry import Geometry
 
 # Radiance calculation tests
 
@@ -219,3 +220,169 @@ def test_get_L_coupled_cos_i_scaling():
 
     # L_dir_dir = r["L_dd"] / coszen * cos_i = 1.0 / 1.0 * 0.5 = 0.5
     assert np.allclose(L_dir_dir, 0.5)
+
+
+# tilt_reflectance tests
+
+
+def _mock_fm_tilt():
+    keys = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
+    fm = _mock_fm_6c(keys)
+    fm.terrain_rereflection = MagicMock(return_value=1.0)
+    fm.get_L_coupled = lambda *args, **kwargs: ForwardModel.get_L_coupled(
+        fm, *args, **kwargs
+    )
+    return fm, keys
+
+
+def test_tilt_reflectance_analytic():
+    """Tilting a half-illuminated surface toward the sun lowers its reflectance
+    by the ratio of target illumination: rho * (0.5 + 1) / (1 + 1)."""
+    fm, keys = _mock_fm_tilt()
+
+    n = 4
+    r = {k: np.ones(n) for k in keys}
+    r["transm_down_dir"] = np.zeros(n)
+    r["sphalb"] = np.zeros(n)
+
+    geom = Geometry(coszen=1.0)
+    geom.cos_i = 0.5
+
+    rho = np.full(n, 0.2)
+    rho_tilt = ForwardModel.tilt_reflectance(
+        fm, r, geom, 1.0, rho, rho, rho_dif_dif=rho
+    )
+
+    assert np.allclose(rho_tilt, 0.2 * 1.5 / 2.0)
+    assert geom.cos_i == 0.5
+
+
+def test_tilt_reflectance_identity():
+    """Lambertian reflectance is unchanged when the new cos_i equals the current one."""
+    fm, keys = _mock_fm_tilt()
+
+    n = 5
+    r = {k: np.linspace(1.0, 2.0, n) for k in keys}
+    r["transm_down_dir"] = np.full(n, 0.7)
+    r["sphalb"] = np.full(n, 0.1)
+
+    geom = Geometry(coszen=0.8)
+    geom.cos_i = 0.6
+
+    rho = np.linspace(0.1, 0.5, n)
+    rho_tilt = ForwardModel.tilt_reflectance(
+        fm, r, geom, geom.cos_i, rho, rho, rho_dif_dif=rho
+    )
+
+    assert np.allclose(rho_tilt, rho)
+
+
+def test_tilt_reflectance_conserves_target_radiance():
+    """The tilted reflectance reproduces the original target-dependent radiance."""
+    fm, keys = _mock_fm_tilt()
+
+    n = 6
+    r = {k: np.linspace(1.0, 3.0, n) * (i + 1) for i, k in enumerate(keys)}
+    r["transm_down_dir"] = np.full(n, 0.6)
+    r["sphalb"] = np.full(n, 0.15)
+
+    geom = Geometry(coszen=0.7, svf=0.9)
+    geom.cos_i = 0.4
+    new_cosi = 0.95
+
+    rho_dir_dir = np.linspace(0.1, 0.4, n)
+    rho_dif_dir = np.linspace(0.12, 0.38, n)
+    rho_dif_dif = np.full(n, 0.25)
+
+    rho_tilt = ForwardModel.tilt_reflectance(
+        fm, r, geom, new_cosi, rho_dir_dir, rho_dif_dir, rho_dif_dif=rho_dif_dif
+    )
+
+    _, L_dd, L_fd, _, _ = ForwardModel.get_L_coupled(fm, r, geom, rho_dif_dif)
+    geom.cos_i = new_cosi
+    _, L_dd_t, L_fd_t, _, _ = ForwardModel.get_L_coupled(fm, r, geom, rho_dif_dif)
+
+    rdn = L_dd * rho_dir_dir + L_fd * rho_dif_dir
+    rdn_tilt = (L_dd_t + L_fd_t) * rho_tilt
+    assert np.allclose(rdn, rdn_tilt)
+
+
+# calc_tilt_ratio tests
+
+
+def _mock_fm_tilt_ratio(r, n):
+    """6c forward model mock with identical surface, atmosphere and instrument
+    wavelength grids, so upsampling and instrument sampling are identities."""
+    fm, _ = _mock_fm_tilt()
+    fm.atmosphere.multipart_transmittance = True
+    fm.atmosphere.get = MagicMock(return_value=r)
+    fm.atmosphere.wl = np.linspace(400.0, 2500.0, n)
+    fm.surface.wl = fm.atmosphere.wl
+    fm.upsample = lambda wl, q: q
+    fm.instrument.sample = lambda x_instrument, wl_hi, q: q
+    fm.tilt_reflectance = lambda *args, **kwargs: ForwardModel.tilt_reflectance(
+        fm, *args, **kwargs
+    )
+    return fm
+
+
+def _flat_geom(cos_i_dem, coszen=1.0):
+    """Geometry of a flat (geoid-relative) retrieval with a DEM cos(i)."""
+    geom = Geometry(coszen=coszen)
+    geom.cos_i_dem = cos_i_dem
+    return geom
+
+
+def test_calc_tilt_ratio_untilted_is_one():
+    """When the DEM cos(i) equals the flat one, the ratio is 1 everywhere."""
+    n = 6
+    r = {
+        k: np.linspace(1.0, 2.0, n)
+        for k in ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
+    }
+    r["transm_down_dir"] = np.full(n, 0.6)
+    r["sphalb"] = np.full(n, 0.1)
+    fm = _mock_fm_tilt_ratio(r, n)
+
+    geom = _flat_geom(cos_i_dem=0.8, coszen=0.8)
+    ratio = ForwardModel.calc_tilt_ratio(
+        fm, np.linspace(0.1, 0.5, n), np.zeros(2), np.zeros(0), geom
+    )
+
+    assert np.allclose(ratio, 1.0)
+
+
+def test_calc_tilt_ratio_analytic():
+    """For a Lambertian surface the ratio is (L_dd + L_fd) / (L_dd_t + L_fd_t),
+    independent of reflectance and finite for negative reflectance; it is
+    undefined (NaN) only where the flat reflectance is zero."""
+    n = 5
+    r = {k: np.ones(n) for k in ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]}
+    r["transm_down_dir"] = np.zeros(n)
+    r["sphalb"] = np.zeros(n)
+    fm = _mock_fm_tilt_ratio(r, n)
+
+    # Flat: L_dd = 1, L_fd = 1. Tilted to cos(i) 0.5: L_dd = 0.5, L_fd = 1
+    geom = _flat_geom(cos_i_dem=0.5)
+    rfl = np.array([0.2, 0.5, -0.01, 0.0, 0.9])
+    ratio = ForwardModel.calc_tilt_ratio(fm, rfl, np.zeros(2), np.zeros(0), geom)
+
+    expected = np.full(n, 2.0 / 1.5)
+    expected[3] = np.nan
+    assert np.allclose(ratio, expected, equal_nan=True)
+    assert geom.cos_i == 1.0
+
+
+def test_calc_tilt_ratio_requires_6c_and_dem_cosi():
+    fm = _mock_fm_tilt_ratio({}, 3)
+
+    with pytest.raises(ValueError, match="cos"):
+        ForwardModel.calc_tilt_ratio(
+            fm, np.ones(3), np.zeros(2), np.zeros(0), _flat_geom(None)
+        )
+
+    fm.atmosphere.multipart_transmittance = False
+    with pytest.raises(ValueError, match="multipart"):
+        ForwardModel.calc_tilt_ratio(
+            fm, np.ones(3), np.zeros(2), np.zeros(0), _flat_geom(0.5)
+        )

@@ -21,7 +21,7 @@
 import logging
 import multiprocessing
 import time
-from types import SimpleNamespace
+from copy import deepcopy
 
 import click
 import numpy as np
@@ -32,7 +32,10 @@ from spectral.io import envi
 from isofit import configs, ray
 from isofit.core.common import envi_header
 from isofit.core.fileio import initialize_output, write_bil_chunk
+from isofit.core.forward import ForwardModel
+from isofit.core.geometry import Geometry
 from isofit.core.instrument import Instrument
+from isofit.core.multistate import construct_full_state, update_config_for_surface
 
 
 @ray.remote(num_cpus=1)
@@ -55,6 +58,12 @@ def _run_chunk(
     loglevel: str,
     logfile: str,
     reference_class_file,
+    input_obs_file: str = None,
+    skyview_factor_file: str = None,
+    bgrfl_file: str = None,
+    output_tilt_file: str = None,
+    tilt_fm: ForwardModel = None,
+    subs_state_file: str = None,
 ) -> None:
     """
     Args:
@@ -75,6 +84,12 @@ def _run_chunk(
         nodata_value: nodata value of input and output
         loglevel: logging level
         logfile: logging file
+        input_obs_file: input observation file, used for DEM-tilt coefficients
+        skyview_factor_file: optional skyview factor file, used for DEM-tilt coefficients
+        bgrfl_file: optional background reflectance file, used for DEM-tilt coefficients
+        output_tilt_file: location to write DEM-tilt ratio PCA coefficients to
+        tilt_fm: forward model, with tilt basis, used for DEM-tilt coefficients
+        subs_state_file: superpixel state file, giving each pixel's atmosphere
 
     Returns:
         None
@@ -216,6 +231,24 @@ def _run_chunk(
     # degree.  This is all approximate of course.  Elevation appears in the
     # Third element, and the first two are latitude/longitude coordinates
 
+    # DEM-tilt coefficients use each pixel's superpixel atmospheric state
+    if output_tilt_file:
+        input_obs_img = envi.open(envi_header(input_obs_file), input_obs_file)
+        subs_state = envi.open(envi_header(subs_state_file)).open_memmap(
+            interleave="bip"
+        )
+        svf_mm = (
+            envi.open(envi_header(skyview_factor_file)).open_memmap(interleave="bip")
+            if skyview_factor_file
+            else None
+        )
+        bgrfl_mm = (
+            envi.open(envi_header(bgrfl_file)).open_memmap(interleave="bip")
+            if bgrfl_file
+            else None
+        )
+        n_tilt_bands = tilt_fm.tilt_basis.n_components
+
     # Iterate through image
     hash_table = {}
 
@@ -234,6 +267,12 @@ def _run_chunk(
 
         output_reflectance_row = np.zeros(input_radiance.shape) + nodata_value
         output_uncertainty_row = np.zeros(input_radiance.shape) + nodata_value
+
+        if output_tilt_file:
+            input_obs_mm = input_obs_img.open_memmap(interleave="bip", writable=False)
+            input_obs = np.array(input_obs_mm[row, :, :])
+            del input_obs_mm
+            output_tilt_row = np.zeros((n_input_samples, n_tilt_bands)) + nodata_value
 
         nspectra, start = 0, time.time()
         for col in np.arange(n_input_samples):
@@ -310,6 +349,31 @@ def _run_chunk(
                     np.sqrt(np.diag(Sy) + pow(calunc * x, 2)) * bhat[:, 1]
                 )
 
+            if output_tilt_file:
+                if segmentation_img is not None:
+                    subs_idx = int(hash_idx)
+                else:
+                    _, subs_idx = tree.query(input_locations[col, :] * loc_scaling, 1)
+                state = subs_state[int(subs_idx), 0, tilt_fm.full_idx]
+
+                geom = Geometry(
+                    obs=input_obs[col, :],
+                    loc=input_locations[col, :],
+                    svf=svf_mm[row, col] if svf_mm is not None else 1,
+                    bg_rfl=bgrfl_mm[row, col, :] if bgrfl_mm is not None else None,
+                    coszen=tilt_fm.atmosphere.coszen,
+                    full_config=config,
+                )
+                ratio = tilt_fm.calc_tilt_ratio(
+                    output_reflectance_row[col, :],
+                    state[tilt_fm.idx_atmosphere],
+                    state[tilt_fm.idx_instrument],
+                    geom,
+                )
+                output_tilt_row[col, :] = tilt_fm.tilt_basis.project(
+                    ratio, fill_value=nodata_value
+                )
+
             nspectra = nspectra + 1
 
         elapsed = float(time.time() - start)
@@ -346,6 +410,14 @@ def _run_chunk(
             (n_input_lines, n_output_uncertainty_bands, n_input_samples),
         )
 
+        if output_tilt_file:
+            write_bil_chunk(
+                output_tilt_row.T.reshape((1, n_tilt_bands, n_input_samples)),
+                output_tilt_file,
+                row,
+                (n_input_lines, n_tilt_bands, n_input_samples),
+            )
+
 
 def empirical_line(
     reference_radiance_file: str,
@@ -366,6 +438,10 @@ def empirical_line(
     n_cores: int = -1,
     reference_class_file: str = None,
     segmentation_size: int = 40,
+    input_obs_file: str = None,
+    skyview_factor_file: str = None,
+    bgrfl_file: str = None,
+    output_tilt_file: str = None,
 ) -> None:
     """
     Perform an empirical line interpolation for reflectance and uncertainty extrapolation
@@ -389,6 +465,12 @@ def empirical_line(
         n_cores: number of cores to run on
         reference_class_file: optional source file for sub-type-classifications, in order: [base, cloud, water]
         segmentation_size: Number of super pixels
+        input_obs_file: input observation file, required for DEM-tilt coefficients
+        skyview_factor_file: optional skyview factor file, used for DEM-tilt coefficients
+        bgrfl_file: optional background reflectance file, used for DEM-tilt coefficients
+        output_tilt_file: location to write DEM-tilt ratio PCA coefficients to. Uses
+            the forward_model.atmosphere.tilt_basis_file and superpixel states of
+            isofit_config
     Returns:
         None
     """
@@ -498,6 +580,50 @@ def empirical_line(
         output_metadata, output_uncertainty_file, (nll, nlb, nls)
     )
 
+    # Forward model and output for DEM-tilt ratio coefficients
+    tilt_fm, subs_state_file = None, None
+    if output_tilt_file:
+        if isofit_config is None or input_obs_file is None:
+            raise ValueError(
+                "Empirical line tilt coefficients require isofit_config and "
+                "input_obs_file"
+            )
+        issues = iconfig.get_tilt_issues()
+        if issues:
+            raise ValueError("; ".join(issues))
+
+        # Only the atmosphere, instrument, and tilt basis are used, so the
+        # first surface class serves for all pixels
+        full_statevector, *_ = construct_full_state(deepcopy(iconfig))
+        surface_class_str = next(iter(iconfig.forward_model.surface.Surfaces), None)
+        tilt_fm = ForwardModel(
+            update_config_for_surface(deepcopy(iconfig), surface_class_str)
+        )
+        tilt_fm.match_statevector(full_statevector)
+        subs_state_file = str(iconfig.output.estimated_state_file)
+
+        tilt_metadata = {
+            "data type": 4,
+            "file type": "ENVI Standard",
+            "byte order": 0,
+            "no data value": nodata_value,
+            "lines": nll,
+            "samples": nls,
+            "bands": tilt_fm.tilt_basis.n_components,
+            "interleave": "bil",
+            "band names": tilt_fm.tilt_basis.band_names,
+            "description": (
+                f"L2A empirical line per-pixel DEM-tilt ratio PCA coefficients (tilt_basis_file={iconfig.forward_model.atmosphere.tilt_basis_file}, segmentation_size={segmentation_size}, engine={engine_name}, isofit_version={isofit_version})"
+            ),
+        }
+        if "map info" in output_metadata:
+            tilt_metadata["map info"] = output_metadata["map info"]
+        initialize_output(
+            tilt_metadata,
+            output_tilt_file,
+            (nll, tilt_fm.tilt_basis.n_components, nls),
+        )
+
     # Now cleanup inputs and outputs, we'll write dynamically above
     del output_reflectance_img, output_uncertainty_img
     del (
@@ -526,6 +652,8 @@ def empirical_line(
         rayargs["num_cpus"] = n_cores
 
     ray.init(**rayargs)
+
+    tilt_fm_ref = ray.put(tilt_fm) if tilt_fm is not None else None
 
     n_ray_cores = multiprocessing.cpu_count()
     n_cores = min(n_ray_cores, n_input_lines)
@@ -561,6 +689,12 @@ def empirical_line(
             level,
             logfile,
             reference_class_file,
+            input_obs_file,
+            skyview_factor_file,
+            bgrfl_file,
+            output_tilt_file,
+            tilt_fm_ref,
+            subs_state_file,
         )
         results.append(_run_chunk.remote(*args))
 
@@ -597,7 +731,28 @@ def empirical_line(
 @click.option(
     "--reference_class_file", default=None, type=str, help="Reference class file"
 )
+@click.option(
+    "--input_obs_file", default=None, type=str, help="Obs file, for tilt coefficients"
+)
+@click.option(
+    "--skyview_factor_file",
+    default=None,
+    type=str,
+    help="Skyview factor file, for tilt coefficients",
+)
+@click.option(
+    "--bgrfl_file",
+    default=None,
+    type=str,
+    help="Background reflectance file, for tilt coefficients",
+)
+@click.option(
+    "--output_tilt_file",
+    default=None,
+    type=str,
+    help="Output file for DEM-tilt ratio PCA coefficients",
+)
 def cli(**kwargs):
     """Run empirical line"""
-    empirical_line(SimpleNamespace(**kwargs))
+    empirical_line(**kwargs)
     click.echo("Done")

@@ -272,6 +272,7 @@ class CLI(click.Group):
         "plot": "isoplots",
         "config": "isofit.configs.utils.interpolate.cli",
         "atm_interpolation": "isofit.utils.atm_interpolation",
+        "build_tilt_basis": "isofit.utils.build_tilt_basis",
     },
 )
 @click.pass_context
