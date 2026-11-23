@@ -95,8 +95,6 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     # - Chappuis still pending issue
 
-    # - Check UV and Conda install to check changes needed
-
     # - Bring in atm profile into isofit-data
 
     def __init__(self, full_config, **kwargs):
@@ -237,6 +235,9 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         self.params.l_trunc = 2 * self.config.engine.nstreams_mom - 1
         self.params.stream_l_cap = 2 * self.config.engine.nstreams_mom - 1
 
+        self.params.polarization_type = jl.seval(
+            f"vSmartMOM.CoreRT.{self.config.engine.polarization_type}"
+        )
         self.params.architecture = jl.seval(self.config.engine.architecture)
         self.params.float_type = jl.seval(self.config.engine.float_type)
 
@@ -329,7 +330,6 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         else:
             data = np.loadtxt(out_path, delimiter=",", skiprows=1)
 
-        # wl = data[:, 0]
         rhoatm = data[:, 1]
         sphalb = data[:, 2]
         transm_down_dir = data[:, 3]

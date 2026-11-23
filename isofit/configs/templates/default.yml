@@ -239,6 +239,7 @@ vsmartmom:
         aerosol_ni: [0.001]
         nstreams_mom: 8
         write_sim: true
+        polarization_type: "Stokes_I()"
         architecture: "CPU()"
         float_type: "Float64"
         wl_resolutions:

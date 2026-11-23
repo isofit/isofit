@@ -78,6 +78,14 @@ class VSmartMomConfig(SectionModel):
         description="Leaving write_sim as True will write out the fine resolution csv(s) to disk, while False will hold in memory for resampling to instrument",
     )
 
+    polarization_type: Literal[
+        "Stokes_I()", "Stokes_IQ()", "Stokes_IQU()", "Stokes_IQUV()"
+    ] = Field(
+        default="Stokes_I()",
+        description="Stokes vector components tracked: I (intensity), Q and U (linear polarization), and V (circular polarization)",
+        examples=["Stokes_I()"],
+    )
+
     architecture: Literal["CPU()", "default_architecture()", "GPU()"] = Field(
         default="CPU()",
         description="Compute architecture for vSmartMOM",
