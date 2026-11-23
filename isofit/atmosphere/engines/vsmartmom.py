@@ -89,15 +89,11 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     # TODO
 
-    # - work more on the h2o representation, using params.q
-
     # - think about how we want to interface with scattering parameters (e.g., angstrom exponent)
 
     # - Chappuis still pending issue
 
     # - double check RAA based on Phils PR-1070
-
-    # - Bring in H2O molar mass, air mass etc, into units
 
     # - Check UV and Conda install to check changes needed
 
@@ -178,16 +174,22 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             "z_km",
             "p_mbar",
             "t_kelvin",
-            "o3_ppmv",
-            "n2o_ppmv",
-            "co_ppmv",
-            "ch4_ppmv",
-            "no2_ppmv",
+            "q_kgkg",
+            "o3_vmr",
+            "n2o_vmr",
+            "co_vmr",
+            "ch4_vmr",
+            "no2_vmr",
         ]
 
         self.atm_profile = {
             k: np.asarray(atm_profile_data[k][atm_idx], dtype=float) for k in fields
         }
+
+        self.p_def = self.atm_profile["p_mbar"]
+        self.T_def = self.atm_profile["t_kelvin"]
+        self.q_def = self.atm_profile["q_kgkg"]
+        self.log_p_def = np.log(self.p_def)
 
         self.day_of_year = self.modtran_geom["IDAY"]
 
@@ -386,59 +388,38 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     def run_vsmartmom(self, vals, out_path):
 
-        # TODO Constants can move to units
-        GRAVITY = 9.80665
-        P_SEALEVEL = 1013.25
-
         params = _jl_deepcopy(self.params)
 
-        p_surf = P_SEALEVEL
+        p_surf = units.standard_atmosphere()
         if vals["surface_elev_km"] > 0.0:
-            p_surf = P_SEALEVEL * np.exp(-vals["surface_elev_km"] / 8.0)
+            p_surf = units.standard_atmosphere() * np.exp(
+                -vals["surface_elev_km"] / 8.0
+            )
 
         co2_vmr = (vals["co2"] / self.o2_total) * self.o2_vmr
 
-        p_array = np.array(params.p)
-        T_array = np.array(params.T)
-        q_array = np.array(params.q)
-
-        # Truncate pressure, surface, q, and gas if above sea level
+        # Truncate pressure grid if above sea level
         if vals["surface_elev_km"] > 0.0:
+            idx = np.searchsorted(self.p_def, p_surf, side="left")
+            idx = max(1, min(idx, len(self.p_def) - 1))
+            params.p = np.concatenate((self.p_def[:idx], [p_surf]))
+        else:
+            params.p = self.p_def
 
-            # find where p_surf is in and set the new surface
-            idx = np.searchsorted(p_array, p_surf, side="left")
-            idx = max(1, min(idx, len(p_array) - 1))
-            params.p = np.concatenate((p_array[:idx], [p_surf]))
-
-            # get midpoint temperature for new surface
-            orig_centers = 0.5 * (p_array[:-1] + p_array[1:])
-            new_centers = 0.5 * (params.p[:-1] + params.p[1:])
-            params.T = np.interp(new_centers, orig_centers, T_array)
-            q_array = np.interp(new_centers, orig_centers, q_array)
-
-        # Always interpolate gas profiles
-        # (reference file from isofit-data has different profile than vSmartMOM)
-        log_p_ref = np.log(self.atm_profile["p_mbar"])
-        p_final = np.asarray(params.p, dtype=float)
+        p_final = np.array(params.p)
         p_centers = 0.5 * (p_final[:-1] + p_final[1:])
-        log_p_surf = np.log(
-            np.clip(
-                p_centers,
-                self.atm_profile["p_mbar"].min(),
-                self.atm_profile["p_mbar"].max(),
-            )
-        )
-        z_centers = np.interp(log_p_surf, log_p_ref, self.atm_profile["z_km"])
+
+        log_p_mid = np.log(np.clip(p_centers, self.p_def.min(), self.p_def.max()))
+        params.T = np.interp(log_p_mid, self.log_p_def, self.T_def)
+        q_array = np.interp(log_p_mid, self.log_p_def, self.q_def)
+        z_centers = np.interp(log_p_mid, self.log_p_def, self.atm_profile["z_km"])
 
         gas_profiles = {
-            "O3": np.interp(log_p_surf, log_p_ref, self.atm_profile["o3_ppmv"]) * 1e-6,
-            "N2O": np.interp(log_p_surf, log_p_ref, self.atm_profile["n2o_ppmv"])
-            * 1e-6,
-            "CO": np.interp(log_p_surf, log_p_ref, self.atm_profile["co_ppmv"]) * 1e-6,
-            "CH4": np.interp(log_p_surf, log_p_ref, self.atm_profile["ch4_ppmv"])
-            * 1e-6,
-            "NO2": np.interp(log_p_surf, log_p_ref, self.atm_profile["no2_ppmv"])
-            * 1e-6,
+            "O3": np.interp(log_p_mid, self.log_p_def, self.atm_profile["o3_vmr"]),
+            "N2O": np.interp(log_p_mid, self.log_p_def, self.atm_profile["n2o_vmr"]),
+            "CO": np.interp(log_p_mid, self.log_p_def, self.atm_profile["co_vmr"]),
+            "CH4": np.interp(log_p_mid, self.log_p_def, self.atm_profile["ch4_vmr"]),
+            "NO2": np.interp(log_p_mid, self.log_p_def, self.atm_profile["no2_vmr"]),
         }
 
         above_toa = z_centers > self.toa_km
@@ -447,13 +428,10 @@ class VSmartMomRT(BaseAtmosphere, Writer):
                 gas_profiles[k] = np.where(above_toa, 0.0, gas_profiles[k])
 
         # Absorption portion of params
-
         # H2O is set via q and not absorption_params.vmr
-        # TODO
-        dp_gcm2 = np.abs(np.diff(p_final)) * 100.0 / GRAVITY * 0.1
+        dp_gcm2 = units.hPa_to_gcm2(np.abs(np.diff(p_final)))
         w_base_gcm2 = np.sum(q_array * dp_gcm2)
-        q_scale = (vals["h2o"] / w_base_gcm2) if w_base_gcm2 > 0.0 else 0.0
-        params.q = q_array * q_scale
+        params.q = q_array * ((vals["h2o"] / w_base_gcm2) if w_base_gcm2 > 0.0 else 0.0)
 
         params.absorption_params.vmr["CO2"] = co2_vmr
         params.absorption_params.vmr["O2"] = self.o2_vmr
