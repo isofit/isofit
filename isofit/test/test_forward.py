@@ -5,6 +5,7 @@ import pytest
 
 from isofit.core.common import eps
 from isofit.core.forward import ForwardModel
+from isofit.core.geometry import Geometry
 
 # Radiance calculation tests
 
@@ -219,3 +220,88 @@ def test_get_L_coupled_cos_i_scaling():
 
     # L_dir_dir = r["L_dd"] / coszen * cos_i = 1.0 / 1.0 * 0.5 = 0.5
     assert np.allclose(L_dir_dir, 0.5)
+
+
+# tilt_reflectance tests
+
+
+def _mock_fm_tilt():
+    keys = ["dir-dir", "dif-dir", "dir-dif", "dif-dif"]
+    fm = _mock_fm_6c(keys)
+    fm.terrain_rereflection = MagicMock(return_value=1.0)
+    fm.get_L_coupled = lambda *args, **kwargs: ForwardModel.get_L_coupled(
+        fm, *args, **kwargs
+    )
+    return fm, keys
+
+
+def test_tilt_reflectance_analytic():
+    """Tilting a half-illuminated surface toward the sun lowers its reflectance
+    by the ratio of target illumination: rho * (0.5 + 1) / (1 + 1)."""
+    fm, keys = _mock_fm_tilt()
+
+    n = 4
+    r = {k: np.ones(n) for k in keys}
+    r["transm_down_dir"] = np.zeros(n)
+    r["sphalb"] = np.zeros(n)
+
+    geom = Geometry(coszen=1.0)
+    geom.cos_i = 0.5
+
+    rho = np.full(n, 0.2)
+    rho_tilt = ForwardModel.tilt_reflectance(
+        fm, r, geom, 1.0, rho, rho, rho_dif_dif=rho
+    )
+
+    assert np.allclose(rho_tilt, 0.2 * 1.5 / 2.0)
+    assert geom.cos_i == 0.5
+
+
+def test_tilt_reflectance_identity():
+    """Lambertian reflectance is unchanged when the new cos_i equals the current one."""
+    fm, keys = _mock_fm_tilt()
+
+    n = 5
+    r = {k: np.linspace(1.0, 2.0, n) for k in keys}
+    r["transm_down_dir"] = np.full(n, 0.7)
+    r["sphalb"] = np.full(n, 0.1)
+
+    geom = Geometry(coszen=0.8)
+    geom.cos_i = 0.6
+
+    rho = np.linspace(0.1, 0.5, n)
+    rho_tilt = ForwardModel.tilt_reflectance(
+        fm, r, geom, geom.cos_i, rho, rho, rho_dif_dif=rho
+    )
+
+    assert np.allclose(rho_tilt, rho)
+
+
+def test_tilt_reflectance_conserves_target_radiance():
+    """The tilted reflectance reproduces the original target-dependent radiance."""
+    fm, keys = _mock_fm_tilt()
+
+    n = 6
+    r = {k: np.linspace(1.0, 3.0, n) * (i + 1) for i, k in enumerate(keys)}
+    r["transm_down_dir"] = np.full(n, 0.6)
+    r["sphalb"] = np.full(n, 0.15)
+
+    geom = Geometry(coszen=0.7, svf=0.9)
+    geom.cos_i = 0.4
+    new_cosi = 0.95
+
+    rho_dir_dir = np.linspace(0.1, 0.4, n)
+    rho_dif_dir = np.linspace(0.12, 0.38, n)
+    rho_dif_dif = np.full(n, 0.25)
+
+    rho_tilt = ForwardModel.tilt_reflectance(
+        fm, r, geom, new_cosi, rho_dir_dir, rho_dif_dir, rho_dif_dif=rho_dif_dif
+    )
+
+    _, L_dd, L_fd, _, _ = ForwardModel.get_L_coupled(fm, r, geom, rho_dif_dif)
+    geom.cos_i = new_cosi
+    _, L_dd_t, L_fd_t, _, _ = ForwardModel.get_L_coupled(fm, r, geom, rho_dif_dif)
+
+    rdn = L_dd * rho_dir_dir + L_fd * rho_dif_dir
+    rdn_tilt = (L_dd_t + L_fd_t) * rho_tilt
+    assert np.allclose(rdn, rdn_tilt)

@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 import logging
-from copy import deepcopy
+from copy import copy, deepcopy
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -531,6 +531,64 @@ class ForwardModel:
         L_dif_dif /= eq_11_term
 
         return L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif
+
+    def tilt_reflectance(
+        self,
+        r: dict,
+        geom: Geometry,
+        new_cosi: float,
+        rho_dir_dir: np.ndarray,
+        rho_dif_dir: np.ndarray,
+        rho_dif_dif: np.ndarray = 0,
+    ):
+        """Convert surface reflectance under the current local illumination
+        geometry into the equivalent Lambertian reflectance of a surface tilted
+        to a new local solar incidence angle, such that both surfaces produce
+        the same target-dependent radiance.
+
+        Note:   This function is only applicable to the 6c run case
+                where r contains populated separated transmittances
+
+        Args:
+            r:           interpolated radiative transfer quantities from the LUT
+            geom:        Geometry object for the current observation
+            new_cosi:    cosine of the local solar zenith angle of the tilted surface
+            rho_dir_dir: directional-directional surface reflectance
+            rho_dif_dir: diffuse-directional surface reflectance
+            rho_dif_dif: diffuse-diffuse (background) surface reflectance
+
+            All reflectances are on the atmosphere (LUT) wavelength grid.
+
+        Returns:
+            rho_tilt: Lambertian reflectance of the tilted surface
+        """
+
+        # 1. Call get_L_coupled(...) for the current geometry and store these radiances
+        L_tot, L_dir_dir, L_dif_dir, L_dir_dif, L_dif_dif = self.get_L_coupled(
+            r, geom, rho_dif_dif=rho_dif_dif
+        )
+
+        # 2. Create a modified geometry object using the new cosine i
+        geom_tilt = copy(geom)
+        geom_tilt.cos_i = new_cosi
+
+        # 3. Call get_L_coupled(...) for the modified geometry and store these radiances
+        (
+            L_tot_tilt,
+            L_dir_dir_tilt,
+            L_dif_dir_tilt,
+            L_dir_dif_tilt,
+            L_dif_dif_tilt,
+        ) = self.get_L_coupled(r, geom_tilt, rho_dif_dif=rho_dif_dif)
+
+        # 4. Assuming the background reflectance is the same for the tilted and original surface, we have:
+        # L_dir_dir * rho_dir_dir + L_dif_dir * rho_dif_dir = (L_dir_dir_tilt + L_dif_dir_tilt) * rho_tilt
+        # We solve for rho_tilt and return that
+        rho_tilt = (L_dir_dir * rho_dir_dir + L_dif_dir * rho_dif_dir) / (
+            L_dir_dir_tilt + L_dif_dir_tilt
+        )
+
+        return rho_tilt
 
     def calc_rdn(
         self,
