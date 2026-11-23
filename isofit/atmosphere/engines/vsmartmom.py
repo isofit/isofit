@@ -93,11 +93,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
 
     # TODO
 
-    # - think about how we want to interface with scattering parameters (e.g., angstrom exponent)
-
     # - Chappuis still pending issue
-
-    # - double check RAA based on Phils PR-1070
 
     # - Check UV and Conda install to check changes needed
 
@@ -396,7 +392,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         sza_deg = self.modtran_geom["PARM2"]
         rel_az = self.modtran_geom["PARM1"]
         vaa_deg = vals.get("TRUEAZ", self.modtran_geom["TRUEAZ"])
-        saa_deg = (vaa_deg - rel_az) % 360
+        saa_deg = (vaa_deg + rel_az) % 360
 
         vza = vals.get("OBSZEN", self.modtran_geom["OBSZEN"])
         vza_deg = 180.0 - vza if vza > 90.0 else vza
@@ -413,9 +409,8 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         if "solar_zenith" in vals:
             sza_deg = vals["solar_zenith"]
 
-        # TODO Double check this based on Phils RAA PR
         if "relative_azimuth" in vals:
-            saa_deg = (vaa_deg - vals["relative_azimuth"]) % 360
+            saa_deg = (vaa_deg + vals["relative_azimuth"]) % 360
 
         return {
             "sza": float(sza_deg),
