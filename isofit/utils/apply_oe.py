@@ -116,6 +116,7 @@ def apply_oe(
     pixel_heuristic_priors=[],
     datestr=None,
     libradtran_band_model=None,
+    vsmartmom=False,
 ):
     """
     Applies OE over a flightline using an atmospheric radiative transfer engine. This executes
@@ -276,6 +277,9 @@ def apply_oe(
         for all other sensors.
     libradtran_band_model: str, default=None
         Provide a band model override to the libradtran atmospheric radiative transfer model.
+    vsmartmom : bool, default=False
+        Use the vsmartmom RT engine instead of MODTRAN/an emulator. Mutually
+        exclusive with emulator_base.
 
     References
     ----------
@@ -291,6 +295,9 @@ def apply_oe(
     """
     use_superpixels = empirical_line or analytical_line or use_background_rfl
     use_multisurface = True if classify_multisurface or surface_class_file else False
+
+    if vsmartmom and emulator_base is not None:
+        raise ValueError("vsmartmom and emulator_base are mutually exclusive")
 
     # Determine if we run in multipart-transmittance (4c) mode
     if emulator_base is not None:
@@ -705,6 +712,7 @@ def apply_oe(
         "use_superpixels": use_superpixels,
         "surface_category": surface_category,
         "emulator_base": emulator_base,
+        "vsmartmom": vsmartmom,
         "uncorrelated_radiometric_uncertainty": uncorrelated_radiometric_uncertainty,
         "prebuilt_lut_path": prebuilt_lut,
         "inversion_windows": sensor_inversion_windows,
@@ -1057,6 +1065,7 @@ def apply_oe(
 @click.option("--use_background_rfl", is_flag=True, default=False)
 @click.option("--eof_path", default=None)
 @click.option("--terrain_style", default="dem", type=click.Choice(["dem", "flat"]))
+@click.option("--vsmartmom", is_flag=True, default=False)
 @click.option(
     "--pixel_heuristic_priors",
     "-php",

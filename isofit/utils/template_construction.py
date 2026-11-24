@@ -730,6 +730,7 @@ def build_config(
     n_cores: int = -1,
     surface_category="multicomponent_surface",
     emulator_base: str = None,
+    vsmartmom: bool = False,
     uncorrelated_radiometric_uncertainty: float = 0.0,
     multiple_restarts: bool = False,
     segmentation_size=400,
@@ -768,6 +769,7 @@ def build_config(
         n_cores:                              the number of cores to use during processing
         surface_category:                     type of surface to use
         emulator_base:                        the basename of the emulator, if used
+        vsmartmom:                            if true, use the vsmartmom RT engine instead of MODTRAN/an emulator
         uncorrelated_radiometric_uncertainty: uncorrelated radiometric uncertainty parameter for isofit
         multiple_restarts:                    if true, use multiple restarts
         segmentation_size:                    image segmentation size if empirical line is used
@@ -866,6 +868,7 @@ def build_config(
                 co2_lut_grid=co2_lut_grid,
                 elevation_lut_grid=elevation_lut_grid,
                 emulator_base=emulator_base,
+                vsmartmom=vsmartmom,
                 multipart_transmittance=multipart_transmittance,
                 prebuilt_lut_path=prebuilt_lut_path,
                 presolve=presolve,
@@ -1584,6 +1587,7 @@ def make_atmosphere_config(
     co2_lut_grid: np.array = None,
     elevation_lut_grid: np.array = None,
     emulator_base: str = None,
+    vsmartmom: bool = False,
     multipart_transmittance: bool = False,
     prebuilt_lut_path: str = None,
     presolve: bool = False,
@@ -1630,6 +1634,8 @@ def make_atmosphere_config(
             engine_name = "libradtran"
         else:
             engine_name = "modtran"
+    elif vsmartmom:
+        engine_name = "vsmartmom"
     # NOTE because modtran_path is always defined via MODTRAN_DIR
     # this should not be reached; however, it's safe to keep for testing.
     else:
@@ -1676,6 +1682,8 @@ def make_atmosphere_config(
                 atmosphere_rte["emulator_aux_file"] = abspath(
                     os.path.splitext(emulator_base)[0] + "_aux.npz"
                 )
+    elif vsmartmom:
+        pass
     else:
         atmosphere_rte["base_dir"] = modtran_path
     atmosphere_config["engine"].update(atmosphere_rte)

@@ -77,7 +77,11 @@ def selectByName(data: dict) -> str:
     This function is called automatically by Pydantic during validation
     and should not be invoked directly by users.
     """
-    name = data.get("name")
+    if isinstance(data, dict):
+        name = data.get("name")
+    else:
+        name = getattr(data, "name", None)
+
     if isinstance(name, str):
         return standardName(name)
     return name
@@ -89,6 +93,7 @@ from .modtran import ModtranConfig
 from .prebuilt import PrebuiltConfig
 from .sixs import SixSConfig
 from .srtmnet import sRTMnetConfig
+from .vsmartmom import VSmartMomConfig
 
 # Add new engines using their standard name
 Engines = Annotated[
@@ -99,6 +104,7 @@ Engines = Annotated[
         Annotated[PrebuiltConfig, Tag("prebuilt")],
         Annotated[SixSConfig, Tag("sixs")],
         Annotated[sRTMnetConfig, Tag("srtmnet")],
+        Annotated[VSmartMomConfig, Tag("vsmartmom")],
     ],
     Discriminator(selectByName),
 ]

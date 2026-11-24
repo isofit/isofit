@@ -23,6 +23,16 @@ import re
 import numpy as np
 
 
+def standard_gravity():
+    # m s-2
+    return 9.80665
+
+
+def standard_atmosphere():
+    # hPa
+    return 1013.25
+
+
 def E_to_L(E, coszen):
     """Convert irradiance to radiance.
 
@@ -421,3 +431,29 @@ def byte_string_to_float(string):
 
     num, unit = parse.match(string).groups()
     return float(num) * 1024 ** units[unit.lower()]
+
+
+def hPa_to_gcm2(hPa):
+    """
+    Converts pressure of units hPa to column mass units gcm2
+
+    Args:
+        hPa:     value(s) in units of hPa
+
+    Returns:
+        Value(s) in units of gcm2
+    """
+    return hPa * 100.0 / standard_gravity() * 0.1
+
+
+def gcm2_to_hPa(gcm2):
+    """
+    Converts column mass of units gcm2 to pressure in units of hPa
+
+    Args:
+        gcm2:    value(s) in units of gcm2
+
+    Returns:
+        Value(s) in units of hPa
+    """
+    return gcm2 * standard_gravity() / 100.0 / 0.1
