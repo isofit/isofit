@@ -112,7 +112,6 @@ class VSmartMomConfig(SectionModel):
             ]
         ],
     )
-    
 
     template_file: Optional[FilePath] = Field(
         description="Template file used as the base configuration for vSmartMOM",
