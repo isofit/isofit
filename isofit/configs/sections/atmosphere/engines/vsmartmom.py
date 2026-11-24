@@ -82,7 +82,7 @@ class VSmartMomConfig(SectionModel):
         "Stokes_I()", "Stokes_IQ()", "Stokes_IQU()", "Stokes_IQUV()"
     ] = Field(
         default="Stokes_I()",
-        description="Stokes vector components tracked: I (intensity), Q and U (linear polarization), and V (circular polarization)",
+        description="Stokes vector components accounted for and tracked: I (intensity), Q and U (linear polarization), and V (circular polarization)",
         examples=["Stokes_I()"],
     )
 
@@ -100,8 +100,7 @@ class VSmartMomConfig(SectionModel):
 
     wl_resolutions: list[tuple[float, float, float]] = Field(
         default=[
-            (340.0, 1200.0, 20.0),
-            (1200.0, 2510.0, 10.0),
+            (340.0, 2510.0, 20.0),
         ],
         description="List of tuples defining spectral resolutions (start_wl_nm, end_wl_nm, wn_res_cm_1)",
         examples=[

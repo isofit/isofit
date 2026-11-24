@@ -88,14 +88,23 @@ _sim_cache: dict[str, np.ndarray] = {}
 
 
 class VSmartMomRT(BaseAtmosphere, Writer):
+    """
+    Vector simulated measurements of the atmosphere using radiative transfer based on the Matrix Operator Method.
+
+    For all vSmartMOM conventions for code development please refer to:
+    https://github.com/RemoteSensingTools/vSmartMOM.jl/blob/release/v2.2-consolidation/docs/src/pages/conventions.md
+
+    References
+    --------
+    Sanghavi, S., Davis, A. B., & Eldering, A. (2014). vSmartMOM: A vector matrix operator method-based radiative transfer
+    model linearized with respect to aerosol properties. JQSRT, 133, 412-433. doi:10.1016/j.jqsrt.2013.09.004
+
+    Jeyaram, R., Sanghavi, S., & Frankenberg, C. (2022). vSmartMOM.jl: An open-source Julia package for atmospheric radiative
+    transfer and remote sensing tools. Journal of Open Source Software, 7(80), 4575. doi:10.21105/joss.04575
+
+    """
 
     albedos = [0.0, 0.2]
-
-    # TODO
-
-    # - Chappuis still pending issue
-
-    # - Bring in atm profile into isofit-data
 
     def __init__(self, full_config, **kwargs):
         self.config = full_config.forward_model.atmosphere
@@ -320,7 +329,7 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         if not self.config.configure_and_exit:
             self.run_vsmartmom(vals, out_path)
 
-    def readSim(self, point):
+    def readSim(self, point: np.array):
         name = self.point_to_filename(point)
         out_path = abspath(join(self.sim_path, f"{name}_vsmartmom.csv"))
 
@@ -374,9 +383,9 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         self.rt_mode = "rdn"
         self.lut.setAttr("RT_mode", "rdn")
 
-    def extract_point_values(self, point):
+    def extract_point_values(self, point: np.array):
         """
-        In vSmartMOM they have the following convention for vaz:
+        In vSmartMOM the following is convention for vaz:
 
         vaz = phi_view - phi_sun ; 0 deg: Sun behind satellite; 180 deg: opposite.
         """
@@ -402,9 +411,21 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         vals["observer_elev_km"] = vals.get("H1ALT", self.modtran_geom["H1ALT"])
 
         h2o = vals.get("H2OSTR", self.modtran_atmos["H2OSTR"])
-        aerfrac_1 = vals.get("AERFRAC_1", 0.10)
-        aerfrac_2 = vals.get("AERFRAC_2", 0.10)
         co2 = vals.get("CO2", self.modtran_atmos["CO2MX"])
+
+        if self.single_aerosol:
+            # In this case, it is assumed template construction creates a grid for only one AOT,
+            # although there is not explicit check to protect against this.
+            aerfrac_1 = float(
+                next(
+                    (v for k, v in vals.items() if k.startswith(("AERFRAC", "AOT"))),
+                    0.10,
+                )
+            )
+            aerfrac_2 = None
+        else:
+            aerfrac_1 = float(vals.get("AERFRAC_1", 0.10))
+            aerfrac_2 = float(vals.get("AERFRAC_2", 0.10))
 
         if "solar_zenith" in vals:
             sza_deg = vals["solar_zenith"]
@@ -418,20 +439,14 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             "vaz": float(vaa_deg - saa_deg),
             "elev": float(elev),
             "h2o": float(h2o),
-            "aerfrac_1": float(aerfrac_1),
-            "aerfrac_2": float(aerfrac_2),
+            "aerfrac_1": aerfrac_1,
+            "aerfrac_2": aerfrac_2,
             "co2": float(co2),
             "surface_elev_km": float(elev),
             "observer_elev_km": float(vals["observer_elev_km"]),
         }
 
-    def run_vsmartmom(self, vals, out_path):
-        """
-        For all vSmartMOM conventions for code development please refer to:
-        https://github.com/RemoteSensingTools/vSmartMOM.jl/blob/release/v2.2-consolidation/docs/src/pages/conventions.md
-
-        """
-
+    def run_vsmartmom(self, vals: dict, out_path: str):
         params = _jl_deepcopy(self.params)
 
         p_surf = units.standard_atmosphere()
@@ -586,10 +601,8 @@ class VSmartMomRT(BaseAtmosphere, Writer):
         transm_up_dif = np.maximum(transm_up_dif, 0)
         sphalb = np.maximum(sphalb, 0)
 
-        wl = units.wavenumber_to_nm(np.array(params.spec_bands[0]))
-
         # Flip arrays - to increase in wl from VIS to SWIR
-        wl = wl[::-1]
+        wl = units.wavenumber_to_nm(np.array(params.spec_bands[0]))[::-1]
         rhoatm = rhoatm[::-1]
         sphalb = sphalb[::-1]
         transm_down_dir = transm_down_dir[::-1]
