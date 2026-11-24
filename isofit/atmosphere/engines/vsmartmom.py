@@ -481,8 +481,10 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             "NO2": np.interp(log_p_mid, self.log_p_def, self.atm_profile["no2_vmr"]),
         }
 
+        # Zero out gas profiles above 100 km
         above_toa = z_centers > self.toa_km
         if np.any(above_toa):
+            q_array = np.where(above_toa, 0.0, q_array)
             for k in gas_profiles:
                 gas_profiles[k] = np.where(above_toa, 0.0, gas_profiles[k])
 
@@ -584,7 +586,6 @@ class VSmartMomRT(BaseAtmosphere, Writer):
             transm_down_dir = np.exp(-tau_tot / mu_s)
             T_down_tot = hT0 / mu_s
             transm_down_dif = np.maximum(T_down_tot - transm_down_dir, 0.0)
-
             transm_up_dir = np.exp(-tau_tot / mu_v)
             alpha_rho = np.pi * (L1 - L0) / mu_s
             T_up_tot = np.where(

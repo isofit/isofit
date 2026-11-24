@@ -93,23 +93,26 @@ class VSmartMomConfig(SectionModel):
     )
 
     float_type: Literal["Float64", "Float32"] = Field(
-        default="Float32",
+        default="Float64",
         description="Floating point precision type for calculations (Float32, Float64)",
         examples=["Float64"],
     )
 
     wl_resolutions: list[tuple[float, float, float]] = Field(
         default=[
-            (340.0, 2510.0, 20.0),
+            (340.0, 1200.0, 20.0),
+            (1200.0, 2510.0, 10.0),
         ],
         description="List of tuples defining spectral resolutions (start_wl_nm, end_wl_nm, wn_res_cm_1)",
         examples=[
             [
-                (340.0, 490.0, 4.0),
-                (490.0, 2510.0, 0.1),
+                (340.0, 817.0, 5.0),
+                (817.0, 1826.0, 1.0),
+                (1826.0, 2510.0, 0.10),
             ]
         ],
     )
+    
 
     template_file: Optional[FilePath] = Field(
         description="Template file used as the base configuration for vSmartMOM",
